@@ -4,7 +4,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Seraph Breaker</title>
-<meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@700;800&family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
@@ -344,7 +343,7 @@ button.card:hover,button.card:focus-visible{border-color:var(--c,var(--signal));
           <div><span id="mapProg">CAMPAIGN · 0/12 CLEAR</span><b>War Map</b></div>
         </div>
         <div class="mapScroll" id="mapScroll"><div class="mapInner" id="mapInner"></div></div>
-        <div class="sheet" id="sheet">
+        <div class="sheet">
           <div class="h"><div><span id="shEye">LEVEL 01</span><b id="shName">First Contact</b></div><span class="cur gem" id="shReward"><i></i>+5</span></div>
           <div class="rooms" id="shRooms"></div>
           <div class="tags" id="shTags"></div>
@@ -377,7 +376,7 @@ button.card:hover,button.card:focus-visible{border-color:var(--c,var(--signal));
           <label for="volM">Music<input type="range" id="volM" min="0" max="100"><output id="volMo">55</output></label>
           <label for="volS">Effects<input type="range" id="volS" min="0" max="100"><output id="volSo">70</output></label>
           <p class="note">The soundtrack is synthesized live in your browser, so it is original and free of copyright claims.</p>
-          <p class="note" id="syncTxt">Progress is saved in this browser.</p>
+          <p class="note">Progress is saved in this browser only.</p>
           <div class="keys desk"><kbd>WASD</kbd> move · <kbd>Mouse</kbd> aim · <kbd>Click</kbd> fire · <kbd>Space</kbd> dash · <kbd>Shift</kbd>/<kbd>RMB</kbd> barrier · <kbd>Q</kbd> special · <kbd>E</kbd><kbd>R</kbd> gadgets · <kbd>P</kbd> pause</div>
           <div class="keys tonly">Left thumb moves. Right thumb drags to aim and fire; hold still to auto-aim. Buttons: SP special, G1/G2 gadgets, DASH, HEX barrier.</div>
           <div class="row"><button class="btn ghost" id="fsBtn">Fullscreen</button><button class="btn ghost" id="resetBtn">Reset all progress</button></div>
@@ -385,11 +384,11 @@ button.card:hover,button.card:focus-visible{border-color:var(--c,var(--signal));
       </section>
     </div>
     <nav class="bnav" aria-label="Hangar">
-      <button data-v="armory" id="nb-armory"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 14h12l3-2h3v3h-3l-2 2H8l-1 3H5l1-3H3z"/></svg>Armory</button>
-      <button data-v="skills" id="nb-skills"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3v6M12 9l-6 6M12 9l6 6M6 15v5M18 15v5"/></svg>Skills</button>
-      <button data-v="home" id="nb-home" class="hexBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 12l16-8-6 16-2-6z"/></svg>Battle</button>
-      <button data-v="frames" id="nb-frames"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M5 4h14v16H5zM9 9h6M9 13h6"/></svg>Frames</button>
-      <button data-v="system" id="nb-system"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M8 12a4 4 0 1 0 8 0a4 4 0 1 0-8 0M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>System</button>
+      <button data-v="armory"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 14h12l3-2h3v3h-3l-2 2H8l-1 3H5l1-3H3z"/></svg>Armory</button>
+      <button data-v="skills"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3v6M12 9l-6 6M12 9l6 6M6 15v5M18 15v5"/></svg>Skills</button>
+      <button data-v="home" class="hexBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 12l16-8-6 16-2-6z"/></svg>Battle</button>
+      <button data-v="frames"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M5 4h14v16H5zM9 9h6M9 13h6"/></svg>Frames</button>
+      <button data-v="system"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M8 12a4 4 0 1 0 8 0a4 4 0 1 0-8 0M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>System</button>
     </nav>
   </div>
 </div>
@@ -610,35 +609,9 @@ function normP(d){
 }
 let P=freshP();
 try{ const s=localStorage.getItem(SAVE_KEY); if(s) P=normP(JSON.parse(s)); }catch(e){}
-let cloud=null,saving=false,savePending=false;
 function saveLocal(){ try{ localStorage.setItem(SAVE_KEY,JSON.stringify(P)); }catch(e){} }
-async function persist(){
-  P.rev=(P.rev||0)+1; saveLocal();
-  if(!cloud) return;
-  if(saving){ savePending=true; return; }
-  saving=true;
-  try{ await cloud.set(JSON.parse(JSON.stringify(P))); }
-  catch(e){ if(e&&(e.code==='invalid_argument'||e.code==='revoked'||e.code==='not_granted')){ cloud=null; setSyncText(); } }
-  saving=false;
-  if(savePending){ savePending=false; persist(); }
-}
-function setSyncText(){ $('syncTxt').textContent=cloud?'Progress syncs to your Claude account, so it carries over between your phone and computer.':'Progress is saved in this browser only.'; }
-async function connectCloud(){
-  try{
-    if(!window.claude||!window.claude.use) return;
-    const [db,user]=await Promise.all([window.claude.use('db'),window.claude.use('user')]);
-    if(!db||!user) return;
-    const uid=await user.id(); if(!uid) return;
-    const ref=db.doc('data/users/'+uid+'/save');
-    const snap=await ref.get(); cloud=ref;
-    if(snap.exists){ const d=normP(snap.data()); d.rev=snap.data().rev||0;
-      if(d.rev>(P.rev||0)){ P=d; saveLocal(); if(state==='menu'){ rebuildPreview(); renderMenu(); } }
-      else if((P.rev||0)>d.rev) persist(); }
-    else if(P.rev>0||P.gold>0) persist();
-    setSyncText();
-  }catch(e){ cloud=null; }
-}
-addEventListener('load',()=>setTimeout(connectCloud,50));
+// P.rev only mattered for the removed cloud sync; it is still bumped so the saved format stays the same for older saves
+function persist(){ P.rev=(P.rev||0)+1; saveLocal(); }
 
 /* ================= AUDIO (synthesized) ================= */
 const AU={ctx:null,want:'menu',muted:false};
@@ -1873,7 +1846,7 @@ function renderFrames(){
   item('sp','Special',SPECIALS[P.unit].name,()=>{});
   [0,1].forEach(i=>{ const g=P.gadgets[i]; item(g||'hook','Gadget '+(i+1),g?GADGETS[g].name:'Empty slot',()=>openView('armory')); });
 }
-function renderSystem(){ $('volM').value=Math.round(P.music*100); $('volMo').textContent=Math.round(P.music*100); $('volS').value=Math.round(P.sfx*100); $('volSo').textContent=Math.round(P.sfx*100); setSyncText(); }
+function renderSystem(){ $('volM').value=Math.round(P.music*100); $('volMo').textContent=Math.round(P.music*100); $('volS').value=Math.round(P.sfx*100); $('volSo').textContent=Math.round(P.sfx*100); }
 $('pilotIn').addEventListener('input',e=>{ const v=e.target.value.replace(/[^\p{L}\p{N} _\-.]/gu,'').slice(0,14); if(v!==e.target.value) e.target.value=v; P.pilot=v.trim(); $('whoName').textContent=P.pilot||'[CALLSIGN]'; });
 $('pilotIn').addEventListener('change',()=>persist());
 $('volM').oninput=e=>{ P.music=e.target.value/100; $('volMo').textContent=e.target.value; setVolumes(); };
