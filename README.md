@@ -33,9 +33,10 @@ Bu proje bir topluluk projesi. Oyunun fikri arkadaş grubumuzdan çıktı; herke
 
 ## Bilgisayarında çalıştırma
 
-Oyunun tamamı tek bir dosyada: [`index.html`](index.html). Three.js bir CDN'den yüklenir.
+Kurulum ya da build adımı yok. Giriş dosyası [`index.html`](index.html); oyun kodu `js/`, görünüm `css/` klasöründe.
+Three.js bir CDN'den yüklenir, bu yüzden ilk açılışta internet gerekir.
 
-En kolayı dosyayı çift tıklayıp tarayıcıda açmak. Bazı tarayıcılar yerel dosyalarda kısıtlama
+En kolayı `index.html` dosyasını çift tıklayıp tarayıcıda açmak. Bazı tarayıcılar yerel dosyalarda kısıtlama
 yapabilir; o zaman klasörde küçük bir sunucu başlat:
 
 ```bash
