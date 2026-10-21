@@ -116,7 +116,7 @@ const RSK={
   goldrush:{name:'Gold Rush',d:'+25% gold.',rarity:'common',max:3,icon:'goldrush',bonus:{gold:.25}},
   sync:{name:'Sync Surge',d:'+20% special charge.',rarity:'common',max:3,icon:'sync',bonus:{sp:.2}},
   // rare: projectile modifiers and on-kill triggers
-  twin:{name:'Twin Shot',d:'+1 parallel projectile.',rarity:'rare',max:2,icon:'twin',proj:1},
+  twin:{name:'Twin Shot',d:'+1 parallel projectile. Each shot deals 75% (60% at rank 2).',rarity:'rare',max:2,icon:'twin',proj:1},
   diag:{name:'Diagonal Fire',d:'+2 projectiles at 40°.',rarity:'rare',max:1,icon:'diag',proj:2},
   side:{name:'Side Fire',d:'+1 projectile to each side.',rarity:'rare',max:1,icon:'side',proj:2},
   rear:{name:'Rear Guard',d:'+1 projectile behind you.',rarity:'rare',max:1,icon:'rear',proj:1},
@@ -166,21 +166,24 @@ const SPLIT_REWARD=.3;
    proj = extra projectiles, orbit = orbiting hitters, headshot = chance). proc: rate = procs per second (token bucket, burst = how many can fire at once). */
 const BAL={
   soft:1, softRate:.5,
-  cap:{crit:.5,dodge:.3,rate:1.5,spd:.4,proj:7,orbit:8,headshot:.03},
-  proc:{arc:{rate:6,burst:3},meteor:{rate:1.25,burst:1},nova:{rate:4,burst:4},shard:{rate:3,burst:3},poison:{stacks:[5,7,9]},ricochet:{falloff:.75}},
+  cap:{crit:.5,dodge:.3,rate:1,spd:.4,proj:6,orbit:6,headshot:.03},
+  // Twin Shot: damage of each parallel shot by rank (1 / 1.5 / 1.8 total), so multishot does not multiply everything else
+  twin:[1,.75,.6],
+  proc:{arc:{rate:6,burst:3},meteor:{rate:.8,burst:1},nova:{rate:4,burst:4},shard:{rate:3,burst:3},poison:{stacks:[5,7,9]},ricochet:{falloff:.75}},
 };
 /* enemy scaling inside an arena: armor and damage grow exponentially with the room index (on top of the arena's hpMul / dmgMul),
-   the room budget (how many enemies) grows slowly. Bosses use the same curve, normalized so the room 10 boss keeps its listed armor. */
-const SCALE={hp:.035,dmg:.025,bossRef:9,budget:{base:3.4,arena:1.1,room:.07,elite:.55}};
+   the room budget (how many enemies) grows slowly. Bosses use the same curve, normalized so the room 10 boss keeps its listed armor and damage;
+   the arena's final boss gets finalHp / finalDmg on top. */
+const SCALE={hp:.063,dmg:.042,bossRef:9,finalHp:1.5,finalDmg:1.25,budget:{base:3.4,arena:1.1,room:.07,elite:.55}};
 // pilot xp per level: base + per × level (about one level every 1-2 rooms)
 const XP_NEED={base:6,per:.35}, XP_BOSS=10;
 /* economy: target earnings for one full run of each arena without gold bonuses (first-clear diamonds come on top, once).
    The per-kill, boss and clear numbers below are tuned so a full run lands near the targets (check with DBG.sim()). */
 const ECON={
   target:{gold:[1200,2000,3000,4000],gems:[30,45,60,80]},
-  killGold:[.7,.75,.8,.85],           // × ENEMY gold per arena
-  bossGold:[.6,.65,.7,.75],           // × BOSSES gold per arena
-  bossGems:.35,                       // × BOSSES gems, paid on the kill
+  killGold:[.9,.8,.8,1],              // × ENEMY gold per arena
+  bossGold:[.55,.4,.26,.4],           // × BOSSES gold per arena
+  bossGems:[.28,.25,.14,.22],         // × BOSSES gems per arena, paid on the kill
   clearGold:[6,9,12,15],              // per cleared combat/elite room
   gemChance:{small:.008,big:.03,elite:.2},
   firstClear:a=>40+30*a, repeatClear:a=>5+5*a,

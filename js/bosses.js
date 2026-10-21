@@ -161,7 +161,7 @@ function updateBoss(dt){
 }
 function bossDeath(){
   const def=boss.def; score+=[5000,8000,12000,16000][stage]; kills++; hideBeams(); fizzleRoom(); boss.jumpY=0; boss.reflectT=0;
-  const gm=Math.round(def.gems*ECON.bossGems); P.gems+=gm; sortie.gems+=gm; logEarn('gems','boss',gm);
+  const gm=Math.round(def.gems*ECON.bossGems[sortie.a]); P.gems+=gm; sortie.gems+=gm; logEarn('gems','boss',gm);
   state='bossdeath'; stateT=3.2; boss.final=false; buzz(200); hitstop(120,true);
   dropGold(boss.pos,def.gold*ECON.bossGold[sortie.a],'boss'); dropItem(boss.pos); gainXp(XP_BOSS);
 }

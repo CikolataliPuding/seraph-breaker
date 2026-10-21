@@ -3,7 +3,7 @@
 const enemyCap=()=>mobileMode?16:22;
 // enemy armor and damage multipliers of the current room (arena, room curve in balance.js, curses and modifiers)
 const roomHpScale=()=>enemyScale(stage,sortie?sortie.ri:0,sortie&&sortie.rule).hp;
-const roomDmgScale=()=>sortie?enemyScale(stage,sortie.ri).dmg:1;
+const roomDmgScale=()=>{ if(!sortie) return 1; const s=enemyScale(stage,sortie.ri); return room&&room.type==='boss'?s.bossDmg:s.dmg; };
 // spawns a mob from ENEMY (data.js). Returns null when the room is at its entity cap (splits, summons and chains respect it).
 function spawnEnemy(type,pos,elite=false,o={}){
   const def=ENEMY[type]; if(!def) return null;
@@ -43,6 +43,7 @@ function hitEnemy(e,d,pos,dot,noProc,flat){
   if(e.shieldT>0) d*=.5;
   // Headshot: small chance to instantly destroy a normal enemy
   if(rs.headshot&&!dot&&e!==boss&&!e.elite&&Math.random()<Math.min(BAL.cap.headshot,.015*rs.headshot)){ d=e.hp+1; crit=true; sparks(pos,0xffffff,10,8); }
+  if(sortie) sortie.dmgDealt=(sortie.dmgDealt||0)+Math.max(0,Math.min(d,e.hp));
   e.hp-=d;
   if(!(player.od>0||player.lance>0)) player.sp=Math.min(100,player.sp+d*.55*player.st.sp);
   if(!dot||Math.random()<.12) flashModel(e);

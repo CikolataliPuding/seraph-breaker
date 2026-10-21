@@ -17,11 +17,11 @@ function refreshControls(){
   if(on) renderAbilityIcons();
 }
 function hideOverlays(){ ['menu','result','pause','card','warn','cine','choice'].forEach(id=>$(id).hidden=true); $('cine').classList.remove('on'); }
-function goNextRoom(){ if(state!=='fight') return; saveRun(sortie.ri+1); state='trans'; stateT=.45; sortie.swapped=false; $('fade').classList.add('on'); resetTouch(); }
+function goNextRoom(){ if(state!=='fight') return; logRoomEnd('exit'); saveRun(sortie.ri+1); state='trans'; stateT=.45; sortie.swapped=false; $('fade').classList.add('on'); resetTouch(); }
 function showResult(win,bonusG=0,first=false){
   state='result'; refreshControls(); resetTouch(); playTrack('menu');
   const A=ARENAS[sortie.a], reached=Math.min(sortie.ri+1,sortie.N);
-  if(!win){ clearRun(); if(reached>(P.bestRoom[sortie.a]||0)) P.bestRoom[sortie.a]=reached; if(score>P.best) P.best=score; }
+  if(!win){ logRoomEnd('death'); clearRun(); if(reached>(P.bestRoom[sortie.a]||0)) P.bestRoom[sortie.a]=reached; if(score>P.best) P.best=score; }
   $('resEye').textContent=`Arena 0${sortie.a+1} · ${A.name}`+(win?' · clear':'');
   $('resTitle').innerHTML=win?'Arena <em>Clear</em>':'Signal <em>Lost</em>';
   $('resEarn').innerHTML=`<span class="cur gold"><i></i>+${sortie.gold}</span><span class="cur gem"><i></i>+${sortie.gems}</span>`+(win&&bonusG?`<small>${first?'First clear bonus':'Clear bonus'}: ${bonusG} diamonds</small>`:'')+(!win?'<small>Gold and diamonds you picked up are kept.</small>':'');

@@ -68,7 +68,11 @@ python -m http.server 8000
 Sonra tarayıcıda `http://localhost:8000` adresini aç.
 
 **Debug modu:** Adresin sonuna `?debug=1` eklersen sol altta bir panel çıkar: sonraki oda, odaya atla, yetenek/eşya ver,
-ölümsüzlük, düşman ve boss çağır. `?debug=1&mobile=1` bilgisayarda telefon modunu zorlar. Kısayollar: `N` sonraki oda, `K` hepsini öldür, `G` ölümsüzlük.
+ölümsüzlük, düşman ve boss çağır. `?debug=1&mobile=1` bilgisayarda telefon modunu zorlar. Kısayollar: `N` sonraki oda, `K` hepsini öldür, `G` ölümsüzlük, `L` koşu kaydı.
+
+**Koşu kaydı ve denge simülasyonu (debug):** `L` tuşu her oda için süre, alınan/verilen hasar, kill, kaynağa göre altın/elmas, oyuncu güç tahmini ve
+düşman çarpanını gösteren küçük bir panel açar; *Export JSON* kaydı kopyalanabilir metin olarak verir. *Sim* (ya da konsolda `DBG.sim({arena:2})`)
+bir arenanın oda sırasını çizim yapmadan hesaplar ve zayıf/ortalama/güçlü build'ler için güç ile düşman eğrisini, koşu başına altın/elmas toplamlarını yazdırır.
 
 ## Lisans
 

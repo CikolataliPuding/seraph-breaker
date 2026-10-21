@@ -64,31 +64,34 @@ function procOk(id){
 
 /* ================= ENEMY SCALING ================= */
 const growth=(g,ri)=>Math.pow(1+g,ri);
-// armor (hp), damage and boss armor multipliers for room index ri (0-based) of arena a
-function enemyScale(a,ri,rule){ const A=ARENAS[a], hm=rule&&rule.hpMul||1;
-  return {hp:A.hpMul*growth(SCALE.hp,ri)*hm, dmg:(A.dmgMul||1)*growth(SCALE.dmg,ri), boss:A.bossMul*growth(SCALE.hp,ri)/growth(SCALE.hp,SCALE.bossRef)*hm}; }
+// armor (hp) and damage multipliers for room index ri (0-based) of arena a; boss rooms use the same curve divided by its room 10 value
+function enemyScale(a,ri,rule){ const A=ARENAS[a], hm=rule&&rule.hpMul||1, dm=A.dmgMul||1, fin=ri>=A.rooms-1;
+  return {hp:A.hpMul*growth(SCALE.hp,ri)*hm, dmg:dm*growth(SCALE.dmg,ri),
+    boss:A.bossMul*growth(SCALE.hp,ri)/growth(SCALE.hp,SCALE.bossRef)*hm*(fin?SCALE.finalHp:1), bossDmg:dm*growth(SCALE.dmg,ri)/growth(SCALE.dmg,SCALE.bossRef)*(fin?SCALE.finalDmg:1)}; }
 // enemy budget for a room (sum of ENEMY cost); grows slowly next to the exponential armor curve
 function roomBudget(a,ri,elite){ const B=SCALE.budget; return (B.base+a*B.arena+(ri+1)*B.room)*(elite?B.elite:1); }
 const xpNeedAt=lv=>XP_NEED.base+Math.floor(lv*XP_NEED.per*10)/10;
 
 /* ================= POWER ESTIMATE ================= */
-/* rough player power next to a fresh pilot with no Core, tree, skills or items (= 1). dps: single-target damage per second with a share
-   of multi-target value for spread shots and procs. ehp: armor you can lose before dying, with dodge, damage taken and sustain.
+/* rough player power next to a fresh pilot with no Core, tree, skills or items (= 1). dps: damage per second on a typical room, as a multiple
+   of the base gun (≈10 dps): the gun chain (damage × fire rate × crit × projectiles × Rage) times its on-hit procs, plus hitters that do not
+   depend on the gun (orbits, wingman, Storm Halo, Dash Trail). ehp: armor you can lose before dying, with dodge, damage taken and sustain.
    Debug output and DBG.sim() compare it with the enemy curve. It is never used to change the game while you play (no rubber-banding). */
 function powerEstimate(st,rs,o={}){
   const r=id=>Math.min(rs[id]||0,RSK[id]?RSK[id].max:0), base=metaStats({skills:{},core:{armor:0,dmg:0,regen:0}},o.unit||P.unit);
-  const critMul=o.critMul||2, crit=1+st.crit*(critMul-1);
-  // projectiles: twin hits the same target, side shots only sometimes find one
-  const tw=r('twin'); let proj=tw?(1+tw)*.8:1, extra=0; const room=BAL.cap.proj;
+  const critMul=o.critMul||2, crit=1+st.crit*(critMul-1), dm=st.dmg/base.dmg;
+  // projectiles: twin hits the same target, spread shots only sometimes find one; trimmed at the projectile cap like pshot
+  const tw=r('twin'); let proj=(1+tw)*BAL.twin[tw], extra=tw; const room=BAL.cap.proj;
   const add=(n,val)=>{ const k=Math.max(0,Math.min(n,room-extra)); extra+=k; proj+=k*val; };
-  extra+=tw; if(r('storm')) add(2,.6*.6); if(r('diag')) add(2,.7*.3); if(r('side')) add(2,.7*.2); if(r('rear')) add(1,.7*.15);
-  proj*=1+.25*r('pierce')+.15*r('ricochet')+.08*r('wall');
-  // procs and orbits as a share of base dps (base rifle ≈ 10 dps)
-  const orb=Math.min(BAL.cap.orbit,orbCount(rs));
-  let procs=1+.2*r('torch')+.12*r('poison')+.1*r('arc')+.1*r('meteor')+.08*r('nova')+.06*r('shard')+.05*r('cryo')+.25*r('wing')+.4*r('halo');
-  procs+=orb*.12+(r('inferno')?.3:0);
+  if(r('storm')) add(2,.6*.5); if(r('diag')) add(2,.7*.3); if(r('side')) add(2,.7*.2); if(r('rear')) add(1,.7*.15);
+  proj*=1+.2*r('pierce')+.1*r('ricochet')+.06*r('wall');
   const rage=1+.25*r('rage')*(r('blood')?2:1)*.35;
-  const dps=st.dmg/base.dmg*(base.rate/st.rate)*crit*proj*procs*rage;
+  const gun=dm*(base.rate/st.rate)*crit*proj*rage;
+  // on-hit procs scale with the gun (their own rate caps keep them in check)
+  const onHit=1+.15*r('torch')+.1*r('poison')+.08*r('arc')+.12*r('meteor')+.06*r('nova')+.05*r('shard')+.04*r('cryo')+.02*r('freeze');
+  // independent hitters, in base-gun units: orbits, wingman, Storm Halo, Dash Trail
+  const orb=Math.min(BAL.cap.orbit,orbCount(rs)), indep=orb*.15+(r('inferno')?.3:0)+.25*r('wing')+(r('halo')?1:0)+.05*r('trail');
+  const dps=gun*onHit+dm*crit*indep;
   const sustain=1+.05*r('vamp')+(r('blood')?.08:0)+.08*r('sorb')+(r('reflect')?.05:0)+.4*(o.lives||r('life'))+(o.aegis?.08:0)+(st.second?.15:0);
   const ehp=st.maxHp/base.maxHp/(st.armor/base.armor)/(1-st.dodge)*sustain;
   return {dps,ehp,power:Math.sqrt(dps*ehp)};

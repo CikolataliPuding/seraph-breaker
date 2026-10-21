@@ -87,15 +87,16 @@ function freeSpot(minFromEntry=6){
   return new V3(rand(-3,3),0,-AZ+2.5);
 }
 // mobs unlock in the arena's list order as the run goes on (2 at first, one more every 4 rooms)
-function arenaPool(){ const A=ARENAS[sortie.a], ok=A.mobs.filter(t=>ENEMY[t]); return ok.slice(0,Math.min(ok.length,2+Math.floor(sortie.ri/4))); }
+function arenaPool(a=sortie.a,ri=sortie.ri){ const A=ARENAS[a], ok=A.mobs.filter(t=>ENEMY[t]); return ok.slice(0,Math.min(ok.length,2+Math.floor(ri/4))); }
 // room budget (roomBudget in balance.js) grows slowly with the room index and the arena; rooms are short: one wave, two at most
-function composeRoom(elite){
-  const pool=arenaPool(), cap=mobileMode?9:11;
-  let budget=roomBudget(sortie.a,sortie.ri,elite);
+// pure: also used by the debug simulation (DBG.sim) without a live run
+function composeRoom(elite,a=sortie.a,ri=sortie.ri,rule=sortie.rule,cap=mobileMode?9:11){
+  const pool=arenaPool(a,ri);
+  let budget=roomBudget(a,ri,elite);
   const list=[]; let guard=0;
   while(budget>.6&&list.length<cap&&guard++<60){ const t=pickOne(pool); if(ENEMY[t].cost<=budget+.4){ list.push(t); budget-=ENEMY[t].cost; } }
   if(list.length<2) list.push(pool[0]);
-  if(elite){ const ep=pool.filter(t=>ENEMY[t].elite!==false); const n=sortie.rule.elitePairs?2:1; for(let i=0;i<n;i++) list.unshift(pickOne(ep.length?ep:pool)+'*'); }
+  if(elite){ const ep=pool.filter(t=>ENEMY[t].elite!==false); const n=rule.elitePairs?2:1; for(let i=0;i<n;i++) list.unshift(pickOne(ep.length?ep:pool)+'*'); }
   const big=list.length>6&&!elite;
   return big?[list.slice(0,Math.ceil(list.length*.6)),list.slice(Math.ceil(list.length*.6))]:[list];
 }
@@ -108,6 +109,7 @@ function startRoom(i,force){
   else { buildRoom(ROOM_X,ROOM_Z,type==='angel'?SANCTUM:pickOne(ROOMS),true); player.pos.set(0,0,AZ-1.5); }
   player.vel.set(0,0,0); camTarget.set(mobileMode?0:player.pos.x,0,mobileMode?mobileCamZ(player.pos.z):player.pos.z);
   if(typeof onRoomStart==='function') onRoomStart();
+  logRoomStart(type);
   $('fade').classList.remove('on');
   const tag=`Room ${i+1}/${sortie.N}`;
   if(type==='boss'){ $('warnTxt').textContent=BOSSES[room.boss].warn; state='warn'; stateT=2.2; $('warn').hidden=false; playTrack('boss'); sfx('beam'); refreshControls(); return; }

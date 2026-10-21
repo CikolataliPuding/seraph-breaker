@@ -61,7 +61,7 @@ function restoreRun(r){
 }
 function arenaComplete(){
   const a=sortie.a, N=sortie.N, first=(P.bestRoom[a]||0)<N;
-  const bonus=first?ECON.firstClear(a):ECON.repeatClear(a); P.gems+=bonus; sortie.gems+=bonus; logEarn('gems','clear',bonus);
+  const bonus=first?ECON.firstClear(a):ECON.repeatClear(a); P.gems+=bonus; sortie.gems+=bonus; logEarn('gems','clear',bonus); logRoomEnd('complete');
   P.bestRoom[a]=N; P.arenas=Math.max(P.arenas,Math.min(ARENAS.length,a+2)); P.clears++;
   if(score>P.best) P.best=score;
   clearRun(); persist(); showResult(true,bonus,first);

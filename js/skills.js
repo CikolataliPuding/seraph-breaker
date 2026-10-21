@@ -7,15 +7,16 @@ function gainXp(v){ if(!sortie) return; sortie.xp+=v; while(sortie.xp>=xpNeed())
 const skillOk=(id,rs=player.rs)=>{ const s=RSK[id]; if((rs[id]||0)>=s.max||(s.req&&!s.req(rs))) return false;
   if(s.rarity!=='legendary'&&(s.proj&&extraProj(rs)+s.proj>BAL.cap.proj||s.orb&&orbCount(rs)+s.orb>BAL.cap.orbit)) return false; return true; };
 // Lucky Coin pushes every roll one tier up
-function rarityWeights(){ const l=player.luck||0; return l?{common:Math.max(20,60-15*l),rare:28+5*l,epic:10+6*l,legendary:2+4*l}:{common:60,rare:28,epic:10,legendary:2}; }
+function rarityWeights(l=player.luck||0){ return l?{common:Math.max(20,60-15*l),rare:28+5*l,epic:10+6*l,legendary:2+4*l}:{common:60,rare:28,epic:10,legendary:2}; }
 /* weighted pick: rarity weights 60/28/10/2 are shared by the skills of that rarity that can still be offered;
    skills you own (and evolutions you unlocked) get x2.5; if any owned skill can rank up, one of the cards is always such an upgrade */
-function skillOptions(n,rarity){
-  const rw=rarityWeights(), ids=Object.keys(RSK).filter(id=>skillOk(id)&&(!rarity||RSK[id].rarity===rarity));
+// ctx defaults to the live player; the debug simulation passes its own {rs,luck}
+function skillOptions(n,rarity,ctx=player){
+  const prs=ctx.rs, rw=rarityWeights(ctx.luck||0), ids=Object.keys(RSK).filter(id=>skillOk(id,prs)&&(!rarity||RSK[id].rarity===rarity));
   const cnt={}; ids.forEach(id=>cnt[RSK[id].rarity]=(cnt[RSK[id].rarity]||0)+1);
-  const w=id=>{ const r=RSK[id].rarity; return rw[r]/cnt[r]*((player.rs[id]||RSK[id].evo)?2.5:1); };
+  const w=id=>{ const r=RSK[id].rarity; return rw[r]/cnt[r]*((prs[id]||RSK[id].evo)?2.5:1); };
   const pick=list=>{ let t=0; list.forEach(id=>t+=w(id)); let x=Math.random()*t; for(const id of list){ x-=w(id); if(x<=0) return id; } return list[list.length-1]; };
-  const out=[], pool=ids.slice(), ups=pool.filter(id=>player.rs[id]);
+  const out=[], pool=ids.slice(), ups=pool.filter(id=>prs[id]);
   if(ups.length&&n>1&&!rarity){ const id=pick(ups); out.push(id); pool.splice(pool.indexOf(id),1); }
   while(out.length<n&&pool.length){ const id=pick(pool); out.push(id); pool.splice(pool.indexOf(id),1); }
   for(let i=out.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0; [out[i],out[j]]=[out[j],out[i]]; }
