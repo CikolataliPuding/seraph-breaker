@@ -32,16 +32,25 @@ function unflash(e){ e.model.mats.forEach(m=>m.emissive.setHex(0)); }
 function hitEnemy(e,d,pos,dot,noProc){
   if(!e||e.dead) return;
   if(e===boss){ if(boss.atk==='enter'||state==='cine') return; if(boss.barrier>0){ if(!dot) sparks(pos,0xffa04a,3,5); return; } d*=player.st.boss; }
-  let crit=false; if(!dot&&Math.random()<player.st.crit){ d*=2; crit=true; }
+  const rs=player.rs;
+  let crit=false; if(!dot&&Math.random()<player.st.crit){ d*=player.critMul||2; crit=true; }
+  // Rage (doubled by Blood Engine): more damage as your armor drops
+  if(rs.rage) d*=1+.25*rs.rage*(rs.blood?2:1)*(1-player.hp/player.maxHp);
+  if(e.shieldT>0) d*=.5;
+  // Headshot: small chance to instantly destroy a normal enemy
+  if(rs.headshot&&!dot&&e!==boss&&!e.elite&&Math.random()<.015*rs.headshot){ d=e.hp+1; crit=true; sparks(pos,0xffffff,10,8); }
   e.hp-=d;
   if(!(player.od>0||player.lance>0)) player.sp=Math.min(100,player.sp+d*.55*player.st.sp);
   if(!dot||Math.random()<.12) flashModel(e);
   if(!dot){ const amt=clamp(d/e.maxHp*1.5,.12,1); hitReact(e,pos,crit?Math.max(amt,.5):amt);
     if(crit) hitstop(45); else if(d>=e.maxHp*.35&&e!==boss) hitstop(55); else if(e===boss&&d>=6) hitstop(40);
     sparks(pos,crit?0xffe14a:unit.shot,crit?6:3,6); sfx('hit');
-    if(!noProc){ const rs=player.rs;
+    if(!noProc){
       if(rs.torch) e.burn=2.5;
       if(rs.cryo) e.slow=1.3;
+      if(rs.poison){ e.psn=Math.min((e.psn||0)+1,3+2*rs.poison); e.psnT=3; }
+      if(rs.freeze&&e!==boss&&Math.random()<.07*rs.freeze){ e.stun=Math.max(e.stun,.9); e.frozen=.9; e.model.mats.forEach(m=>m.emissive.setHex(0x2a7aa8)); sparks(pos,0x9fe8ff,6,5); }
+      if(rs.meteor&&player.meteorCd<=0&&Math.random()<.04*rs.meteor){ player.meteorCd=.5; queueBlast(e.pos.x,e.pos.z,{t:.55,rad:3.4,dmg:16*player.st.dmg,color:0xff8a30,size:1}); }
       if(rs.arc&&Math.random()<(rs.arc>1?.35:.2)){ const t=nearestFoe(e.pos,6,null,new Set([e])); if(t){ bolt(pos.clone().setY(2),t.pos.clone().setY(2),0xbfe8ff); hitEnemy(t,d*.6,t.pos.clone().setY(2),false,true); } } } }
   if(e.hp<=0) killEnemy(e);
 }
@@ -52,7 +61,11 @@ function killEnemy(e){
   const mul=e.elite?3:1, def=e.def||ENEMY.drone;
   score+=(def.score*(1+stage*.5)*mul)|0; kills++;
   if(!(player.od>0||player.lance>0)) player.sp=Math.min(100,player.sp+5*player.st.sp);
-  if(player.rs.vamp) player.hp=Math.min(player.maxHp,player.hp+player.maxHp*.02*player.rs.vamp);
+  const rs=player.rs;
+  if(rs.vamp) player.hp=Math.min(player.maxHp,player.hp+player.maxHp*(.02*rs.vamp+(rs.blood?.04:0)));
+  if(rs.nova) queueBlast(e.pos.x,e.pos.z,{t:.14,rad:3+.6*rs.nova,dmg:(6+5*rs.nova)*player.st.dmg,color:0xff5a2a,size:.7,skip:e});
+  if(rs.shard){ const n=4+2*rs.shard,o=rand(0,1); for(let i=0;i<n;i++){ const a=(i+o)/n*Math.PI*2; shoot('p',e.pos.clone().setY(1.8),new V3(Math.sin(a),0,Math.cos(a)),22,1.6*player.st.dmg,unit.shot,{life:.5}); } }
+  if(rs.dreset&&Math.random()<.35*rs.dreset){ if(mobileMode) player.dashCh=Math.min(player.dashMax,player.dashCh+1); else player.dashCd=0; }
   const angel=e.angel;
   crossBlast(e.pos.clone().setY(.2),angel?0xffd36a:0xff5a2a,def.cost>=2||e.elite?1.3:.9);
   if(e.elite) hitstop(75,true);

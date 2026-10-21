@@ -26,6 +26,23 @@ const IC={
   atk:'M14 4l6 6-10 10H4v-6z', armor:'M12 3l8 3v6c0 5-4 8-8 9-4-1-8-4-8-9V6z', vamp:'M12 21s-8-5-8-11a5 5 0 0 1 8-3 5 5 0 0 1 8 3c0 6-8 11-8 11z',
   orbit:'M9 12a3 3 0 1 0 6 0a3 3 0 1 0-6 0M12 2a10 10 0 0 1 10 10M12 22A10 10 0 0 1 2 12', regen:'M4 12a8 8 0 0 1 14-5M20 12a8 8 0 0 1-14 5M18 3v4h-4M6 21v-4h4',
   crit:'M4 12a8 8 0 1 0 16 0a8 8 0 1 0-16 0M12 7v10M7 12h10', heal:'M12 5v14M5 12h14',
+  side:'M12 4v16M4 12h4M16 12h4M6 9l-3 3 3 3M18 9l3 3-3 3', wall:'M20 3v18M3 18l9-12 8 6', poison:'M12 3c3 4 6 7 6 11a6 6 0 0 1-12 0c0-4 3-7 6-11zM10 13h.01M14 16h.01',
+  freeze:'M12 2v20M3 7l18 10M21 7L3 17M9 4l3 2 3-2M9 20l3-2 3 2', headshot:'M12 3a9 9 0 1 0 0 18a9 9 0 1 0 0-18M12 8a4 4 0 1 0 0 8a4 4 0 1 0 0-8M12 1v5M12 18v5M1 12h5M18 12h5',
+  nova:'M12 2l2 6 6-2-4 5 5 4-6 1 1 6-4-4-4 4 1-6-6-1 5-4-4-5 6 2z', shardb:'M12 12L5 5M12 12l7-7M12 12l-7 7M12 12l7 7M12 12V2M12 12v10M2 12h10M12 12h10',
+  goldrush:'M12 3a9 9 0 1 0 0 18a9 9 0 1 0 0-18M12 6v12M15 9c0-1.4-1.3-2-3-2s-3 .8-3 2 1.3 1.8 3 2.2 3 .8 3 2.3-1.3 2-3 2-3-.6-3-2',
+  forb:'M12 2a10 10 0 0 1 10 10M2 12A10 10 0 0 1 12 2M12 8c1.5 2 3 3 3 5a3 3 0 0 1-6 0c0-1.3.8-2 1.4-2.6.4.8.8 1 1.3 1 0-1.2-.4-2.2.3-3.4z',
+  iorb:'M12 2a10 10 0 0 1 10 10M2 12A10 10 0 0 1 12 2M12 8v8M8.5 10l7 4M15.5 10l-7 4', borb:'M12 2a10 10 0 0 1 10 10M2 12A10 10 0 0 1 12 2M13 7l-3 5h4l-3 5',
+  sorb:'M12 2a10 10 0 0 1 10 10M2 12A10 10 0 0 1 12 2M12 8l4 1.5v3c0 2.5-2 4-4 4.5-2-.5-4-2-4-4.5v-3z', wing:'M4 10h16M7 10v3h10v-3M12 13v3M5 6l3 4M19 6l-3 4M9 20h6',
+  meteor:'M20 4L11 13M17 4l-8 8M20 7l-8 8M8 12a4 4 0 1 0 4 4', maxarmor:'M12 3l8 3v6c0 5-4 8-8 9-4-1-8-4-8-9V6zM12 8v8M8 12h8',
+  rage:'M4 20l4-8 3 4 3-9 3 6 3-3', dodge:'M6 20V10a6 6 0 0 1 12 0v10l-3-2-3 2-3-2zM10 10h.01M14 10h.01', life:'M12 21s-8-5-8-11a5 5 0 0 1 8-3 5 5 0 0 1 8 3c0 6-8 11-8 11zM12 9v6M9 12h6',
+  grace:'M8 4a4 1.4 0 1 0 8 0a4 1.4 0 1 0-8 0M12 8v9M6 11l6 2 6-2M9 21l3-4 3 4', trail:'M2 16h6M2 12h4M2 8h6M14 4c2 4 6 6 6 10a5 5 0 0 1-10 0c0-2 1-4 2-5 1 2 2 2 2 2 0-3-1-5 0-7z',
+  dreset:'M3 12h8M3 7h5M3 17h5M20 12a6 6 0 1 1-2-4.5M20 4v4h-4', reflect:'M12 3l8 4v5c0 4-3 7-8 9-5-2-8-5-8-9V7zM7 14l5-5 5 5',
+  hexnova:'M12 2l8.66 5v10L12 22l-8.66-5V7zM12 7v3M12 14v3M7 12h3M14 12h3', sync:'M12 2l3 7 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1zM2 2l4 4',
+  overload:'M12 2l3 7 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1zM12 8v4M12 15h.01', echo:'M8 6a6 6 0 1 0 0 12M14 6a6 6 0 1 1 0 12M11 9l3 3-3 3',
+  storm:'M4 4v16M10 4v16M16 4v16M2 8l2-4 2 4M8 8l2-4 2 4M14 8l2-4 2 4M20 6l2 2-2 2', inferno:'M12 2a10 10 0 1 0 0 20a10 10 0 1 0 0-20M12 6c2 3 4 4 4 7a4 4 0 0 1-8 0c0-2 1-3 2-4 .5 1 1 1.5 2 1.5 0-2-1-3 0-4.5z',
+  halo:'M4 8a8 3 0 1 0 16 0a8 3 0 1 0-16 0M13 12l-3 5h4l-3 5', blood:'M12 21s-8-5-8-11a5 5 0 0 1 8-3 5 5 0 0 1 8 3c0 6-8 11-8 11zM8 11h2l1-3 2 6 1-3h2',
+  glass:'M8 3h8l-1 8a3 3 0 0 1-6 0zM12 14v6M8 21h8M10 6l3 3', berserk:'M6 4l6 8 6-8M12 12v8M8 20h8M4 10l3 1M20 10l-3 1',
+  greed:'M9 4h6l-2 3h-2zM6 14a6 6 0 0 0 12 0c0-3-3-7-6-7s-6 4-6 7zM12 10v7', brittle:'M12 3l8 3v6c0 5-4 8-8 9-4-1-8-4-8-9V6zM12 3l-2 6 4 3-2 5',
 };
 const svg = k => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="${IC[k]}"/></svg>`;
 const WEAPONS={
@@ -66,26 +83,71 @@ const TREE=[
     {id:'magnet',name:'Salvage magnet',max:2,cost:[250,500],d:'+60% pickup reach, +10% gold'},
     {id:'gadget',name:'Quick deploy',max:2,cost:[600,1100],d:'-12% gadget cooldowns'}]},
 ];
-/* run skills: picked on level-up, from angels and devils; they last for one level */
+/* run skills: picked on level-up (skill roulette), from angels and devils. They last for the whole arena run.
+   rarity: common (pure stats) · rare (projectile modifiers, on-kill triggers) · epic (orbits, mechanic-specific) · legendary (evolutions).
+   apply(p,rank) runs once per rank taken. req(rs) gates a skill (evolutions need both parents maxed). Most combat effects read player.rs[id]
+   directly (bullets.js, enemies.js, player.js), so a new skill is: an entry here, an IC icon, and a few lines where it acts. */
+const RARITY={common:{w:60,c:'#d6cfdc',n:'Common'},rare:{w:28,c:'#3ad0ff',n:'Rare'},epic:{w:10,c:'#b070ff',n:'Epic'},legendary:{w:2,c:'#ffc83a',n:'Legendary'}};
 const RSK={
-  twin:{name:'Twin Shot',d:'+1 parallel projectile.',max:2},
-  diag:{name:'Diagonal Fire',d:'+2 projectiles at 40°.',max:1},
-  rear:{name:'Rear Guard',d:'+1 projectile behind you.',max:1},
-  pierce:{name:'Piercing Rounds',d:'Projectiles pass through enemies.',max:1},
-  ricochet:{name:'Ricochet',d:'Projectiles bounce to a nearby enemy.',max:2},
-  torch:{name:'Burn Rounds',d:'Hits set enemies on fire for 2.5 s.',max:1},
-  cryo:{name:'Cryo Rounds',d:'Hits slow enemies by 45%.',max:1},
-  arc:{name:'Chain Spark',d:'Hits can arc to a second enemy.',max:2},
-  atk:{name:'Attack Boost',d:'+18% damage.',max:3},
-  sig:{name:'Rapid Cycle',d:'+15% fire rate.',max:3},
-  armor:{name:'Armor Up',d:'+20% max armor and repair 20%.',max:3},
-  vamp:{name:'Vampiric Core',d:'Repair 2% armor per kill.',max:2},
-  orbit:{name:'Orbit Blades',d:'Two blades circle you and cut enemies.',max:2},
-  regen:{name:'Hex Regen',d:'+40% power regeneration.',max:2},
-  dash:{name:'Swift Servos',d:'+12% move speed.',max:2},
-  crit:{name:'Crit Lens',d:'+10% critical chance.',max:2},
+  // common: pure stats
+  atk:{name:'Attack Boost',d:'+15% damage.',rarity:'common',max:6,icon:'atk',apply:p=>{p.st.dmg*=1.15;}},
+  sig:{name:'Rapid Cycle',d:'+13% fire rate.',rarity:'common',max:4,icon:'arc',apply:p=>{p.st.rate*=.88;}},
+  armor:{name:'Armor Up',d:'+15% max armor and repair 15%.',rarity:'common',max:5,icon:'armor',apply:p=>{ p.maxHp=Math.round(p.maxHp*1.15); p.hp=Math.min(p.maxHp,p.hp+p.maxHp*.15*p.st.heal); }},
+  maxarmor:{name:'Max Armor+',d:'+30 max armor.',rarity:'common',max:5,icon:'maxarmor',apply:p=>{ p.maxHp+=30; p.hp+=30; }},
+  regen:{name:'Hex Regen',d:'+35% power regeneration.',rarity:'common',max:3,icon:'regen',apply:p=>{p.st.regen*=1.35;}},
+  dash:{name:'Swift Servos',d:'+8% move speed.',rarity:'common',max:4,icon:'dash',apply:p=>{p.st.spd*=1.08;}},
+  crit:{name:'Crit Lens',d:'+7% critical chance.',rarity:'common',max:4,icon:'crit',apply:p=>{p.st.crit+=.07;}},
+  dodge:{name:'Dodge',d:'6% chance to ignore a hit.',rarity:'common',max:3,icon:'dodge',apply:p=>{p.st.dodge+=.06;}},
+  goldrush:{name:'Gold Rush',d:'+25% gold.',rarity:'common',max:3,icon:'goldrush',apply:p=>{p.st.goldMul*=1.25;}},
+  sync:{name:'Sync Surge',d:'+20% special charge.',rarity:'common',max:3,icon:'sync',apply:p=>{p.st.sp*=1.2;}},
+  // rare: projectile modifiers and on-kill triggers
+  twin:{name:'Twin Shot',d:'+1 parallel projectile.',rarity:'rare',max:2,icon:'twin'},
+  diag:{name:'Diagonal Fire',d:'+2 projectiles at 40°.',rarity:'rare',max:1,icon:'diag'},
+  side:{name:'Side Fire',d:'+1 projectile to each side.',rarity:'rare',max:1,icon:'side'},
+  rear:{name:'Rear Guard',d:'+1 projectile behind you.',rarity:'rare',max:1,icon:'rear'},
+  pierce:{name:'Piercing Rounds',d:'Projectiles pass through enemies.',rarity:'rare',max:1,icon:'pierce'},
+  ricochet:{name:'Ricochet',d:'Projectiles bounce to a nearby enemy.',rarity:'rare',max:3,icon:'ricochet'},
+  wall:{name:'Wall Bounce',d:'Projectiles bounce off walls and blocks once per rank.',rarity:'rare',max:2,icon:'wall'},
+  torch:{name:'Burn Rounds',d:'Hits set enemies on fire for 2.5 s.',rarity:'rare',max:1,icon:'torch'},
+  cryo:{name:'Cryo Rounds',d:'Hits slow enemies by 45%.',rarity:'rare',max:1,icon:'cryo'},
+  poison:{name:'Poison',d:'Hits stack poison that ticks for 3 s.',rarity:'rare',max:3,icon:'poison'},
+  arc:{name:'Chain Spark',d:'Hits can arc to a second enemy.',rarity:'rare',max:3,icon:'arc'},
+  vamp:{name:'Vampiric Core',d:'Repair 2% armor per kill.',rarity:'rare',max:3,icon:'vamp'},
+  nova:{name:'Death Nova',d:'Enemies explode when they die.',rarity:'rare',max:2,icon:'nova'},
+  shard:{name:'Shard Burst',d:'Dead enemies spray bullets.',rarity:'rare',max:2,icon:'shardb'},
+  rage:{name:'Rage',d:'Up to +25% damage per rank as your armor drops.',rarity:'rare',max:2,icon:'rage'},
+  trail:{name:'Dash Trail',d:'Dashing leaves a trail of fire.',rarity:'rare',max:2,icon:'trail'},
+  dreset:{name:'Dash Reset',d:'Kills can reset your dash (phone: refill a charge).',rarity:'rare',max:2,icon:'dreset'},
+  overload:{name:'Overload Special',d:'Your special hits 30% harder and lasts longer.',rarity:'rare',max:2,icon:'overload',apply:p=>{p.st.spPow*=1.3;}},
+  grace:{name:"Angel's Grace",d:'Angels fully repair you and offer one more skill.',rarity:'rare',max:1,icon:'grace'},
+  // epic: elemental orbits and mechanic-specific
+  orbit:{name:'Orbit Blades',d:'Two blades circle you and cut enemies.',rarity:'epic',max:3,icon:'orbit',apply:()=>buildOrbit()},
+  forb:{name:'Fire Orbit',d:'A fire orb circles you and burns what it touches.',rarity:'epic',max:2,icon:'forb',apply:()=>buildOrbit()},
+  iorb:{name:'Ice Orbit',d:'An ice orb circles you and chills what it touches.',rarity:'epic',max:2,icon:'iorb',apply:()=>buildOrbit()},
+  borb:{name:'Bolt Orbit',d:'A bolt orb circles you and zaps nearby enemies.',rarity:'epic',max:2,icon:'borb',apply:()=>buildOrbit()},
+  sorb:{name:'Shield Orbit',d:'Two plates circle you and block enemy shots.',rarity:'epic',max:2,icon:'sorb',apply:()=>buildOrbit()},
+  wing:{name:'Wingman Drone',d:'A drone flies with you for the whole run.',rarity:'epic',max:2,icon:'wing',apply:()=>buildWingman()},
+  meteor:{name:'Meteor',d:'Hits can call down a meteor strike.',rarity:'epic',max:2,icon:'meteor'},
+  freeze:{name:'Freeze',d:'Cryo hits can freeze enemies solid for a moment.',rarity:'epic',max:2,icon:'freeze',req:rs=>rs.cryo>0},
+  headshot:{name:'Headshot',d:'Small chance to instantly destroy a normal enemy.',rarity:'epic',max:2,icon:'headshot'},
+  life:{name:'Extra Life',d:'Come back once with half your armor.',rarity:'epic',max:1,icon:'life',apply:p=>{p.lives++;}},
+  reflect:{name:'Reflect Hex',d:'Shots your hex shield or barrier blocks fly back. Beams cannot be reflected.',rarity:'epic',max:1,icon:'reflect'},
+  hexnova:{name:'Hex Nova',d:'Overheating the hex shield or breaking the barrier blasts everything near you.',rarity:'epic',max:2,icon:'hexnova'},
+  echo:{name:'Gadget Echo',d:'Gadgets trigger twice.',rarity:'epic',max:1,icon:'echo'},
+  // legendary: evolutions, offered only when both parents are maxed
+  storm:{name:'Bullet Storm',d:'Evolution of Twin Shot + Rapid Cycle: +25% fire rate and every shot fans out.',rarity:'legendary',max:1,icon:'storm',evo:['twin','sig'],apply:p=>{p.st.rate*=.8;}},
+  inferno:{name:'Inferno Ring',d:'Evolution of Burn Rounds + Orbit Blades: blades become a wide ring of fire.',rarity:'legendary',max:1,icon:'inferno',evo:['torch','orbit'],apply:()=>buildOrbit()},
+  halo:{name:'Storm Halo',d:'Evolution of Chain Spark + Bolt Orbit: lightning strikes 3 enemies every second.',rarity:'legendary',max:1,icon:'halo',evo:['arc','borb']},
+  blood:{name:'Blood Engine',d:'Evolution of Vampiric Core + Rage: kills repair 4% and Rage counts double.',rarity:'legendary',max:1,icon:'blood',evo:['vamp','rage']},
 };
-const RSK_IC={twin:'twin',diag:'diag',rear:'rear',pierce:'pierce',ricochet:'ricochet',torch:'torch',cryo:'cryo',arc:'arc',atk:'atk',sig:'arc',armor:'armor',vamp:'vamp',orbit:'orbit',regen:'regen',dash:'dash',crit:'crit'};
+for(const id in RSK){ const s=RSK[id]; if(s.evo&&!s.req) s.req=rs=>s.evo.every(k=>(rs[k]||0)>=RSK[k].max); }
+/* devil curses: power now, a lasting cost for the rest of the run */
+const CURSES={
+  glass:{name:'Glass Cannon',d:'+40% damage, -25% max armor.',icon:'glass',apply:p=>{ p.st.dmg*=1.4; p.maxHp=Math.max(30,Math.round(p.maxHp*.75)); p.hp=Math.min(p.hp,p.maxHp); }},
+  berserk:{name:'Berserk',d:'+30% fire rate. Your hex shield and barrier are gone.',icon:'berserk',apply:p=>{ p.st.rate/=1.3; p.st.noHex=true; }},
+  greed:{name:'Greed',d:'+50% gold. Enemies get +15% armor.',icon:'greed',rule:{goldMul:1.5,hpMul:1.15}},
+  brittle:{name:'Brittle',d:'Take +20% damage. Gain a random epic skill.',icon:'brittle',apply:(p,silent)=>{ p.st.armor*=1.2; if(!silent){ const o=skillOptions(1,'epic'); if(o[0]) applySkill(o[0]); } }},
+};
 
 /* arenas: one run each, a flat sequence of short rooms. Room schedule (see arenaRoomType in run.js): boss every 10th room, angel every
    other 5th, elite around every 7th. mobs unlock in list order as the run goes on; bosses are drawn from the pool, never twice in a row. */

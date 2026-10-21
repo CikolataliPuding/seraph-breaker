@@ -2,7 +2,8 @@
 /* ================= GAME STATE ================= */
 let state='menu',paused=false,player=null,unit=null,boss=null,sortie=null,room=null;
 const enemies=[],bullets=[],fx=[],pickups=[],shocks=[],mines=[],holes=[];
-let decoy=null,buddy=null,chrono=0,npc=null,obstacles=[],door=null,stage=0;
+let decoy=null,buddy=null,wingman=null,chrono=0,npc=null,obstacles=[],door=null,stage=0;
+const blasts=[],trails=[];
 let stateT=0,spawnQ=[],score=0,kills=0,playTime=0,shake=0,toastT=0,choiceBack='fight';
 const playing=()=>['card','warn','cine','fight','trans','bossdeath','dying','choice'].includes(state);
 const ray=new THREE.Raycaster(), aimPlane=new THREE.Plane(new V3(0,1,0),-2.3), aimPt=new V3();

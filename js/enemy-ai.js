@@ -16,7 +16,7 @@ function updateEnemies(dt){
     const pd=Math.hypot(player.pos.x-e.pos.x,player.pos.z-e.pos.z);
     const m=e.model;
     if(e.wake>0){ e.wake-=dt; e.vel.multiplyScalar(.8); }
-    else if(e.stun>0){ e.stun-=dt; e.vel.multiplyScalar(.85); if(Math.random()<dt*6) sparks(e.pos.clone().setY(2.6),0x5fe0ff,1,2); }
+    else if(e.stun>0){ e.stun-=dt; e.vel.multiplyScalar(e.frozen>0?0:.85); if(e.frozen>0){ e.frozen-=dt; if(e.frozen<=0) unflash(e); } if(Math.random()<dt*6) sparks(e.pos.clone().setY(2.6),0x5fe0ff,1,2); }
     else if(e.type==='drone'||e.type==='heavy'){
       const want=new V3(), far=(e.type==='heavy'?13:11)*(small?.6:1), near=(e.type==='heavy'?8:6.5)*(small?.6:1);
       if(d>far) want.copy(to); else if(d<near) want.copy(to).negate(); else want.set(-to.z*e.side,0,to.x*e.side);

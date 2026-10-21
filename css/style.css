@@ -45,7 +45,7 @@ input{-webkit-user-select:text;user-select:text}
 .ab kbd{position:absolute;left:3px;top:1px;font-family:var(--f-data);font-size:10px;color:var(--dim)}
 .ab::after,.tb::after{content:"";position:absolute;inset:0;border-radius:inherit;background:conic-gradient(rgba(5,3,7,.72) calc(var(--cd,0)*360deg),transparent 0);pointer-events:none}
 .ab.ready{border-color:var(--sp);box-shadow:0 0 10px rgba(255,225,74,.6)} .ab.empty{opacity:.3}
-#rsBar{top:calc(100px + env(safe-area-inset-top,0px));right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-wrap:wrap;gap:4px;justify-content:flex-end;max-width:150px}
+#rsBar{top:calc(100px + env(safe-area-inset-top,0px));right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-wrap:wrap;gap:4px;justify-content:flex-end;max-width:262px}
 #rsBar span{width:24px;height:24px;display:grid;place-items:center;background:rgba(12,9,16,.65);border:1px solid rgba(125,255,154,.5);color:#7dff9a;position:relative}
 #rsBar span svg{width:15px;height:15px}
 #rsBar span b{position:absolute;right:-3px;bottom:-5px;font-family:var(--f-data);font-size:9px;color:var(--paper)}
@@ -315,3 +315,27 @@ body.mob h2{font-size:30px}
 .resKit span,#rsBar span{width:24px;height:24px;display:grid;place-items:center;background:rgba(12,9,16,.65);border:1px solid rgba(125,255,154,.5);color:#7dff9a;position:relative}
 .resKit span{width:34px;height:34px} .resKit span svg{width:20px;height:20px}
 .resKit span b{position:absolute;right:-3px;bottom:-5px;font-family:var(--f-data);font-size:10px;color:var(--paper)}
+
+/* skill roulette: each card is a slot reel; rarity colors the glow */
+.rcard{overflow:hidden}
+.rcard .reelWin{height:46px;overflow:hidden;position:relative}
+.rcard .reel{will-change:transform}
+.rcard .ent{height:46px;display:flex;gap:10px;align-items:center}
+.rcard .ent .ic{width:40px;height:40px;flex:none;display:grid;place-items:center;background:color-mix(in srgb,var(--c) 15%,transparent);color:var(--c);clip-path:polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%)}
+.rcard .ent .ic svg{width:22px;height:22px}
+.rcard .ent .n{font-size:20px;font-weight:700;letter-spacing:.04em;line-height:1}
+.rcard .tag,.rcard p{opacity:0;transition:opacity .2s}
+.rcard.stop .tag,.rcard.stop p{opacity:1}
+.rcard:not(.stop) .ent .ic{color:var(--dim);background:rgba(255,255,255,.06)}
+.rcard.stop{border-color:color-mix(in srgb,var(--c) 70%,transparent);box-shadow:inset 0 0 22px color-mix(in srgb,var(--c) 22%,transparent)}
+.rcard.stop.rr-epic{animation:rGlow 1.6s ease-in-out infinite}
+.rcard.stop.rr-legendary{animation:rGlow .9s ease-in-out infinite;background:linear-gradient(135deg,rgba(255,200,58,.18),rgba(23,18,29,.95) 60%)}
+.rcard .tag{color:var(--c)}
+@keyframes rGlow{50%{box-shadow:inset 0 0 34px color-mix(in srgb,var(--c) 40%,transparent),0 0 18px color-mix(in srgb,var(--c) 45%,transparent)}}
+#chReroll{justify-self:start}
+#rsBar span.r-common,.resKit span.r-common{border-color:rgba(214,207,220,.55);color:#d6cfdc}
+#rsBar span.r-rare,.resKit span.r-rare{border-color:rgba(58,208,255,.6);color:#3ad0ff}
+#rsBar span.r-epic,.resKit span.r-epic{border-color:rgba(176,112,255,.7);color:#b070ff}
+#rsBar span.r-legendary,.resKit span.r-legendary{border-color:#ffc83a;color:#ffc83a;box-shadow:0 0 6px rgba(255,200,58,.6)}
+#rsBar span.curse,.resKit span.curse{border-color:var(--alert);color:var(--alert)}
+#rsBar span.it,.resKit span.it{border-radius:50%}

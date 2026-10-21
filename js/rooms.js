@@ -90,7 +90,7 @@ function clearEnemiesAndShots(){
   mines.forEach(m=>scene.remove(m.g)); mines.length=0;
   holes.forEach(h=>scene.remove(h.g)); holes.length=0;
   if(decoy){ scene.remove(decoy.m.g); decoy=null; }
-  hideBeams(); spawnQ=[]; $('bossHud').hidden=true;
+  hideBeams(); spawnQ=[]; $('bossHud').hidden=true; clearBlasts();
 }
 function spawnNpc(kind,pos){
   const m=kind==='angel'?buildSeraph(1.25):buildDevil();

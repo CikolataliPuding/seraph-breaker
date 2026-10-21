@@ -3,7 +3,7 @@
 function clearWorld(){
   clearEnemiesAndShots(); clearRoom(); clearJuice();
   fx.forEach(f=>{ scene.remove(f.obj); if(f.dispose&&f.obj.geometry) f.obj.geometry.dispose(); }); fx.length=0;
-  if(buddy){ scene.remove(buddy.g); buddy=null; } chrono=0;
+  if(buddy){ scene.remove(buddy.g); buddy=null; } if(wingman){ scene.remove(wingman.g); wingman=null; } chrono=0; clearBlasts();
   if(player){ scene.remove(player.model.g,player.model.shadow); player=null; }
   orbitG.children.slice().forEach(c=>orbitG.remove(c));
   shieldG.visible=false; pBeamO.visible=pBeamC.visible=false; chargeOrb.visible=false; odRing.visible=false; hookLine.visible=hookHead.visible=false;

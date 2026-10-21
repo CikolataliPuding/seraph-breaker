@@ -44,8 +44,12 @@ function frame(now){
         // the final boss ends the arena; earlier bosses open the door to the next room
         if(sortie.ri>=sortie.N-1) arenaComplete(); else { state='fight'; room.cleared=true; if(typeof onRoomClear==='function') onRoomClear(); openDoor(); saveRun(sortie.ri+1); refreshControls(); } } }
     else if(state==='dying'){ stateT-=dt; updateEnemies(edt); if(stateT<=0) showResult(false); }
-    for(const e of enemies){ if(e.dead) continue; if(e.burn>0){ e.burn-=dt; hitEnemy(e,3*player.st.dmg*dt,e.pos,true); if(Math.random()<dt*8) sparks(e.pos.clone().setY(2),0xff7a2a,1,3); } if(e.slow>0) e.slow-=dt; }
+    player.meteorCd=Math.max(0,(player.meteorCd||0)-dt);
+    updateBlasts(edt); updateTrails(dt);
+    for(const e of enemies){ if(e.dead) continue; if(e.psnT>0){ e.psnT-=dt; hitEnemy(e,e.psn*.8*player.st.dmg*dt,e.pos,true); if(Math.random()<dt*6) sparks(e.pos.clone().setY(2),0x8aff5a,1,3); if(e.dead) continue; } if(e.burn>0){ e.burn-=dt; hitEnemy(e,3*player.st.dmg*dt,e.pos,true); if(Math.random()<dt*8) sparks(e.pos.clone().setY(2),0xff7a2a,1,3); } if(e.slow>0) e.slow-=dt; }
     if(decoy){ decoy.t-=dt; decoy.m.g.visible=Math.floor(decoy.t*12)%5!==0; if(decoy.t<=0){ scene.remove(decoy.m.g); decoy=null; } }
+    if(wingman&&player){ wingman.a+=dt*1.8; wingman.g.position.set(player.pos.x+Math.cos(wingman.a)*2.4,3.4+Math.sin(t*2.5)*.2,player.pos.z+Math.sin(wingman.a)*2.4); wingman.cd-=dt;
+      const f=state==='fight'?nearestFoe(wingman.g.position,15):null; if(f){ wingman.g.rotation.y=Math.atan2(f.pos.x-wingman.g.position.x,f.pos.z-wingman.g.position.z); if(wingman.cd<=0){ wingman.cd=player.rs.wing>1?.33:.5; const dir=new V3(f.pos.x-wingman.g.position.x,0,f.pos.z-wingman.g.position.z).normalize(); shoot('p',wingman.g.position.clone().setY(2.4),dir,30,1.4*player.st.dmg,unit.shot,{life:.8}); } } }
     if(buddy&&player){ buddy.t-=dt; buddy.a+=dt*2.2; buddy.g.position.set(player.pos.x+Math.cos(buddy.a)*2.2,3.2+Math.sin(t*3)*.2,player.pos.z+Math.sin(buddy.a)*2.2); buddy.g.rotation.y+=dt*5; buddy.cd-=dt;
       if(buddy.cd<=0&&state==='fight'){ const f=nearestFoe(buddy.g.position,15); if(f){ buddy.cd=.3; const dir=new V3(f.pos.x-buddy.g.position.x,0,f.pos.z-buddy.g.position.z).normalize(); shoot('p',buddy.g.position.clone().setY(2.4),dir,30,1.6*player.st.dmg,0x9ff0ff,{life:.8}); } }
       if(buddy.t<=0){ scene.remove(buddy.g); buddy=null; } }
@@ -64,6 +68,11 @@ function frame(now){
     else if(b.seek){ if(b.seek.dead) b.seek=nearestFoe(b.m.position,14); if(b.seek){ const sp=b.vel.length(); _tmp.set(b.seek.pos.x-b.m.position.x,0,b.seek.pos.z-b.m.position.z).setLength(sp); b.vel.lerp(_tmp,Math.min(1,bdt*b.turn)).setLength(sp); b.m.lookAt(b.m.position.clone().add(b.vel)); } }
     b.m.position.addScaledVector(b.vel,bdt);
     const p=b.m.position;
+    // Wall Bounce: player shots reflect off the room edge and blocks
+    if(b.wall>0&&b.from==='p'){ let hitW=false;
+      if(Math.abs(p.x)>AX){ p.x=Math.sign(p.x)*AX; b.vel.x*=-1; hitW=true; } else if(Math.abs(p.z)>AZ){ p.z=Math.sign(p.z)*AZ; b.vel.z*=-1; hitW=true; }
+      else { const o=inBlock(p.x,p.z,0,'block'); if(o){ const dx=Math.min(p.x-o.x0,o.x1-p.x), dz=Math.min(p.z-o.z0,o.z1-p.z); if(dx<dz){ b.vel.x*=-1; p.x+=b.vel.x>0?dx+.05:-dx-.05; } else { b.vel.z*=-1; p.z+=b.vel.z>0?dz+.05:-dz-.05; } hitW=true; } }
+      if(hitW){ b.wall--; b.life=Math.max(b.life,.5); b.m.lookAt(p.clone().add(b.vel)); sparks(p,unit.shot,2,3); if(b.hit) b.hit.clear(); } }
     if(b.life<=0||Math.abs(p.x)>AX+OUTW||Math.abs(p.z)>AZ+OUTW){ if(b.grav) makeHole(p); else if(b.life>0) sparks(p,b.from==='p'?unit.shot:0xff8a40,2,3); killBullet(i); continue; }
     if(!b.over&&obstacles.length&&inBlock(p.x,p.z,0,'block')){ if(b.grav) makeHole(p); sparks(p,b.from==='p'?unit.shot:0xff8a40,3,4); killBullet(i); continue; }
     if(b.from==='p'){
@@ -78,6 +87,7 @@ function frame(now){
     } else if(player&&!player.dead){
       _tmp.set(p.x-player.pos.x,0,p.z-player.pos.z); const d=_tmp.length();
       if(player.shield&&d<2.6&&d>.01&&_tmp.divideScalar(d).dot(player.aim)>.45){ sparks(p,0xffa04a,4,5); player.en-=7; player.regenDelay=.9; sfx('shield'); if(player.rs.reflect) reflectShot(b); killBullet(i); continue; }
+      if(d<3.4&&orbitG.children.length&&orbitBlocks(b)){ killBullet(i); continue; }
       if(d<.75+b.r*.5){ if(player.dashT>.04){ perfectDodge(); continue; } if(tryBarrier(b)){ killBullet(i); continue; } hurt(b.dmg); killBullet(i); continue; }
     }
   }
