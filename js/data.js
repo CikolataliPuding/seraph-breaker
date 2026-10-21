@@ -87,22 +87,39 @@ const RSK={
 };
 const RSK_IC={twin:'twin',diag:'diag',rear:'rear',pierce:'pierce',ricochet:'ricochet',torch:'torch',cryo:'cryo',arc:'arc',atk:'atk',sig:'arc',armor:'armor',vamp:'vamp',orbit:'orbit',regen:'regen',dash:'dash',crit:'crit'};
 
-/* stages + levels */
-const D='drone',S='seraph',H='heavy',W='warden';
+/* arenas: one run each, a flat sequence of short rooms. Room schedule (see arenaRoomType in run.js): boss every 10th room, angel every
+   other 5th, elite around every 7th. mobs unlock in list order as the run goes on; bosses are drawn from the pool, never twice in a row. */
 const ARENAS=[
-  {name:'Outer City', boss:'colossus', hpMul:1, levels:['First Contact','Steel Rain','Wings Over the City'],
-   pools:[[D],[D,D,H],[D,D,S,H]],
+  {name:'Outer City', rooms:30, hpMul:1, bossMul:1, mobs:['drone','spark','crawler','heavy','howitzer'], bosses:['colossus','hive','arachne'], rule:{}, ruleTxt:'Training ground: no special rule',
    theme:{bg:0x1d1424,hemiS:0xffd6b8,hemiG:0x2a1d3a,ground:0x5a4c64,city:0xffffff,edge:0xff6a1a,rim:0xff7a40,win:0xffc47a,floor:0xa898b0,wall:0x3a3346,block:0x5e5468,water:0xff7a2a},
    colorCss:'#ff6a1a'},
-  {name:'Night Harbor', boss:'prism', hpMul:1.35, levels:['Low Tide','Watchers','Glass Storm'],
-   pools:[[S,S,D],[W,D,S,D],[W,S,H,D]],
+  {name:'Night Harbor', rooms:40, hpMul:1.3, bossMul:1.25, mobs:['seraph','drone','shardling','warden','lancer','bulwark'], bosses:['prism','arachne','hive'], rule:{shotSpd:1.15,hazards:.35}, ruleTxt:'Enemy shots fly 15% faster',
    theme:{bg:0x0b1726,hemiS:0xb8d4ff,hemiG:0x10203a,ground:0x3e5470,city:0x9ab4e0,edge:0x3ad0ff,rim:0x3a8aff,win:0x9ae4ff,floor:0x86a2c4,wall:0x22344a,block:0x2f5f9a,water:0x1a74e0},
    colorCss:'#3ad0ff'},
-  {name:"Heaven's Gate", boss:'seraph', hpMul:1.75, levels:['The Choir','Iron Faith','Last Light'],
-   pools:[[S,W,S,D],[H,W,S,H],[H,W,S,S,W,D]],
+  {name:"Heaven's Gate", rooms:50, hpMul:1.6, bossMul:1.5, mobs:['seraph','warden','cherub','censer','heavy','ophan'], bosses:['seraph','throne','archon'], rule:{elitePairs:true,hazards:.4}, ruleTxt:'Elites come in pairs',
    theme:{bg:0x2b1a26,hemiS:0xfff0d0,hemiG:0x3a2638,ground:0x7a6670,city:0xe2c8d8,edge:0xffd36a,rim:0xffb060,win:0xfff0b0,floor:0xd8c6cc,wall:0x8a7480,block:0xf0e8f2,water:0xffd36a},
    colorCss:'#ffd36a'},
+  {name:'Fallen Sky', rooms:50, hpMul:1.9, bossMul:1.8, mixed:true, mobs:['drone','spark','seraph','crawler','shardling','warden','heavy','lancer','censer','howitzer','bulwark','cherub','ophan'], bosses:'all', rule:{hazards:.45,corruptElites:true}, ruleTxt:'Both factions, corrupted elites, 2 random modifiers',
+   theme:{bg:0x170e22,hemiS:0xe0c8ff,hemiG:0x22123a,ground:0x4a3a64,city:0xb8a0e0,edge:0xb070ff,rim:0xff4ad0,win:0xd8a0ff,floor:0x9a8ab8,wall:0x2e2244,block:0x5a3a8a,water:0xb070ff},
+   colorCss:'#b070ff'},
 ];
+/* Arena 4 rolls two of these per run */
+const MODS={
+  swift:{name:'Swift shots',d:'Enemy shots +15% speed.',rule:{shotSpd:1.15}},
+  frenzy:{name:'Frenzy',d:'Enemies move 20% faster.',rule:{moveSpd:1.2}},
+  volatile:{name:'Volatile',d:'Enemies burst into slow shots when they die.',rule:{volatile:true}},
+  armored:{name:'Armored',d:'Enemies +20% armor, +25% gold.',rule:{hpMul:1.2,goldMul:1.25}},
+  unstable:{name:'Unstable ground',d:'Floor hazards in every room.',rule:{hazards:1}},
+  twin:{name:'Twin elites',d:'Elites come in pairs.',rule:{elitePairs:true}},
+};
+/* mobs: stats and model. cost = room budget, xp = pilot xp, gold/score per kill. elite:false keeps a mob out of elite rolls. */
+const ENEMY={
+  drone:{name:'Drone',hp:5,r:1.15,speed:3.4,sc:.8,cost:1,xp:1,gold:6,score:100,build:()=>buildMech(0x4c4658,0x9a2c42,0x24202c,0xff2a2a,.8),elite:false},
+  seraph:{name:'Seraph',hp:7,r:1.45,speed:5,sc:1,fly:true,angel:true,cost:1.3,xp:1.3,gold:8,score:150,build:()=>buildSeraph(1)},
+  mini:{name:'Mini seraph',hp:4,r:1.05,speed:6,sc:.7,fly:true,angel:true,cost:.8,xp:0,gold:3,score:60,build:()=>buildSeraph(.7),elite:false,ai:'seraph'},
+  heavy:{name:'Heavy',hp:20,r:1.7,speed:2.4,sc:1.25,cost:2.6,xp:3,gold:16,score:300,build:()=>buildMech(0x5a5244,0xc08a2a,0x2a2620,0xff3030,1.25)},
+  warden:{name:'Warden',hp:11,r:1.45,speed:3,sc:1,fly:true,angel:true,cost:1.9,xp:2,gold:12,score:250,build:()=>buildWarden()},
+};
 const BOSSES={
   colossus:{name:'Iron Colossus',cls:'Class · War machine · Siege frame',epi:'Built to level cities. It walks straight through gunfire and shakes the ground apart.',threat:3,warn:'HOSTILE WAR MACHINE INBOUND',hp:470,r:3.2,fly:0,barrier:false,minion:'drone',gold:220,gems:25,angel:false,
     pool:[['burst','missiles','slam'],['burst','missiles','slam','summon'],['missiles','slam','burst','summon','slam']]},
@@ -111,11 +128,6 @@ const BOSSES={
   seraph:{name:'The Last Seraph',cls:'Class · Angel · Seraph',epi:'The source of every signal. Six wings, one core, and nothing left to lose.',threat:5,warn:'HIGH-ENERGY SIGNAL DESCENDING',hp:860,r:3.0,fly:4.2,barrier:true,minion:'mini',gold:600,gems:60,angel:true,
     pool:[['ring','beam','spiral','aimed'],['ring','beam','spiral','summon','aimed','sweep'],['ring','sweep','spiral','summon','aimed','beam','shards']]},
 };
-const LEVEL_ROOMS=['combat','combat','angel','combat','elite'], BOSS_ROOMS=['combat','angel','boss'];
-function levelInfo(n){
-  const s=Math.floor(n/4), k=n%4, Sx=ARENAS[s], boss=k===3;
-  return {n,s,k,boss,stage:Sx,name:boss?BOSSES[Sx.boss].name:Sx.levels[k],rooms:boss?BOSS_ROOMS:LEVEL_ROOMS,pool:boss?Sx.pools[2]:Sx.pools[k]};
-}
 /* hand-built room layouts: 9 columns × 15 rows of 2-unit cells (a tall rectangle). Row 0 is the door side, the last row the entry.
    # block (stops movement and most shots) · ~ hazard canal (stops movement only) · . open floor. Keep row 0 and the last two rows open in the middle. */
 const ROOMS=[

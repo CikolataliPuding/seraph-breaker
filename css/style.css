@@ -1,4 +1,4 @@
-/* Layout: full-bleed WebGL arena; hangar = phone-shaped column (top bar, views, bottom nav) over the dim city; War Map is a scrolling path of 12 levels; rooms play Archero-style with a door to the next room */
+/* Layout: full-bleed WebGL arena; hangar = phone-shaped column (top bar, views, bottom nav) over the dim city; Arena Select lists the 4 arenas; rooms play Archero-style with a door to the next room */
 :root{
   --ink:#0c0910; --ink-2:#17121d; --ink-3:#221a2a; --paper:#f3eee6; --dim:#a79fae; --line:rgba(255,255,255,.13);
   --signal:#ff6a1a; --alert:#e8243c; --heal:#7dff9a; --gold:#ffc83a; --gem:#5fe0ff; --sp:#ffe14a;
@@ -135,7 +135,7 @@ body.mob .desk{display:none} body:not(.mob) .tonly{display:none}
 .frame .n{font-size:19px;font-weight:700;letter-spacing:.06em;color:var(--c)}
 .frame .r{font-family:var(--f-data);font-size:11px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .frame[aria-pressed="true"]{border-color:var(--c);background:color-mix(in srgb,var(--c) 16%,rgba(23,18,29,.95))}
-.frame:focus-visible,.sw button:focus-visible,.node:focus-visible,.mnode:focus-visible{outline:2px solid var(--signal);outline-offset:1px}
+.frame:focus-visible,.sw button:focus-visible,.node:focus-visible{outline:2px solid var(--signal);outline-offset:1px}
 .sw{display:flex;flex-wrap:wrap;gap:6px}
 .sw button{appearance:none;cursor:pointer;width:32px;height:32px;border:2px solid rgba(255,255,255,.18);background:var(--c);clip-path:polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%)}
 .sw button[aria-pressed="true"]{border-color:var(--paper);transform:scale(1.15)}
@@ -192,20 +192,6 @@ button.card:hover,button.card:focus-visible{border-color:var(--c,var(--signal));
 .mapHead span{font-family:var(--f-data);font-size:11px;letter-spacing:.22em;color:var(--signal)}
 .mapHead b{font-family:var(--f-display);font-weight:800;font-size:28px}
 .mapScroll{flex:1;min-height:0;overflow:auto;touch-action:pan-y;position:relative}
-.mapInner{position:relative;height:740px}
-.band{position:absolute;left:0;right:0}
-.band span{position:absolute;right:14px;top:10px;font-family:var(--f-data);font-size:11px;letter-spacing:.18em}
-.mapPath{position:absolute;inset:0;width:100%;height:100%}
-.mnode{position:absolute;transform:translate(-50%,-50%);appearance:none;border:0;padding:0;cursor:pointer;width:44px;height:44px;clip-path:polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%);display:grid;place-items:center;font-family:var(--f-data);font-weight:600;font-size:14px;background:#17121d;color:var(--dim);box-shadow:inset 0 0 0 2px rgba(255,255,255,.25)}
-.mnode.done{background:var(--signal);color:var(--ink);box-shadow:none}
-.mnode.open{background:var(--unit);color:var(--ink);box-shadow:none}
-.mnode.lock{cursor:default;opacity:.7}
-.mnode.boss{width:64px;height:64px;background:radial-gradient(circle,rgba(232,36,60,.5),#17121d 70%)}
-.mnode.boss.done{background:radial-gradient(circle,rgba(255,106,26,.7),#17121d 75%)}
-.mnode.boss img{width:46px;height:46px;object-fit:contain}
-.mnode.sel{outline:3px solid var(--paper);outline-offset:-3px}
-.mnode.sel.boss,.mnode.sel{filter:drop-shadow(0 0 8px var(--paper))}
-.youAre{position:absolute;transform:translate(-50%,-100%);font-family:var(--f-data);font-size:10px;letter-spacing:.16em;color:var(--paper);background:var(--unit);padding:2px 6px;pointer-events:none;white-space:nowrap}
 .sheet{flex:none;padding:14px 16px calc(14px + 0px);background:#17121d;border-top:2px solid var(--unit);display:flex;flex-direction:column;gap:8px}
 .sheet .h{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
 .sheet .h div{display:flex;flex-direction:column;line-height:1.05;min-width:0}
@@ -307,3 +293,25 @@ body.mob #choice .card{padding:10px 12px}
 body.mob #choice .card p{font-size:14px}
 body.mob h2{font-size:30px}
 @media (orientation:landscape) and (max-height:520px){ body.mob #choice .choices{grid-template-columns:repeat(3,minmax(0,1fr))} body.mob #choice{place-items:center} .tb.big{width:72px;height:72px} .mbtns{flex-direction:row-reverse;align-items:flex-end} }
+
+/* arena select (replaces the 12-level war map) */
+.arenaList{display:grid;gap:10px;padding:4px 16px 16px}
+.arena{appearance:none;cursor:pointer;text-align:left;display:grid;gap:4px;padding:12px 14px;border:1px solid var(--line);background:linear-gradient(135deg,color-mix(in srgb,var(--c) 22%,rgba(23,18,29,.95)),rgba(23,18,29,.95) 60%);position:relative;clip-path:polygon(0 0,calc(100% - 16px) 0,100% 16px,100% 100%,0 100%)}
+.arena::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--c)}
+.arena .n{font-family:var(--f-data);font-size:11px;letter-spacing:.18em;color:var(--c)}
+.arena b{font-family:var(--f-display);font-weight:800;font-size:28px;line-height:1}
+.arena .r{font-size:14px;color:var(--dim)}
+.arena .bp{display:flex;gap:4px;flex-wrap:wrap}
+.arena .bp img{width:40px;height:40px;clip-path:polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%);background:radial-gradient(circle,rgba(232,36,60,.45),#0c0910 70%);object-fit:contain}
+.arena .pr{height:4px;background:rgba(255,255,255,.1)} .arena .pr i{display:block;height:100%;background:var(--c)}
+.arena.sel{border-color:var(--c);box-shadow:0 0 0 1px var(--c)}
+.arena.lock{opacity:.45;cursor:default;filter:grayscale(.6)}
+.arena:focus-visible{outline:2px solid var(--signal);outline-offset:1px}
+.bossMini{flex-direction:row!important;flex-wrap:wrap;justify-content:flex-end;max-width:130px}
+.bossMini img{width:40px!important;height:40px!important}
+.bossMini span{width:100%;text-align:right}
+.contGo{height:52px;font-size:18px;flex:none;letter-spacing:.08em}
+.resKit{display:flex;flex-wrap:wrap;gap:6px}
+.resKit span,#rsBar span{width:24px;height:24px;display:grid;place-items:center;background:rgba(12,9,16,.65);border:1px solid rgba(125,255,154,.5);color:#7dff9a;position:relative}
+.resKit span{width:34px;height:34px} .resKit span svg{width:20px;height:20px}
+.resKit span b{position:absolute;right:-3px;bottom:-5px;font-family:var(--f-data);font-size:10px;color:var(--paper)}

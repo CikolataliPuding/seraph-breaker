@@ -6,14 +6,13 @@ function roomUpdate(dt,edt){
   if(spawnQ.length&&!enemies.length){ spawnWave(spawnQ); spawnQ=[]; toast('Second wave'); }
   updateEnemies(edt);
   if(room.type!=='boss'&&room.type!=='angel'&&!room.cleared&&!enemies.length&&!spawnQ.length){
-    room.cleared=true;
-    if(sortie.ri===sortie.rooms.length-1){ room.completeT=1.6; toast('Level clear','Collecting salvage'); }
-    else { openDoor(); if(!room.hurt&&Math.random()<.35&&sortie.rooms[sortie.ri+1]!=='angel') spawnNpc('devil',new V3(rand(-3,3),0,-2)); }
+    room.cleared=true; if(typeof onRoomClear==='function') onRoomClear();
+    openDoor(); saveRun(sortie.ri+1);
+    if(!room.hurt&&Math.random()<.35&&arenaRoomType(sortie.ri+2)==='combat') spawnNpc('devil',new V3(rand(-3,3),0,-2));
   }
   if(npc){ npc.t+=dt; npc.m.g.position.y=Math.sin(npc.t*2)*.25; npc.m.g.rotation.y+=dt*.6;
     if(!npc.used&&Math.hypot(player.pos.x-npc.pos.x,player.pos.z-npc.pos.z)<2.4){ npc.used=true; if(npc.kind==='angel') angelChoice(); else devilChoice(); return; } }
   if(door&&door.open){ door.arrow.position.y=.25+Math.sin(performance.now()/200)*.15; if(player.pos.z<-AZ+.3&&Math.abs(player.pos.x)<1.4) goNextRoom(); }
-  if(room.completeT>0){ room.completeT-=dt; if(room.completeT<=0) levelComplete(); }
   if(sortie.pendingLv>0&&state==='fight') showLevelUp();
 }
 function frame(now){
@@ -32,16 +31,18 @@ function frame(now){
   if(player&&dt>0){
     const act=state==='fight';
     if(['fight','card','warn','cine','bossdeath','trans'].includes(state)){ updatePlayer(dt,act); playTime+=dt; }
-    if(state==='card'){ stateT-=dt; if(stateT<=0){ $('card').hidden=true; startRoom(0); } }
+    if(state==='card'){ stateT-=dt; if(stateT<=0){ $('card').hidden=true; startRoom(sortie.ri); } }
     else if(state==='warn'){ stateT-=dt; if(stateT<=0){ $('warn').hidden=true; startCine(); } }
     else if(state==='cine'){ stateT-=dt; updateBoss(dt); if(stateT<=0) endCine(); }
-    else if(state==='trans'){ stateT-=dt; if(!sortie.swapped&&stateT<=.22){ sortie.swapped=true; startRoom(sortie.ri+1); } }
+    else if(state==='trans'){ stateT-=dt; if(!sortie.swapped&&stateT<=.22){ sortie.swapped=true; const f=sortie.force; sortie.force=null; startRoom(sortie.ri+1,f); } }
     else if(state==='fight'){ roomUpdate(dt,edt); }
     else if(state==='bossdeath'){ const b=boss; stateT-=dt;
       b.model.g.position.set(b.pos.x+rand(-.15,.15),b.y,b.pos.z+rand(-.15,.15));
       if(Math.random()<dt*7){ const p=bossCore(b).add(new V3(rand(-3,3),rand(-3,3),rand(-3,3))); crossBlast(p.setY(Math.max(.2,p.y-3)),Math.random()<.5?0xff2236:0xffd36a,rand(.6,1.1)); }
       if(stateT<=.8&&!b.final){ b.final=true; crossBlast(b.pos.clone().setY(0),0xff2236,3); hitstop(110,true); shatter(b.model,b.pos,0,0,{max:mobileMode?10:22,spd:1.6,cy:b.y+2,crystal:b.def.angel?0xffd36a:0}); scene.remove(b.model.g,b.model.shadow); enemies.slice().forEach(e=>{ if(e!==b&&!e.dead) killEnemy(e); }); enemies.length=0; }
-      if(stateT<=0){ boss=null; $('bossHud').hidden=true; pickups.slice().forEach(q=>{ if(q.kind!=='heal') collect(q); scene.remove(q.m); }); pickups.length=0; levelComplete(); } }
+      if(stateT<=0){ boss=null; $('bossHud').hidden=true; pickups.slice().forEach(q=>{ if(q.kind!=='heal'&&q.kind!=='item') collect(q); if(q.kind!=='item'){ scene.remove(q.m); q.gone=true; } }); for(let i=pickups.length-1;i>=0;i--) if(pickups[i].gone) pickups.splice(i,1);
+        // the final boss ends the arena; earlier bosses open the door to the next room
+        if(sortie.ri>=sortie.N-1) arenaComplete(); else { state='fight'; room.cleared=true; if(typeof onRoomClear==='function') onRoomClear(); openDoor(); saveRun(sortie.ri+1); refreshControls(); } } }
     else if(state==='dying'){ stateT-=dt; updateEnemies(edt); if(stateT<=0) showResult(false); }
     for(const e of enemies){ if(e.dead) continue; if(e.burn>0){ e.burn-=dt; hitEnemy(e,3*player.st.dmg*dt,e.pos,true); if(Math.random()<dt*8) sparks(e.pos.clone().setY(2),0xff7a2a,1,3); } if(e.slow>0) e.slow-=dt; }
     if(decoy){ decoy.t-=dt; decoy.m.g.visible=Math.floor(decoy.t*12)%5!==0; if(decoy.t<=0){ scene.remove(decoy.m.g); decoy=null; } }
@@ -97,8 +98,8 @@ function frame(now){
     $('hpBar').firstElementChild.style.width=(Math.max(0,p.hp)/p.maxHp*100)+'%'; $('hpTxt').textContent=Math.ceil(Math.max(0,p.hp))+'/'+p.maxHp;
     $('enBar').firstElementChild.style.width=Math.max(0,p.en)+'%'; $('enBar').classList.toggle('hot',p.overheat>0); $('enLbl').textContent=p.overheat>0?'Overheat':'Power'; $('enTxt').textContent=Math.max(0,Math.floor(p.en));
     const spv=p.od>0?p.od/5*100:p.lance>0?p.lance/2.4*100:p.sp; $('spBar').firstElementChild.style.width=spv+'%'; $('spBar').classList.toggle('ready',p.sp>=100); $('spLbl').textContent=SPECIALS[P.unit].name; $('spTxt').textContent=p.sp>=100?'READY':Math.floor(p.sp)+'%';
-    $('lvlTxt').textContent=String(sortie.n+1).padStart(2,'0'); $('roomTxt').textContent=`${sortie.ri+1}/${sortie.rooms.length}`;
-    $('goldTxt').textContent=P.gold.toLocaleString(); $('gemTxt').textContent=P.gems;
+    $('roomTxt').textContent=String(sortie.ri+1).padStart(2,'0'); $('roomN').textContent='/'+sortie.N;
+    $('arTxt').textContent=ARENAS[sortie.a].name.toUpperCase(); $('goldTxt').textContent=P.gold.toLocaleString(); $('gemTxt').textContent=P.gems;
     $('xpFill').style.width=(sortie.xp/xpNeed()*100)+'%'; const lv=$('lvTxt'); if(lv) lv.textContent='LV '+sortie.lv;
     if(boss) $('bossBar').firstElementChild.style.width=Math.max(0,boss.hp/boss.maxHp*100)+'%';
     const spReady=p.sp>=100&&!busy(); $('abQ').classList.toggle('ready',spReady); $('abQ').style.setProperty('--cd',1-p.sp/100); $('tSP').classList.toggle('ready',spReady); $('tSP').style.setProperty('--cd',1-p.sp/100);

@@ -42,7 +42,7 @@ function buildRoom(hx,hz,grid,withDoor){
   fitCamera();
 }
 function buildBossRoom(){
-  buildRoom(BOSS_X,BOSS_Z,null,false);
+  buildRoom(BOSS_X,BOSS_Z,null,true);
   const t=ARENAS[stage].theme, bm=toon(t.block);
   [[-6.5,-6.5],[6.5,-6.5],[-6.5,6.5],[6.5,6.5]].forEach(([x,z])=>{ const b=part(box(1.8,2.2,1.8),bm,roomGroup,x,1.1,z,.1); const s=new THREE.Mesh(box(1.84,.14,1.84),basic(t.edge,false)); s.position.y=.8; b.add(s); obstacles.push({x0:x-.9,x1:x+.9,z0:z-.9,z1:z+.9,kind:'block'}); });
   [[7.6,8],[3.2,3.35]].forEach(([a,b])=>{ const hx=new THREE.Mesh(new THREE.RingGeometry(a,b,6),addMat(t.edge,.25)); hx.rotation.x=-Math.PI/2; hx.rotation.z=Math.PI/6; hx.position.y=.03; roomGroup.add(hx); });
@@ -52,29 +52,34 @@ function freeSpot(minFromEntry=6){
   for(let i=0;i<60;i++){ const x=rand(-AX+1.5,AX-1.5), z=rand(-AZ+1.5,AZ-3.5); if(inBlock(x,z,1)) continue; if(Math.hypot(x,z-(AZ-1.5))<minFromEntry) continue; if(player&&Math.hypot(x-player.pos.x,z-player.pos.z)<5) continue; return new V3(x,0,z); }
   return new V3(rand(-3,3),0,-AZ+2.5);
 }
+// mobs unlock in the arena's list order as the run goes on (2 at first, one more every 4 rooms)
+function arenaPool(){ const A=ARENAS[sortie.a], ok=A.mobs.filter(t=>ENEMY[t]); return ok.slice(0,Math.min(ok.length,2+Math.floor(sortie.ri/4))); }
+// room budget grows with the room index and the arena number; rooms are short: one wave, two at most
 function composeRoom(elite){
-  const inf=levelInfo(sortie.n), cost={drone:1,seraph:1.3,warden:1.9,heavy:2.6};
-  let budget=3.6+stage*1.4+inf.k*1.1+sortie.ri*.55; if(elite) budget*=.7;
+  const pool=arenaPool(), r=sortie.ri+1, cap=mobileMode?9:11;
+  let budget=3.2+sortie.a*1.5+r*.16; if(elite) budget*=.55;
   const list=[]; let guard=0;
-  while(budget>.8&&list.length<10&&guard++<40){ const t=pickOne(inf.pool); if(cost[t]<=budget+.4){ list.push(t); budget-=cost[t]; } }
-  if(list.length<2) list.push(D);
-  if(elite) list.unshift(stage===0?'heavy*':pickOne(['heavy*','warden*']));
-  const big=list.length>5 && !elite;
+  while(budget>.6&&list.length<cap&&guard++<60){ const t=pickOne(pool); if(ENEMY[t].cost<=budget+.4){ list.push(t); budget-=ENEMY[t].cost; } }
+  if(list.length<2) list.push(pool[0]);
+  if(elite){ const ep=pool.filter(t=>ENEMY[t].elite!==false); const n=sortie.rule.elitePairs?2:1; for(let i=0;i<n;i++) list.unshift(pickOne(ep.length?ep:pool)+'*'); }
+  const big=list.length>6&&!elite;
   return big?[list.slice(0,Math.ceil(list.length*.6)),list.slice(Math.ceil(list.length*.6))]:[list];
 }
 function spawnWave(list){ list.forEach(t=>{ const elite=t.endsWith('*'); spawnEnemy(elite?t.slice(0,-1):t,freeSpot(),elite); }); }
-function startRoom(i){
-  sortie.ri=i; const type=sortie.rooms[i];
+function startRoom(i,force){
+  sortie.ri=i; const type=force&&force.type||arenaRoomType(i+1);
   clearEnemiesAndShots();
-  room={type,cleared:false,hurt:false,completeT:0};
+  room={type,cleared:false,hurt:false,completeT:0,boss:type==='boss'?(force&&force.boss||pickBoss()):null};
   if(type==='boss'){ buildBossRoom(); player.pos.set(0,0,AZ-3); }
   else { buildRoom(ROOM_X,ROOM_Z,type==='angel'?SANCTUM:pickOne(ROOMS),true); player.pos.set(0,0,AZ-1.5); }
-  player.vel.set(0,0,0); camTarget.copy(player.pos);
+  player.vel.set(0,0,0); camTarget.set(mobileMode?0:player.pos.x,0,mobileMode?mobileCamZ(player.pos.z):player.pos.z);
+  if(typeof onRoomStart==='function') onRoomStart();
   $('fade').classList.remove('on');
-  if(type==='boss'){ $('warnTxt').textContent=BOSSES[ARENAS[stage].boss].warn; state='warn'; stateT=2.2; $('warn').hidden=false; playTrack('boss'); sfx('beam'); return; }
+  const tag=`Room ${i+1}/${sortie.N}`;
+  if(type==='boss'){ $('warnTxt').textContent=BOSSES[room.boss].warn; state='warn'; stateT=2.2; $('warn').hidden=false; playTrack('boss'); sfx('beam'); refreshControls(); return; }
   state='fight'; playTrack('battle');
-  if(type==='angel'){ spawnNpc('angel',new V3(0,0,-1)); openDoor(); toast('Sanctuary',`Room ${i+1}/${sortie.rooms.length}`); }
-  else { const waves=composeRoom(type==='elite'); spawnWave(waves[0]); spawnQ=waves[1]||[]; toast(type==='elite'?'Elite room':'Hostiles',`Room ${i+1}/${sortie.rooms.length}`); }
+  if(type==='angel'){ spawnNpc('angel',new V3(0,0,-2)); openDoor(); toast('Sanctuary',tag); }
+  else { const waves=composeRoom(type==='elite'); spawnWave(waves[0]); spawnQ=waves[1]||[]; toast(type==='elite'?'Elite room':'Hostiles',tag); }
   refreshControls();
 }
 function clearEnemiesAndShots(){

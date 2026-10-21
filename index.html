@@ -26,8 +26,8 @@
   <div class="bar" id="spBar"><i style="width:0%"></i></div>
 </div>
 <div class="hud" id="hudR" hidden>
-  <div><span>LEVEL</span> <b class="big" id="lvlTxt">01</b><span>/12</span></div>
-  <div><span>ROOM</span> <b id="roomTxt">1/5</b></div>
+  <div><span id="arTxt">OUTER CITY</span></div>
+  <div><span>ROOM</span> <b class="big" id="roomTxt">01</b><span id="roomN">/30</span></div>
   <div><span class="cur gold"><i></i></span> <b id="goldTxt">0</b> &nbsp;<span class="cur gem"><i></i></span> <b id="gemTxt">0</b></div>
 </div>
 <div class="hud" id="rsBar" hidden></div>
@@ -44,7 +44,7 @@
   <div class="ab" id="abS"><kbd>SPC</kbd><span></span></div>
 </div>
 
-<!-- HANGAR (A) + WAR MAP (C) -->
+<!-- HANGAR (A) + ARENA SELECT (C) -->
 <div class="ov" id="menu">
   <div class="shell">
     <div class="tbar">
@@ -56,21 +56,22 @@
     <div class="views">
       <section class="view" id="v-home">
         <div class="stageCard">
-          <div class="t"><span class="eyebrow" id="hEye">STAGE 01 · LEVEL 01/12</span><b id="hStage">Outer City</b><div class="pips" id="hPips"></div></div>
-          <div class="bossMini"><img id="hBoss" alt=""><span>BOSS</span></div>
+          <div class="t"><span class="eyebrow" id="hEye">ARENA 01 · 30 ROOMS</span><b id="hStage">Outer City</b><div class="pips" id="hPips"></div></div>
+          <div class="bossMini" id="hBosses"></div>
         </div>
         <div id="slotHome"><div class="pvWrap" id="pvWrap"><canvas id="pvCanvas"></canvas><div class="pvTag"><span>Frame</span><b id="pvUnit">Azure</b><em id="pvSp">SP · Overdrive</em></div></div></div>
+        <button class="btn alt contGo" id="contBtn" hidden>Continue run</button>
         <button class="btn bigGo" id="sortieBtn">Sortie ▸</button>
         <div class="best" id="bestTxt"></div>
       </section>
       <section class="view" id="v-map" hidden>
         <div class="mapHead">
           <button id="mapBack" aria-label="Back to hangar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
-          <div><span id="mapProg">CAMPAIGN · 0/12 CLEAR</span><b>War Map</b></div>
+          <div><span id="mapProg">ARENAS · 1/4 OPEN</span><b>Arena Select</b></div>
         </div>
-        <div class="mapScroll" id="mapScroll"><div class="mapInner" id="mapInner"></div></div>
+        <div class="mapScroll" id="mapScroll"><div class="arenaList" id="mapInner"></div></div>
         <div class="sheet">
-          <div class="h"><div><span id="shEye">LEVEL 01</span><b id="shName">First Contact</b></div><span class="cur gem" id="shReward"><i></i>+5</span></div>
+          <div class="h"><div><span id="shEye">ARENA 01</span><b id="shName">Outer City</b></div><span class="cur gem" id="shReward"><i></i>+40</span></div>
           <div class="rooms" id="shRooms"></div>
           <div class="tags" id="shTags"></div>
           <button class="btn" id="launchBtn">Launch ▸</button>
@@ -121,7 +122,7 @@
   </div>
 </div>
 
-<div class="ov" id="card" hidden><div class="c"><div class="num" id="cardNum">STAGE 01 · LEVEL 01/12</div><div class="t" id="cardT">First Contact</div><div class="s" id="cardS">Outer City</div></div></div>
+<div class="ov" id="card" hidden><div class="c"><div class="num" id="cardNum">ARENA 01 · 30 ROOMS</div><div class="t" id="cardT">First Contact</div><div class="s" id="cardS">Outer City</div></div></div>
 <div class="ov" id="warn" hidden><div class="w"><div><b>WARNING</b><span id="warnTxt">HIGH-ENERGY SIGNAL APPROACHING</span></div></div></div>
 <div id="cine" hidden>
   <div class="lb top"></div><div class="lb bot"></div>
@@ -144,8 +145,9 @@
 <div class="ov" id="pause" hidden>
   <div class="menuIn">
     <h2>Paused</h2>
-    <div class="row"><button class="btn" id="resumeBtn">Resume</button><button class="btn ghost" id="muteBtn">Music: on</button><button class="btn alt" id="quitBtn">Abandon level</button></div>
-    <p class="note">Gold and diamonds you already picked up are kept.</p>
+    <div class="row"><button class="btn" id="resumeBtn">Resume</button><button class="btn ghost" id="muteBtn">Music: on</button></div>
+    <div class="row"><button class="btn alt" id="quitBtn">Save &amp; exit</button><button class="btn ghost" id="abandonBtn">Abandon run</button></div>
+    <p class="note">Save &amp; exit continues from the last cleared room. Gold and diamonds you already picked up are always kept.</p>
   </div>
 </div>
 
@@ -155,7 +157,8 @@
     <h1 id="resTitle">Level <em>Clear</em></h1>
     <div class="earn" id="resEarn"></div>
     <div id="resStats"></div>
-    <div class="row"><button class="btn" id="resNext">Next level</button><button class="btn alt" id="resMap">War Map</button><button class="btn ghost" id="resHome">Hangar</button></div>
+    <div class="resKit" id="resKit"></div>
+    <div class="row"><button class="btn" id="resNext">Next arena</button><button class="btn alt" id="resMap">Arenas</button><button class="btn ghost" id="resHome">Hangar</button></div>
   </div>
 </div>
 
@@ -192,6 +195,7 @@
 <script src="js/player.js"></script>
 <script src="js/enemy-ai.js"></script>
 <script src="js/bosses.js"></script>
+<script src="js/run.js"></script>
 <script src="js/flow.js"></script>
 <script src="js/ui-hangar.js"></script>
 <script src="js/ui-warmap.js"></script>

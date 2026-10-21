@@ -7,9 +7,17 @@ const DBG={
   killAll(){ enemies.slice().forEach(e=>{ if(!e.dead&&e!==boss) killEnemy(e); }); spawnQ=[]; },
   skipCard(){ if(state==='card'){ stateT=0; } if(state==='warn'){ stateT=0; } if(state==='cine') endCine(); },
   spawn(type,elite=false){ if(!player) return; const p=freeSpot(3); return !!spawnEnemy(type,p,elite); },
-  next(){ if(state!=='fight'||!room) return; DBG.killAll(); room.cleared=true; enemies.length=0; if(door) openDoor(); goNextRoom(); },
+  start(a=0){ launchArena(a); setTimeout(()=>DBG.skipCard(),50); },
+  next(){ if(state!=='fight'||!room) return;
+    if(boss&&!boss.dead){ boss.atk='idle'; killEnemy(boss); return; }
+    DBG.killAll(); if(!room.cleared){ room.cleared=true; if(typeof onRoomClear==='function') onRoomClear(); openDoor(); saveRun(sortie.ri+1); } goNextRoom(); },
+  // jump to room n (1-based) of the current arena
+  jump(n,force){ if(!sortie||!player) return; n=clamp(n|0,1,sortie.N); clearEnemiesAndShots(); hideOverlays(); $('result').hidden=true; paused=false; sortie.ri=n-2; sortie.force=force||null; sortie.swapped=false; state='trans'; stateT=.3; $('fade').classList.add('on'); },
+  boss(kind){ if(!sortie) return; DBG.jump(sortie.ri+2>sortie.N?sortie.N:sortie.ri+2,{type:'boss',boss:kind}); },
+  skill(id){ if(player&&RSK[id]) applySkill(id); },
+  mode(){ P.ctrl=mobileMode?'desktop':'mobile'; persist(); setMode(); },
   gold(n=5000){ P.gold+=n; persist(); renderMenu&&renderMenu(); },
-  state(){ return {state,room:room&&room.type,ri:sortie&&sortie.ri,enemies:enemies.length,hp:player&&Math.round(player.hp),mobile:mobileMode,rs:player&&player.rs}; },
+  state(){ return {state,room:room&&room.type,ri:sortie&&sortie.ri,a:sortie&&sortie.a,lv:sortie&&sortie.lv,boss:boss&&boss.kind,enemies:enemies.length,hp:player&&Math.round(player.hp),mobile:mobileMode,rs:player&&player.rs}; },
 };
 window.DBG=DBG;
 function initDebug(){

@@ -122,4 +122,14 @@ function buildDevil(){
   const ring=new THREE.Mesh(new THREE.TorusGeometry(1.2,.05,6,40),basic(0xd5352a,true,.8)); ring.rotation.x=Math.PI/2; ring.position.y=-1.2; body.add(ring);
   return {g,body,mats:[MK,MR]};
 }
+// Corrupted variant look: purple tint, crystal spikes and a void aura. Works on any model (mobs, bosses).
+function corruptModel(m,amt=.45){
+  const tint=new THREE.Color(0x6a1a5a); m.g.traverse(o=>{ if(o.isMesh&&o.material&&o.material.isMeshToonMaterial) o.material.color.lerp(tint,amt); });
+  m.g.updateMatrixWorld(true); const bb=new THREE.Box3(); m.g.traverse(o=>{ if(o.isMesh&&!o.userData.nofit&&o.material!==outlineMat) bb.expandByObject(o); });
+  const s=bb.getSize(new V3()), c=bb.getCenter(new V3()), sc=m.g.scale.x||1, host=m.torso||m.body||m.g, MV=basic(0xb070ff,false);
+  host.updateMatrixWorld(true); const inv=new THREE.Matrix4().copy(host.matrixWorld).invert(), hs=host.getWorldScale(new V3()).x||1;
+  [[-.35,.95,-.5,.6],[.35,1,-.5,.7],[0,1.1,-.55,.9],[-.6,.8,-.4,.45],[.6,.8,-.4,.5]].forEach(([x,y,z,k])=>{ const w=new V3(c.x+x*s.x*.5,bb.min.y+y*s.y,c.z+z*s.z*.5).applyMatrix4(inv); const cr=part(new THREE.OctahedronGeometry(.22*k*Math.max(1,s.y/3)/hs,0),MV,host,w.x,w.y,w.z,.03); cr.scale.y=2.2; cr.rotation.x=-.5; });
+  const aura=new THREE.Mesh(new THREE.RingGeometry(1,1.08,40),addMat(0xb070ff,.55)); aura.rotation.x=-Math.PI/2; aura.position.y=.05; aura.scale.setScalar(Math.max(1.2,Math.max(s.x,s.z)/sc*.6)); aura.userData.nofit=1; m.g.add(aura);
+  m.corrupt=true; return m;
+}
 const BOSS_BUILD={colossus:buildColossus,prism:buildPrism,seraph:buildSeraphBoss};

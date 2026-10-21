@@ -1,9 +1,10 @@
 // Seraph Breaker · skills.js: In-level XP, run skills (level-up, angel and devil choices).
 /* ================= RUN SKILLS / XP ================= */
-const xpNeed=()=>4+sortie.lv*3;
+// tuned for 30-50 room runs: frequent level-ups early, without maxing everything by mid-run
+const xpNeed=()=>5+Math.floor(sortie.lv*2.6);
 function gainXp(v){ if(!sortie) return; sortie.xp+=v; while(sortie.xp>=xpNeed()){ sortie.xp-=xpNeed(); sortie.lv++; sortie.pendingLv++; } }
 function skillOptions(n){ const ids=Object.keys(RSK).filter(id=>(player.rs[id]||0)<RSK[id].max); const out=[]; while(out.length<n&&ids.length){ out.push(ids.splice((Math.random()*ids.length)|0,1)[0]); } return out; }
-function applySkill(id){
+function applySkill(id,silent){
   const rs=player.rs; rs[id]=(rs[id]||0)+1; const p=player;
   if(id==='atk') p.st.dmg*=1.18;
   if(id==='sig') p.st.rate*=.87;
@@ -12,9 +13,14 @@ function applySkill(id){
   if(id==='dash') p.st.spd*=1.12;
   if(id==='crit') p.st.crit+=.1;
   if(id==='orbit') buildOrbit();
-  renderRunSkills(); sfx('lvup');
+  if(!silent){ renderRunSkills(); sfx('lvup'); }
 }
-function renderRunSkills(){ const bar=$('rsBar'); bar.innerHTML=''; if(!player) return; Object.entries(player.rs).forEach(([id,n])=>{ const s=document.createElement('span'); s.title=RSK[id].name; s.innerHTML=svg(RSK_IC[id]); if(n>1){ const b=document.createElement('b'); b.textContent=n; s.appendChild(b); } bar.appendChild(s); }); }
+// skill + item icons (HUD row and result screen)
+function runIcons(){ const out=[]; if(!player) return out;
+  Object.entries(player.rs).forEach(([id,n])=>{ if(!RSK[id]) return; const s=document.createElement('span'); s.title=RSK[id].name; s.innerHTML=svg(RSK_IC[id]||'sp'); if(n>1){ const b=document.createElement('b'); b.textContent=n; s.appendChild(b); } out.push(s); });
+  if(sortie&&sortie.items) sortie.items.forEach(it=>{ const d=typeof ITEMS!=='undefined'&&ITEMS[it.id||it]; if(!d) return; const s=document.createElement('span'); s.className='it r-'+d.rarity; s.title=d.name; s.innerHTML=svg(d.icon); out.push(s); });
+  return out; }
+function renderRunSkills(){ const bar=$('rsBar'); bar.innerHTML=''; bar.append(...runIcons()); }
 function buildOrbit(){ orbitG.children.slice().forEach(c=>orbitG.remove(c)); const n=(player.rs.orbit||0)*2; for(let i=0;i<n;i++){ const b=new THREE.Mesh(G.blade,addMat(unit.shot,.9)); orbitG.add(b); } }
 function skillCard(id,extra){ return {id,icon:RSK_IC[id],name:RSK[id].name,desc:RSK[id].d+(extra||''),tag:(player.rs[id]?`Rank ${player.rs[id]+1}/${RSK[id].max}`:'New')}; }
 function openChoice(cfg){
@@ -33,7 +39,7 @@ function showLevelUp(){
   sortie.pendingLv--;
   const opts=skillOptions(3).map(id=>({...skillCard(id),color:'#7dff9a',act:()=>applySkill(id)}));
   if(!opts.length){ player.hp=Math.min(player.maxHp,player.hp+player.maxHp*.2); return; }
-  openChoice({eyebrow:`Pilot level ${sortie.lv}`,title:'Choose a skill',note:'Skills last until this level ends.',options:opts});
+  openChoice({eyebrow:`Pilot level ${sortie.lv}`,title:'Choose a skill',note:'Skills last for the whole run.',options:opts});
 }
 function angelChoice(){
   const heal=Math.round(40*player.st.heal);

@@ -50,7 +50,7 @@ function updateEnemies(dt){
     if(e.type==='warden'){ const wu=e.cd<.5&&!e.stun?1-e.cd/.5:0; m.body.position.y=2.6+Math.sin(e.t*2)*.3-wu*.35; m.rings[0].rotation.x+=dt*(1.5+wu*9); m.rings[1].rotation.y+=dt*(1.1+wu*7); m.body.scale.set(1+wu*.12,1-wu*.1,1+wu*.12); }
     if(e.type==='seraph'){ const wn=e.st==='wind'?1-e.stT/.65:0; m.body.position.y=2.1+Math.sin(e.t*2.5)*.3*(1-wn)+wn*.3; m.body.position.z=-wn*.9; m.body.position.x=wn?Math.sin(e.t*70)*.09*wn:0; m.body.rotation.x=e.st==='charge'?.5:-wn*.35; m.halo.rotation.z+=dt*(2+wn*14); m.wings.forEach((w,i)=>w.rotation.x=e.st==='charge'?-.6:Math.sin(e.t*6+i)*.25-wn*.5); }
     for(const o of enemies){ if(o===e||o.dead)continue; const dx=e.pos.x-o.pos.x,dz=e.pos.z-o.pos.z,dd=Math.hypot(dx,dz),mn=(e.r+o.r)*.8; if(dd<mn&&dd>.001){ const k=o===boss?1:.5; e.pos.x+=dx/dd*(mn-dd)*k; e.pos.z+=dz/dd*(mn-dd)*k; } }
-    e.pos.addScaledVector(e.vel,dt*(e.slow>0?.55:1));
+    e.pos.addScaledVector(e.vel,dt*(e.slow>0?.55:1)*(sortie.rule.moveSpd||1));
     if(!e.fly) pushOut(e.pos,e.r*.55);
     e.pos.x=clamp(e.pos.x,-AX+1,AX-1); e.pos.z=clamp(e.pos.z,-AZ+1,AZ-1);
     m.g.position.set(e.pos.x,e.dropY,e.pos.z); m.g.rotation.y=e.yaw; m.shadow.position.set(e.pos.x,.03,e.pos.z); m.shadow.scale.setScalar(1/(1+e.dropY*.15));

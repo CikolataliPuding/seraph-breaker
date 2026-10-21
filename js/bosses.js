@@ -2,7 +2,9 @@
 /* ================= BOSSES ================= */
 function spawnBoss(kind){
   const def=BOSSES[kind]; const m=BOSS_BUILD[kind]();
-  boss={kind,def,model:m,pos:new V3(0,0,-6),vel:new V3(),hp:def.hp,maxHp:def.hp,r:def.r,t:0,flash:0,atk:'enter',atkT:99,phase:1,barrier:0,barrierCd:9,y:32,base:def.fly,spinA:0,beam:null,yaw:0,walk:0,lastAtk:'',stun:0,born:1,burn:0,slow:0,jz:juiceState(),dropY:0,sc:m.g.scale.x};
+  // boss armor scales with the arena and with how deep into the run this boss room is (room 10, 20, 30...)
+  const hp=Math.round(def.hp*ARENAS[stage].bossMul*(1+(Math.floor((sortie.ri+1)/10)-1)*.45)*(sortie.rule.hpMul||1));
+  boss={kind,def,model:m,pos:new V3(0,0,-6),vel:new V3(),hp,maxHp:hp,r:def.r,t:0,flash:0,atk:'enter',atkT:99,phase:1,barrier:0,barrierCd:9,y:32,base:def.fly,spinA:0,beam:null,yaw:0,walk:0,lastAtk:'',stun:0,born:1,burn:0,slow:0,jz:juiceState(),dropY:0,sc:m.g.scale.x};
   scene.add(m.g,m.shadow); enemies.push(boss);
   $('bossName').textContent=def.name.toUpperCase(); $('bossPh').textContent='PHASE I'; $('bossImg').src=PORTRAIT[kind]||'';
 }
@@ -81,15 +83,16 @@ function updateBoss(dt){
   if(m.shield){ m.shield.visible=b.barrier>0; if(b.barrier>0){ m.shield.rotation.z+=dt; m.shield.children.forEach((c,i)=>{ c.material.opacity=(i<3?.8:.18)*(.6+Math.sin(b.t*20+i)*.4); }); } }
 }
 function bossDeath(){
-  const def=boss.def; score+=[5000,8000,12000][stage]; kills++; hideBeams(); clearEnemyShots();
+  const def=boss.def; score+=[5000,8000,12000,16000][stage]; kills++; hideBeams(); clearEnemyShots();
+  const gm=Math.round(def.gems*.5); P.gems+=gm; sortie.gems+=gm;
   state='bossdeath'; stateT=3.2; boss.final=false; buzz(200); hitstop(120,true);
-  dropGold(boss.pos,def.gold);
+  dropGold(boss.pos,def.gold*(1+sortie.a*.3));
 }
 function startCine(){
-  const kind=ARENAS[stage].boss, def=BOSSES[kind];
+  const kind=room.boss, def=BOSSES[kind];
   spawnBoss(kind);
   $('cineImg').src=PORTRAIT[kind]||''; $('cineName').textContent=def.name; $('cineClass').textContent=def.cls; $('cineEpi').textContent=def.epi;
-  $('cineThreat').textContent='THREAT '+'■'.repeat(def.threat)+'□'.repeat(5-def.threat)+` · LEVEL ${String(sortie.n+1).padStart(2,'0')}/12`;
+  $('cineThreat').textContent='THREAT '+'■'.repeat(def.threat)+'□'.repeat(5-def.threat)+` · ROOM ${sortie.ri+1}/${sortie.N}`;
   const c=$('cine'); c.hidden=false; requestAnimationFrame(()=>c.classList.add('on'));
   state='cine'; stateT=5; refreshControls();
 }
