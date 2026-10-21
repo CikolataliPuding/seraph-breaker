@@ -1,0 +1,528 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<!-- Seraph Breaker · docs/bestiary.html: Reference sheet for new mobs and bosses. The build*() functions are written with the game's own part()/box()/toon() helpers and can be ported to js/models.js as-is. -->
+<title>Seraph Breaker Bestiyeri</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@700;800&family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+*{box-sizing:border-box}[hidden]{display:none!important}body{margin:0}
+/* Layout: oyunun hangar diliyle tek sütun akış; sabit filtre çubuğu, mob ve boss kartları ızgarada, en altta arena havuzu tablosu. Oyunla aynı koyu dünya, bilinçli olarak tek tema. */
+:root{
+  --ink:#0c0910; --ink-2:#17121d; --ink-3:#221a2a; --paper:#f3eee6; --dim:#a79fae; --line:rgba(255,255,255,.13);
+  --signal:#ff6a1a; --alert:#e8243c; --gem:#5fe0ff; --sp:#ffe14a; --angel:#ffd36a; --void:#b070ff;
+  --f-display:"Shippori Mincho B1","Hiragino Mincho ProN","Yu Mincho",Georgia,serif;
+  --f-label:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-data:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+  color-scheme:dark;
+}
+html{background:var(--ink)}
+body{background:var(--ink);color:var(--paper);font-family:var(--f-label);font-size:16px;line-height:1.4}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 64px;display:grid;gap:36px}
+header{display:grid;gap:10px}
+.eye{font-family:var(--f-data);font-size:12px;letter-spacing:.14em;color:var(--signal);text-transform:uppercase}
+h1{font-family:var(--f-display);font-weight:800;font-size:clamp(30px,6vw,52px);line-height:1.05;margin:0;text-wrap:balance}
+h1 em{font-style:normal;color:var(--signal)}
+.lede{color:var(--dim);font-size:18px;max-width:62ch;margin:0}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-family:var(--f-data);font-size:12px;color:var(--dim)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:color-mix(in srgb,var(--ink) 92%,transparent);backdrop-filter:blur(6px);padding-block:10px;border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;gap:8px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--ink)}
+.chip{font:600 14px/1 var(--f-label);letter-spacing:.12em;text-transform:uppercase;background:var(--ink-2);color:var(--dim);border:1px solid var(--line);padding:9px 12px;cursor:pointer;clip-path:polygon(0 0,100% 0,calc(100% - 8px) 100%,0 100%);padding-right:18px}
+.chip[aria-pressed="true"]{background:var(--paper);color:var(--ink);border-color:var(--paper)}
+.chip:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
+.sep{width:1px;background:var(--line);margin-inline:4px}
+section{display:grid;gap:16px}
+.sh{display:flex;align-items:baseline;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line);padding-bottom:8px;flex-wrap:wrap}
+h2{font-family:var(--f-display);font-size:26px;margin:0;font-weight:800}
+.cnt{font-family:var(--f-data);font-size:12px;color:var(--dim)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+.card{background:var(--ink-2);border:1px solid var(--line);display:grid;grid-template-rows:auto 1fr;min-width:0}
+.card.boss{grid-column:span 1}
+.stage{position:relative;aspect-ratio:1;max-width:100%;background:radial-gradient(circle at 50% 58%,color-mix(in srgb,var(--fc) 26%,var(--ink-3)) 0%,var(--ink) 72%)}
+.stage canvas{width:100%;height:100%;display:block}
+.tag{position:absolute;top:10px;left:10px;font:600 12px/1 var(--f-data);letter-spacing:.08em;padding:5px 7px;text-transform:uppercase}
+.tag.yeni{background:var(--signal);color:var(--ink)}
+.tag.mevcut{background:rgba(255,255,255,.12);color:var(--paper)}
+.tag.varyant{background:var(--void);color:var(--ink)}
+.fac{position:absolute;top:10px;right:10px;font:600 12px/1 var(--f-label);letter-spacing:.16em;text-transform:uppercase;color:var(--fc)}
+.body{padding:12px 14px 14px;display:grid;gap:8px;align-content:start;min-width:0}
+.nm{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.nm b{font-size:22px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;line-height:1}
+.thr{font-family:var(--f-data);font-size:12px;color:var(--alert);letter-spacing:.05em;white-space:nowrap}
+.role{font-size:14px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--fc)}
+.card p{margin:0;font-size:16px;color:var(--paper)}
+.card .ctr{color:var(--dim);font-size:15px}
+.card .ctr i{font-style:normal;color:var(--gem);font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:13px;margin-right:4px}
+.ar{display:flex;gap:6px;flex-wrap:wrap;margin-top:2px}
+.ar span{font:600 12px/1 var(--f-data);padding:4px 6px;border:1px solid var(--line);color:var(--dim)}
+.tbl{overflow-x:auto;border:1px solid var(--line)}
+table{border-collapse:collapse;width:100%;min-width:640px;font-size:15px}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font:600 12px/1.2 var(--f-data);letter-spacing:.08em;text-transform:uppercase;color:var(--dim);background:var(--ink-2)}
+td b{font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+td small{display:block;color:var(--dim);font-family:var(--f-data);font-size:12px;margin-top:2px}
+.n{color:var(--signal)} .v{color:var(--void)}
+.note{color:var(--dim);font-size:15px;max-width:75ch;margin:0}
+@media (max-width:420px){ .grid{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div class="eye">Seraph Breaker · Bestiyer taslağı · Arena genişletmesi</div>
+    <h1>Şehri saran <em>makineler</em> ve göğün <em>melekleri</em></h1>
+    <p class="lede">Mevcut 4 mob ve 3 bossun yanına arenaları dolduracak 9 yeni mob, 4 yeni boss ve bedava çeşitlilik için bir varyant örneği. Hepsi oyunun kendi Three.js parça diliyle çizildi, yani doğrudan models.js'e taşınabilir.</p>
+    <div class="legend"><span>■ = tehdit seviyesi</span><span>A1 Outer City · A2 Night Harbor · A3 Heaven's Gate · A4+ karışık</span></div>
+  </header>
+
+  <nav class="bar" aria-label="Filtre">
+    <button class="chip" id="f-all" data-f="all" aria-pressed="true">Tümü</button>
+    <button class="chip" id="f-yeni" data-f="yeni" aria-pressed="false">Yeni</button>
+    <button class="chip" id="f-mevcut" data-f="mevcut" aria-pressed="false">Mevcut</button>
+    <span class="sep" aria-hidden="true"></span>
+    <button class="chip" id="g-all" data-g="all" aria-pressed="true">İki taraf</button>
+    <button class="chip" id="g-mak" data-g="Makine" aria-pressed="false">Makine</button>
+    <button class="chip" id="g-mel" data-g="Melek" aria-pressed="false">Melek</button>
+  </nav>
+
+  <section>
+    <div class="sh"><h2>Moblar</h2><span class="cnt" id="cMob"></span></div>
+    <div class="grid" id="gMob"></div>
+  </section>
+  <section>
+    <div class="sh"><h2>Bosslar</h2><span class="cnt" id="cBoss"></span></div>
+    <div class="grid" id="gBoss"></div>
+  </section>
+
+  <section>
+    <div class="sh"><h2>Arena havuzları</h2><span class="cnt">boss slotları her denemede havuzdan rastgele</span></div>
+    <div class="tbl"><table>
+      <thead><tr><th>Arena</th><th>Mob havuzu</th><th>Boss havuzu (10·20·30…)</th><th>Arena kuralı</th></tr></thead>
+      <tbody>
+        <tr><td><b>A1 · Outer City</b><small>30 oda</small></td><td>Drone, <span class="n">Spark</span>, <span class="n">Crawler</span>, Heavy, <span class="n">Howitzer</span></td><td>Iron Colossus, <span class="n">Hive Carrier</span>, <span class="n">Siege Arachne</span></td><td>Yok, öğretici arena</td></tr>
+        <tr><td><b>A2 · Night Harbor</b><small>40 oda</small></td><td>Seraph, Warden, <span class="n">Shardling</span>, <span class="n">Lancer</span>, <span class="n">Bulwark</span>, Drone</td><td>Prism Angel, <span class="n">Siege Arachne</span>, <span class="n">Hive Carrier</span></td><td>Mermiler %15 hızlı</td></tr>
+        <tr><td><b>A3 · Heaven's Gate</b><small>50 oda</small></td><td>Seraph, Warden, <span class="n">Cherub</span>, <span class="n">Censer</span>, <span class="n">Ophan</span>, Heavy</td><td>The Last Seraph, <span class="n">Ophanim Throne</span>, <span class="n">Archon</span></td><td>Elitler ikili gelir</td></tr>
+        <tr><td><b>A4+ · Karışık</b><small>50 oda</small></td><td>İki taraf birlikte, <span class="v">corrupted</span> elitler</td><td>Tüm bosslar + <span class="v">corrupted varyantlar</span></td><td>Her arenada 2 modifier</td></tr>
+      </tbody>
+    </table></div>
+    <p class="note">Her arenada 5 boss slotu var ve en az 3 boss havuzda. Aynı boss arka arkaya gelmez. A4 ve sonrasında yeni model gerekmiyor; varyant renkleri, saldırı havuzu kombinasyonları ve modifier'lar çeşitliliği taşıyor.</p>
+  </section>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const V3=THREE.Vector3, clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+/* ---- oyunun renderer.js yardımcıları (birebir) ---- */
+const grad=(()=>{ const d=new Uint8Array([80,80,80,255,165,165,165,255,255,255,255,255]); const t=new THREE.DataTexture(d,3,1,THREE.RGBAFormat); t.minFilter=t.magFilter=THREE.NearestFilter; t.needsUpdate=true; return t; })();
+const toon=(c,e=0)=>new THREE.MeshToonMaterial({color:c,gradientMap:grad,emissive:e});
+const outlineMat=new THREE.MeshBasicMaterial({color:0x0a0610,side:THREE.BackSide});
+const basicCache={};
+function basic(c,add=true,op=1){ const k=c+'_'+add+'_'+op; return basicCache[k]||(basicCache[k]=new THREE.MeshBasicMaterial({color:c,transparent:op<1||add,opacity:op,blending:add?THREE.AdditiveBlending:THREE.NormalBlending,depthWrite:!add})); }
+const addMat=(c,op=1)=>new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:op,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide});
+const box=(x,y,z)=>new THREE.BoxGeometry(x,y,z);
+function part(geo,mat,parent,x=0,y=0,z=0,t=.09){
+  const m=new THREE.Mesh(geo,mat); m.position.set(x,y,z); parent.add(m);
+  if(t){ geo.computeBoundingBox(); const s=new V3(); geo.boundingBox.getSize(s); const o=new THREE.Mesh(geo,outlineMat); o.scale.set((s.x+t)/(s.x||1),(s.y+t)/(s.y||1),(s.z+t)/(s.z||1)); m.add(o); }
+  return m;
+}
+const blob=r=>{ const m=new THREE.Mesh(new THREE.CircleGeometry(r,18),new THREE.MeshBasicMaterial({color:0,transparent:true,opacity:.34,depthWrite:false})); m.rotation.x=-Math.PI/2; m.position.y=.03; return m; };
+
+/* ---- oyunun models.js modelleri (birebir) ---- */
+function buildMech(c1,c2,c3,eye,scale=1,frame=''){
+  const g=new THREE.Group(); const M1=toon(c1),M2=toon(c2),M3=toon(c3),ME=basic(eye,false);
+  const hips=new THREE.Group(); hips.position.y=1.6; g.add(hips);
+  const torso=new THREE.Group(); hips.add(torso);
+  part(box(.85,.45,.55),M3,torso,0,.15,0); part(box(1.25,.8,.78),M1,torso,0,.75,0); part(box(.75,.42,.2),M2,torso,0,.82,.43,.06); part(box(.5,.25,.5),M3,torso,0,1.2,0);
+  const head=new THREE.Group(); head.position.set(0,1.42,.05); torso.add(head);
+  part(box(.36,.4,.5),M1,head,0,.12,0); part(box(.3,.18,.3),M3,head,0,-.06,.18,.05);
+  const hl=.6; const horn=part(new THREE.ConeGeometry(.07,hl,5),M2,head,0,.3+hl*.25,.22,.05); horn.rotation.x=.5;
+  const eyes=new THREE.Mesh(box(.3,.07,.06),ME); eyes.position.set(0,.14,.26); head.add(eyes);
+  const sf=1, arms=[];
+  [-1,1].forEach(s=>{ const sh=part(box(.5*sf,.72*sf,.85*sf),M1,torso,s*.88,1.02,0); part(box(.06,.5*sf,.6*sf),M2,sh,s*.26*sf,0,0,.04);
+    const arm=new THREE.Group(); arm.position.set(s*.86,.92,0); torso.add(arm); part(box(.28,.6,.28),M3,arm,0,-.38,0,.06); part(box(.36,.62,.4),M1,arm,0,-.92,0); arms.push(arm); });
+  const rifle=part(box(.2,1.5,.26),M3,arms[1],0,-1.45,.12,.07); part(box(.22,.4,.32),M2,rifle,0,.25,0,.05);
+  const legs=[],shins=[];
+  [-1,1].forEach(s=>{ const leg=new THREE.Group(); leg.position.set(s*.3,0,0); hips.add(leg); part(box(.38,.8,.42),M3,leg,0,-.4,0,.07);
+    const shin=new THREE.Group(); shin.position.y=-.8; leg.add(shin); part(box(.44,.82,.52),M1,shin,0,-.38,0); part(box(.46,.18,.75),M2,shin,0,-.73,.1,.06); legs.push(leg); shins.push(shin); });
+  g.scale.setScalar(scale);
+  return {g,hips,torso,head,arms,legs,shins,rifle,mats:[M1,M2,M3],shadow:blob(.9*scale)};
+}
+function animMech(m,walk,amt){
+  const s=Math.sin(walk), c=Math.cos(walk), A=.5*amt;
+  const a0=s*A, a1=-s*A, b0=Math.max(0,-c)*1.1*amt, b1=Math.max(0,c)*1.1*amt;
+  m.legs[0].rotation.x=a0; m.legs[1].rotation.x=a1; m.shins[0].rotation.x=b0; m.shins[1].rotation.x=b1;
+  const reach=(a,b)=>.8*Math.cos(a)+.82*Math.cos(a+b); m.hips.position.y=Math.max(reach(a0,b0),reach(a1,b1))-.02;
+  m.arms[0].rotation.x=-s*.45*amt-.2; m.arms[1].rotation.x=-1.45; m.torso.rotation.y=-s*.1*amt; m.torso.rotation.x=.09*amt;
+}
+function buildSeraph(scale=1){
+  const g=new THREE.Group(); const body=new THREE.Group(); body.position.y=2.1; g.add(body); const MW=toon(0xeee8f4),MD=toon(0x2a2232);
+  const crystal=part(new THREE.OctahedronGeometry(.8,0),MW,body,0,0,0,.1); crystal.scale.y=1.6; part(new THREE.OctahedronGeometry(.32,0),MD,body,0,-1.25,0,.06);
+  const core=new THREE.Mesh(new THREE.SphereGeometry(.28,14,10),basic(0xff2a3a,false)); core.position.z=.55; body.add(core);
+  const halo=new THREE.Mesh(new THREE.TorusGeometry(.6,.05,6,32),basic(0xffd36a,false)); halo.rotation.x=Math.PI/2; halo.position.y=1.75; body.add(halo);
+  const wings=[]; [-1,1].forEach(s=>{ const w=part(box(1.5,.08,.5),MW,body,s*1.1,.3,-.2,.06); w.rotation.z=s*.5; wings.push(w); const w2=part(box(1.1,.06,.36),MW,body,s*.95,-.15,-.2,.05); w2.rotation.z=s*.15; wings.push(w2); });
+  g.scale.setScalar(scale); return {g,body,core,halo,wings,mats:[MW,MD],shadow:blob(.8*scale)};
+}
+function buildWarden(){
+  const g=new THREE.Group(); const body=new THREE.Group(); body.position.y=2.6; g.add(body); const MW=toon(0xe8e2f0),MG=toon(0xd4a640);
+  part(new THREE.SphereGeometry(.7,16,12),MW,body,0,0,0,.1);
+  const eye=new THREE.Mesh(new THREE.TorusGeometry(.3,.09,8,24),basic(0xff2a3a,false)); eye.position.z=.66; body.add(eye);
+  const pupil=new THREE.Mesh(new THREE.SphereGeometry(.12,10,8),basic(0x0a0610,false)); pupil.position.z=.7; body.add(pupil);
+  const r1=part(new THREE.TorusGeometry(1.1,.07,6,40),MG,body,0,0,0,.05), r2=part(new THREE.TorusGeometry(1.35,.05,6,40),MG,body,0,0,0,.04);
+  return {g,body,rings:[r1,r2],eye,mats:[MW,MG],shadow:blob(.9)};
+}
+function buildColossus(){
+  const m=buildMech(0x3a3d48,0xd2382a,0x1c1d24,0xff2a2a,3); const MP=toon(0x2a2c34);
+  [-1,1].forEach(s=>{ const pod=part(box(.62,.5,.9),MP,m.torso,s*1.0,1.68,-.1,.06); for(let i=0;i<3;i++){ const t=new THREE.Mesh(box(.12,.12,.06),basic(0xff3a2a,false)); t.position.set(-.18+i*.18,.08,.46); pod.add(t);} });
+  m.shadow=blob(2.6); return m;
+}
+function buildPrism(){
+  const g=new THREE.Group(); const body=new THREE.Group(); body.position.y=5; g.add(body); const MB=toon(0x3a78ff),MC=toon(0x9ad0ff);
+  const crystal=part(new THREE.OctahedronGeometry(2.6,0),MB,body,0,0,0,.18);
+  const core=new THREE.Mesh(new THREE.SphereGeometry(.7,18,12),basic(0xff2236,false)); core.position.z=1.6; body.add(core); core.add(new THREE.Mesh(new THREE.SphereGeometry(1.05,18,12),basic(0xff3048,true,.3)));
+  const shards=[]; for(let i=0;i<6;i++){ const s=part(new THREE.OctahedronGeometry(.45,0),MC,body,0,0,0,.06); s.scale.y=1.8; shards.push(s); }
+  const ring=new THREE.Mesh(new THREE.TorusGeometry(3.6,.05,6,64),basic(0x8ad8ff,true,.7)); ring.rotation.x=Math.PI/2; body.add(ring);
+  return {g,body,crystal,core,shards,ring,mats:[MB,MC],shadow:blob(2.8)};
+}
+function buildSeraphBoss(){
+  const g=new THREE.Group(); const body=new THREE.Group(); body.position.y=5.2; g.add(body); const MW=toon(0xf2eef8),MB=toon(0x1c1626),MG=toon(0xd9c9ff);
+  const crystal=part(new THREE.OctahedronGeometry(2,0),MW,body,0,0,0,.18); crystal.scale.set(1,1.7,1);
+  const inner=part(new THREE.OctahedronGeometry(1.2,0),MB,body,0,-2.6,0,.12); inner.scale.y=1.3;
+  const core=new THREE.Mesh(new THREE.SphereGeometry(.8,20,14),basic(0xff2236,false)); core.position.z=1.35; body.add(core); core.add(new THREE.Mesh(new THREE.SphereGeometry(1.2,20,14),basic(0xff3048,true,.35)));
+  const mask=part(box(.9,1.1,.15),MW,body,0,1.6,1.05,.08); [-1,1].forEach(s=>{ const h=new THREE.Mesh(box(.18,.26,.05),basic(0x0a0610,false)); h.position.set(s*.2,.12,.09); mask.add(h); });
+  const halo=new THREE.Mesh(new THREE.TorusGeometry(1.6,.1,8,48),basic(0xffd36a,false)); halo.rotation.x=Math.PI/2; halo.position.y=4; body.add(halo);
+  const rings=[0,1].map(i=>{ const r=new THREE.Mesh(new THREE.TorusGeometry(3.4+i*.7,.06,6,64),basic(i?0xff6a1a:0xffffff,true,.7)); body.add(r); return r; });
+  const wings=new THREE.Group(); wings.position.z=-.6; body.add(wings);
+  for(let i=0;i<6;i++){ const s=i<3?-1:1,k=i%3; const piv=new THREE.Group(); piv.rotation.z=s*(.45+k*.42); wings.add(piv); part(box(.5,4.6-k*.8,.14),MG,piv,0,2.6-k*.3,0,.08); piv.userData.base=piv.rotation.z; piv.userData.s=s; }
+  return {g,body,core,halo,rings,wings,mats:[MW,MB,MG],shadow:blob(3)};
+}
+
+/* ================= YENİ MODELLER ================= */
+// Crawler: dört bacaklı küçük örümcek tank. Arachne bossu bunun büyütülmüş hali.
+function buildCrawler(scale=1,pal){
+  const P=pal||{c1:0x4c4658,c2:0x9a2c42,c3:0x24202c,eye:0xff2a2a};
+  const g=new THREE.Group(), body=new THREE.Group(); body.position.y=1.15; g.add(body);
+  const M1=toon(P.c1),M2=toon(P.c2),M3=toon(P.c3),ME=basic(P.eye,false);
+  part(box(1.6,.5,1.9),M1,body,0,0,0); part(box(1.1,.3,1.2),M3,body,0,.38,-.1,.06); part(box(1.62,.12,.4),M2,body,0,.05,.78,.04);
+  const tur=new THREE.Group(); tur.position.set(0,.68,.1); body.add(tur);
+  part(box(.75,.34,.75),M1,tur,0,0,0); [-1,1].forEach(s=>part(box(.1,.1,.95),M3,tur,s*.17,0,.62,.04));
+  const eye=new THREE.Mesh(box(.5,.07,.05),ME); eye.position.set(0,.06,.39); tur.add(eye);
+  const legs=[];
+  [[1,1],[-1,1],[1,-1],[-1,-1]].forEach(([sx,sz],i)=>{
+    const leg=new THREE.Group(); leg.position.set(sx*.75,0,sz*.75); leg.rotation.y=Math.atan2(-sz,sx); body.add(leg);
+    const th=part(box(.95,.2,.22),M3,leg,.4,.28,0,.06); th.rotation.z=.55;
+    const sh=part(box(.2,1.55,.22),M1,leg,.92,-.28,0,.06); sh.rotation.z=.12;
+    part(new THREE.ConeGeometry(.14,.3,4),M2,leg,1.0,-1.05,0,.04).rotation.z=Math.PI;
+    legs.push(leg); leg.userData.i=i; leg.userData.ry=leg.rotation.y;
+  });
+  g.scale.setScalar(scale);
+  return {g,body,tur,legs,mats:[M1,M2,M3],shadow:blob(1.4*scale)};
+}
+// Lancer: ince, uzun namlulu keskin nişancı mech. Ateşten önce kırmızı lazer çizgisi.
+function buildLancer(){
+  const m=buildMech(0x3e4a5a,0xe8e8ee,0x1c2028,0x3ad0ff,1.05); const M3=m.mats[2], M2=m.mats[1];
+  part(box(.1,1.6,.1),M3,m.rifle,0,-1.5,0,.04); part(box(.16,.3,.16),M2,m.rifle,0,-.5,-.2,.04);
+  part(box(.16,.34,.2),M3,m.rifle,0,.1,-.22,.04);
+  const laser=new THREE.Mesh(box(.035,7,.035),basic(0xff2a3a,true,.75)); laser.position.y=-5.8; m.rifle.add(laser);
+  const ant=part(box(.05,.9,.05),M3,m.torso,-.4,1.6,-.3,.03); ant.rotation.z=.15;
+  part(box(.9,.5,.35),M3,m.torso,0,.9,-.5,.06);
+  laser.userData.nofit=1; m.laser=laser; m.shadow=blob(.95); return m;
+}
+// Howitzer: paletli havan. Yere hedef çemberi çizip yay şeklinde mermi atar.
+function buildHowitzer(){
+  const g=new THREE.Group(), body=new THREE.Group(); body.position.y=.4; g.add(body);
+  const M1=toon(0x5a5244),M2=toon(0xc08a2a),M3=toon(0x2a2620),ME=basic(0xff3030,false);
+  [-1,1].forEach(s=>{ part(box(.55,.6,2.3),M3,body,s*.85,0,0); part(box(.57,.1,2.32),M2,body,s*.85,.32,0,.04); });
+  part(box(1.3,.7,1.7),M1,body,0,.45,0); part(box(.8,.42,.6),M1,body,0,.98,.45,.06);
+  const e=new THREE.Mesh(box(.5,.07,.05),ME); e.position.set(0,1.02,.76); body.add(e);
+  const mort=new THREE.Group(); mort.position.set(0,.95,-.35); mort.rotation.x=.55; body.add(mort);
+  part(new THREE.CylinderGeometry(.3,.36,1.7,10),M3,mort,0,.8,0);
+  const mouth=new THREE.Mesh(new THREE.TorusGeometry(.32,.07,6,16),M2); mouth.rotation.x=Math.PI/2; mouth.position.y=1.65; mort.add(mouth);
+  part(box(.6,.4,.5),M2,body,0,.6,-1.05,.05);
+  const target=new THREE.Mesh(new THREE.RingGeometry(1.1,1.25,32),addMat(0xff3a2a,.7)); target.rotation.x=-Math.PI/2; target.position.set(0,.05,3.2); target.userData.nofit=1; g.add(target);
+  return {g,body,mort,target,mats:[M1,M2,M3],shadow:blob(1.5)};
+}
+// Bulwark: önden mermi bloklayan dev kalkanlı mech. Delici mermi ya da yandan saldırı ister.
+function buildBulwark(){
+  const m=buildMech(0x5a5244,0xc08a2a,0x2a2620,0xff3030,1.15);
+  const sh=new THREE.Group(); sh.position.set(0,.7,1.05); m.torso.add(sh);
+  part(box(1.9,2.5,.2),toon(0x3a3d48),sh,0,-.3,0,.08); part(box(1.5,.18,.24),toon(0xc08a2a),sh,0,.55,0,.04);
+  const slit=new THREE.Mesh(box(.8,.08,.06),basic(0xff3030,false)); slit.position.set(0,.2,.13); sh.add(slit);
+  const hex=new THREE.Mesh(new THREE.RingGeometry(.55,.68,6),addMat(0xff7a2a,.9)); hex.position.set(0,-.55,.13); hex.rotation.z=Math.PI/6; sh.add(hex);
+  m.hex=hex; m.shadow=blob(1.1); return m;
+}
+// Spark: dikenli küçük kamikaze küre. Yuvarlanır, yanıp söner, patlar.
+function buildSpark(){
+  const g=new THREE.Group(), body=new THREE.Group(); body.position.y=.75; g.add(body);
+  const M1=toon(0x2a2632),M2=toon(0xd5352a);
+  part(new THREE.IcosahedronGeometry(.62,0),M1,body,0,0,0,.08);
+  [[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]].forEach(d=>{ const c=part(new THREE.ConeGeometry(.15,.5,4),M2,body,d[0]*.68,d[1]*.68,d[2]*.68,.04); c.lookAt(new V3(d[0]*3,d[1]*3,d[2]*3)); c.rotateX(Math.PI/2); });
+  const core=new THREE.Mesh(new THREE.SphereGeometry(.34,12,8),basic(0xffa040,true,.9)); body.add(core);
+  const warn=new THREE.Mesh(new THREE.RingGeometry(1.6,1.75,32),addMat(0xffa040,.6)); warn.rotation.x=-Math.PI/2; warn.position.y=.05; warn.userData.nofit=1; g.add(warn);
+  return {g,body,core,warn,mats:[M1,M2],shadow:blob(.6)};
+}
+// Shardling: kristal küme. Ölünce iki küçük kopyaya bölünür.
+function buildShardling(){
+  const g=new THREE.Group(), body=new THREE.Group(); body.position.y=1.7; g.add(body);
+  const MB=toon(0x3a78ff),MC=toon(0x9ad0ff);
+  const main=part(new THREE.OctahedronGeometry(.6,0),MB,body,0,0,0,.08); main.scale.y=1.7;
+  const subs=[]; for(let i=0;i<4;i++){ const a=i/4*Math.PI*2; const s=part(new THREE.OctahedronGeometry(.28,0),MC,body,Math.cos(a)*.75,(i%2?.3:-.3),Math.sin(a)*.75,.05); s.scale.y=1.8; s.rotation.z=(i%2?.4:-.4); subs.push(s); }
+  const core=new THREE.Mesh(new THREE.SphereGeometry(.18,10,8),basic(0xff2236,false)); core.position.z=.42; body.add(core);
+  return {g,body,subs,mats:[MB,MC],shadow:blob(.8)};
+}
+// Cherub: küçük koro meleği. Saldırmaz, çevresindeki düşmanları iyileştirir ve kalkan verir. Öncelikli hedef.
+function buildCherub(){
+  const g=new THREE.Group(), body=new THREE.Group(); body.position.y=2.2; g.add(body);
+  const MW=toon(0xf6f0e6),MG=toon(0xd9a520);
+  part(new THREE.SphereGeometry(.45,14,10),MW,body,0,0,0,.08);
+  const sk=part(new THREE.ConeGeometry(.42,.8,6),MW,body,0,-.62,0,.06); sk.rotation.x=Math.PI;
+  const band=new THREE.Mesh(box(.5,.08,.05),basic(0xffd36a,false)); band.position.set(0,.05,.44); body.add(band);
+  const halo=new THREE.Mesh(new THREE.TorusGeometry(.42,.05,6,28),basic(0xffd36a,false)); halo.rotation.x=Math.PI/2; halo.position.y=.75; body.add(halo);
+  const wings=[]; [-1,1].forEach(s=>{ [0,1].forEach(k=>{ const piv=new THREE.Group(); piv.position.set(s*.3,.05-k*.25,-.2); body.add(piv); const w=part(box(.9-k*.25,.06,.32),k?MG:MW,piv,s*(.45-k*.1),0,0,.05); piv.userData.s=s; piv.userData.k=k; wings.push(piv); }); });
+  const aura=new THREE.Mesh(new THREE.RingGeometry(2.2,2.35,40),addMat(0x7dff9a,.55)); aura.rotation.x=-Math.PI/2; aura.position.y=.05; aura.userData.nofit=1; g.add(aura);
+  return {g,body,halo,wings,aura,mats:[MW,MG],shadow:blob(.6)};
+}
+// Ophan: iç içe dönen göz dolu iki çember. Düz çizgide yuvarlanır, arkasında mermi bırakır.
+function buildOphan(scale=1,R=1.3,nr=2,ne=4){
+  const g=new THREE.Group(), body=new THREE.Group(); body.position.y=(R+1.1); g.add(body);
+  const MG=toon(0xd9a520),MW=toon(0xf2eef8);
+  const rings=[];
+  for(let r=0;r<nr;r++){ const rr=R+r*.45; const ring=part(new THREE.TorusGeometry(rr,.13,8,40),MG,body,0,0,0,.06);
+    if(r===1) ring.rotation.y=Math.PI/2; if(r===2) ring.rotation.x=Math.PI/2;
+    for(let i=0;i<ne;i++){ const a=i/ne*Math.PI*2+r; const eg=new THREE.Group(); eg.position.set(Math.cos(a)*rr,Math.sin(a)*rr,0); ring.add(eg);
+      part(new THREE.SphereGeometry(.2,10,8),MW,eg,0,0,0,.05); const p=new THREE.Mesh(new THREE.SphereGeometry(.09,8,6),basic(0xff2a3a,false)); p.position.z=.16; eg.add(p); }
+    rings.push(ring); }
+  const core=new THREE.Mesh(new THREE.OctahedronGeometry(.42,0),basic(0xff2236,false)); body.add(core);
+  core.add(new THREE.Mesh(new THREE.SphereGeometry(.7,14,10),basic(0xff6a3a,true,.25)));
+  g.scale.setScalar(scale);
+  return {g,body,rings,core,mats:[MG,MW],shadow:blob(1.2*scale)};
+}
+// Censer: zincirli buhurdan. Yavaş, güdümlü ışık küreleri saçar; yerde iz bırakır.
+function buildCenser(){
+  const g=new THREE.Group(), body=new THREE.Group(); body.position.y=3.6; g.add(body);
+  const MG=toon(0xd9a520),MD=toon(0x2a2232);
+  const halo=part(new THREE.TorusGeometry(.55,.07,6,28),MG,body,0,0,0,.04); halo.rotation.x=Math.PI/2;
+  const swing=new THREE.Group(); body.add(swing);
+  [0,1,2].forEach(i=>{ const a=i/3*Math.PI*2; const c=part(box(.04,1.1,.04),MG,swing,Math.cos(a)*.35,-.55,Math.sin(a)*.35,0); c.rotation.z=Math.cos(a)*.25; c.rotation.x=-Math.sin(a)*.25; });
+  const cage=part(new THREE.OctahedronGeometry(.62,0),MD,swing,0,-1.5,0,.08); cage.scale.y=1.35;
+  const glow=new THREE.Mesh(new THREE.SphereGeometry(.42,12,8),basic(0xffd36a,true,.85)); glow.position.y=-1.5; swing.add(glow);
+  const cap=part(new THREE.ConeGeometry(.35,.4,6),MG,swing,0,-.75,0,.04);
+  const orbs=[]; for(let i=0;i<3;i++){ const o=new THREE.Mesh(new THREE.SphereGeometry(.22,10,8),basic(0xffe9a0,true,.8)); body.add(o); orbs.push(o); }
+  return {g,body,swing,glow,orbs,mats:[MG,MD],shadow:blob(.7)};
+}
+
+/* ---- yeni bosslar ---- */
+// Hive Carrier: dört rotorlu uçan taşıyıcı. Drone indirir, hat boyu bombalama yapar.
+function buildHive(){
+  const g=new THREE.Group(), body=new THREE.Group(); body.position.y=5; g.add(body);
+  const M1=toon(0x3a3d48),M2=toon(0xd2382a),M3=toon(0x1c1d24);
+  part(box(3.6,1.2,5.6),M1,body,0,0,0,.14); part(new THREE.ConeGeometry(1.2,1.6,4),M1,body,0,0,3.4,.1).rotation.set(Math.PI/2,Math.PI/4,0);
+  part(box(1.6,.8,1.6),M3,body,0,.95,1.4,.08); const e=new THREE.Mesh(box(1.1,.12,.06),basic(0xff2a2a,false)); e.position.set(0,1.05,2.22); body.add(e);
+  part(box(3.7,.22,.5),M2,body,0,.3,-1.8,.05);
+  const bay=new THREE.Mesh(box(2.2,.08,3.2),basic(0xff6a1a,true,.8)); bay.position.y=-.64; body.add(bay);
+  [-1,1].forEach(s=>{ const pod=part(box(.6,.6,1.8),M3,body,s*2.1,-.2,.6,.06); for(let i=0;i<3;i++){ const t=new THREE.Mesh(box(.14,.14,.06),basic(0xff3a2a,false)); t.position.set(0,.05-i*.0,.92); t.position.x=(-.18+i*.18); pod.add(t);} });
+  const rotors=[];
+  [[1,1],[-1,1],[1,-1],[-1,-1]].forEach(([sx,sz])=>{ const arm=part(box(1.5,.25,.35),M3,body,sx*2.4,.2,sz*2.1,.05); arm.rotation.y=sx*sz*.6;
+    const hub=new THREE.Group(); hub.position.set(sx*3.2,.35,sz*2.7); body.add(hub);
+    const ring=part(new THREE.TorusGeometry(1.15,.1,6,32),M1,hub,0,0,0,.05); ring.rotation.x=Math.PI/2;
+    const bl=new THREE.Group(); hub.add(bl); part(box(2,.06,.26),M2,bl,0,0,0,.03); part(box(.26,.06,2),M2,bl,0,0,0,.03); rotors.push(bl); });
+  return {g,body,rotors,bay,mats:[M1,M2,M3],shadow:blob(3.4)};
+}
+// Siege Arachne: dev örümcek kuşatma makinesi. Kafa lazeriyle süpürür, mayın tarlası döşer.
+function buildArachne(){
+  const m=buildCrawler(2.6,{c1:0x3a3d48,c2:0xd2382a,c3:0x1c1d24,eye:0xff2a2a});
+  const M3=m.mats[2];
+  const can=part(new THREE.CylinderGeometry(.22,.3,1.3,10),M3,m.tur,0,.05,.95,.05); can.rotation.x=Math.PI/2;
+  const lens=new THREE.Mesh(new THREE.SphereGeometry(.2,12,8),basic(0xff2236,false)); lens.position.set(0,.05,1.62); m.tur.add(lens);
+  lens.add(new THREE.Mesh(new THREE.SphereGeometry(.34,12,8),basic(0xff3048,true,.35)));
+  [-1,0,1].forEach(i=>{ const sp=part(new THREE.ConeGeometry(.12,.55,4),m.mats[1],m.body,i*.4,.7,-.75,.03); sp.rotation.x=-.4; });
+  m.lens=lens; m.shadow=blob(3.6); return m;
+}
+// Ophanim Throne: üç çemberli, gözlerle kaplı taht. Dönen mermi duvarları, yuvarlanarak hücum.
+function buildThrone(){
+  const m=buildOphan(1,2.4,3,8);
+  const MW=toon(0xf2eef8);
+  const wings=new THREE.Group(); wings.position.z=-.8; m.body.add(wings);
+  for(let i=0;i<4;i++){ const s=i<2?-1:1,k=i%2; const piv=new THREE.Group(); piv.rotation.z=s*(.7+k*.6); wings.add(piv); part(box(.5,4.2-k*.9,.14),MW,piv,0,2.6,0,.07); piv.userData.base=piv.rotation.z; piv.userData.s=s; }
+  const halo=new THREE.Mesh(new THREE.TorusGeometry(1.1,.1,8,40),basic(0xffd36a,false)); halo.rotation.x=Math.PI/2; halo.position.y=4; m.body.add(halo);
+  m.wings=wings; m.shadow=blob(3.2); return m;
+}
+// Archon: zırhlı melek yargıç. Kılıçla hat boyu kesik, atılma, kalkan fazında mermi yansıtır.
+function buildArchon(){
+  const g=new THREE.Group(), body=new THREE.Group(); body.position.y=4.6; g.add(body);
+  const MW=toon(0xf2eef8),MG=toon(0xd9a520),MD=toon(0x1c1626),ML=toon(0xd9c9ff);
+  const tor=part(new THREE.OctahedronGeometry(1.3,0),MW,body,0,0,0,.14); tor.scale.set(1,1.4,.8);
+  part(box(1.1,1,.5),MG,body,0,.35,.6,.08);
+  const core=new THREE.Mesh(new THREE.SphereGeometry(.28,12,8),basic(0xff2236,false)); core.position.set(0,.35,.9); body.add(core);
+  const sk=part(new THREE.ConeGeometry(1,2.4,6),MD,body,0,-2.2,0,.1); sk.rotation.x=Math.PI;
+  const head=new THREE.Group(); head.position.y=2.15; body.add(head);
+  part(box(.85,1.05,.85),MW,head,0,0,0,.08); const vis=new THREE.Mesh(box(.6,.1,.06),basic(0xff2236,false)); vis.position.set(0,.05,.45); head.add(vis);
+  part(new THREE.ConeGeometry(.14,1,4),MG,head,0,.95,-.1,.04);
+  [-1,1].forEach(s=>part(box(.9,.5,1),MG,body,s*1.25,1.1,0,.07));
+  const sword=new THREE.Group(); sword.position.set(1.75,.4,.6); sword.rotation.z=-.35; sword.rotation.x=-.25; body.add(sword);
+  part(box(.32,4.8,.12),ML,sword,0,2.6,0,.07); part(new THREE.ConeGeometry(.23,.6,4),ML,sword,0,5.3,0,.04);
+  part(box(1.1,.2,.3),MG,sword,0,.15,0,.05); part(box(.16,.8,.16),MD,sword,0,-.35,0,.04);
+  const edge=new THREE.Mesh(box(.08,4.8,.14),basic(0xffd36a,true,.7)); edge.position.set(.18,2.6,0); sword.add(edge);
+  const shield=new THREE.Group(); shield.position.set(-1.75,.1,.7); shield.rotation.y=-.4; body.add(shield);
+  part(box(1.7,2.6,.2),MG,shield,0,0,0,.08);
+  const hx=new THREE.Mesh(new THREE.RingGeometry(.5,.62,6),addMat(0xffd36a,.9)); hx.position.z=.12; hx.rotation.z=Math.PI/6; shield.add(hx);
+  const wings=new THREE.Group(); wings.position.set(0,.8,-.7); body.add(wings);
+  for(let i=0;i<4;i++){ const s=i<2?-1:1,k=i%2; const piv=new THREE.Group(); piv.rotation.z=s*(.55+k*.55); wings.add(piv); part(box(.42,3.6-k*.8,.12),MW,piv,0,2.1,0,.06); piv.userData.base=piv.rotation.z; piv.userData.s=s; }
+  const halo=new THREE.Mesh(new THREE.TorusGeometry(.8,.07,6,32),basic(0xffd36a,false)); halo.rotation.x=Math.PI/2; halo.position.y=3.1; body.add(halo);
+  return {g,body,sword,shield,wings,halo,mats:[MW,MG,MD,ML],shadow:blob(2.2)};
+}
+// Corrupted Colossus: mevcut modelin renk kayması + mor kristal sırt dikenleri. Varyant sistemine örnek.
+function buildCorrupted(){
+  const m=buildColossus(); const tint=new THREE.Color(0x6a1a5a);
+  m.g.traverse(o=>{ if(o.isMesh&&o.material&&o.material.isMeshToonMaterial) o.material.color.lerp(tint,.45); });
+  const MV=basic(0xb070ff,false);
+  [[-.35,1.45,-.45,.6],[.35,1.5,-.45,.7],[0,1.75,-.5,.9],[-.6,1.2,-.4,.45],[.6,1.2,-.4,.5]].forEach(([x,y,z,s])=>{ const c=part(new THREE.OctahedronGeometry(.22*s/.5,0),MV,m.torso,x,y,z,.03); c.scale.y=2.2; c.rotation.x=-.5; });
+  const aura=new THREE.Mesh(new THREE.RingGeometry(4,4.25,48),addMat(0xb070ff,.55)); aura.rotation.x=-Math.PI/2; aura.position.y=.05; aura.userData.nofit=1; m.g.add(aura);
+  return m;
+}
+
+/* ================= KADRO VERİSİ ================= */
+const MAK='Makine', MEL='Melek';
+const ROSTER=[
+  /* mevcut moblar */
+  {k:'mob',st:'mevcut',fac:MAK,name:'Drone',role:'Temel nişancı',thr:1,ar:['A1','A2'],build:()=>buildMech(0x4c4658,0x9a2c42,0x24202c,0xff2a2a,.8),an:'mech',
+   d:'Mesafe koruyup tek mermi atar, yan yan dolaşır.',c:'Her silah işe yarar, sadece kalabalıkta tehlikeli.'},
+  {k:'mob',st:'mevcut',fac:MAK,name:'Heavy',role:'Saçma tank',thr:3,ar:['A1','A3'],build:()=>buildMech(0x5a5244,0xc08a2a,0x2a2620,0xff3030,1.25),an:'mech',
+   d:'Yavaş ilerler, 5-7 mermilik yelpaze atar.',c:'Yelpazenin boşluklarından geç, yakın dur.'},
+  {k:'mob',st:'mevcut',fac:MEL,name:'Seraph',role:'Hücumcu',thr:2,ar:['A2','A3'],build:()=>buildSeraph(1),an:'seraph',
+   d:'Havada süzülür, çekirdeği parlayınca düz çizgide hücum eder.',c:'Parlamayı gör, yana dash at.'},
+  {k:'mob',st:'mevcut',fac:MEL,name:'Warden',role:'Mermi halkası',thr:3,ar:['A2','A3'],build:buildWarden,an:'warden',
+   d:'Uzaktan 360° mermi halkası açar. Göz titreyince atış geliyor.',c:'Halkalar arası boşluğa gir, kalkanla karşıla.'},
+  /* yeni moblar */
+  {k:'mob',st:'yeni',fac:MAK,name:'Spark',role:'Kamikaze',thr:1,ar:['A1','A4+'],build:buildSpark,an:'spark',
+   d:'Hızla yuvarlanıp yaklaşır, 1 saniye yanıp söner ve patlar. Gruplar halinde gelir.',c:'Uzaktan vur ya da patlama çemberinden çık. Zincirleme patlamalarla diğer düşmanlara da zarar verir.'},
+  {k:'mob',st:'yeni',fac:MAK,name:'Crawler',role:'Kanat avcısı',thr:2,ar:['A1','A2'],build:()=>buildCrawler(1),an:'crawler',
+   d:'Dört bacakla hızlı yan geçiş yapar, arkasında 2 mayın bırakır, çift namluyla kısa seri atar.',c:'Mayın hattını takip etme, önünü kes. Cryo ile yavaşlat.'},
+  {k:'mob',st:'yeni',fac:MAK,name:'Howitzer',role:'Topçu',thr:3,ar:['A1','A2'],build:buildHowitzer,an:'howitzer',
+   d:'Hareket etmeden yere kırmızı hedef çemberi çizer, 1.2 saniye sonra yay şeklinde mermi düşer. Bloklardan etkilenmez.',c:'Hedef çemberinden çık, sonra üstüne git. Yakında savunmasız.'},
+  {k:'mob',st:'yeni',fac:MAK,name:'Lancer',role:'Keskin nişancı',thr:3,ar:['A2','A4+'],build:buildLancer,an:'lancer',
+   d:'Durur, kırmızı lazer çizgisiyle seni takip eder ve kilitlenince delici, çok hızlı tek atış yapar.',c:'Lazer kilitlenmeden blok arkasına geç ya da dash at. Hook ile üstüne çekil.'},
+  {k:'mob',st:'yeni',fac:MAK,name:'Bulwark',role:'Kalkan duvarı',thr:3,ar:['A2','A3'],build:buildBulwark,an:'bulwark',
+   d:'Önündeki dev kalkan tüm mermileri durdurur. Yavaşça üstüne yürür ve diğer düşmanlara siper olur.',c:'Arkasından ya da yandan vur. Pierce, ricochet, arc ve orbit blades kalkanı atlatır.'},
+  {k:'mob',st:'yeni',fac:MEL,name:'Shardling',role:'Bölünen',thr:2,ar:['A2'],build:buildShardling,an:'shard',
+   d:'Kristal küme, kısa kristal mermiler atar. Ölünce iki küçük kopyaya bölünür, onlar da bir kez daha bölünür.',c:'Alan hasarı ve burn ile temizle. Odayı bunlarla doldurma, en fazla 2-3 tane.'},
+  {k:'mob',st:'yeni',fac:MEL,name:'Cherub',role:'Destek',thr:2,ar:['A3','A4+'],build:buildCherub,an:'cherub',
+   d:'Saldırmaz. Yeşil aurasındaki düşmanları iyileştirir ve 3 saniyelik kalkan verir. Senden kaçar.',c:'Odadaki öncelikli hedef. Arc Caster ve Swarm Pod otomatik bulur.'},
+  {k:'mob',st:'yeni',fac:MEL,name:'Censer',role:'Alan kontrolü',thr:3,ar:['A2','A3'],build:buildCenser,an:'censer',
+   d:'Zincirli buhurdan. Yavaş ve güdümlü ışık küreleri saçar. Küreler 6 saniye yaşar ve hareket alanını daraltır.',c:'Küreleri kalkanla sil ya da EMP at. Kendisi yavaş ve kırılgan.'},
+  {k:'mob',st:'yeni',fac:MEL,name:'Ophan',role:'Yuvarlanan çember',thr:4,ar:['A3','A4+'],build:()=>buildOphan(1),an:'ophan',
+   d:'Göz dolu iki çember. Odayı düz çizgilerle yuvarlanarak geçer, arkasında yavaş mermi izi bırakır. Duvara çarpınca yön değiştirir.',c:'Rotası önceden çizilir, rotadan çekil. Dönüş anında durur, o an vur.'},
+  /* mevcut bosslar */
+  {k:'boss',st:'mevcut',fac:MAK,name:'Iron Colossus',role:'Kuşatma mech',thr:3,ar:['A1'],build:buildColossus,an:'mech',
+   d:'Seri atış, güdümlü füze yelpazesi, yer sarsma şok dalgası, drone çağırma.',c:'Şok dalgasının üstünden zıpla, füzeleri birbirine çarptır.'},
+  {k:'boss',st:'mevcut',fac:MEL,name:'Prism Angel',role:'Kristal ışın',thr:4,ar:['A2'],build:buildPrism,an:'prism',
+   d:'Kilitli ışın, süpüren ışın, geciken kristal parçalar, bariyer fazı.',c:'Işın uyarısında yana kay, bariyerde mobları temizle.'},
+  {k:'boss',st:'mevcut',fac:MEL,name:'The Last Seraph',role:'Final',thr:5,ar:['A3'],build:buildSeraphBoss,an:'sboss',
+   d:'Halka, spiral, nişanlı seri, ışın ve süpürme. Fazlarda hepsi birleşir.',c:'Spiralde merkeze yakın dön, halkaları kalkanla kır.'},
+  /* yeni bosslar */
+  {k:'boss',st:'yeni',fac:MAK,name:'Hive Carrier',role:'Taşıyıcı',thr:3,ar:['A1','A2'],build:buildHive,an:'hive',
+   d:'Uçan taşıyıcı. Ambarından drone dalgaları indirir, odanın bir ucundan diğerine hat boyu bombalama yapar, faz 3\'te Spark sürüsü bırakır.',c:'Bombalama hattı yere işaretlenir, kenara kaç. Rotorlar zayıf nokta: her rotor kırıldığında yavaşlar.'},
+  {k:'boss',st:'yeni',fac:MAK,name:'Siege Arachne',role:'Kuşatma örümceği',thr:4,ar:['A1','A2'],build:buildArachne,an:'arachne',
+   d:'Dev Crawler. Kafa lazeriyle 180° süpürme, odaya mayın tarlası döşeme, bacaklarla sıçrayıp ezme.',c:'Lazer süpürmesinde altına gir, gövdenin altı kör nokta. Mayınları EMP ile temizle.'},
+  {k:'boss',st:'yeni',fac:MEL,name:'Ophanim Throne',role:'Taht',thr:5,ar:['A3'],build:buildThrone,an:'throne',
+   d:'Üç çember, 24 göz. Her çember ayrı yönde dönen mermi duvarı açar, açık kalan gözler nişanlı atış yapar, faz 3\'te odayı yuvarlanarak tarar.',c:'Gözler vurulabilir: her kör edilen göz bir mermi kaynağını kapatır. Kristal sistemi yerine hedef seçme bossu.'},
+  {k:'boss',st:'yeni',fac:MEL,name:'Archon',role:'Melek yargıç',thr:5,ar:['A3','A4+'],build:buildArchon,an:'archon',
+   d:'Yakın dövüş bossu. Kılıçla hat boyu kesik dalgası, üstüne atılma, kalkan fazında mermilerini sana geri yansıtır.',c:'Kalkan fazında ateşi kes, arkasına geç. Atılmadan sonra 1.5 saniye açık kalır.'},
+  /* varyant */
+  {k:'boss',st:'varyant',fac:MAK,name:'Corrupted Colossus',role:'Varyant örneği',thr:4,ar:['A4+'],build:buildCorrupted,an:'mech',
+   d:'Aynı model, renk kayması ve mor kristal dikenler. Saldırı havuzu karışık: Colossus slamı + Prism kristal parçaları.',c:'Yeni model çizmeden boss havuzunu ikiye katlamanın yolu. Her boss için bir corrupted sürüm.'},
+];
+
+/* ================= RENDER ================= */
+const R=new THREE.WebGLRenderer({antialias:true,alpha:true}); R.setPixelRatio(1); const RS=360; R.setSize(RS,RS,false);
+const scene=new THREE.Scene();
+scene.add(new THREE.HemisphereLight(0xffe0c8,0x302040,.95)); const dl=new THREE.DirectionalLight(0xfff0e0,.95); dl.position.set(3,6,5); scene.add(dl); const rl=new THREE.DirectionalLight(0xff6a1a,.7); rl.position.set(-5,2,-4); scene.add(rl);
+const cam=new THREE.PerspectiveCamera(30,1,.1,500);
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const FC={[MAK]:'#ff6a1a',[MEL]:'#ffd36a'};
+
+function animate(e,t){
+  const m=e.m;
+  switch(e.an){
+    case 'mech': animMech(m,t*5,.55); break;
+    case 'lancer': animMech(m,0,0); m.laser.material.opacity=.45+Math.sin(t*12)*.3; break;
+    case 'bulwark': animMech(m,t*3.5,.45); m.hex.rotation.z+=.02; break;
+    case 'seraph': m.body.position.y=2.1+Math.sin(t*2.5)*.3; m.halo.rotation.z+=.03; m.wings.forEach((w,i)=>w.rotation.x=Math.sin(t*6+i)*.25); break;
+    case 'warden': m.body.position.y=2.6+Math.sin(t*2)*.3; m.rings[0].rotation.x+=.025; m.rings[1].rotation.y+=.018; break;
+    case 'prism': m.crystal.rotation.y+=.012; m.ring.rotation.z+=.01; m.ring.rotation.x=Math.PI/2+Math.sin(t*.8)*.3; m.shards.forEach((s,i)=>{ const a=t*1.2+i/6*Math.PI*2; s.position.set(Math.cos(a)*4,Math.sin(t*2+i)*.6,Math.sin(a)*4); s.rotation.y+=.05; }); break;
+    case 'sboss': m.rings[0].rotation.set(t*.9,t*.5,0); m.rings[1].rotation.set(-t*.6,0,t*.7); m.halo.rotation.z+=.016; m.wings.children.forEach((w,i)=>{ w.rotation.z=w.userData.base+Math.sin(t*2+i)*.12*w.userData.s; }); break;
+    case 'crawler': case 'arachne': m.legs.forEach(l=>{ l.rotation.z=Math.sin(t*7+l.userData.i*1.6)*.12; }); m.body.position.y=1.15+Math.abs(Math.sin(t*7))*.05; m.tur.rotation.y=Math.sin(t*.9)*.6; if(m.lens) m.lens.scale.setScalar(1+Math.sin(t*6)*.15); break;
+    case 'howitzer': m.mort.rotation.x=.55+Math.max(0,Math.sin(t*2.2))*.08; m.target.scale.setScalar(.6+((t*.8)%1)*.5); m.target.material.opacity=.8-((t*.8)%1)*.5; break;
+    case 'spark': m.body.rotation.x+=.06; m.body.rotation.z+=.03; const b=(Math.sin(t*9)>0); m.core.material.color.setHex(b?0xffffff:0xffa040); m.warn.scale.setScalar(.8+Math.sin(t*3)*.15); break;
+    case 'shard': m.body.rotation.y+=.015; m.body.position.y=1.7+Math.sin(t*2)*.2; m.subs.forEach((s,i)=>s.rotation.y+=.04*(i%2?1:-1)); break;
+    case 'cherub': m.body.position.y=2.2+Math.sin(t*3)*.25; m.halo.rotation.z+=.03; m.wings.forEach(p=>{ p.rotation.z=p.userData.s*(Math.sin(t*14+p.userData.k)*.4); }); m.aura.scale.setScalar(.9+Math.sin(t*2)*.1); break;
+    case 'censer': m.swing.rotation.z=Math.sin(t*1.6)*.28; m.swing.rotation.x=Math.cos(t*1.3)*.12; m.orbs.forEach((o,i)=>{ const a=t*.8+i*2.1; o.position.set(Math.cos(a)*1.9,-1.4+Math.sin(t*1.5+i)*.4,Math.sin(a)*1.9); }); m.glow.scale.setScalar(1+Math.sin(t*4)*.12); break;
+    case 'ophan': case 'throne': m.rings.forEach((r,i)=>{ if(i===0) r.rotation.z+=.02; if(i===1) r.rotation.x+=.016; if(i===2) r.rotation.y+=.012; }); m.core.rotation.y+=.03; if(m.wings) m.wings.children.forEach((w,i)=>{ w.rotation.z=w.userData.base+Math.sin(t*1.8+i)*.1*w.userData.s; }); break;
+    case 'hive': m.rotors.forEach(r=>r.rotation.y+=.45); m.body.position.y=5+Math.sin(t*1.4)*.25; m.bay.material.opacity=.55+Math.sin(t*5)*.3; break;
+    case 'archon': m.body.position.y=4.6+Math.sin(t*1.6)*.2; m.halo.rotation.z+=.02; m.sword.rotation.x=-.25+Math.sin(t*1.1)*.15; m.wings.children.forEach((w,i)=>{ w.rotation.z=w.userData.base+Math.sin(t*2+i)*.1*w.userData.s; }); break;
+  }
+}
+
+const entries=[];
+function makeCard(e){
+  const el=document.createElement('article'); el.className='card'+(e.k==='boss'?' boss':''); el.style.setProperty('--fc',FC[e.fac]);
+  el.dataset.st=e.st; el.dataset.fac=e.fac;
+  const thr='■'.repeat(e.thr)+'□'.repeat(5-e.thr);
+  el.innerHTML=`<div class="stage"><canvas width="${RS}" height="${RS}" aria-label="${e.name} 3D modeli"></canvas><span class="tag ${e.st}">${e.st}</span><span class="fac">${e.fac}</span></div>
+  <div class="body"><div class="nm"><b></b><span class="thr" title="Tehdit ${e.thr}/5">${thr}</span></div><div class="role"></div><p class="d"></p><p class="ctr"><i>Karşı</i><span></span></p><div class="ar">${e.ar.map(a=>`<span>${a}</span>`).join('')}</div></div>`;
+  el.querySelector('.nm b').textContent=e.name; el.querySelector('.role').textContent=e.role; el.querySelector('.d').textContent=e.d; el.querySelector('.ctr span').textContent=e.c;
+  e.el=el; e.ctx=el.querySelector('canvas').getContext('2d'); e.vis=false;
+  // model + kaide
+  const m=e.build(); e.m=m; const wrap=new THREE.Group(); wrap.add(m.g); if(m.shadow) wrap.add(m.shadow);
+  animate(e,0);
+  const hid=[]; m.g.traverse(o=>{ if(o.userData.nofit) hid.push([o,o.parent]); }); hid.forEach(([o,p])=>p.remove(o));
+  const bb=new THREE.Box3().setFromObject(m.g), s=bb.getSize(new V3()), c=bb.getCenter(new V3());
+  hid.forEach(([o,p])=>p.add(o));
+  const pr=Math.max(1.4,Math.max(s.x,s.z)*.55);
+  const ped=new THREE.Mesh(new THREE.CylinderGeometry(pr,pr*1.08,.22,6),toon(0x2a2232)); ped.position.y=-.12; wrap.add(ped);
+  const ring=new THREE.Mesh(new THREE.RingGeometry(pr*1.06,pr*1.11,6),addMat(e.fac===MAK?0xff6a1a:0xffd36a,.9)); ring.rotation.x=-Math.PI/2; ring.position.y=.01; wrap.add(ring);
+  e.wrap=wrap;
+  const span=Math.max(s.y*1.05,pr*2.1,s.x,s.z);
+  const dist=span/(2*Math.tan(15*Math.PI/180))*1.08;
+  e.look=new V3(0,Math.max(c.y*.92,s.y*.42),0);
+  e.camPos=e.look.clone().add(new V3(.42,.38,1).normalize().multiplyScalar(dist));
+  e.phase=Math.random()*6;
+  return el;
+}
+function draw(e,t){
+  scene.add(e.wrap); e.m.g.rotation.y=-.5+(reduce?0:t*.45);
+  animate(e,t+e.phase);
+  cam.position.copy(e.camPos); cam.lookAt(e.look);
+  R.render(scene,cam); scene.remove(e.wrap);
+  e.ctx.clearRect(0,0,RS,RS); e.ctx.drawImage(R.domElement,0,0);
+}
+const gMob=document.getElementById('gMob'), gBoss=document.getElementById('gBoss');
+ROSTER.forEach(e=>{ (e.k==='boss'?gBoss:gMob).appendChild(makeCard(e)); entries.push(e); });
+const io=new IntersectionObserver(es=>es.forEach(x=>{ const e=entries.find(q=>q.el===x.target); if(e) e.vis=x.isIntersecting; }),{rootMargin:'100px'});
+entries.forEach(e=>io.observe(e.el));
+entries.forEach(e=>draw(e,0));
+let last=0;
+function loop(now){ requestAnimationFrame(loop); if(reduce) return; if(now-last<33) return; last=now; const t=now/1000; for(const e of entries) if(e.vis&&!e.el.hidden) draw(e,t); }
+requestAnimationFrame(loop);
+
+/* filtreler */
+let fSt='all', fFac='all';
+function apply(){
+  let cm=0,cb=0;
+  entries.forEach(e=>{ const ok=(fSt==='all'||e.st===fSt||(fSt==='yeni'&&e.st==='varyant'))&&(fFac==='all'||e.fac===fFac); e.el.hidden=!ok; if(ok){ e.k==='boss'?cb++:cm++; } });
+  const nm=entries.filter(e=>e.k==='mob'&&e.st==='yeni').length, nb=entries.filter(e=>e.k==='boss'&&e.st!=='mevcut').length;
+  document.getElementById('cMob').textContent=`${cm} gösteriliyor · ${nm} yeni`;
+  document.getElementById('cBoss').textContent=`${cb} gösteriliyor · ${nb} yeni/varyant`;
+}
+document.querySelectorAll('[data-f]').forEach(b=>b.onclick=()=>{ fSt=b.dataset.f; document.querySelectorAll('[data-f]').forEach(x=>x.setAttribute('aria-pressed',x===b)); apply(); });
+document.querySelectorAll('[data-g]').forEach(b=>b.onclick=()=>{ fFac=b.dataset.g; document.querySelectorAll('[data-g]').forEach(x=>x.setAttribute('aria-pressed',x===b)); apply(); });
+apply();
+</script>
+
+</body>
+</html>
