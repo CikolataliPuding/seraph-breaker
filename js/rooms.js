@@ -35,23 +35,24 @@ function buildRoom(hx,hz,grid,withDoor){
     const cols=grid[0].length, rows=grid.length, flip=Math.random()<.5, cx=2*hx/cols, cz=2*hz/rows, bm=toon(t.block);
     grid.forEach((row,r)=>{ for(let c0=0;c0<cols;c0++){ const c=flip?cols-1-c0:c0, ch=row[c0]; if(ch==='.') continue;
       const x=-hx+cx*(c+.5), z=-hz+cz*(r+.5);
-      if(ch==='#'){ const b=part(box(2,1.5,2),bm,roomGroup,x,.75,z,.1); b.receiveShadow=true; const s=new THREE.Mesh(box(2.04,.12,2.04),basic(t.edge,false)); s.position.y=.7; b.add(s); obstacles.push({x0:x-1,x1:x+1,z0:z-1,z1:z+1,kind:'block'}); }
+      if(ch==='#'){ const b=part(box(cx,1.5,cz),bm,roomGroup,x,.75,z,.1); b.receiveShadow=true; const s=new THREE.Mesh(box(cx+.04,.12,cz+.04),basic(t.edge,false)); s.position.y=.7; b.add(s); obstacles.push({x0:x-cx/2,x1:x+cx/2,z0:z-cz/2,z1:z+cz/2,kind:'block'}); }
       else { const w=new THREE.Mesh(box(cx,.06,cz),basic(t.water,false)); w.position.set(x,.04,z); roomGroup.add(w); const gl=new THREE.Mesh(box(cx*.7,.07,cz*.7),addMat(0xffffff,.12)); gl.position.set(x,.05,z); roomGroup.add(gl); obstacles.push({x0:x-cx/2,x1:x+cx/2,z0:z-cz/2,z1:z+cz/2,kind:'water'}); }
     } });
   }
   fitCamera();
 }
 function buildBossRoom(){
-  buildRoom(BOSS_X,BOSS_Z,null,true);
-  const t=ARENAS[stage].theme, bm=toon(t.block);
-  [[-6.5,-6.5],[6.5,-6.5],[-6.5,6.5],[6.5,6.5]].forEach(([x,z])=>{ const b=part(box(1.8,2.2,1.8),bm,roomGroup,x,1.1,z,.1); const s=new THREE.Mesh(box(1.84,.14,1.84),basic(t.edge,false)); s.position.y=.8; b.add(s); obstacles.push({x0:x-.9,x1:x+.9,z0:z-.9,z1:z+.9,kind:'block'}); });
+  buildRoom(roomHalfX(true),BOSS_Z,null,true);
+  const t=ARENAS[stage].theme, bm=toon(t.block), px=AX*.65;
+  [[-px,-6.5],[px,-6.5],[-px,6.5],[px,6.5]].forEach(([x,z])=>{ const b=part(box(1.8,2.2,1.8),bm,roomGroup,x,1.1,z,.1); const s=new THREE.Mesh(box(1.84,.14,1.84),basic(t.edge,false)); s.position.y=.8; b.add(s); obstacles.push({x0:x-.9,x1:x+.9,z0:z-.9,z1:z+.9,kind:'block'}); });
   [[7.6,8],[3.2,3.35]].forEach(([a,b])=>{ const hx=new THREE.Mesh(new THREE.RingGeometry(a,b,6),addMat(t.edge,.25)); hx.rotation.x=-Math.PI/2; hx.rotation.z=Math.PI/6; hx.position.y=.03; roomGroup.add(hx); });
 }
 /* ground hazards (arena 2+): fire vents and collapsing tiles, always telegraphed before they hurt */
 const HAZ_T={vent:[2.4,1,1.3],tile:[3,1.2,2.5]}; // idle, warn, active (seconds)
 function addHazards(){
   const ch=sortie.rule.hazards||0; if(Math.random()>=ch) return; const n=2+((Math.random()*3)|0), t=ARENAS[stage].theme;
-  for(let i=0;i<n;i++) for(let k=0;k<24;k++){ const x=-AX+2*(((Math.random()*9)|0)+.5), z=-AZ+2*(((Math.random()*12)|0)+1.5);
+  const cols=Math.floor(AX);
+  for(let i=0;i<n;i++) for(let k=0;k<24;k++){ const x=-AX+2*(((Math.random()*cols)|0)+.5), z=-AZ+2*(((Math.random()*12)|0)+1.5);
     if(inBlock(x,z,1.2)||z>AZ-4||hazards.some(h=>Math.hypot(h.x-x,h.z-z)<3.2)) continue;
     const kind=Math.random()<.55?'vent':'tile', g=new THREE.Group(); g.position.set(x,0,z); roomGroup.add(g);
     let warn,act;
@@ -74,6 +75,8 @@ function updateHazards(dt){
       if(pin&&h.cd<=0){ h.cd=h.kind==='vent'?.5:.6; hurt(h.kind==='vent'?10:6); }
       if(h.kind==='vent') for(const e of enemies){ if(!e.dead&&!e.fly&&e!==boss&&Math.hypot(e.pos.x-h.x,e.pos.z-h.z)<1.4) e.burn=Math.max(e.burn,1); } } }
 }
+// a room is clear: hazards fizzle, gold bonus, save. roomUpdate then lets pickups fly in, opens queued choices and finally the door.
+function roomCleared(){ if(!room||room.cleared) return; room.cleared=true; room.clearT=0; room.doorPending=true; fizzleRoom(); clearBonus(); logRoomEnd('clear'); if(typeof onRoomClear==='function') onRoomClear(); saveRun(sortie.ri+1); }
 // room clear: leftover enemy mines, floor hazards, enemy shots and pending enemy blasts fizzle out harmlessly
 function fizzleRoom(){
   emines.forEach(m=>{ sparks(m.g.position.clone().setY(.4),0xa79fae,3,3); roomGroup.remove(m.g); }); emines.length=0;
@@ -106,7 +109,7 @@ function startRoom(i,force){
   clearEnemiesAndShots();
   room={type,cleared:false,hurt:false,completeT:0,boss:type==='boss'?(force&&force.boss||pickBoss()):null};
   if(type==='boss'){ buildBossRoom(); player.pos.set(0,0,AZ-3); }
-  else { buildRoom(ROOM_X,ROOM_Z,type==='angel'?SANCTUM:pickOne(ROOMS),true); player.pos.set(0,0,AZ-1.5); }
+  else { buildRoom(roomHalfX(),ROOM_Z,type==='angel'?SANCTUM:pickOne(ROOMS),true); player.pos.set(0,0,AZ-1.5); }
   player.vel.set(0,0,0); camTarget.set(mobileMode?0:player.pos.x,0,mobileMode?mobileCamZ(player.pos.z):player.pos.z);
   if(typeof onRoomStart==='function') onRoomStart();
   logRoomStart(type);

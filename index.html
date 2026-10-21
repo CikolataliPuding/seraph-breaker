@@ -15,7 +15,7 @@
 <div id="chronoTint"></div>
 <div id="fade"></div>
 
-<div class="hud" id="xpTrack" hidden><i id="xpFill" style="width:0%"></i></div>
+<div class="hud" id="xpTrack" hidden><i id="xpFill" style="width:0%"></i><b id="lvReady" hidden>LEVEL READY</b></div>
 <div class="hud" id="hudL" hidden>
   <div class="unitname" id="uName">Azure</div>
   <div class="lbl">Armor <b id="hpTxt">100</b></div>
@@ -31,6 +31,7 @@
   <div><span class="cur gold"><i></i></span> <b id="goldTxt">0</b> &nbsp;<span class="cur gem"><i></i></span> <b id="gemTxt">0</b></div>
 </div>
 <div class="hud" id="rsBar" hidden></div>
+<div class="hud" id="rsPop" hidden></div>
 <div class="hud" id="toast"></div>
 <div class="hud" id="bossHud" hidden>
   <img class="bossThumb" id="bossImg" alt="">
@@ -136,12 +137,9 @@
 </div>
 
 <div class="ov" id="choice" hidden>
-  <div class="menuIn">
-    <div class="eyebrow" id="chEye">Level up</div>
-    <h2 id="chTitle">Choose a skill</h2>
-    <p class="note" id="chNote"></p>
-    <div class="choices" id="chList"></div>
-    <button class="btn ghost" id="chReroll" hidden>Reroll</button>
+  <div class="chWrap">
+    <div class="chHead"><span class="eyebrow" id="chEye">Level up</span><b id="chTitle">Choose a skill</b><span id="chNote"></span><button class="chRr" id="chReroll" hidden>Reroll</button></div>
+    <div id="chList"></div>
   </div>
 </div>
 
@@ -151,6 +149,8 @@
     <div class="row"><button class="btn" id="resumeBtn">Resume</button><button class="btn ghost" id="muteBtn">Music: on</button></div>
     <div class="row"><button class="btn alt" id="quitBtn">Save &amp; exit</button><button class="btn ghost" id="abandonBtn">Abandon run</button></div>
     <p class="note">Save &amp; exit continues from the last cleared room. Gold and diamonds you already picked up are always kept.</p>
+    <h3>Build</h3>
+    <div class="buildList" id="pauseBuild"></div>
   </div>
 </div>
 

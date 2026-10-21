@@ -10,7 +10,7 @@ const DBG={
   start(a=0){ launchArena(a); setTimeout(()=>DBG.skipCard(),50); },
   next(){ if(state!=='fight'||!room) return;
     if(boss&&!boss.dead){ boss.atk='idle'; killEnemy(boss); return; }
-    DBG.killAll(); if(!room.cleared){ room.cleared=true; if(typeof onRoomClear==='function') onRoomClear(); openDoor(); saveRun(sortie.ri+1); } goNextRoom(); },
+    DBG.killAll(); roomCleared(); room.doorPending=false; openDoor(); goNextRoom(); },
   // jump to room n (1-based) of the current arena
   jump(n,force){ if(!sortie||!player) return; n=clamp(n|0,1,sortie.N); clearEnemiesAndShots(); hideOverlays(); $('result').hidden=true; paused=false; sortie.ri=n-2; sortie.force=force||null; sortie.swapped=false; state='trans'; stateT=.3; $('fade').classList.add('on'); },
   boss(kind){ if(!sortie) return; DBG.jump(sortie.ri+2>sortie.N?sortie.N:sortie.ri+2,{type:'boss',boss:kind}); },

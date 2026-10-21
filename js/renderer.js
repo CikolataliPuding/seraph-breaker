@@ -40,9 +40,11 @@ function part(geo,mat,parent,x=0,y=0,z=0,t=.09){
 const blob=r=>{ const m=new THREE.Mesh(new THREE.CircleGeometry(r,18),new THREE.MeshBasicMaterial({color:0,transparent:true,opacity:.34,depthWrite:false})); m.rotation.x=-Math.PI/2; m.position.y=.03; return m; };
 
 /* world: ground + city ring */
-let AX=9, AZ=15, hazardMat=null; // half-width (x) and half-depth (z) of the current room; the door is at z=-AZ
+let AX=11, AZ=15, hazardMat=null; // half-width (x) and half-depth (z) of the current room; the door is at z=-AZ
 const CITY_R=24;
-const OUTW=6, ROOM_X=9, ROOM_Z=15, BOSS_X=10, BOSS_Z=14, OUT_DPS=6; // rooms are tall rectangles: 9 columns × 15 rows of 2-unit cells
+const OUTW=6, ROOM_X=11, ROOM_Z=15, BOSS_X=12, BOSS_Z=14, OUT_DPS=6; // rooms are tall rectangles: 11 columns × 15 rows (22 × 30 units)
+// phone mode keeps entities readable at 390 px: rooms are 20 wide there (the same 11 columns, slightly narrower cells)
+const ROOM_X_M=10, BOSS_X_M=11, roomHalfX=boss=>mobileMode?(boss?BOSS_X_M:ROOM_X_M):(boss?BOSS_X:ROOM_X);
 let groundMat,cityMat,winInst,tileTex;
 (function buildWorld(){
   const cv=document.createElement('canvas'); cv.width=cv.height=256; const g=cv.getContext('2d');

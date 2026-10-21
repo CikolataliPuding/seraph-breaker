@@ -29,13 +29,11 @@ function applySkill(id,silent){
 }
 function applyCurse(id,silent){ const c=CURSES[id]; if(!c||sortie.curses.includes(id)) return; sortie.curses.push(id); recalcStats(); if(c.apply) c.apply(player,silent); buildRule(); if(!silent) renderRunSkills(); }
 // skill + curse + item icons (HUD row and result screen)
-function runIcons(){ const out=[]; if(!player) return out;
-  Object.entries(player.rs).forEach(([id,n])=>{ const d=RSK[id]; if(!d) return; const s=document.createElement('span'); s.className='r-'+d.rarity; s.title=d.name; s.innerHTML=svg(d.icon); if(n>1){ const b=document.createElement('b'); b.textContent=n; s.appendChild(b); } out.push(s); });
-  if(sortie) sortie.curses.forEach(id=>{ const d=CURSES[id]; if(!d) return; const s=document.createElement('span'); s.className='curse'; s.title=d.name; s.innerHTML=svg(d.icon); out.push(s); });
-  if(sortie&&sortie.items) sortie.items.forEach(it=>{ const d=typeof ITEMS!=='undefined'&&ITEMS[it.id||it]; if(!d) return; const s=document.createElement('span'); s.className='it r-'+d.rarity; s.title=d.name; s.innerHTML=svg(d.icon); out.push(s); });
-  return out; }
+function runIcons(){ return buildEntries().map((en,i)=>{ const s=document.createElement('span'); s.className=en.cls; s.dataset.i=i; s.setAttribute('aria-label',en.name); s.innerHTML=svg(en.icon);
+  const n=en.kind==='skill'?player.rs[en.id]:0; if(n>1){ const b=document.createElement('b'); b.textContent=n; s.appendChild(b); } return s; }); }
 function renderRunSkills(){ const bar=$('rsBar'); bar.innerHTML=''; bar.append(...runIcons()); }
-function skillCard(id,extra){ const s=RSK[id], rk=player.rs[id]||0; return {id,icon:s.icon,name:s.name,desc:s.d+(extra||''),rarity:s.rarity,tag:`${RARITY[s.rarity].n} · `+(rk?`Rank ${rk+1}/${s.max}`:'New')}; }
+// roulette card for a run skill: rank pips and a value preview for stat skills ("Damage +18% → +36%")
+function skillCard(id,extra){ const s=RSK[id], rk=player.rs[id]||0; return {id,icon:s.icon,name:s.name,desc:s.d+(extra||''),rarity:s.rarity,tag:`${RARITY[s.rarity].n} · `+(rk?`Rank ${rk+1}/${s.max}`:'New'),pips:{rank:rk,max:s.max},pv:bonusPreview(s.bonus)}; }
 
 /* ================= ORBITS + WINGMAN ================= */
 function buildOrbit(){
@@ -101,25 +99,31 @@ function updateTrails(dt){ for(let i=trails.length-1;i>=0;i--){ const t=trails[i
   if(t.t<=0){ scene.remove(t.m); t.m.geometry.dispose(); trails.splice(i,1); } } }
 
 /* ================= CHOICE SCREEN + ROULETTE ================= */
-// cards spin like slot reels (result is decided before the spin); a tap, click or key skips the spin.
-// Only a fresh press that starts after the screen opened (plus a short grace) counts: held keys auto-repeat and held mouse buttons are ignored.
-let spin=null, ignoreClickUntil=0, choiceOpenT=0;
-const REEL_H=46, SKIP_GRACE=250;
+/* minimal choice screen: the world stays visible (darkened, slowed) and compact cards slide up from the bottom.
+   Each card: rarity edge, icon slot reel (the result is decided before the spin), name, one-line effect, value preview and rank pips.
+   Only a fresh press that starts after the screen opened (plus a short grace) skips the spin: held keys auto-repeat and held mouse buttons are ignored.
+   Desktop: 1/2/3 pick a card, R rerolls. */
+let spin=null, ignoreClickUntil=0, choiceOpenT=0, chCfg=null;
+const REEL_H=44, SKIP_GRACE=250;
 function openChoice(cfg){
-  if(state!=='choice') choiceBack=state; state='choice'; choiceOpenT=performance.now(); resetTouch(); for(const k in keys)keys[k]=false; mouseDown=rightDown=false;
+  if(state!=='choice') choiceBack=state; state='choice'; choiceOpenT=performance.now(); chCfg=cfg; resetTouch(); for(const k in keys)keys[k]=false; mouseDown=rightDown=false;
+  hideRsPop();
   $('chEye').textContent=cfg.eyebrow; $('chTitle').textContent=cfg.title; $('chNote').textContent=cfg.note||'';
-  const rr=$('chReroll'); rr.hidden=!cfg.reroll; if(cfg.reroll){ rr.textContent=`Reroll · ${sortie.rerolls} left`; rr.disabled=sortie.rerolls<1; rr.onclick=()=>{ if(spin&&spin.left>0||sortie.rerolls<1) return; sortie.rerolls--; sfx('click'); cfg.reroll(); }; }
-  const list=$('chList'); list.innerHTML='';
-  const ids=Object.keys(RSK);
+  const rr=$('chReroll'); rr.hidden=!cfg.reroll;
+  if(cfg.reroll){ rr.innerHTML=`<kbd>R</kbd>Reroll · ${sortie.rerolls}`; rr.disabled=sortie.rerolls<1; rr.onclick=rerollChoice; }
+  const list=$('chList'); list.innerHTML=''; list.classList.toggle('many',cfg.options.length>3);
+  const icons=Object.keys(RSK).map(id=>RSK[id].icon);
   spin={cards:[],left:0,tick:0};
-  cfg.options.forEach((o,i)=>{ const b=document.createElement('button'); b.className='card rcard'+(o.rarity?' rr-'+o.rarity:''); b.id='ch'+i;
-    b.style.setProperty('--c',o.rarity?RARITY[o.rarity].c:(o.color||'var(--signal)'));
-    b.innerHTML=`<div class="reelWin"><div class="reel"></div></div><div class="tag"></div><p></p>`;
-    const reel=b.querySelector('.reel'), doSpin=cfg.spin&&!o.static;
-    const ent=(icon,name)=>{ const d=document.createElement('div'); d.className='ent'; d.innerHTML=`<div class="ic">${svg(icon)}</div><div class="n"></div>`; d.querySelector('.n').textContent=name; reel.appendChild(d); };
-    const n=doSpin?10+i*3:0; for(let k=0;k<n;k++){ const f=RSK[pickOne(ids)]; ent(f.icon,f.name); } ent(o.icon,o.name);
-    b.querySelector('.tag').textContent=o.tag||''; b.querySelector('p').textContent=o.desc;
-    b.onclick=()=>{ if(spin&&spin.left>0) return; if(performance.now()<ignoreClickUntil) return; spin=null; $('choice').hidden=true; state=choiceBack; o.act(); refreshControls(); };
+  cfg.options.forEach((o,i)=>{ const b=document.createElement('button'); b.className='rcard'+(o.rarity?' rr-'+o.rarity:''); b.id='ch'+i; b.type='button';
+    b.style.setProperty('--c',o.rarity?RARITY[o.rarity].c:(o.color||'var(--signal)')); b.style.setProperty('--i',i);
+    b.innerHTML=`<span class="ic"><span class="reel"></span></span><span class="body"><span class="top"><b class="n"></b><span class="tag"></span></span><span class="d"></span><span class="pv"></span></span><span class="pips"></span><kbd class="key">${i+1}</kbd>`;
+    const reel=b.querySelector('.reel'), doSpin=cfg.spin&&!o.static, n=doSpin?10+i*3:0;
+    const ent=icon=>{ const d=document.createElement('i'); d.innerHTML=svg(icon); reel.appendChild(d); };
+    for(let k=0;k<n;k++) ent(pickOne(icons)); ent(o.icon);
+    b.querySelector('.n').textContent=o.name; b.querySelector('.tag').textContent=o.tag||''; b.querySelector('.d').textContent=o.desc;
+    const pv=b.querySelector('.pv'); (o.pv||[]).forEach(l=>{ const r=document.createElement('span'); r.innerHTML=`<em></em> <s></s> → <b></b>`; r.querySelector('em').textContent=l.label; r.querySelector('s').textContent=l.from; r.querySelector('b').textContent=l.to; pv.appendChild(r); });
+    if(o.pips){ const pp=b.querySelector('.pips'); for(let k=0;k<o.pips.max;k++){ const q=document.createElement('i'); q.className=k<o.pips.rank?'f':k===o.pips.rank?'nx':''; pp.appendChild(q); } }
+    b.onclick=()=>pickChoice(i);
     list.appendChild(b);
     if(doSpin){ spin.left++; const dur=.5+i*.17; spin.cards.push({b,reel,n,dur,rarity:o.rarity}); reel.style.transform='translateY(0)'; }
     else b.classList.add('stop');
@@ -128,20 +132,42 @@ function openChoice(cfg){
   if(spin.left){ requestAnimationFrame(()=>requestAnimationFrame(()=>{ if(!spin) return; spin.cards.forEach(c=>{ c.reel.style.transition=`transform ${c.dur}s cubic-bezier(.12,.8,.22,1)`; c.reel.style.transform=`translateY(${-c.n*REEL_H}px)`; c.timer=setTimeout(()=>stopReel(c),c.dur*1000); }); }));
     const tick=()=>{ if(!spin||spin.left<=0) return; sfx('tick'); spin.tick=setTimeout(tick,70); }; tick(); }
   else spin=null;
-  setTimeout(()=>{ const f=$('ch0'); if(f&&!mobileMode) f.focus(); },50);
 }
+function pickChoice(i){
+  const o=chCfg&&chCfg.options[i]; if(!o||state!=='choice') return;
+  if(spin&&spin.left>0) return; if(performance.now()<ignoreClickUntil) return;
+  spin=null; chCfg=null; $('choice').hidden=true; state=choiceBack; o.act(); refreshControls();
+}
+function rerollChoice(){ if(!chCfg||!chCfg.reroll||spin&&spin.left>0||sortie.rerolls<1) return; sortie.rerolls--; sfx('click'); chCfg.reroll(); }
 function stopReel(c){ if(!spin||c.done) return; c.done=true; clearTimeout(c.timer); c.reel.style.transition='none'; c.reel.style.transform=`translateY(${-c.n*REEL_H}px)`; c.b.classList.add('stop'); sfx('r_'+(c.rarity||'common')); spin.left--; if(c.rarity==='legendary') buzz(60); }
 function skipSpin(){ if(!spin||spin.left<=0) return false; spin.cards.forEach(stopReel); ignoreClickUntil=performance.now()+350; return true; }
 const freshPress=e=>performance.now()-choiceOpenT>=SKIP_GRACE&&!e.repeat;
+const MOD_KEYS=['ShiftLeft','ShiftRight','ControlLeft','ControlRight','AltLeft','AltRight','MetaLeft','MetaRight'];
 $('choice').addEventListener('pointerdown',e=>{ if(freshPress(e)&&skipSpin()){ e.preventDefault(); e.stopPropagation(); } },true);
-addEventListener('keydown',e=>{ if(state!=='choice'||!spin) return; if(['ShiftLeft','ShiftRight','ControlLeft','ControlRight','AltLeft','AltRight','MetaLeft','MetaRight'].includes(e.code)) return; if(freshPress(e)&&skipSpin()){ e.preventDefault(); e.stopPropagation(); } },true);
+addEventListener('keydown',e=>{
+  if(state!=='choice'||MOD_KEYS.includes(e.code)) return;
+  // a press during the spin only skips it (number keys and R included); after the spin 1/2/3 pick and R rerolls
+  if(spin&&spin.left>0){ if(freshPress(e)&&skipSpin()){ e.preventDefault(); e.stopPropagation(); } return; }
+  if(e.repeat||performance.now()<ignoreClickUntil) return;
+  const m=/^(?:Digit|Numpad)([1-9])$/.exec(e.code); if(m){ e.preventDefault(); e.stopPropagation(); pickChoice(+m[1]-1); return; }
+  if(e.code==='KeyR'&&chCfg&&chCfg.reroll){ e.preventDefault(); e.stopPropagation(); rerollChoice(); }
+},true);
 
+/* ================= LEVEL-UP QUEUE ================= */
+// level-ups and item swaps wait for the room to be clear (after the boss dies in boss rooms); never mid-fight. They open one after another
+// before the door opens. choiceQ holds other queued choices (item swaps) as functions that open them.
+const choiceQ=[];
+function pumpChoices(){ if(state!=='fight'&&state!=='prep') return false;
+  if(sortie.pendingLv>0){ showLevelUp(); return true; }
+  if(choiceQ.length){ choiceQ.shift()(); return true; }
+  return false; }
 function showLevelUp(){
   sortie.pendingLv--;
-  const roll=()=>{ const opts=skillOptions(3).map(id=>({...skillCard(id),act:()=>applySkill(id)})); return opts; };
+  const roll=()=>skillOptions(3).map(id=>({...skillCard(id),act:()=>applySkill(id)}));
   const opts=roll();
   if(!opts.length){ player.hp=Math.min(player.maxHp,player.hp+player.maxHp*.2); return; }
-  const cfg={eyebrow:`Pilot level ${Math.max(2,sortie.lv-sortie.pendingLv)}`,title:'Skill roulette',note:'Skills last for the whole run.',options:opts,spin:true};
+  const more=sortie.pendingLv;
+  const cfg={eyebrow:`Pilot level ${Math.max(2,sortie.lv-more)}`+(more?` · ${more} more queued`:''),title:'Skill roulette',note:'Skills last for the whole run.',options:opts,spin:true};
   cfg.reroll=()=>{ cfg.options=roll(); openChoice(cfg); };
   openChoice(cfg);
 }
@@ -156,7 +182,45 @@ function angelChoice(){
 }
 function devilChoice(){
   const free=Object.keys(CURSES).filter(c=>!sortie.curses.includes(c)), opts=[];
-  while(opts.length<2&&free.length){ const id=free.splice((Math.random()*free.length)|0,1)[0], c=CURSES[id]; opts.push({icon:c.icon,name:c.name,desc:c.d,tag:'Curse · lasts the whole run',color:'#e8243c',act:()=>{ applyCurse(id); sfx('lvup'); crossBlast(player.pos.clone(),0xe8243c,.8); npcGone(); }}); }
+  while(opts.length<2&&free.length){ const id=free.splice((Math.random()*free.length)|0,1)[0], c=CURSES[id];
+    opts.push({icon:c.icon,name:c.name,desc:c.d,tag:'Curse · whole run',color:'#e8243c',pv:bonusPreview(c.bonus),act:()=>{ applyCurse(id); sfx('lvup'); crossBlast(player.pos.clone(),0xe8243c,.8); npcGone(); }}); }
   opts.push({icon:'rear',name:'Walk away',desc:'Keep things as they are. The offer is gone for good.',tag:'Decline',color:'#a79fae',act:()=>npcGone()});
   openChoice({eyebrow:'A flawless room draws attention',title:'The devil makes an offer',note:'Power now, at a price you pay until the run ends.',options:opts});
+}
+
+/* ================= BUILD PANEL ================= */
+// the skill / curse / item boxes: a small popover with details (hover on desktop, tap on phone; never click on desktop, left click fires)
+function buildEntries(){ const out=[]; if(!player) return out;
+  Object.entries(player.rs).forEach(([id,n])=>{ const d=RSK[id]; if(!d) return; const rk=Math.min(n,d.max);
+    out.push({kind:'skill',id,icon:d.icon,name:d.name,cls:'r-'+d.rarity,sub:`${RARITY[d.rarity].n} · Rank ${rk}/${d.max}`,effect:effectText(d.bonus,rk)||d.d,desc:d.bonus?d.d.replace(/\.$/,'')+' per rank.':''}); });
+  if(sortie) sortie.curses.forEach(id=>{ const d=CURSES[id]; if(!d) return; out.push({kind:'curse',id,icon:d.icon,name:d.name,cls:'curse',sub:'Devil curse · whole run',effect:effectText(d.bonus,1,true)||d.d,cost:d.cost}); });
+  if(sortie&&sortie.items) sortie.items.forEach(it=>{ const id=it.id||it, d=ITEMS[id]; if(!d) return; out.push({kind:'item',id,icon:d.icon,name:d.name,cls:'it r-'+d.rarity,sub:`${RARITY[d.rarity].n} item`,effect:d.d}); });
+  return out; }
+// "Damage +36% · Fire rate +13%" for a bonus at a rank (gains only for curses: the cost is listed on its own)
+function effectText(bonus,rank,gainsOnly){ if(!bonus) return ''; const pc=v=>(v>=0?'+':'-')+Math.round(Math.abs(v)*100)+'%';
+  return Object.entries(bonus).filter(([k,v])=>!gainsOnly||(k!=='taken'&&v>0)).map(([k,v])=>`${BUCKET_TXT[k]||k} ${k==='hpFlat'||k==='en'?'+'+Math.round(v*rank):k==='taken'?pc(v*rank)+' taken':pc(v*rank)}`).join(' · '); }
+function hideRsPop(){ const p=$('rsPop'); if(p) p.hidden=true; }
+function showRsPop(el){
+  const en=buildEntries()[+el.dataset.i], p=$('rsPop'); if(!en||!p) return;
+  p.innerHTML=`<b></b><small></small><span class="ef"></span>`; p.className='hud '+en.cls;
+  p.querySelector('b').textContent=en.name; p.querySelector('small').textContent=en.sub; p.querySelector('.ef').textContent=en.effect;
+  if(en.cost){ const c=document.createElement('span'); c.className='cost'; c.textContent='Cost: '+en.cost; p.appendChild(c); }
+  p.hidden=false; const r=el.getBoundingClientRect(), w=p.offsetWidth, h=p.offsetHeight;
+  p.style.left=clamp(r.right-w,8,innerWidth-w-8)+'px'; p.style.top=clamp(r.bottom+6,8,innerHeight-h-8)+'px';
+}
+(()=>{ const bar=$('rsBar');
+  bar.addEventListener('pointerover',e=>{ if(e.pointerType!=='mouse') return; const s=e.target.closest('span[data-i]'); if(s) showRsPop(s); });
+  bar.addEventListener('pointerout',e=>{ if(e.pointerType==='mouse'&&!bar.contains(e.relatedTarget)) hideRsPop(); });
+  bar.addEventListener('pointerdown',e=>{ if(e.pointerType==='mouse') return; const s=e.target.closest('span[data-i]'); if(!s) return; e.stopPropagation(); const p=$('rsPop'); if(!p.hidden&&p.dataset.for===s.dataset.i){ hideRsPop(); return; } p.dataset.for=s.dataset.i; showRsPop(s); });
+  addEventListener('pointerdown',e=>{ if(!e.target.closest||!e.target.closest('#rsBar')) hideRsPop(); },true);
+})();
+// pause screen: the whole build with details, plus the stat buckets it adds up to
+function renderPauseBuild(){
+  const el=$('pauseBuild'); if(!el) return; el.innerHTML=''; if(!player) return;
+  const b=player.bonus||{}, st=document.createElement('div'); st.className='bStats';
+  st.textContent=['dmg','rate','crit','hp','spd','dodge'].map(k=>`${BUCKET_TXT[k]} ${bucketVal(k,b)}`).join(' · ');
+  el.appendChild(st);
+  const list=buildEntries(); if(!list.length){ const n=document.createElement('p'); n.className='note'; n.textContent='No run skills yet. Level up by clearing rooms.'; el.appendChild(n); return; }
+  list.forEach(en=>{ const r=document.createElement('div'); r.className='bRow '+en.cls; r.innerHTML=`<span class="bi">${svg(en.icon)}</span><span class="bt"><b></b><small></small><span></span></span>`;
+    r.querySelector('b').textContent=en.name; r.querySelector('small').textContent=en.sub; r.querySelector('.bt span').textContent=en.effect+(en.cost?' · Cost: '+en.cost:''); el.appendChild(r); });
 }

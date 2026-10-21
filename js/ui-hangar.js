@@ -23,7 +23,9 @@ function renderHome(){
   const hb=$('hBosses'); hb.innerHTML=''; arenaBossPool(a).slice(0,3).forEach(k=>{ const img=document.createElement('img'); img.src=PORTRAIT[k]||''; img.alt=BOSSES[k].name; img.title=BOSSES[k].name; hb.appendChild(img); }); const bl=document.createElement('span'); bl.textContent='BOSSES'; hb.appendChild(bl);
   $('pvUnit').textContent=UNITS[P.unit].name; $('pvSp').textContent='SP · '+SPECIALS[P.unit].name;
   const run=loadRun(), cb=$('contBtn'); cb.hidden=!run; if(run) cb.textContent=`Continue · ${ARENAS[run.a].name} · room ${run.ri+1}/${ARENAS[run.a].rooms}`;
-  $('bestTxt').textContent=`BEST ${String(P.best).padStart(6,'0')} · ${P.arenas}/${ARENAS.length} ARENAS OPEN`;
+  // personal record: the furthest arena you reached and your best room there
+  let ra=-1; P.bestRoom.forEach((r,i)=>{ if(r>0&&i<ARENAS.length) ra=i; });
+  $('bestTxt').textContent=(ra<0?'Record: no runs yet':`Record: Arena ${ra+1} · Room ${P.bestRoom[ra]}/${ARENAS[ra].rooms}`)+` · ${P.arenas}/${ARENAS.length} arenas open`;
 }
 $('sortieBtn').onclick=()=>{ sfx('click'); openView('map'); };
 $('contBtn').onclick=()=>{ const r=loadRun(); if(r){ sfx('click'); launchArena(r.a,r); } else renderHome(); };

@@ -20,11 +20,11 @@ function launchArena(a,saved){
   stage=a; applyTheme(a);
   const A=ARENAS[a], N=A.rooms;
   sortie={a,N,ri:saved?clamp(saved.ri|0,0,N-1):0,xp:0,lv:1,pendingLv:0,gold:0,gems:0,start:performance.now(),rerolls:1,curses:[],items:[],lastBoss:'',mods:saved?(saved.mods||[]).filter(m=>MODS[m]):(A.mixed?rollMods():[]),rule:{},dmgTaken:0,log:[]};
-  makePlayer();
+  choiceQ.length=0; makePlayer();
   $('uName').innerHTML=''; const nm=document.createElement('span'); nm.textContent=P.pilot||'Pilot'; const sm=document.createElement('small'); sm.textContent=' · '+unit.name; const lv=document.createElement('em'); lv.id='lvTxt'; lv.textContent='LV 1'; $('uName').append(nm,sm,lv);
   buildRule(); score=0; kills=0; playTime=0;
   if(saved) restoreRun(saved);
-  buildRoom(ROOM_X,ROOM_Z,SANCTUM,true); player.pos.set(0,0,AZ-1.5); camTarget.copy(player.pos);
+  buildRoom(roomHalfX(),ROOM_Z,SANCTUM,true); player.pos.set(0,0,AZ-1.5); camTarget.copy(player.pos);
   $('cardNum').textContent=`ARENA 0${a+1} · `+(saved?`CONTINUE · ROOM ${sortie.ri+1}/${N}`:`${N} ROOMS`); $('cardT').textContent=A.name;
   $('cardS').textContent=[A.ruleTxt,...sortie.mods.map(m=>MODS[m].name)].join(' · ');
   const c=$('card'); c.hidden=false; const inner=c.firstElementChild; inner.style.animation='none'; void inner.offsetWidth; inner.style.animation='';
@@ -63,6 +63,5 @@ function arenaComplete(){
   const a=sortie.a, N=sortie.N, first=(P.bestRoom[a]||0)<N;
   const bonus=first?ECON.firstClear(a):ECON.repeatClear(a); P.gems+=bonus; sortie.gems+=bonus; logEarn('gems','clear',bonus); logRoomEnd('complete');
   P.bestRoom[a]=N; P.arenas=Math.max(P.arenas,Math.min(ARENAS.length,a+2)); P.clears++;
-  if(score>P.best) P.best=score;
   clearRun(); persist(); showResult(true,bonus,first);
 }

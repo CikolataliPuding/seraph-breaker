@@ -31,7 +31,7 @@ Bir dosyada en üst seviyede tanımlanan her şey (fonksiyonlar, `const`/`let`) 
 | `js/balance.js` | Denge sistemi: stat kovaları (aynı stattaki bonuslar toplanır, kovalar çarpılır), soft/hard cap'ler, proc limitleri, düşman ölçek eğrisi (`enemyScale`), oyuncu güç tahmini (`powerEstimate`), ekonomi yardımcıları. Sayılar `data.js` içindeki `BAL`, `SCALE`, `XP_NEED`, `ECON`'da. |
 | `js/save.js` | Kayıt (localStorage). Yeni alanlar `DEF_P`'ye varsayılanla eklenir, eski kayıtlar `normP` ile açılır. |
 | `js/audio.js` | Tarayıcıda üretilen müzik (`TRACKS`) ve ses efektleri (`sfx`) |
-| `js/renderer.js` | Three.js sahnesi, kamera (bilgisayar: izometrik, telefon: dik ve odaya sığan), ışıklar, şehir; oda boyutları (`ROOM_X`, `ROOM_Z`, `BOSS_X`, `BOSS_Z`) |
+| `js/renderer.js` | Three.js sahnesi, kamera (bilgisayar: izometrik, telefon: dik ve odaya sığan), ışıklar, şehir; oda boyutları (`ROOM_X`, `ROOM_Z`, `BOSS_X`, `BOSS_Z`, telefonda `ROOM_X_M`, `BOSS_X_M`) |
 | `js/models.js` | Mecha, melek, arena mobları ve boss 3D modelleri (`buildMech`, `BOSS_BUILD`, `corruptModel`). Yeni modellerin kaynağı `docs/bestiary.html`. |
 | `js/preview.js` | Hangardaki dönen mecha ve boss portreleri |
 | `js/input.js` | Klavye ve fare |
@@ -71,7 +71,7 @@ Oyun içinde System menüsünde "Build N" yazar; oyuncu eski sürümdeyse burada
 
 Kolay başlangıç fikirleri:
 
-- **Yeni oda düzeni:** `js/data.js` içindeki `ROOMS` listesine 15 satır × 9 karakterlik yeni bir harita ekle. `#` blok, `~` kanal, `.` boş alan. İlk satır kapı tarafı, son satır giriş tarafı; ilk satırın ve son iki satırın ortası boş kalsın.
+- **Yeni oda düzeni:** `js/data.js` içindeki `ROOMS` listesine 15 satır × 11 karakterlik yeni bir harita ekle. `#` blok, `~` kanal, `.` boş alan. İlk satır kapı tarafı, son satır giriş tarafı; ilk satırın ve son iki satırın ortası boş kalsın.
 - **Denge ayarı:** Silah hasarları `js/player.js` içindeki `weaponUpdate`, düşman canları `js/data.js` içindeki `ENEMY`, boss canları `BOSSES`, arena zorluğu `ARENAS` (`hpMul`, `dmgMul`, `bossMul`), odadan odaya büyüme `SCALE`, cap'ler `BAL`, ekonomi `ECON`. Bir değişikliğin etkisini görmek için `?debug=1` ile açıp konsolda `DBG.sim()` çalıştır.
 - **Yeni koşu yeteneği:** `js/data.js` içindeki `RSK` listesine `{name, d, rarity, max, icon, bonus}` ile ekle (`apply` sadece yan etkiler için; `bonus` cap'lere ve kart önizlemesine kendiliğinden girer), ikonunu `IC`'ye koy. Stat yetenekleri sadece `bonus` ister; özel etkiler `player.rs.<id>` okunarak `js/enemies.js` (`hitEnemy`, `killEnemy`) ya da `js/bullets.js` içine yazılır.
 - **Yeni eşya:** `ITEMS` listesine `{name, d, rarity, icon, shape, color, bonus}` ekle. Stat dışı bayraklar için `add` ve `rem` kullan; birbirinin tersi olmalı ki eşya takas edilebilsin.

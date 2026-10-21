@@ -17,7 +17,7 @@ Bu proje bir topluluk projesi. Oyunun fikri arkadaş grubumuzdan çıktı; herke
 - **Kalıcı güçlenme:** Yetenekler, pilot seviyesi ve eşyalar bütün koşu boyunca kalır, ölünce ya da arena bitince sıfırlanır. Toplanan altın ve elmas her zaman sende kalır.
 - **Koşu kaydı:** Her temizlenen odadan sonra koşu kaydedilir. Uygulamayı kapatsan bile hangardan **Continue run** ile kaldığın odadan devam edersin.
 - **Arena kuralları:** Night Harbor'da düşman mermileri %15 hızlı, Heaven's Gate'te elitler ikili gelir, Fallen Sky'da iki taraf birlikte gelir, elitler corrupted olur ve her koşuya 2 rastgele modifier eklenir. 2. arenadan itibaren bazı odalarda ateş menfezleri ve çöken zeminler var.
-- **Yetenek ruleti:** Level atlayınca 3 kart slot makinesi gibi döner. Nadirlikler: Common (saf stat), Rare (mermi değiştiriciler, öldürünce tetiklenenler), Epic (orbitler, mekaniğe özel), Legendary (evrimler). Sahip olduğun yetenekler daha sık gelir, yükseltilebilecek bir yeteneğin varsa kartlardan biri mutlaka yükseltmedir. Koşu başına 1 reroll. Dokunmak ya da tuşa basmak dönüşü atlar.
+- **Yetenek ruleti:** Level atlayınca 3 kart slot makinesi gibi döner. Nadirlikler: Common (saf stat), Rare (mermi değiştiriciler, öldürünce tetiklenenler), Epic (orbitler, mekaniğe özel), Legendary (evrimler). Sahip olduğun yetenekler daha sık gelir, yükseltilebilecek bir yeteneğin varsa kartlardan biri mutlaka yükseltmedir. Koşu başına 1 reroll. Yeni bir dokunuş ya da tuş basışı dönüşü atlar (basılı tutulan tuş atlamaz). Bilgisayarda `1/2/3` kart seçer, `R` reroll. Level atlamaları savaşın ortasında açılmaz: XP çubuğunda "LEVEL READY" işareti yanar, seçimler oda temizlenince (boss odasında boss ölünce) kapı açılmadan önce sırayla gelir.
 - **Evrimler:** Twin Shot + Rapid Cycle → Bullet Storm, Burn Rounds + Orbit Blades → Inferno Ring, Chain Spark + Bolt Orbit → Storm Halo, Vampiric Core + Rage → Blood Engine. İki yetenek de maksimumdayken teklif edilir.
 - **Melek ve şeytan:** Melek tamir ya da yetenek verir. Hasar almadan temizlenen odalardan sonra şeytan gelebilir: Glass Cannon, Berserk, Greed ya da Brittle lanetlerinden biri karşılığında güç verir. İstersen "Walk away" diyebilirsin.
 - **Eşyalar:** Elitler %25, bosslar her zaman eşya düşürür. 4 slot var, dolunca hangisini bırakacağını seçersin. Plated Core, Servo Boots, Capacitor, Mine Layer, Thorn Plating, Halo Fragment, Overclock Chip, Lucky Coin ve daha fazlası.
@@ -40,7 +40,8 @@ Bu proje bir topluluk projesi. Oyunun fikri arkadaş grubumuzdan çıktı; herke
 | Shift / sağ tık | Altıgen kalkan |
 | Q | Özel hareket |
 | E / R | Aletler |
-| P / Esc | Duraklat |
+| P / Esc | Duraklat (tüm build detaylarıyla) |
+| 1 / 2 / 3, R | Seçim ekranında kart seç, reroll |
 
 ### Telefon (dikey ekran)
 
