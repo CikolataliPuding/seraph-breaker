@@ -163,7 +163,7 @@ function bossDeath(){
   const def=boss.def; score+=[5000,8000,12000,16000][stage]; kills++; hideBeams(); clearEnemyShots(); boss.jumpY=0; boss.reflectT=0;
   const gm=Math.round(def.gems*.5); P.gems+=gm; sortie.gems+=gm;
   state='bossdeath'; stateT=3.2; boss.final=false; buzz(200); hitstop(120,true);
-  dropGold(boss.pos,def.gold*(1+sortie.a*.3));
+  dropGold(boss.pos,def.gold*(1+sortie.a*.3)); dropItem(boss.pos);
 }
 function startCine(){
   const kind=room.boss, def=BOSSES[kind];

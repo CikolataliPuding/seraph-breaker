@@ -80,6 +80,7 @@ function killEnemy(e){
   const g=def.gold*(1+stage*.4)*mul*(sortie.rule.goldMul||1);
   dropGold(e.pos,g);
   if(Math.random()<(e.elite?.3:def.cost>=2.5?.05:.015)) dropPick(e.pos,'gem',1);
+  if(e.elite&&Math.random()<.25) dropItem(e.pos);
   if(Math.random()<.12) dropPick(e.pos,'heal',16);
   if(def.xp) gainXp(def.xp*mul*(1+sortie.a*.12)*(e.gen?.35:1));
 }

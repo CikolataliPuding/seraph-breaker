@@ -26,26 +26,31 @@ Bir dosyada en üst seviyede tanımlanan her şey (fonksiyonlar, `const`/`let`) 
 
 | Dosya | Ne var |
 |---|---|
-| `js/core.js` | Her yerde kullanılan küçük yardımcılar (`$`, `rand`, `clamp`, `isTouch` ...) |
-| `js/data.js` | **Oyun verisi.** Birimler (`UNITS`), silahlar (`WEAPONS`), aletler (`GADGETS`), yetenek ağacı (`TREE`), level içi yetenekler (`RSK`, ikonları `RSK_IC`), stage'ler (`STAGES`), bosslar (`BOSSES`), oda düzenleri (`ROOMS`). Katkıların çoğu buradan başlar. |
-| `js/save.js` | Kayıt (localStorage) |
+| `js/core.js` | Her yerde kullanılan küçük yardımcılar (`$`, `rand`, `clamp`, `isTouch`, `mobileMode` ...) |
+| `js/data.js` | **Oyun verisi.** Birimler (`UNITS`), silahlar (`WEAPONS`), aletler (`GADGETS`), yetenek ağacı (`TREE`), Core statlar (`CORE`), arenalar (`ARENAS`, `MODS`), düşmanlar (`ENEMY`), koşu yetenekleri (`RSK`, `RARITY`), şeytan lanetleri (`CURSES`), eşyalar (`ITEMS`), bosslar (`BOSSES` + corrupted varyantlar), oda düzenleri (`ROOMS`), ikonlar (`IC`). Katkıların çoğu buradan başlar. |
+| `js/save.js` | Kayıt (localStorage). Yeni alanlar `DEF_P`'ye varsayılanla eklenir, eski kayıtlar `normP` ile açılır. |
 | `js/audio.js` | Tarayıcıda üretilen müzik (`TRACKS`) ve ses efektleri (`sfx`) |
-| `js/renderer.js` | Three.js sahnesi, kamera, ışıklar, şehir; arena boyutları (`ROOM_R`, `BOSS_R`, `OUTW`, `OUT_DPS`) |
-| `js/models.js` | Mecha, melek ve boss 3D modelleri (`buildMech`, `BOSS_BUILD`) |
+| `js/renderer.js` | Three.js sahnesi, kamera (bilgisayar: izometrik, telefon: dik ve odaya sığan), ışıklar, şehir; oda boyutları (`ROOM_X`, `ROOM_Z`, `BOSS_X`, `BOSS_Z`) |
+| `js/models.js` | Mecha, melek, arena mobları ve boss 3D modelleri (`buildMech`, `BOSS_BUILD`, `corruptModel`). Yeni modellerin kaynağı `docs/bestiary.html`. |
 | `js/preview.js` | Hangardaki dönen mecha ve boss portreleri |
-| `js/input.js` | Klavye, fare ve dokunmatik kontroller |
+| `js/input.js` | Klavye ve fare |
+| `js/mobile.js` | Kontrol modu, telefon joystick'i, otomatik nişan, otomatik kalkan |
 | `js/state.js` | Ortak oyun durumu |
 | `js/fx.js` | Görsel efektler |
-| `js/rooms.js` | Oda kurulumu, minder sınırı, engeller, kapı, düşman dalgaları (`buildRoom`, `composeRoom`, `startRoom`) |
+| `js/juice.js` | Oyun hissi: hitstop, yavaş çekim, yaylar (`spring`), vuruş tepkisi, ölüm parçaları |
+| `js/rooms.js` | Oda kurulumu, engeller, kapı, zemin tehlikeleri, düşman dalgaları (`buildRoom`, `composeRoom`, `startRoom`) |
 | `js/bullets.js` | Mermiler |
-| `js/enemies.js` | Düşman oluşturma, hasar ve ölüm (`spawnEnemy`, `hitEnemy`) |
-| `js/skills.js` | Level içi tecrübe ve yetenek seçimi (`applySkill`) |
+| `js/enemies.js` | Düşman oluşturma, hasar ve ölüm (`spawnEnemy`, `hitEnemy`, `killEnemy`) |
+| `js/skills.js` | Tecrübe, yetenek ruleti, melek/şeytan teklifleri, orbitler ve yetenek etkileri |
+| `js/items.js` | Eşya düşürme, 4 slot ve takas |
 | `js/player.js` | Oyuncu, özel hareketler, aletler ve silahlar (`weaponUpdate`) |
-| `js/enemy-ai.js` | Düşman davranışları (`updateEnemies`) |
-| `js/bosses.js` | Boss saldırıları (`bossTick`) ve sinematik giriş |
-| `js/flow.js` | Level başlatma, oda geçişleri, sonuç ekranı |
+| `js/enemy-ai.js` | Düşman davranışları (`AI` ve `ANIM` tabloları) |
+| `js/bosses.js` | Boss saldırıları (`bossTick`), boss parçaları ve sinematik giriş |
+| `js/run.js` | Arena koşusu: oda sırası, boss seçimi, koşu kaydı ve devam |
+| `js/flow.js` | Oda geçişleri, sonuç ekranı, duraklatma |
 | `js/ui-hangar.js` | Hangar menüsü ve alt menü |
-| `js/ui-warmap.js` | War Map, cephanelik, yetenek ağacı, birim ve ayar panelleri |
+| `js/ui-warmap.js` | Arena seçimi, cephanelik, Core + yetenek ağacı, birim ve ayar panelleri |
+| `js/debug.js` | `?debug=1` ile açılan test paneli |
 | `js/main.js` | Oyun döngüsü (`frame`) ve başlatma. Her zaman en son yüklenir. |
 
 Yeni bir dosya eklersen `index.html`'de doğru sıraya bir `<script src="js/...">` satırı ekle.
@@ -53,9 +58,11 @@ Bir dosyanın en üst seviyesinde, sonraki bir dosyada tanımlanan bir şeyi hem
 
 Kolay başlangıç fikirleri:
 
-- **Yeni oda düzeni:** `js/data.js` içindeki `ROOMS` listesine 9 satır × 9 karakterlik yeni bir harita ekle. `#` blok, `~` kanal, `.` boş alan. İlk satır kapı tarafı, son satır giriş tarafı.
-- **Denge ayarı:** Silah hasarları `js/player.js` içindeki `weaponUpdate`, düşman canları `js/enemies.js` içindeki `spawnEnemy`, boss canları `js/data.js` içindeki `BOSSES` içinde.
-- **Yeni level içi yetenek:** `js/data.js` içindeki `RSK` listesine ekle ve ikonunu `RSK_IC`'e bağla. Etkisini `js/skills.js` içindeki `applySkill` ya da `js/enemies.js` içindeki `hitEnemy` içine yaz.
+- **Yeni oda düzeni:** `js/data.js` içindeki `ROOMS` listesine 15 satır × 9 karakterlik yeni bir harita ekle. `#` blok, `~` kanal, `.` boş alan. İlk satır kapı tarafı, son satır giriş tarafı; ilk satırın ve son iki satırın ortası boş kalsın.
+- **Denge ayarı:** Silah hasarları `js/player.js` içindeki `weaponUpdate`, düşman canları `js/data.js` içindeki `ENEMY`, boss canları `BOSSES`, arena zorluğu `ARENAS` (`hpMul`, `bossMul`) ve `js/rooms.js` içindeki `composeRoom`.
+- **Yeni koşu yeteneği:** `js/data.js` içindeki `RSK` listesine `{name, d, rarity, max, icon, apply}` ile ekle, ikonunu `IC`'ye koy. Stat yetenekleri sadece `apply` ister; özel etkiler `player.rs.<id>` okunarak `js/enemies.js` (`hitEnemy`, `killEnemy`) ya da `js/bullets.js` içine yazılır.
+- **Yeni eşya:** `ITEMS` listesine `{name, d, rarity, icon, shape, color, add, rem}` ekle. `add` ve `rem` birbirinin tersi olmalı ki eşya takas edilebilsin.
+- **Yeni düşman:** `ENEMY` listesine ekle, `js/enemy-ai.js` içindeki `AI` ve `ANIM` tablolarına birer fonksiyon yaz, bir arenanın `mobs` listesine koy.
 
 ## İyi bir PR için
 

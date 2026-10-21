@@ -43,6 +43,11 @@ const IC={
   halo:'M4 8a8 3 0 1 0 16 0a8 3 0 1 0-16 0M13 12l-3 5h4l-3 5', blood:'M12 21s-8-5-8-11a5 5 0 0 1 8-3 5 5 0 0 1 8 3c0 6-8 11-8 11zM8 11h2l1-3 2 6 1-3h2',
   glass:'M8 3h8l-1 8a3 3 0 0 1-6 0zM12 14v6M8 21h8M10 6l3 3', berserk:'M6 4l6 8 6-8M12 12v8M8 20h8M4 10l3 1M20 10l-3 1',
   greed:'M9 4h6l-2 3h-2zM6 14a6 6 0 0 0 12 0c0-3-3-7-6-7s-6 4-6 7zM12 10v7', brittle:'M12 3l8 3v6c0 5-4 8-8 9-4-1-8-4-8-9V6zM12 3l-2 6 4 3-2 5',
+  i_core:'M12 3l8 4.5v9L12 21l-8-4.5v-9zM12 8l4 2.2v4.6L12 17l-4-2.2v-4.6z', i_boot:'M7 3h5v9l7 3v5H5V3zM5 16h14', i_cap:'M6 7h11v10H6zM17 10h2v4h-2M11 9l-2 3h3l-2 3',
+  i_thorn:'M12 3l8 3v6c0 5-4 8-8 9-4-1-8-4-8-9V6zM2 9l3 1M22 9l-3 1M12 1v2M4 19l2-2M20 19l-2-2', i_halo:'M4 8a8 3 0 1 0 16 0a8 3 0 1 0-16 0M12 13l-2 8h4z',
+  i_chip:'M7 7h10v10H7zM10 10h4v4h-4M9 3v4M15 3v4M9 17v4M15 17v4M3 9h4M3 15h4M17 9h4M17 15h4', i_coin:'M12 3a9 9 0 1 0 0 18a9 9 0 1 0 0-18M12 7l1.5 3 3.5.5-2.5 2.5.6 3.5-3.1-1.6-3.1 1.6.6-3.5L7 10.5l3.5-.5z',
+  i_coil:'M4 12c0-3 2-5 4-5s4 2 4 5-2 5-4 5-4-2-4-5zM12 12c0-3 2-5 4-5s4 2 4 5-2 5-4 5', i_reactor:'M12 2v4M12 18v4M5 5l3 3M16 16l3 3M2 12h4M18 12h4M5 19l3-3M16 8l3-3M9 12a3 3 0 1 0 6 0a3 3 0 1 0-6 0',
+  i_scope:'M12 2v6M12 16v6M2 12h6M16 12h6M5 12a7 7 0 1 0 14 0a7 7 0 1 0-14 0', i_aegis:'M12 2l9 4-2 11-7 5-7-5-2-11zM12 7v10M7 10h10', i_cool:'M12 3c3 4 6 7 6 11a6 6 0 0 1-12 0c0-4 3-7 6-11zM9 14h6M12 11v6',
 };
 const svg = k => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="${IC[k]}"/></svg>`;
 const WEAPONS={
@@ -148,6 +153,24 @@ const RSK={
   blood:{name:'Blood Engine',d:'Evolution of Vampiric Core + Rage: kills repair 4% and Rage counts double.',rarity:'legendary',max:1,icon:'blood',evo:['vamp','rage']},
 };
 for(const id in RSK){ const s=RSK[id]; if(s.evo&&!s.req) s.req=rs=>s.evo.every(k=>(rs[k]||0)>=RSK[k].max); }
+/* run-only items: elites drop one 25% of the time, bosses always. 4 slots. add/rem are exact inverses so items can be swapped out.
+   shape + color build the small pickup model (items.js). Flags such as p.thorn are read where they act. */
+const ITEMS={
+  plated:{name:'Plated Core',d:'+20% max armor.',rarity:'common',icon:'i_core',shape:'box',color:0x5f7aa8,add:p=>{ p.maxHp=Math.round(p.maxHp*1.2); p.hp=Math.min(p.maxHp,p.hp*1.2); },rem:p=>{ p.maxHp=Math.round(p.maxHp/1.2); p.hp=Math.min(p.hp,p.maxHp); }},
+  servo:{name:'Servo Boots',d:'+10% move speed.',rarity:'common',icon:'i_boot',shape:'cyl',color:0x3a3d48,add:p=>{p.st.spd*=1.1;},rem:p=>{p.st.spd/=1.1;}},
+  cap:{name:'Capacitor',d:'+25% power (125 max).',rarity:'common',icon:'i_cap',shape:'cyl',color:0xff6a1a,add:p=>{p.enMax+=25;},rem:p=>{ p.enMax-=25; p.en=Math.min(p.en,p.enMax); }},
+  coil:{name:'Salvage Coil',d:'Double pickup reach, +15% gold.',rarity:'common',icon:'i_coil',shape:'torus',color:0xffc83a,add:p=>{ p.st.magnet*=2; p.st.goldMul*=1.15; },rem:p=>{ p.st.magnet/=2; p.st.goldMul/=1.15; }},
+  coolant:{name:'Coolant Loop',d:'-25% gadget cooldowns.',rarity:'common',icon:'i_cool',shape:'sphere',color:0x5fe0ff,add:p=>{p.st.gadgetCd*=.75;},rem:p=>{p.st.gadgetCd/=.75;}},
+  minel:{name:'Mine Layer',d:'Every dash drops a proximity mine.',rarity:'rare',icon:'mines',shape:'cyl',color:0x2a2632,add:p=>{p.mineLayer=(p.mineLayer||0)+1;},rem:p=>{p.mineLayer--;}},
+  thorn:{name:'Thorn Plating',d:'Enemies that ram you take 3x the damage back.',rarity:'rare',icon:'i_thorn',shape:'oct',color:0xd5352a,add:p=>{p.thorn=(p.thorn||0)+1;},rem:p=>{p.thorn--;}},
+  halof:{name:'Halo Fragment',d:'Repair 5% armor after every cleared room.',rarity:'rare',icon:'i_halo',shape:'torus',color:0xffd36a,add:p=>{p.haloFrag=(p.haloFrag||0)+1;},rem:p=>{p.haloFrag--;}},
+  overclock:{name:'Overclock Chip',d:'+15% fire rate, but you take 10% more damage.',rarity:'rare',icon:'i_chip',shape:'box',color:0x7dff9a,add:p=>{ p.st.rate/=1.15; p.st.armor*=1.1; },rem:p=>{ p.st.rate*=1.15; p.st.armor/=1.1; }},
+  reactor:{name:'Sync Reactor',d:'Start every room with +30% special charge.',rarity:'rare',icon:'i_reactor',shape:'sphere',color:0xffe14a,add:p=>{p.reactor=(p.reactor||0)+1;},rem:p=>{p.reactor--;}},
+  scope:{name:'Target Scope',d:'+6% crit chance and crits hit 2.5x.',rarity:'rare',icon:'i_scope',shape:'cone',color:0xe8e8ee,add:p=>{ p.st.crit+=.06; p.critMul=2.5; },rem:p=>{ p.st.crit-=.06; p.critMul=2; }},
+  lucky:{name:'Lucky Coin',d:'Skill roulette rolls one rarity tier higher more often.',rarity:'epic',icon:'i_coin',shape:'cyl',color:0xffc83a,add:p=>{p.luck++;},rem:p=>{p.luck--;}},
+  aegis:{name:'Aegis Shard',d:'The first hit you take in each room is blocked.',rarity:'epic',icon:'i_aegis',shape:'oct',color:0xb070ff,add:p=>{ p.aegisN=(p.aegisN||0)+1; p.aegis=true; },rem:p=>{ p.aegisN--; p.aegis=p.aegisN>0&&p.aegis; }},
+};
+RARITY.common.drop=55; RARITY.rare.drop=32; RARITY.epic.drop=13;
 /* devil curses: power now, a lasting cost for the rest of the run */
 const CURSES={
   glass:{name:'Glass Cannon',d:'+40% damage, -25% max armor.',icon:'glass',apply:p=>{ p.st.dmg*=1.4; p.maxHp=Math.max(30,Math.round(p.maxHp*.75)); p.hp=Math.min(p.hp,p.maxHp); }},

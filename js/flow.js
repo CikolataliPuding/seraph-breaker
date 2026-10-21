@@ -17,7 +17,7 @@ function refreshControls(){
   if(on) renderAbilityIcons();
 }
 function hideOverlays(){ ['menu','result','pause','card','warn','cine','choice'].forEach(id=>$(id).hidden=true); $('cine').classList.remove('on'); }
-function goNextRoom(){ if(state!=='fight') return; if(room&&room.type==='angel') saveRun(sortie.ri+1); state='trans'; stateT=.45; sortie.swapped=false; $('fade').classList.add('on'); resetTouch(); }
+function goNextRoom(){ if(state!=='fight') return; saveRun(sortie.ri+1); state='trans'; stateT=.45; sortie.swapped=false; $('fade').classList.add('on'); resetTouch(); }
 function showResult(win,bonusG=0,first=false){
   state='result'; refreshControls(); resetTouch(); playTrack('menu');
   const A=ARENAS[sortie.a], reached=Math.min(sortie.ri+1,sortie.N);
