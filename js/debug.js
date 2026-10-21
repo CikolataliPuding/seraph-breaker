@@ -4,7 +4,7 @@ const QS=new URLSearchParams(location.search), DEBUG=QS.get('debug')==='1';
 let godMode=false;
 const DBG={
   god(on=!godMode){ godMode=on; toast(godMode?'God mode on':'God mode off'); return godMode; },
-  killAll(){ enemies.slice().forEach(e=>{ if(!e.dead&&e!==boss) killEnemy(e); }); spawnQ=[]; },
+  killAll(){ for(let k=0;k<5;k++) enemies.slice().forEach(e=>{ if(!e.dead&&e!==boss) killEnemy(e); }); spawnQ=[]; },
   skipCard(){ if(state==='card'){ stateT=0; } if(state==='warn'){ stateT=0; } if(state==='cine') endCine(); },
   spawn(type,elite=false){ if(!player) return; const p=freeSpot(3); return !!spawnEnemy(type,p,elite); },
   start(a=0){ launchArena(a); setTimeout(()=>DBG.skipCard(),50); },

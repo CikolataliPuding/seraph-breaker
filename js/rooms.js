@@ -47,6 +47,33 @@ function buildBossRoom(){
   [[-6.5,-6.5],[6.5,-6.5],[-6.5,6.5],[6.5,6.5]].forEach(([x,z])=>{ const b=part(box(1.8,2.2,1.8),bm,roomGroup,x,1.1,z,.1); const s=new THREE.Mesh(box(1.84,.14,1.84),basic(t.edge,false)); s.position.y=.8; b.add(s); obstacles.push({x0:x-.9,x1:x+.9,z0:z-.9,z1:z+.9,kind:'block'}); });
   [[7.6,8],[3.2,3.35]].forEach(([a,b])=>{ const hx=new THREE.Mesh(new THREE.RingGeometry(a,b,6),addMat(t.edge,.25)); hx.rotation.x=-Math.PI/2; hx.rotation.z=Math.PI/6; hx.position.y=.03; roomGroup.add(hx); });
 }
+/* ground hazards (arena 2+): fire vents and collapsing tiles, always telegraphed before they hurt */
+const HAZ_T={vent:[2.4,1,1.3],tile:[3,1.2,2.5]}; // idle, warn, active (seconds)
+function addHazards(){
+  const ch=sortie.rule.hazards||0; if(Math.random()>=ch) return; const n=2+((Math.random()*3)|0), t=ARENAS[stage].theme;
+  for(let i=0;i<n;i++) for(let k=0;k<24;k++){ const x=-AX+2*(((Math.random()*9)|0)+.5), z=-AZ+2*(((Math.random()*12)|0)+1.5);
+    if(inBlock(x,z,1.2)||z>AZ-4||hazards.some(h=>Math.hypot(h.x-x,h.z-z)<3.2)) continue;
+    const kind=Math.random()<.55?'vent':'tile', g=new THREE.Group(); g.position.set(x,0,z); roomGroup.add(g);
+    let warn,act;
+    if(kind==='vent'){ const base=new THREE.Mesh(new THREE.CircleGeometry(1.3,8),basic(0x1a1420,false)); base.rotation.x=-Math.PI/2; base.position.y=.035; g.add(base);
+      for(let j=-1;j<=1;j++){ const s=new THREE.Mesh(box(1.8,.02,.16),basic(t.wall,false)); s.position.set(0,.05,j*.45); g.add(s); }
+      warn=new THREE.Mesh(new THREE.CircleGeometry(1.3,20),addMat(0xff6a1a,.5)); warn.rotation.x=-Math.PI/2; warn.position.y=.06; g.add(warn);
+      act=new THREE.Group(); for(let j=0;j<5;j++){ const f=new THREE.Mesh(new THREE.ConeGeometry(.35,2.2,6),addMat(j%2?0xffd040:0xff6a1a,.8)); const a=j/5*Math.PI*2; f.position.set(Math.cos(a)*.55,1.1,Math.sin(a)*.55); act.add(f); } g.add(act); }
+    else { warn=new THREE.Mesh(box(2,.02,2),addMat(0xe8243c,.45)); warn.position.y=.05; g.add(warn);
+      act=new THREE.Mesh(box(2,.03,2),basic(0x050306,false)); act.position.y=.04; g.add(act); }
+    warn.visible=act.visible=false;
+    hazards.push({kind,x,z,g,warn,act,ph:0,t:rand(0,HAZ_T[kind][0]),cd:0}); break; }
+}
+function updateHazards(dt){
+  for(const h of hazards){ const T=HAZ_T[h.kind]; h.t-=dt; h.cd-=dt;
+    if(h.t<=0){ h.ph=(h.ph+1)%3; h.t=T[h.ph]; h.warn.visible=h.ph===1; h.act.visible=h.ph===2;
+      if(h.ph===2&&h.kind==='tile'){ crossBlast(new V3(h.x,0,h.z),0xe8243c,.5); if(player&&Math.abs(player.pos.x-h.x)<1.1&&Math.abs(player.pos.z-h.z)<1.1){ hurt(14); h.cd=.6; } } }
+    if(h.ph===1){ const k=1-h.t/T[1]; h.warn.material.opacity=.25+.35*Math.abs(Math.sin(k*k*30)); }
+    if(h.ph===2){ if(h.kind==='vent'){ h.act.children.forEach((f,i)=>{ f.scale.y=.8+Math.random()*.5; }); if(Math.random()<dt*10) sparks(new V3(h.x,1,h.z),0xff8a30,1,4); }
+      const pin=player&&!player.dead&&(h.kind==='vent'?Math.hypot(player.pos.x-h.x,player.pos.z-h.z)<1.4:Math.abs(player.pos.x-h.x)<1.05&&Math.abs(player.pos.z-h.z)<1.05);
+      if(pin&&h.cd<=0){ h.cd=h.kind==='vent'?.5:.6; hurt(h.kind==='vent'?10:6); }
+      if(h.kind==='vent') for(const e of enemies){ if(!e.dead&&!e.fly&&e!==boss&&Math.hypot(e.pos.x-h.x,e.pos.z-h.z)<1.4) e.burn=Math.max(e.burn,1); } } }
+}
 function openDoor(){ if(!door||door.open) return; door.open=true; door.bar.material.color.setHex(0x5fe0ff); door.bar.material.opacity=.25; door.arrow.visible=true; sfx('door'); toast('Room clear','Door open'); }
 function freeSpot(minFromEntry=6){
   for(let i=0;i<60;i++){ const x=rand(-AX+1.5,AX-1.5), z=rand(-AZ+1.5,AZ-3.5); if(inBlock(x,z,1)) continue; if(Math.hypot(x,z-(AZ-1.5))<minFromEntry) continue; if(player&&Math.hypot(x-player.pos.x,z-player.pos.z)<5) continue; return new V3(x,0,z); }
@@ -79,7 +106,7 @@ function startRoom(i,force){
   if(type==='boss'){ $('warnTxt').textContent=BOSSES[room.boss].warn; state='warn'; stateT=2.2; $('warn').hidden=false; playTrack('boss'); sfx('beam'); refreshControls(); return; }
   state='fight'; playTrack('battle');
   if(type==='angel'){ spawnNpc('angel',new V3(0,0,-2)); openDoor(); toast('Sanctuary',tag); }
-  else { const waves=composeRoom(type==='elite'); spawnWave(waves[0]); spawnQ=waves[1]||[]; toast(type==='elite'?'Elite room':'Hostiles',tag); }
+  else { addHazards(); const waves=composeRoom(type==='elite'); spawnWave(waves[0]); spawnQ=waves[1]||[]; toast(type==='elite'?'Elite room':'Hostiles',tag); }
   refreshControls();
 }
 function clearEnemiesAndShots(){
@@ -90,7 +117,7 @@ function clearEnemiesAndShots(){
   mines.forEach(m=>scene.remove(m.g)); mines.length=0;
   holes.forEach(h=>scene.remove(h.g)); holes.length=0;
   if(decoy){ scene.remove(decoy.m.g); decoy=null; }
-  hideBeams(); spawnQ=[]; $('bossHud').hidden=true; clearBlasts();
+  hideBeams(); spawnQ=[]; $('bossHud').hidden=true; clearBlasts(); emines.forEach(m=>roomGroup.remove(m.g)); emines.length=0; hazards.length=0;
 }
 function spawnNpc(kind,pos){
   const m=kind==='angel'?buildSeraph(1.25):buildDevil();

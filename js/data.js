@@ -188,6 +188,16 @@ const ENEMY={
   mini:{name:'Mini seraph',hp:4,r:1.05,speed:6,sc:.7,fly:true,angel:true,cost:.8,xp:0,gold:3,score:60,build:()=>buildSeraph(.7),elite:false,ai:'seraph'},
   heavy:{name:'Heavy',hp:20,r:1.7,speed:2.4,sc:1.25,cost:2.6,xp:3,gold:16,score:300,build:()=>buildMech(0x5a5244,0xc08a2a,0x2a2620,0xff3030,1.25)},
   warden:{name:'Warden',hp:11,r:1.45,speed:3,sc:1,fly:true,angel:true,cost:1.9,xp:2,gold:12,score:250,build:()=>buildWarden()},
+  // arena mobs (models from docs/bestiary.html, behavior in enemy-ai.js)
+  spark:{name:'Spark',hp:3,r:.9,speed:7.5,sc:1,cost:.7,xp:.6,gold:4,score:80,build:()=>buildSpark(),elite:false,init:e=>{ e.model.core.material=e.model.core.material.clone(); e.st='roll'; }},
+  crawler:{name:'Crawler',hp:9,r:1.3,speed:5.5,sc:1,cost:1.4,xp:1.4,gold:9,score:160,build:()=>buildCrawler(1),init:e=>{ e.cd=rand(1.5,2.5); }},
+  howitzer:{name:'Howitzer',hp:12,r:1.4,speed:0,sc:1,cost:2.2,xp:2.2,gold:13,score:260,build:()=>buildHowitzer(),init:e=>{ e.cd=rand(1.4,2.4); }},
+  lancer:{name:'Lancer',hp:9,r:1.15,speed:3.2,sc:1.05,cost:2,xp:2,gold:12,score:240,build:()=>buildLancer(),init:e=>{ e.model.laser.material=e.model.laser.material.clone(); e.st='move'; e.stT=rand(1.2,2.2); }},
+  bulwark:{name:'Bulwark',hp:24,r:1.6,speed:1.8,sc:1.15,cost:2.4,xp:2.6,gold:15,score:280,build:()=>buildBulwark(),init:e=>{ e.cd=rand(2,3); }},
+  shardling:{name:'Shardling',hp:8,r:1.2,speed:3,sc:1,fly:true,angel:true,cost:1.6,xp:1.4,gold:9,score:180,build:()=>buildShardling(),init:(e,o)=>{ e.gen=o.gen||0; e.sc=Math.pow(.72,e.gen); e.hp*=Math.pow(.45,e.gen); e.r*=e.sc; }},
+  cherub:{name:'Cherub',hp:7,r:1,speed:4.6,sc:1,fly:true,angel:true,cost:1.5,xp:1.5,gold:10,score:220,build:()=>buildCherub(),elite:false,init:e=>{ e.cd=3; }},
+  censer:{name:'Censer',hp:10,r:1.1,speed:1.8,sc:1,fly:true,angel:true,cost:2,xp:2,gold:12,score:240,build:()=>buildCenser(),init:e=>{ e.cd=rand(1.5,2.5); }},
+  ophan:{name:'Ophan',hp:16,r:1.8,speed:11,sc:1,angel:true,cost:2.8,xp:3,gold:16,score:320,build:()=>buildOphan(1),init:e=>{ e.st='pause'; e.stT=rand(1,2); }},
 };
 const BOSSES={
   colossus:{name:'Iron Colossus',cls:'Class · War machine · Siege frame',epi:'Built to level cities. It walks straight through gunfire and shakes the ground apart.',threat:3,warn:'HOSTILE WAR MACHINE INBOUND',hp:470,r:3.2,fly:0,barrier:false,minion:'drone',gold:220,gems:25,angel:false,
@@ -196,7 +206,20 @@ const BOSSES={
     pool:[['beam','shards','ring'],['beam','sweep','shards','ring'],['sweep','beam','shards','ring','summon']]},
   seraph:{name:'The Last Seraph',cls:'Class · Angel · Seraph',epi:'The source of every signal. Six wings, one core, and nothing left to lose.',threat:5,warn:'HIGH-ENERGY SIGNAL DESCENDING',hp:860,r:3.0,fly:4.2,barrier:true,minion:'mini',gold:600,gems:60,angel:true,
     pool:[['ring','beam','spiral','aimed'],['ring','beam','spiral','summon','aimed','sweep'],['ring','sweep','spiral','summon','aimed','beam','shards']]},
+  hive:{name:'Hive Carrier',cls:'Class · War machine · Rotor carrier',epi:'A flying hangar with four rotors. It seeds the room with drones and bombs it in straight lines.',threat:3,warn:'ROTOR NOISE OVERHEAD',hp:540,r:3.6,fly:.01,coreY:5,barrier:false,minion:'drone',gold:240,gems:28,angel:false,
+    pool:[['drones','bombline','missiles'],['drones','bombline','missiles','bombline'],['sparks','bombline','drones','missiles','bombline']]},
+  arachne:{name:'Siege Arachne',cls:'Class · War machine · Siege walker',epi:'A Crawler grown to the size of a building. Its head laser sweeps half the room; the space under its belly is the only blind spot.',threat:4,warn:'SEISMIC SIGNATURE CLOSING',hp:600,r:3.4,fly:0,coreY:3.2,barrier:false,minion:'crawler',gold:300,gems:34,angel:false,
+    pool:[['sweep180','mines','burst2'],['sweep180','mines','stomp','burst2'],['sweep180','stomp','mines','burst2','stomp']]},
+  throne:{name:'Ophanim Throne',cls:'Class · Angel · Throne',epi:'Three rings and twenty-four eyes. Every open eye is a gun; shoot them out.',threat:5,warn:'THE THRONE IS WATCHING',hp:880,r:3.4,fly:.01,coreY:3.5,barrier:false,minion:'mini',gold:560,gems:56,angel:true,
+    pool:[['walls','eyes'],['walls','eyes','walls2'],['walls2','eyes','roll','walls','roll']]},
+  archon:{name:'Archon',cls:'Class · Angel · Judge',epi:'An armored knight with a sword of light. Stay out of the lunge, punish the recovery, and stop firing into the shield.',threat:5,warn:'JUDGEMENT DESCENDS',hp:820,r:2.6,fly:.01,coreY:4.6,barrier:false,minion:'seraph',gold:560,gems:56,angel:true,
+    pool:[['wave','lunge','aimed'],['wave','lunge','shieldup','wave'],['lunge','wave','shieldup','lunge','ring']]},
 };
+/* corrupted variants: any boss + purple tint, crystal spikes and a few attacks borrowed from another boss. Arena 4 draws from all of them. */
+const CORRUPT_DONOR={colossus:['shards','beam'],prism:['missiles','slam'],seraph:['walls','bombline'],hive:['mines','spiral'],arachne:['bombline','ring'],throne:['spiral','missiles'],archon:['slam','shards']};
+for(const k of Object.keys(CORRUPT_DONOR)){ const b=BOSSES[k], dn=CORRUPT_DONOR[k];
+  BOSSES['x_'+k]=Object.assign({},b,{name:'Corrupted '+b.name.replace(/^The /,''),cls:b.cls+' · Corrupted',epi:'The void got inside it. Same frame, new tricks, more armor.',threat:Math.min(5,b.threat+1),warn:'CORRUPTED SIGNAL · '+b.warn,hp:Math.round(b.hp*1.35),form:k,corrupt:true,gold:Math.round(b.gold*1.3),gems:Math.round(b.gems*1.3),
+    pool:b.pool.map((p,i)=>p.concat(dn.slice(0,i===0?1:2)))}); }
 /* hand-built room layouts: 9 columns × 15 rows of 2-unit cells (a tall rectangle). Row 0 is the door side, the last row the entry.
    # block (stops movement and most shots) · ~ hazard canal (stops movement only) · . open floor. Keep row 0 and the last two rows open in the middle. */
 const ROOMS=[

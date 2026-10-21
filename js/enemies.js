@@ -31,7 +31,7 @@ function flashModel(e){ e.model.mats.forEach(m=>m.emissive.setHex(0xffffff)); e.
 function unflash(e){ e.model.mats.forEach(m=>m.emissive.setHex(0)); }
 function hitEnemy(e,d,pos,dot,noProc){
   if(!e||e.dead) return;
-  if(e===boss){ if(boss.atk==='enter'||state==='cine') return; if(boss.barrier>0){ if(!dot) sparks(pos,0xffa04a,3,5); return; } d*=player.st.boss; }
+  if(e===boss){ if(boss.atk==='enter'||state==='cine') return; if(boss.barrier>0){ if(!dot) sparks(pos,0xffa04a,3,5); return; } d*=player.st.boss; if(boss.vuln>0) d*=1.6; if(boss.reflectT>0) d*=.3; }
   const rs=player.rs;
   let crit=false; if(!dot&&Math.random()<player.st.crit){ d*=player.critMul||2; crit=true; }
   // Rage (doubled by Blood Engine): more damage as your armor drops
@@ -52,12 +52,18 @@ function hitEnemy(e,d,pos,dot,noProc){
       if(rs.freeze&&e!==boss&&Math.random()<.07*rs.freeze){ e.stun=Math.max(e.stun,.9); e.frozen=.9; e.model.mats.forEach(m=>m.emissive.setHex(0x2a7aa8)); sparks(pos,0x9fe8ff,6,5); }
       if(rs.meteor&&player.meteorCd<=0&&Math.random()<.04*rs.meteor){ player.meteorCd=.5; queueBlast(e.pos.x,e.pos.z,{t:.55,rad:3.4,dmg:16*player.st.dmg,color:0xff8a30,size:1}); }
       if(rs.arc&&Math.random()<(rs.arc>1?.35:.2)){ const t=nearestFoe(e.pos,6,null,new Set([e])); if(t){ bolt(pos.clone().setY(2),t.pos.clone().setY(2),0xbfe8ff); hitEnemy(t,d*.6,t.pos.clone().setY(2),false,true); } } } }
+  if(e===boss&&!dot) bossPartHit(boss,pos,d);
   if(e.hp<=0) killEnemy(e);
 }
 function aoe(pos,rad,dmg,stun=0,knock=0){ for(const e of enemies.slice()){ if(e.dead)continue; const d=Math.hypot(e.pos.x-pos.x,e.pos.z-pos.z); if(d<rad+e.r*.6){ if(stun&&e!==boss) e.stun=Math.max(e.stun,stun); if(knock&&e!==boss&&d>.01){ e.pos.x+=(e.pos.x-pos.x)/d*knock; e.pos.z+=(e.pos.z-pos.z)/d*knock; } hitEnemy(e,dmg,e.pos.clone().setY(2)); } } }
 function killEnemy(e){
   e.dead=true;
   if(e===boss){ bossDeath(); return; }
+  if(e.type==='spark'&&!e.boomed){ e.boomed=true; queueBlast(e.pos.x,e.pos.z,{t:.12,rad:2.6,dmg:10*ARENAS[stage].hpMul,color:0xffa040,size:.8,skip:e}); }
+  if(e.ring) e.ring.visible=false;
+  // Shardlings split into two smaller copies, twice (capped per room)
+  if(e.type==='shardling'&&(e.gen||0)<2){ let n=0; for(const o of enemies) if(o.type==='shardling'&&!o.dead) n++; for(const s of [-1,1]){ if(n++>=10) break; const c=spawnEnemy('shardling',new V3(clamp(e.pos.x+s*.9,-AX+1,AX-1),0,clamp(e.pos.z,-AZ+1,AZ-1)),false,{gen:(e.gen||0)+1,noDrop:true}); if(c){ c.kx=s*7; c.kz=rand(-3,3); c.elite=false; } } }
+  if(sortie.rule.volatile){ const o=rand(0,1); for(let i=0;i<6;i++){ const a=(i+o)/6*Math.PI*2; shoot('e',e.pos.clone().setY(1.6),new V3(Math.sin(a),0,Math.cos(a)),4*eSpd(),8,0xb070ff,{life:3,r:.42,over:true}); } }
   const mul=e.elite?3:1, def=e.def||ENEMY.drone;
   score+=(def.score*(1+stage*.5)*mul)|0; kills++;
   if(!(player.od>0||player.lance>0)) player.sp=Math.min(100,player.sp+5*player.st.sp);
@@ -75,7 +81,7 @@ function killEnemy(e){
   dropGold(e.pos,g);
   if(Math.random()<(e.elite?.3:def.cost>=2.5?.05:.015)) dropPick(e.pos,'gem',1);
   if(Math.random()<.12) dropPick(e.pos,'heal',16);
-  if(def.xp) gainXp(def.xp*mul*(1+sortie.a*.12));
+  if(def.xp) gainXp(def.xp*mul*(1+sortie.a*.12)*(e.gen?.35:1));
 }
 function dropPick(pos,kind,v){
   let m;

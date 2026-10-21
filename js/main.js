@@ -4,7 +4,7 @@ let last=performance.now(),hudT=0;
 const _sunOff=new V3(-6,32,3);
 function roomUpdate(dt,edt){
   if(spawnQ.length&&!enemies.length){ spawnWave(spawnQ); spawnQ=[]; toast('Second wave'); }
-  updateEnemies(edt);
+  updateEnemies(edt); updateEMines(edt,performance.now()/1000); updateHazards(dt);
   if(room.type!=='boss'&&room.type!=='angel'&&!room.cleared&&!enemies.length&&!spawnQ.length){
     room.cleared=true; if(typeof onRoomClear==='function') onRoomClear();
     openDoor(); saveRun(sortie.ri+1);
@@ -79,7 +79,13 @@ function frame(now){
       let gone=false;
       for(const e of enemies){ if(e.dead||e.born<.4)continue; if(b.hit&&b.hit.has(e))continue;
         const shieldPad=e===boss&&boss.barrier>0?1.2:0, r=e.r+b.r*.5+shieldPad, dx=p.x-e.pos.x, dz=p.z-e.pos.z;
-        if(dx*dx+dz*dz<r*r){ if(b.grav){ makeHole(p); gone=true; break; } hitEnemy(e,b.dmg,p.clone());
+        if(dx*dx+dz*dz<r*r){ if(b.grav){ makeHole(p); gone=true; break; }
+          // Bulwark: the front shield stops plain shots (pierce and ricochet get through, wall-bounce shots bounce off it)
+          if(e.type==='bulwark'&&!b.pierce&&!b.bounce){ const fx=Math.sin(e.yaw),fz=Math.cos(e.yaw),l=Math.hypot(dx,dz)||1; if((dx*fx+dz*fz)/l>.3){ sparks(p,0xffa04a,3,4); sfx('shield'); e.model.hex.scale.setScalar(1.5); e.jz.pop.v+=.6;
+            if(b.wall>0){ b.wall--; const dn=b.vel.x*fx+b.vel.z*fz; b.vel.x-=2*dn*fx; b.vel.z-=2*dn*fz; p.x+=fx*.6; p.z+=fz*.6; b.m.lookAt(p.clone().add(b.vel)); } else gone=true; break; } }
+          // Archon shield phase: your shots fly back at you
+          if(e===boss&&boss.reflectT>0){ const v=new V3(player.pos.x-p.x,0,player.pos.z-p.z).normalize(); shoot('e',p.clone().setY(1.8),v,13*eSpd(),9,0xffd36a,{life:2.4,r:.42,over:true}); sparks(p,0xffd36a,2,4); gone=true; break; }
+          hitEnemy(e,b.dmg,p.clone());
           if(b.pierce&&!shieldPad) b.hit.add(e);
           else if(b.bounce>0&&!shieldPad){ b.bounce--; b.hit.add(e); const nx=nearestFoe(e.pos,8,null,b.hit); if(nx){ const sp=b.vel.length(); b.vel.set(nx.pos.x-p.x,0,nx.pos.z-p.z).setLength(sp); b.m.lookAt(p.clone().add(b.vel)); b.life=Math.max(b.life,.6); } else { gone=true; } break; }
           else { gone=true; break; } } }
@@ -97,7 +103,7 @@ function frame(now){
   updateJuice(dt);
   for(let i=fx.length-1;i>=0;i--){ const f=fx[i]; if(dt>0) f.life-=dt; const k=Math.max(0,f.life/f.max); f.upd(f,dt,k); if(f.life<=0){ scene.remove(f.obj); if(f.dispose&&f.obj.geometry) f.obj.geometry.dispose(); fx.splice(i,1); } }
   let want=1;
-  if(state==='cine'&&boss){ camTarget.lerp(_tmp.set(boss.pos.x,boss.kind==='colossus'?3:boss.y*.5,boss.pos.z),Math.min(1,(dt||.016)*3)); want=1.55; }
+  if(state==='cine'&&boss){ camTarget.lerp(_tmp.set(boss.pos.x,bossCore(boss).y*.5,boss.pos.z),Math.min(1,(dt||.016)*3)); want=1.55; }
   else if(player&&!player.dead&&dt>0){ if(mobileMode) _tmp.set(0,0,mobileCamZ(player.pos.z)); else _tmp.copy(player.pos).addScaledVector(player.aim,1.5); camTarget.lerp(_tmp,Math.min(1,dt*5)); }
   camZoom+=(want-camZoom)*Math.min(1,(dt||.016)*3); if(Math.abs(cam.zoom-camZoom)>.001){ cam.zoom=camZoom; cam.updateProjectionMatrix(); }
   cam.position.copy(camTarget).add(mobileMode?CAM_OFF_M:CAM_OFF);
