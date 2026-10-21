@@ -339,3 +339,15 @@ body.mob h2{font-size:30px}
 #rsBar span.r-legendary,.resKit span.r-legendary{border-color:#ffc83a;color:#ffc83a;box-shadow:0 0 6px rgba(255,200,58,.6)}
 #rsBar span.curse,.resKit span.curse{border-color:var(--alert);color:var(--alert)}
 #rsBar span.it,.resKit span.it{border-radius:50%}
+
+/* core stats (hangar · skills) */
+.core{display:grid;gap:6px}
+.coreRow{appearance:none;cursor:pointer;display:grid;grid-template-columns:auto 1fr auto auto;gap:10px;align-items:center;text-align:left;border:1px solid var(--line);background:rgba(23,18,29,.92);padding:9px 11px;min-width:0}
+.coreRow .ic{width:34px;height:34px;display:grid;place-items:center;color:var(--signal);background:rgba(255,106,26,.12);clip-path:polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%)}
+.coreRow .ic svg{width:20px;height:20px}
+.coreRow .t{display:grid;min-width:0} .coreRow b{font-size:17px} .coreRow small{font-size:13px;color:var(--dim)}
+.coreRow .lv{font-family:var(--f-data);font-size:13px;color:var(--paper)}
+.coreRow .cost{font-size:14px}
+.coreRow:not(.max):hover{border-color:var(--signal)}
+.coreRow.poor .cost{opacity:.55} .coreRow.max .cost{font-family:var(--f-data);font-size:12px;color:var(--signal)}
+.coreRow:focus-visible{outline:2px solid var(--signal);outline-offset:1px}

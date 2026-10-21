@@ -1,7 +1,7 @@
 // Seraph Breaker · save.js: Save/load of player progress in localStorage (key and fields must stay compatible with existing saves).
 /* ================= SAVE ================= */
 const SAVE_KEY='seraph-breaker-save-v2';
-const DEF_P={v:3,rev:0,pilot:'',unit:'azure',c1:null,c2:null,gold:0,gems:0,skills:{},owned:{},weapon:'sig',gadgets:['',''],music:.55,sfx:.7,best:0,clears:0,progress:0,ctrl:'auto',autoGadget:false,arenas:1,bestRoom:[0,0,0,0],selArena:0};
+const DEF_P={v:3,rev:0,pilot:'',unit:'azure',c1:null,c2:null,gold:0,gems:0,skills:{},owned:{},weapon:'sig',gadgets:['',''],music:.55,sfx:.7,best:0,clears:0,progress:0,ctrl:'auto',autoGadget:false,arenas:1,bestRoom:[0,0,0,0],selArena:0,core:{armor:0,dmg:0,regen:0}};
 const freshP = () => JSON.parse(JSON.stringify(DEF_P));
 function normP(d){
   const p=freshP();
@@ -16,6 +16,7 @@ function normP(d){
   // saves from the 12-level campaign: progress 4/8/12 unlock arenas 2/3/4
   if(!d||typeof d.arenas!=='number') p.arenas=p.progress>=12?4:p.progress>=8?3:p.progress>=4?2:1;
   p.arenas=clamp(Math.floor(+p.arenas||1),1,4); p.selArena=clamp(Math.floor(+p.selArena||0),0,p.arenas-1);
+  const c=p.core&&typeof p.core==='object'?p.core:{}; p.core={}; for(const k of ['armor','dmg','regen']) p.core[k]=clamp(Math.floor(+c[k]||0),0,30);
   p.bestRoom=[0,1,2,3].map(i=>Math.max(0,Math.floor(+(Array.isArray(p.bestRoom)&&p.bestRoom[i])||0)));
   p.pilot=String(p.pilot||'').slice(0,14);
   if(!['auto','mobile','desktop'].includes(p.ctrl)) p.ctrl='auto'; p.autoGadget=!!p.autoGadget;

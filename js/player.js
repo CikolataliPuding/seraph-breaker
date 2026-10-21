@@ -1,8 +1,8 @@
 // Seraph Breaker · player.js: Player stats, movement, dash, barrier, special moves, gadgets and weapons.
 /* ================= PLAYER ================= */
 function computeStats(){
-  const r=id=>P.skills[id]||0;
-  return {dmg:1+.1*r('dmg'),rate:1-.08*r('rate'),crit:.07*r('crit'),sp:1+.25*r('sp'),boss:1+.3*r('exec'),heal:1+.4*r('repair'),hexDrain:1-.2*r('hex'),armor:1-.08*r('plate'),second:r('second')>0,spd:1+.06*r('spd'),regen:1+.15*r('regen'),dashCd:1-.15*r('dashcd'),magnet:3.2*(1+.6*r('magnet')),goldMul:1+.1*r('magnet'),gadgetCd:1-.12*r('gadget'),maxHp:UNITS[P.unit].hp+15*r('hp'),dodge:0,spPow:1,noHex:false};
+  const r=id=>P.skills[id]||0, c=P.core;
+  return {dmg:(1+.1*r('dmg'))*(1+.04*c.dmg),rate:1-.08*r('rate'),crit:.07*r('crit'),sp:1+.25*r('sp'),boss:1+.3*r('exec'),heal:1+.4*r('repair'),hexDrain:1-.2*r('hex'),armor:1-.08*r('plate'),second:r('second')>0,spd:1+.06*r('spd'),regen:(1+.15*r('regen'))*(1+.03*c.regen),dashCd:1-.15*r('dashcd'),magnet:3.2*(1+.6*r('magnet')),goldMul:1+.1*r('magnet'),gadgetCd:1-.12*r('gadget'),maxHp:UNITS[P.unit].hp+15*r('hp')+20*c.armor,dodge:0,spPow:1,noHex:false};
 }
 function makePlayer(){
   unit=UNITS[P.unit];
