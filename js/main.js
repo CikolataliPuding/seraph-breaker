@@ -20,10 +20,14 @@ function frame(now){
   requestAnimationFrame(frame);
   let dt=Math.min(.033,(now-last)/1000); last=now;
   if(paused||state==='choice'||state==='result') dt=0;
+  const rdt=dt; hsCool=Math.max(0,hsCool-rdt);
+  // hitstop freezes the simulation while rendering continues; slow motion only slows enemies and their shots
+  if(dt>0&&hitstopT>0){ hitstopT-=dt; dt=0; }
+  if(dt>0&&slowT>0) slowT=Math.max(0,slowT-dt);
   const t=now/1000;
   if(state==='menu'){ camTarget.set(Math.sin(t*.12)*6,0,Math.cos(t*.12)*6); if(!$('menu').hidden&&(view==='home'||view==='frames')) renderPreview(t); }
-  chrono=Math.max(0,chrono-dt); const eTS=chrono>0?.3:1, edt=dt*eTS;
-  $('chronoTint').style.opacity=chrono>0?1:0;
+  chrono=Math.max(0,chrono-dt); const eTS=(chrono>0?.3:1)*(slowT>0?.25:1), edt=dt*eTS;
+  $('chronoTint').style.opacity=chrono>0||slowT>0?1:0;
   if(toastT>0){ toastT-=dt||.016; if(toastT<=0) $('toast').classList.remove('on'); }
   if(player&&dt>0){
     const act=state==='fight';
@@ -36,7 +40,7 @@ function frame(now){
     else if(state==='bossdeath'){ const b=boss; stateT-=dt;
       b.model.g.position.set(b.pos.x+rand(-.15,.15),b.y,b.pos.z+rand(-.15,.15));
       if(Math.random()<dt*7){ const p=bossCore(b).add(new V3(rand(-3,3),rand(-3,3),rand(-3,3))); crossBlast(p.setY(Math.max(.2,p.y-3)),Math.random()<.5?0xff2236:0xffd36a,rand(.6,1.1)); }
-      if(stateT<=.8&&!b.final){ b.final=true; crossBlast(b.pos.clone().setY(0),0xff2236,3); scene.remove(b.model.g,b.model.shadow); enemies.slice().forEach(e=>{ if(e!==b&&!e.dead) killEnemy(e); }); enemies.length=0; }
+      if(stateT<=.8&&!b.final){ b.final=true; crossBlast(b.pos.clone().setY(0),0xff2236,3); hitstop(110,true); shatter(b.model,b.pos,0,0,{max:mobileMode?10:22,spd:1.6,cy:b.y+2,crystal:b.def.angel?0xffd36a:0}); scene.remove(b.model.g,b.model.shadow); enemies.slice().forEach(e=>{ if(e!==b&&!e.dead) killEnemy(e); }); enemies.length=0; }
       if(stateT<=0){ boss=null; $('bossHud').hidden=true; pickups.slice().forEach(q=>{ if(q.kind!=='heal') collect(q); scene.remove(q.m); }); pickups.length=0; levelComplete(); } }
     else if(state==='dying'){ stateT-=dt; updateEnemies(edt); if(stateT<=0) showResult(false); }
     for(const e of enemies){ if(e.dead) continue; if(e.burn>0){ e.burn-=dt; hitEnemy(e,3*player.st.dmg*dt,e.pos,true); if(Math.random()<dt*8) sparks(e.pos.clone().setY(2),0xff7a2a,1,3); } if(e.slow>0) e.slow-=dt; }
@@ -79,6 +83,7 @@ function frame(now){
   if(dt>0) for(let i=shocks.length-1;i>=0;i--){ const s=shocks[i]; s.r+=s.speed*edt; const k=1-s.r/s.max; s.ring.scale.setScalar(s.r); s.wall.scale.set(s.r,.9,s.r); s.ring.material.opacity=k; s.wall.material.opacity=k*.55;
     if(player&&!player.dead&&!s.hit){ const dd=Math.hypot(player.pos.x-s.x,player.pos.z-s.z); if(Math.abs(dd-s.r)<.7){ s.hit=true; hurt(16); } }
     if(s.r>=s.max){ scene.remove(s.ring,s.wall); shocks.splice(i,1); } }
+  updateJuice(dt);
   for(let i=fx.length-1;i>=0;i--){ const f=fx[i]; if(dt>0) f.life-=dt; const k=Math.max(0,f.life/f.max); f.upd(f,dt,k); if(f.life<=0){ scene.remove(f.obj); if(f.dispose&&f.obj.geometry) f.obj.geometry.dispose(); fx.splice(i,1); } }
   let want=1;
   if(state==='cine'&&boss){ camTarget.lerp(_tmp.set(boss.pos.x,boss.kind==='colossus'?3:boss.y*.5,boss.pos.z),Math.min(1,(dt||.016)*3)); want=1.55; }
@@ -105,6 +110,7 @@ function frame(now){
 
 /* boot */
 initTouchControls();
+initDebug();
 applyTheme(0);
 makePortraits();
 rebuildPreview();

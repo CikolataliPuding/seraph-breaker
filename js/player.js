@@ -10,7 +10,7 @@ function makePlayer(){
   const c=paint(); const m=buildMech(c.c1,c.c2,c.c3,c.eye,1,P.unit); scene.add(m.g,m.shadow);
   const st=computeStats();
   player={model:m,pos:new V3(0,0,6),vel:new V3(),st,hp:st.maxHp,maxHp:st.maxHp,en:100,overheat:0,regenDelay:0,fireCd:0,dashT:0,dashCd:0,dashDir:new V3(),inv:0,shield:false,aim:new V3(-1,0,-1).normalize(),aimOk:false,yaw:Math.PI,walk:0,dead:false,flash:0,
-    sp:0,od:0,leap:null,lance:0,lanceDir:new V3(),charge:0,prevFire:false,lunge:0,slashSide:1,hook:null,jump:null,gcd:[0,0],secondUsed:false,rs:{},orbA:0};
+    sp:0,od:0,leap:null,lance:0,lanceDir:new V3(),charge:0,prevFire:false,lunge:0,slashSide:1,hook:null,jump:null,gcd:[0,0],secondUsed:false,rs:{},orbA:0,jz:juiceState(),kick:new V3(),wasDash:false};
   odRing.material.color.setHex(0xffe14a); pBeamO.material.color.setHex(unit.shot);
   buildOrbit(); renderRunSkills();
 }
@@ -59,17 +59,17 @@ function moveVec(){
 }
 function nearestFoe(from,maxD=1e9,cone=null,skip=null){ let best=null,bd=maxD*maxD; for(const e of enemies){ if(e.dead||e.born<.4||(skip&&skip.has(e)))continue; const dx=e.pos.x-from.x,dz=e.pos.z-from.z,d=dx*dx+dz*dz; if(d>=bd)continue; if(cone){ const l=Math.sqrt(d)||1; if((dx*cone.x+dz*cone.z)/l<cone.c) continue; } bd=d; best=e; } return best; }
 function hurt(d){
-  const p=player; if(!p||p.dead||p.inv>0||p.dashT>0||p.leap||p.jump||(p.hook&&p.hook.phase==='pull')||state!=='fight') return;
+  const p=player; if(godMode) return; if(!p||p.dead||p.inv>0||p.dashT>0||p.leap||p.jump||(p.hook&&p.hook.phase==='pull')||state!=='fight') return;
   d*=p.st.armor*(p.lance>0?.5:1);
-  p.hp-=d; p.inv=.55; shake=Math.max(shake,.4); flashModel(p); buzz(40); sfx('hurt'); if(room) room.hurt=true;
+  p.hp-=d; p.inv=.55; shake=Math.max(shake,.4); if(d>=14) hitstop(40); p.jz.sq.v+=2; flashModel(p); buzz(40); sfx('hurt'); if(room) room.hurt=true;
   $('vign').style.opacity=1; setTimeout(()=>{ $('vign').style.opacity=player&&!player.dead&&player.hp<player.maxHp*.3?.45:0; },160);
   sparks(p.pos.clone().setY(2),0xff4a3a,10,8);
   if(p.hp<=0) zeroHp();
 }
 function zeroHp(){
-  const p=player;
+  const p=player; if(godMode){ p.hp=1; return; }
   if(p.st.second&&!p.secondUsed){ p.secondUsed=true; p.hp=p.maxHp*.3; p.inv=1.6; crossBlast(p.pos.clone(),0x7dff9a,1); clearEnemyShots(p.pos,8); return; }
-  p.hp=0; p.dead=true; crossBlast(p.pos.clone(),unit.shot,1.6); scene.remove(p.model.g); state='dying'; stateT=1.8; shieldG.visible=false; pBeamO.visible=pBeamC.visible=false; chargeOrb.visible=false; buzz(300);
+  p.hp=0; p.dead=true; crossBlast(p.pos.clone(),unit.shot,1.6); hitstop(120,true); shatter(p.model,p.pos,0,0,{max:14,spd:1.2}); scene.remove(p.model.g,p.model.shadow); state='dying'; stateT=1.8; shieldG.visible=false; pBeamO.visible=pBeamC.visible=false; chargeOrb.visible=false; buzz(300);
 }
 const _tmp=new V3(),_tmp2=new V3(),_mz=new V3();
 function shotDir(mz){ const p=player; if(p.aimOk&&!isTouch){ _tmp2.set(aimPt.x-mz.x,0,aimPt.z-mz.z); if(_tmp2.lengthSq()>2.2) return _tmp2.normalize().clone(); } return p.aim.clone(); }
@@ -92,9 +92,9 @@ function updatePlayer(dt,canAct){
   const m=p.model; let air=0;
   if(p.od>0) p.od-=dt;
   if(p.leap){ const L=p.leap; L.t+=dt; const k=Math.min(1,L.t/L.dur); p.pos.lerpVectors(L.from,L.to,k); air=Math.sin(Math.PI*k)*4.5; p.vel.set(0,0,0);
-    if(k>=1){ p.leap=null; pushOut(p.pos,.7); aoe(p.pos,7,45*p.st.dmg,.8,2.5); crossBlast(p.pos.clone(),0xff4a2a,2); shockwave(p.pos,22,9,0xffa040,true); clearEnemyShots(p.pos,5); buzz(120); } }
+    if(k>=1){ p.leap=null; pushOut(p.pos,.7); p.jz.sq.v=-7; hitstop(70,true); aoe(p.pos,7,45*p.st.dmg,.8,2.5); crossBlast(p.pos.clone(),0xff4a2a,2); shockwave(p.pos,22,9,0xffa040,true); clearEnemyShots(p.pos,5); buzz(120); } }
   else if(p.jump){ const J=p.jump; J.t+=dt; const k=Math.min(1,J.t/J.dur); p.pos.lerpVectors(J.from,J.to,k); air=Math.sin(Math.PI*k)*3.5; p.vel.set(0,0,0);
-    if(k>=1){ p.jump=null; pushOut(p.pos,.7); aoe(p.pos,4.2,14*p.st.dmg,.6,1.5); groundRing(p.pos,0xffa040,5,.5); sparks(p.pos.clone().setY(.5),0xffa040,10,6); shake=.3; sfx('boom'); } }
+    if(k>=1){ p.jump=null; pushOut(p.pos,.7); p.jz.sq.v=-5; aoe(p.pos,4.2,14*p.st.dmg,.6,1.5); groundRing(p.pos,0xffa040,5,.5); sparks(p.pos.clone().setY(.5),0xffa040,10,6); shake=.3; sfx('boom'); } }
   else if(p.hook&&p.hook.phase==='pull'){ const h=p.hook; const dest=h.target&&!h.target.dead?h.target.pos.clone().addScaledVector(h.dir,-(h.target.r+1)):h.end;
     _tmp.set(dest.x-p.pos.x,0,dest.z-p.pos.z); const d=_tmp.length(); const step=32*dt;
     if(d<=step+.1){ p.pos.set(dest.x,0,dest.z); pushOut(p.pos,.7); if(h.target&&!h.target.dead){ if(h.target!==boss) h.target.stun=1.2; hitEnemy(h.target,8*p.st.dmg,h.target.pos.clone().setY(2)); } p.hook=null; groundRing(p.pos,0xffe0a0,2,.3); }
@@ -107,6 +107,7 @@ function updatePlayer(dt,canAct){
     else if(p.lunge>0){ p.lunge-=dt; p.vel.copy(p.aim).multiplyScalar(18); }
     else p.vel.lerp(_tmp.copy(mv).multiplyScalar(sp),Math.min(1,dt*12));
     p.pos.addScaledVector(p.vel,dt);
+    if(p.kick.lengthSq()>1e-4){ p.pos.addScaledVector(p.kick,dt); p.kick.multiplyScalar(Math.exp(-10*dt)); }
     pushOut(p.pos,.7);
   }
   // the mat has no walls: past the boundary line the hazard zone drains armor every second
@@ -125,6 +126,14 @@ function updatePlayer(dt,canAct){
   p.yaw=lerpAngle(p.yaw,Math.atan2(faceDir.x,faceDir.z),Math.min(1,dt*16));
   m.g.position.set(p.pos.x,air,p.pos.z); m.g.rotation.y=p.yaw; m.shadow.position.set(p.pos.x,.03,p.pos.z); m.shadow.scale.setScalar(1-air/8);
   stepMech(m,p,air>0?0:Math.min(p.vel.length(),14),dt,1);
+  // juice: lean into movement with overshoot, torso lag on turns, rifle recoil, dash stretch and landing squash
+  mechLean(m,p.jz,dt,p.dashT>0?0:p.vel.x,p.dashT>0?0:p.vel.z,p.yaw,Math.atan2(p.aim.x,p.aim.z));
+  spring(p.jz.rec,0,dt,22,.45); spring(p.jz.sq,0,dt,16,.32);
+  const rc=p.jz.rec.x; m.arms[1].rotation.x-=rc*.45; m.rifle.position.y=-1.45+rc*.18;
+  if(P.unit==='crimson'&&P.weapon==='sig'){ m.torso.position.z=-rc*.12; m.torso.rotation.x-=rc*.14; m.torso.position.x=Math.sin(performance.now()*.09)*rc*.05; }
+  if(p.wasDash&&p.dashT<=0) p.jz.sq.v=-3.2; p.wasDash=p.dashT>0;
+  let sx=1,sy=1,sz=1; if(p.dashT>0){ const f=Math.abs(p.dashDir.x*Math.sin(p.yaw)+p.dashDir.z*Math.cos(p.yaw)); sz=1+.34*f; sx=1+.34*(1-f); sy=.84; } else if(air>0){ sy=1.08; sx=sz=.95; }
+  const q=clamp(p.jz.sq.x,-.5,.5); m.g.scale.set(sx*(1-q*.5),sy*(1+q),sz*(1-q*.5)); m.g.rotation.order='YXZ'; m.g.rotation.x=p.jz.lean.x; m.g.rotation.z=p.jz.roll.x;
   m.g.visible=!(p.inv>0&&Math.floor(p.inv*30)%2===0);
   if(!busy()&&!p.shield) weaponUpdate(dt,fireIn); else { chargeOrb.visible=false; p.charge=0; p.prevFire=fireIn; }
   if(p.lance>0){
@@ -173,18 +182,19 @@ function weaponUpdate(dt,fireIn){
   p.fireCd-=dt;
   m.muzzle.getWorldPosition(_mz); const mz=_mz.clone(); const dir=shotDir(mz); const base=Math.atan2(dir.x,dir.z);
   const col=unit.shot;
+  const fired=(kick,size=1)=>{ p.jz.rec.v+=kick; muzzleFlash(mz,col,size); };
   if(wp!=='rail') chargeOrb.visible=false;
   switch(wp){
-    case 'azure': if(fireIn&&p.fireCd<=0){ p.fireCd=.1*rateM; const a=base+rand(-.025,.025); pshot(mz,new V3(Math.sin(a),0,Math.cos(a)),36,1*dmg,col,{life:.9,pierce:p.od>0}); sparks(mz,col,1,3); sfx('shot'); } break;
+    case 'azure': if(fireIn&&p.fireCd<=0){ p.fireCd=.1*rateM; const a=base+rand(-.025,.025); pshot(mz,new V3(Math.sin(a),0,Math.cos(a)),36,1*dmg,col,{life:.9,pierce:p.od>0}); sparks(mz,col,1,3); fired(1.6,.7); sfx('shot'); } break;
     case 'crimson': if(fireIn&&p.fireCd<=0){ p.fireCd=.32*rateM; for(let i=-2;i<=2;i++){ const a=base+i*.1+rand(-.025,.025); shoot('p',mz,new V3(Math.sin(a),0,Math.cos(a)),rand(28,33),1.05*dmg,col,{geo:G.pel,life:.5,pierce:p.rs.pierce>0,bounce:p.rs.ricochet||0}); }
-      if(p.rs.twin||p.rs.diag||p.rs.rear) pshot(mz,dir,30,1.6*dmg,col,{geo:G.pel,life:.55}); shake=Math.max(shake,.08); sfx('heavy'); } break;
-    case 'verdant': if(fireIn&&p.fireCd<=0){ p.fireCd=.42*rateM; pshot(mz,dir,27,3.8*dmg,col,{geo:G.pBig,life:1.2,r:.8,pierce:true}); shake=Math.max(shake,.1); sfx('heavy'); } break;
+      if(p.rs.twin||p.rs.diag||p.rs.rear) pshot(mz,dir,30,1.6*dmg,col,{geo:G.pel,life:.55}); shake=Math.max(shake,.08); fired(5,1.4); sfx('heavy'); } break;
+    case 'verdant': if(fireIn&&p.fireCd<=0){ p.fireCd=.42*rateM; pshot(mz,dir,27,3.8*dmg,col,{geo:G.pBig,life:1.2,r:.8,pierce:true}); shake=Math.max(shake,.1); fired(3.5,1.2); p.kick.addScaledVector(dir,-4.5); sfx('heavy'); } break;
     case 'rail':
       if(fireIn&&p.fireCd<=0){ p.charge=Math.min(1,p.charge+dt/.9); chargeOrb.visible=true; chargeOrb.position.copy(mz); chargeOrb.scale.setScalar(.4+p.charge*1.4); chargeOrb.material.color.setHex(p.charge>=1?0xffffff:col); }
       else if(!fireIn&&p.prevFire&&p.charge>.08){ const c=p.charge; p.charge=0; chargeOrb.visible=false; p.fireCd=.3*rateM;
         const end=mz.clone().addScaledVector(dir,40); const d=(4+20*Math.pow(c,1.5))*dmg;
         for(const e of enemies.slice()){ if(e.dead)continue; const t=clamp((e.pos.x-mz.x)*dir.x+(e.pos.z-mz.z)*dir.z,0,40); if(Math.hypot(e.pos.x-mz.x-dir.x*t,e.pos.z-mz.z-dir.z*t)<e.r+.35) hitEnemy(e,d,e.pos.clone().setY(2)); }
-        beamFlash(mz,end,col,.35+c*.6); shake=Math.max(shake,.15+c*.3); sfx(c>.9?'beam':'heavy'); }
+        beamFlash(mz,end,col,.35+c*.6); shake=Math.max(shake,.15+c*.3); fired(2+c*4,.8+c); p.kick.addScaledVector(dir,-c*6); if(c>.9) hitstop(50); sfx(c>.9?'beam':'heavy'); }
       else if(!fireIn){ p.charge=0; chargeOrb.visible=false; }
       break;
     case 'torch':
@@ -196,6 +206,7 @@ function weaponUpdate(dt,fireIn){
     case 'arc':
       if(fireIn&&p.fireCd<=0){ p.fireCd=.42*rateM; const hit=new Set(); let cur=nearestFoe(p.pos,12,{x:dir.x,z:dir.z,c:.45})||nearestFoe(p.pos,6); let from=mz.clone();
         if(!cur) bolt(from,from.clone().addScaledVector(dir,6),col);
+        fired(1.2,.6);
         for(let j=0;j<4+(p.rs.twin||0)&&cur;j++){ hit.add(cur); const to=cur.pos.clone().setY(2); bolt(from,to,j?0xbfe8ff:col); hitEnemy(cur,4.5*dmg,to); from=to; cur=nearestFoe(cur.pos,6,null,hit); }
         sfx('zap'); }
       break;
@@ -206,13 +217,13 @@ function weaponUpdate(dt,fireIn){
         const reach=3.8+(p.rs.twin?.6:0);
         for(const e of enemies.slice()){ if(e.dead)continue; const dx=e.pos.x-p.pos.x,dz=e.pos.z-p.pos.z,d=Math.hypot(dx,dz); if(d<reach+e.r*.6&&(d<.01||(dx*dir.x+dz*dir.z)/d>.3)) hitEnemy(e,8.5*dmg,e.pos.clone().setY(2)); }
         for(let i=bullets.length-1;i>=0;i--){ const b=bullets[i]; if(b.from!=='e')continue; const dx=b.m.position.x-p.pos.x,dz=b.m.position.z-p.pos.z,d=Math.hypot(dx,dz); if(d<reach&&(d<.01||(dx*dir.x+dz*dir.z)/d>.2)){ sparks(b.m.position,col,2,4); killBullet(i); } }
-        sfx('slash'); shake=Math.max(shake,.1); }
+        sfx('slash'); shake=Math.max(shake,.1); p.jz.rec.v-=3; }
       break;
     case 'swarm':
-      if(fireIn&&p.fireCd<=0){ p.fireCd=.5*rateM; const n=1+(p.rs.twin||0); for(let i=-n;i<=n;i+=2){ const a=base+i*.5; const st=p.pos.clone().setY(2.8).add(new V3(Math.cos(p.yaw)*i*.6,0,-Math.sin(p.yaw)*i*.6)); const t=nearestFoe(p.pos,18,{x:dir.x,z:dir.z,c:.2})||nearestFoe(p.pos,18); shoot('p',st,new V3(Math.sin(a),0,Math.cos(a)),15,3.4*dmg,0xffd060,{geo:G.mis,life:2.2,seek:t,turn:7}); } sfx('shot'); }
+      if(fireIn&&p.fireCd<=0){ p.fireCd=.5*rateM; const n=1+(p.rs.twin||0); for(let i=-n;i<=n;i+=2){ const a=base+i*.5; const st=p.pos.clone().setY(2.8).add(new V3(Math.cos(p.yaw)*i*.6,0,-Math.sin(p.yaw)*i*.6)); const t=nearestFoe(p.pos,18,{x:dir.x,z:dir.z,c:.2})||nearestFoe(p.pos,18); shoot('p',st,new V3(Math.sin(a),0,Math.cos(a)),15,3.4*dmg,0xffd060,{geo:G.mis,life:2.2,seek:t,turn:7}); } p.jz.rec.v+=1; sfx('shot'); }
       break;
     case 'grav':
-      if(fireIn&&p.fireCd<=0){ p.fireCd=1.8*rateM; shoot('p',mz,dir,10,6*dmg,0xb070ff,{geo:G.gorb,life:.85,r:.6,grav:true}); sfx('heavy'); }
+      if(fireIn&&p.fireCd<=0){ p.fireCd=1.8*rateM; shoot('p',mz,dir,10,6*dmg,0xb070ff,{geo:G.gorb,life:.85,r:.6,grav:true}); fired(4,1.3); p.kick.addScaledVector(dir,-3); sfx('heavy'); }
       break;
   }
   p.prevFire=fireIn;

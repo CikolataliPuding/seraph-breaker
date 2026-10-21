@@ -10,8 +10,10 @@ function spawnEnemy(type,pos,elite=false){
   else e={type:'drone',model:buildMech(0x4c4658,0x9a2c42,0x24202c,0xff2a2a,.8),hp:5,r:1.15,speed:3.4,cd:rand(1.2,2.4),side:Math.random()<.5?-1:1,walk:0,sc:.8};
   castShadows=true;
   e.hp*=hm; e.pos=pos.clone(); e.vel=new V3(); e.flash=0; e.t=0; e.born=0; e.yaw=0; e.stun=0; e.wake=.9; e.burn=0; e.slow=0;
+  // juice: springs, knockback, and the drop-in from the light pillar
+  e.jz=juiceState(); e.kx=e.kz=0; e.hdx=0; e.hdz=0; e.dropY=9; e.dropV=0; e.standT=0; e.heavyK=type==='heavy'?.45:1;
   if(elite){ e.elite=true; e.hp*=3.2; e.sc*=1.3; e.r*=1.25; e.model.mats[0].color.lerp(new THREE.Color(0xffc83a),.45);
-    const ring=new THREE.Mesh(new THREE.RingGeometry(.9,1.05,32),addMat(0xffc83a,.8)); ring.rotation.x=-Math.PI/2; ring.position.y=.05; e.model.g.add(ring); }
+    const ring=new THREE.Mesh(new THREE.RingGeometry(.9,1.05,32),addMat(0xffc83a,.8)); ring.rotation.x=-Math.PI/2; ring.position.y=.05; ring.userData.nofit=1; e.model.g.add(ring); }
   e.maxHp=e.hp;
   scene.add(e.model.g,e.model.shadow); e.model.g.position.copy(pos);
   enemies.push(e);
@@ -30,7 +32,9 @@ function hitEnemy(e,d,pos,dot,noProc){
   e.hp-=d;
   if(!(player.od>0||player.lance>0)) player.sp=Math.min(100,player.sp+d*.55*player.st.sp);
   if(!dot||Math.random()<.12) flashModel(e);
-  if(!dot){ sparks(pos,crit?0xffe14a:unit.shot,crit?6:3,6); sfx('hit');
+  if(!dot){ const amt=clamp(d/e.maxHp*1.5,.12,1); hitReact(e,pos,crit?Math.max(amt,.5):amt);
+    if(crit) hitstop(45); else if(d>=e.maxHp*.35&&e!==boss) hitstop(55); else if(e===boss&&d>=6) hitstop(40);
+    sparks(pos,crit?0xffe14a:unit.shot,crit?6:3,6); sfx('hit');
     if(!noProc){ const rs=player.rs;
       if(rs.torch) e.burn=2.5;
       if(rs.cryo) e.slow=1.3;
@@ -48,6 +52,8 @@ function killEnemy(e){
   if(player.rs.vamp) player.hp=Math.min(player.maxHp,player.hp+player.maxHp*.02*player.rs.vamp);
   const angel=e.fly;
   crossBlast(e.pos.clone().setY(.2),angel?0xffd36a:0xff5a2a,e.type==='heavy'||e.elite?1.3:.9);
+  if(e.elite) hitstop(75,true);
+  shatter(e.model,e.pos,e.hdx,e.hdz,{crystal:angel?0xffd36a:0,cy:angel?2.2:1.4});
   scene.remove(e.model.g,e.model.shadow); enemies.splice(enemies.indexOf(e),1);
   const g=({drone:6,seraph:8,heavy:16,warden:12}[e.type]||6)*(e.mini?.4:1)*(1+stage*.4)*mul;
   dropGold(e.pos,g);

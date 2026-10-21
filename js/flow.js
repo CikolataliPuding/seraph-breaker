@@ -1,7 +1,7 @@
 // Seraph Breaker · flow.js: Level flow: launching a level, room transitions, results, pause.
 /* ================= LEVEL FLOW ================= */
 function clearWorld(){
-  clearEnemiesAndShots(); clearRoom();
+  clearEnemiesAndShots(); clearRoom(); clearJuice();
   fx.forEach(f=>{ scene.remove(f.obj); if(f.dispose&&f.obj.geometry) f.obj.geometry.dispose(); }); fx.length=0;
   if(buddy){ scene.remove(buddy.g); buddy=null; } chrono=0;
   if(player){ scene.remove(player.model.g,player.model.shadow); player=null; }

@@ -2,7 +2,7 @@
 /* ================= BOSSES ================= */
 function spawnBoss(kind){
   const def=BOSSES[kind]; const m=BOSS_BUILD[kind]();
-  boss={kind,def,model:m,pos:new V3(0,0,-6),vel:new V3(),hp:def.hp,maxHp:def.hp,r:def.r,t:0,flash:0,atk:'enter',atkT:99,phase:1,barrier:0,barrierCd:9,y:32,base:def.fly,spinA:0,beam:null,yaw:0,walk:0,lastAtk:'',stun:0,born:1,burn:0,slow:0};
+  boss={kind,def,model:m,pos:new V3(0,0,-6),vel:new V3(),hp:def.hp,maxHp:def.hp,r:def.r,t:0,flash:0,atk:'enter',atkT:99,phase:1,barrier:0,barrierCd:9,y:32,base:def.fly,spinA:0,beam:null,yaw:0,walk:0,lastAtk:'',stun:0,born:1,burn:0,slow:0,jz:juiceState(),dropY:0,sc:m.g.scale.x};
   scene.add(m.g,m.shadow); enemies.push(boss);
   $('bossName').textContent=def.name.toUpperCase(); $('bossPh').textContent='PHASE I'; $('bossImg').src=PORTRAIT[kind]||'';
 }
@@ -22,7 +22,7 @@ function bossTick(b,dt,to){
     case 'ring':{ const n=ph===1?20:ph===2?26:32,rings=ph===3?2:1; for(let r=0;r<rings;r++) for(let i=0;i<n;i++){ const a=i/n*Math.PI*2+r*(Math.PI/n)+b.t; shoot('e',o,new V3(Math.sin(a),0,Math.cos(a)),(7+r*2.2)*sp,12,0xff3a5a,{life:4,r:.5,scale:1.15,over:ov}); } crossBlast(o.clone().setY(0),0xff3048,.6); return true; }
     case 'spiral': if(b.subT<=0){ b.subT=ph===3?.06:.09; b.spinA+=.27; const arms=ph===1?3:4; for(let k=0;k<arms;k++){ const a=b.spinA+k*Math.PI*2/arms; shoot('e',o,new V3(Math.sin(a),0,Math.cos(a)),7.5*sp,10,0xff8a3a,{life:4,r:.45,over:ov}); } } return b.atkT>2.6;
     case 'aimed': if(b.subT<=0){ b.subT=.4; const base=Math.atan2(to.x,to.z); for(let i=-1;i<=1;i++){ const a=base+i*.16; shoot('e',o,new V3(Math.sin(a),0,Math.cos(a)),12*sp,12,0xff5a2a,{life:3,r:.45,over:ov}); } } return b.atkT>1.6;
-    case 'burst': if(b.subT<=0){ b.subT=ph===3?.08:.11; b.model.muzzle.getWorldPosition(_tmp2); const mz=_tmp2.clone().setY(1.8); const T=tgt(); const base=Math.atan2(T.x-mz.x,T.z-mz.z)+rand(-.09,.09); shoot('e',mz,new V3(Math.sin(base),0,Math.cos(base)),13,9,0xff5a2a,{life:3,r:.45}); sparks(mz,0xff8a40,2,4); } return b.atkT>1.5;
+    case 'burst': if(b.subT<=0){ b.subT=ph===3?.08:.11; b.model.muzzle.getWorldPosition(_tmp2); const mz=_tmp2.clone().setY(1.8); const T=tgt(); const base=Math.atan2(T.x-mz.x,T.z-mz.z)+rand(-.09,.09); shoot('e',mz,new V3(Math.sin(base),0,Math.cos(base)),13,9,0xff5a2a,{life:3,r:.45}); sparks(mz,0xff8a40,2,4); b.jz.rec.v+=2.5; } return b.atkT>1.5;
     case 'missiles':{ const n=ph===1?8:ph===2?12:16; for(let i=0;i<n;i++){ const a=b.yaw+Math.PI+(i/(n-1)-.5)*Math.PI*1.6; const st=o.clone().add(new V3(Math.sin(a)*2,0,Math.cos(a)*2)); shoot('e',st,new V3(Math.sin(a),0,Math.cos(a)),5,11,0xffb040,{life:5,r:.45,home:1.6,turn:2.4,after:11,over:true}); } sparks(o.clone().setY(5),0xffb040,10,6); return true; }
     case 'slam': if(!b.slam&&b.atkT>.9){ b.slam=1; shockwave(b.pos,13,26); crossBlast(b.pos.clone(),0xff3a2a,.8); if(ph===3) b.slam2=.4; } if(b.slam2>0){ b.slam2-=dt; if(b.slam2<=0) shockwave(b.pos,9,26); } return b.atkT>1.5;
     case 'summon':{ const n=ph===3?3:2; for(let i=0;i<n;i++){ const a=rand(0,Math.PI*2); spawnEnemy(b.def.minion,new V3(clamp(b.pos.x+Math.cos(a)*5,-ARENA+2,ARENA-2),0,clamp(b.pos.z+Math.sin(a)*5,-ARENA+2,ARENA-2))); } return true; }
@@ -53,7 +53,7 @@ function updateBoss(dt){
   const T=tgt(); const to=_tmp.subVectors(T,b.pos).setY(0); const d=to.length()||1; to.divideScalar(d);
   const pd=Math.hypot(player.pos.x-b.pos.x,player.pos.z-b.pos.z);
   const newPh=b.hp<b.maxHp*.33?3:b.hp<b.maxHp*.66?2:1;
-  if(newPh!==b.phase&&b.atk!=='enter'){ b.phase=newPh; $('bossPh').textContent='PHASE '+['I','II','III'][newPh-1]; groundRing(b.pos,0xff2236,14,1); shake=.6; if(def.barrier) b.barrier=3; b.atk='idle'; b.atkT=.7; b.beam=null; hideBeams(); clearEnemyShots(); }
+  if(newPh!==b.phase&&b.atk!=='enter'){ b.phase=newPh; $('bossPh').textContent='PHASE '+['I','II','III'][newPh-1]; groundRing(b.pos,0xff2236,14,1); shake=.6; hitstop(85,true); b.jz.pop.v=-8; if(def.barrier) b.barrier=3; b.atk='idle'; b.atkT=.7; b.beam=null; hideBeams(); clearEnemyShots(); }
   const cool=[1.3,1,.72][b.phase-1];
   if(b.atk==='enter'){ b.y+=(b.base-b.y)*Math.min(1,dt*2.6); b.atkT-=dt;
     if(b.atkT<=0){ b.y=b.base; b.atk='idle'; b.atkT=1; groundRing(b.pos,STAGES[stage].theme.edge,16,1.2); crossBlast(b.pos.clone(),0xff6a1a,1.2); shake=.8; buzz(120); } }
@@ -68,15 +68,19 @@ function updateBoss(dt){
   }
   m.g.position.set(b.pos.x,b.y,b.pos.z); m.shadow.position.set(b.pos.x,.03,b.pos.z); m.shadow.scale.setScalar(clamp(1-(b.y-b.base)/30,.2,1));
   b.yaw=lerpAngle(b.yaw,Math.atan2(to.x,to.z),Math.min(1,dt*(def.fly?2:3))); m.g.rotation.y=b.yaw;
-  if(b.kind==='colossus'){ stepMech(m,b,b.vel.length(),dt,3);
-    if(b.atk==='slam'){ const k=b.atkT<.9?b.atkT/.9:Math.max(0,1-(b.atkT-.9)*3); m.hips.position.y=1.6-.45*k; m.arms[0].rotation.x=-2.6*k; m.arms[1].rotation.x=-1.45-1.2*k; } }
+  applyJuice(m.g,b.jz,dt,b.sc);
+  if(b.kind==='colossus'){ stepMech(m,b,b.vel.length(),dt,3); mechLean(m,b.jz,dt,b.vel.x*.5,b.vel.z*.5,b.yaw,b.yaw);
+    // slam wind-up: crouch, raise both arms, tremble at the top, then smash down
+    if(b.atk==='slam'){ const k=b.atkT<.9?b.atkT/.9:Math.max(0,1-(b.atkT-.9)*3), tr=b.atkT>.6&&b.atkT<.9?Math.sin(b.t*60)*.05:0; m.hips.position.y=1.6-.45*k; m.arms[0].rotation.x=-2.6*k+tr; m.arms[1].rotation.x=-1.45-1.2*k-tr; m.torso.rotation.x=-.25*k; if(!b.slamHit&&b.atkT>=.9){ b.slamHit=1; b.jz.pop.v=-9; } }
+    else b.slamHit=0;
+    if(b.atk==='burst'){ spring(b.jz.rec,0,dt,20,.4); m.arms[1].rotation.x-=b.jz.rec.x*.3; } }
   else if(b.kind==='prism'){ m.crystal.rotation.y+=dt*.7; m.ring.rotation.z+=dt*.6; m.ring.rotation.x=Math.PI/2+Math.sin(b.t*.8)*.3; m.shards.forEach((s,i)=>{ const a=b.t*1.2+i/6*Math.PI*2; s.position.set(Math.cos(a)*4,Math.sin(b.t*2+i)*.6,Math.sin(a)*4); s.rotation.y+=dt*3; }); m.core.scale.setScalar(1+Math.sin(b.t*(4+b.phase*2))*.1); }
   else { m.rings[0].rotation.set(b.t*.9,b.t*.5,0); m.rings[1].rotation.set(-b.t*.6,0,b.t*.7); m.halo.rotation.z+=dt; m.wings.children.forEach((w,i)=>{ w.rotation.z=w.userData.base+Math.sin(b.t*2+i)*.12*w.userData.s; }); m.core.scale.setScalar(1+Math.sin(b.t*(4+b.phase*2))*.08); }
   if(m.shield){ m.shield.visible=b.barrier>0; if(b.barrier>0){ m.shield.rotation.z+=dt; m.shield.children.forEach((c,i)=>{ c.material.opacity=(i<3?.8:.18)*(.6+Math.sin(b.t*20+i)*.4); }); } }
 }
 function bossDeath(){
   const def=boss.def; score+=[5000,8000,12000][stage]; kills++; hideBeams(); clearEnemyShots();
-  state='bossdeath'; stateT=3.2; boss.final=false; buzz(200);
+  state='bossdeath'; stateT=3.2; boss.final=false; buzz(200); hitstop(120,true);
   dropGold(boss.pos,def.gold);
 }
 function startCine(){

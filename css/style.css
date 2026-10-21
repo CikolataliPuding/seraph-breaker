@@ -271,3 +271,9 @@ button.card:hover,button.card:focus-visible{border-color:var(--c,var(--signal));
 .tb.on{background:rgba(255,255,255,.25)}
 @media (orientation:landscape) and (max-height:520px){ .tcl{bottom:calc(16% + env(safe-area-inset-bottom,0px));grid-template-columns:repeat(3,54px)} .tb{width:54px;height:54px} }
 @media (prefers-reduced-motion:reduce){#card .c,#warn .w{animation-duration:0s}#cine .lb,.cinePanel{transition:none}}
+
+/* debug panel (?debug=1) */
+#dbg{position:fixed;left:8px;bottom:calc(8px + env(safe-area-inset-bottom,0px));z-index:30;display:flex;flex-wrap:wrap;gap:4px;max-width:min(420px,calc(100% - 16px));padding:6px;background:rgba(5,3,7,.85);border:1px solid var(--signal);font:12px var(--f-data);color:var(--paper);pointer-events:auto}
+#dbg b{width:100%;color:var(--signal)} #dbg button,#dbg select,#dbg input{font:12px var(--f-data);background:#221a2a;color:var(--paper);border:1px solid var(--line);padding:3px 6px}
+#dbg input{width:44px} #dbg label{display:flex;gap:3px;align-items:center}
+#dbg.min>*:not(b):not([data-a="hide"]){display:none}
