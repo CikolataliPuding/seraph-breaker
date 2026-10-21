@@ -1,16 +1,13 @@
 // Seraph Breaker · player.js: Player stats, movement, dash, barrier, special moves, gadgets and weapons.
 /* ================= PLAYER ================= */
-function computeStats(){
-  const r=id=>P.skills[id]||0, c=P.core;
-  return {dmg:(1+.1*r('dmg'))*(1+.04*c.dmg),rate:1-.08*r('rate'),crit:.07*r('crit'),sp:1+.25*r('sp'),boss:1+.3*r('exec'),heal:1+.4*r('repair'),hexDrain:1-.2*r('hex'),armor:1-.08*r('plate'),second:r('second')>0,spd:1+.06*r('spd'),regen:(1+.15*r('regen'))*(1+.03*c.regen),dashCd:1-.15*r('dashcd'),magnet:3.2*(1+.6*r('magnet')),goldMul:1+.1*r('magnet'),gadgetCd:1-.12*r('gadget'),maxHp:UNITS[P.unit].hp+15*r('hp')+20*c.armor,dodge:0,spPow:1,noHex:false};
-}
 function makePlayer(){
   unit=UNITS[P.unit];
   document.documentElement.style.setProperty('--unit',unitCss());
   const c=paint(); const m=buildMech(c.c1,c.c2,c.c3,c.eye,1,P.unit); scene.add(m.g,m.shadow);
-  const st=computeStats();
-  player={model:m,pos:new V3(0,0,6),vel:new V3(),st,hp:st.maxHp,maxHp:st.maxHp,en:100,overheat:0,regenDelay:0,fireCd:0,dashT:0,dashCd:0,dashDir:new V3(),inv:0,shield:false,aim:new V3(-1,0,-1).normalize(),aimOk:false,yaw:Math.PI,walk:0,dead:false,flash:0,
-    sp:0,od:0,leap:null,lance:0,lanceDir:new V3(),charge:0,prevFire:false,lunge:0,slashSide:1,hook:null,jump:null,gcd:[0,0],secondUsed:false,rs:{},orbA:0,jz:juiceState(),kick:new V3(),wasDash:false,dashCh:2,dashMax:2,dashRc:0,still:0,perfect:false,lives:0,luck:0,echoQ:null,enMax:100,critMul:2};
+  // stats come from balance.js (Core + tree × run buckets); recalcStats() rebuilds them whenever a skill, item or curse changes
+  player={model:m,pos:new V3(0,0,6),vel:new V3(),st:null,hp:0,maxHp:0,en:100,overheat:0,regenDelay:0,fireCd:0,dashT:0,dashCd:0,dashDir:new V3(),inv:0,shield:false,aim:new V3(-1,0,-1).normalize(),aimOk:false,yaw:Math.PI,walk:0,dead:false,flash:0,
+    sp:0,od:0,leap:null,lance:0,lanceDir:new V3(),charge:0,prevFire:false,lunge:0,slashSide:1,hook:null,jump:null,gcd:[0,0],secondUsed:false,rs:{},orbA:0,jz:juiceState(),kick:new V3(),wasDash:false,dashCh:2,dashMax:2,dashRc:0,still:0,perfect:false,lives:0,luck:0,echoQ:null,enMax:100,critMul:2,extra:{},procs:{},bonus:null};
+  recalcStats(); player.hp=player.maxHp;
   odRing.material.color.setHex(0xffe14a); pBeamO.material.color.setHex(unit.shot);
   buildOrbit(); renderRunSkills();
 }
@@ -79,7 +76,8 @@ function hurt(d){
   const p=player; if(godMode) return; if(!p||p.dead||p.inv>0||p.dashT>0||p.leap||p.jump||(p.hook&&p.hook.phase==='pull')||state!=='fight') return;
   if(p.aegis){ p.aegis=false; p.inv=.5; hexFlash(p.pos.clone().addScaledVector(p.aim,2)); sparks(p.pos.clone().setY(2),0xb070ff,10,6); popText('AEGIS'); sfx('shield'); return; }
   if(p.st.dodge&&Math.random()<p.st.dodge){ p.inv=.3; sparks(p.pos.clone().setY(2),0xffffff,6,5); popText('DODGE'); return; }
-  d*=p.st.armor*(p.lance>0?.5:1);
+  // every enemy hit and hazard goes through here: the room's damage curve applies once
+  d*=roomDmgScale()*p.st.armor*(p.lance>0?.5:1); if(sortie) sortie.dmgTaken=(sortie.dmgTaken||0)+Math.min(d,Math.max(0,p.hp));
   p.hp-=d; p.inv=.55; shake=Math.max(shake,.4); if(d>=14) hitstop(40); p.jz.sq.v+=2; flashModel(p); buzz(40); sfx('hurt'); if(room) room.hurt=true;
   $('vign').style.opacity=1; setTimeout(()=>{ $('vign').style.opacity=player&&!player.dead&&player.hp<player.maxHp*.3?.45:0; },160);
   sparks(p.pos.clone().setY(2),0xff4a3a,10,8);
@@ -141,7 +139,7 @@ function updatePlayer(dt,canAct){
   p.pos.x=clamp(p.pos.x,-AX-OUTW,AX+OUTW); p.pos.z=clamp(p.pos.z,-AZ-OUTW,AZ+OUTW);
   const outside=Math.abs(p.pos.x)>AX||Math.abs(p.pos.z)>AZ, atDoor=door&&door.open&&Math.abs(p.pos.x)<1.6&&p.pos.z<0;
   if(outside&&!atDoor&&air===0&&canAct){
-    p.hp-=OUT_DPS*p.st.armor*dt; if(room) room.hurt=true;
+    p.hp-=OUT_DPS*p.st.armor*dt; if(sortie) sortie.dmgTaken=(sortie.dmgTaken||0)+OUT_DPS*p.st.armor*dt; if(room) room.hurt=true;
     if(!p.outWarn){ p.outWarn=true; toast('Out of bounds','Get back on the mat'); sfx('hurt'); buzz(60); }
     $('vign').style.opacity=.85; if(Math.random()<dt*10) sparks(p.pos.clone().setY(.4),0xe8243c,1,4);
     if(hazardMat) hazardMat.opacity=.18+Math.sin(performance.now()/90)*.08;
@@ -198,9 +196,9 @@ function updatePlayer(dt,canAct){
 function collect(q){
   const p=player;
   if(q.kind==='item'){ takeItem(q.id); return; }
-  if(q.kind==='heal'){ p.hp=Math.min(p.maxHp,p.hp+q.v*p.st.heal); sparks(q.m.position,0x7dff9a,8,5); sfx('coin'); }
-  else if(q.kind==='gem'){ P.gems+=q.v; sortie.gems+=q.v; sparks(q.m.position,0x5fe0ff,8,5); sfx('gem'); }
-  else { const v=Math.max(1,Math.round(q.v*p.st.goldMul)); P.gold+=v; sortie.gold+=v; sfx('coin'); }
+  if(q.kind==='heal'){ p.hp=Math.min(p.maxHp,p.hp+p.maxHp*q.v*p.st.heal); sparks(q.m.position,0x7dff9a,8,5); sfx('coin'); }
+  else if(q.kind==='gem'){ P.gems+=q.v; sortie.gems+=q.v; logEarn('gems','pickup',q.v); sparks(q.m.position,0x5fe0ff,8,5); sfx('gem'); }
+  else { const v=Math.max(1,Math.round(q.v*p.st.goldMul)); P.gold+=v; sortie.gold+=v; logEarn('gold',q.src||'kill',v); sfx('coin'); }
 }
 function weaponUpdate(dt,fireIn){
   const p=player,m=p.model;

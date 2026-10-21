@@ -6,7 +6,7 @@ function roomUpdate(dt,edt){
   if(spawnQ.length&&!enemies.length){ spawnWave(spawnQ); spawnQ=[]; toast('Second wave'); }
   updateEnemies(edt); updateEMines(edt,performance.now()/1000); updateHazards(dt);
   if(room.type!=='boss'&&room.type!=='angel'&&!room.cleared&&!enemies.length&&!spawnQ.length){
-    room.cleared=true; fizzleRoom(); if(typeof onRoomClear==='function') onRoomClear();
+    room.cleared=true; fizzleRoom(); clearBonus(); if(typeof onRoomClear==='function') onRoomClear();
     openDoor(); saveRun(sortie.ri+1);
     if(!room.hurt&&Math.random()<.35&&arenaRoomType(sortie.ri+2)==='combat') spawnNpc('devil',new V3(rand(-3,3),0,-2));
   }
@@ -44,7 +44,6 @@ function frame(now){
         // the final boss ends the arena; earlier bosses open the door to the next room
         if(sortie.ri>=sortie.N-1) arenaComplete(); else { state='fight'; room.cleared=true; if(typeof onRoomClear==='function') onRoomClear(); openDoor(); saveRun(sortie.ri+1); refreshControls(); } } }
     else if(state==='dying'){ stateT-=dt; updateEnemies(edt); if(stateT<=0) showResult(false); }
-    player.meteorCd=Math.max(0,(player.meteorCd||0)-dt);
     updateBlasts(edt); updateTrails(dt);
     for(const e of enemies){ if(e.dead) continue; if(e.psnT>0){ e.psnT-=dt; hitEnemy(e,e.psn*.8*player.st.dmg*dt,e.pos,true); if(Math.random()<dt*6) sparks(e.pos.clone().setY(2),0x8aff5a,1,3); if(e.dead) continue; } if(e.burn>0){ e.burn-=dt; hitEnemy(e,3*player.st.dmg*dt,e.pos,true); if(Math.random()<dt*8) sparks(e.pos.clone().setY(2),0xff7a2a,1,3); } if(e.slow>0) e.slow-=dt; }
     if(decoy){ decoy.t-=dt; decoy.m.g.visible=Math.floor(decoy.t*12)%5!==0; if(decoy.t<=0){ scene.remove(decoy.m.g); decoy=null; } }
@@ -87,7 +86,7 @@ function frame(now){
           if(e===boss&&boss.reflectT>0){ const v=new V3(player.pos.x-p.x,0,player.pos.z-p.z).normalize(); shoot('e',p.clone().setY(1.8),v,13*eSpd(),9,0xffd36a,{life:2.4,r:.42,over:true}); sparks(p,0xffd36a,2,4); gone=true; break; }
           hitEnemy(e,b.dmg,p.clone(),false,b.proc,b.flat);
           if(b.pierce&&!shieldPad) b.hit.add(e);
-          else if(b.bounce>0&&!shieldPad){ b.bounce--; b.hit.add(e); const nx=nearestFoe(e.pos,8,null,b.hit); if(nx){ const sp=b.vel.length(); b.vel.set(nx.pos.x-p.x,0,nx.pos.z-p.z).setLength(sp); b.m.lookAt(p.clone().add(b.vel)); b.life=Math.max(b.life,.6); } else { gone=true; } break; }
+          else if(b.bounce>0&&!shieldPad){ b.bounce--; b.hit.add(e); b.dmg*=BAL.proc.ricochet.falloff; const nx=nearestFoe(e.pos,8,null,b.hit); if(nx){ const sp=b.vel.length(); b.vel.set(nx.pos.x-p.x,0,nx.pos.z-p.z).setLength(sp); b.m.lookAt(p.clone().add(b.vel)); b.life=Math.max(b.life,.6); } else { gone=true; } break; }
           else { gone=true; break; } } }
       if(gone) killBullet(i);
     } else if(player&&!player.dead){

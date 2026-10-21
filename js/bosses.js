@@ -2,8 +2,8 @@
 /* ================= BOSSES ================= */
 function spawnBoss(kind){
   const def=BOSSES[kind], m=BOSS_BUILD[kind](), form=def.form||kind;
-  // boss armor scales with the arena and with how deep into the run this boss room is (room 10, 20, 30...)
-  const hp=Math.round(def.hp*ARENAS[stage].bossMul*(1+(Math.floor((sortie.ri+1)/10)-1)*.45)*(sortie.rule.hpMul||1));
+  // boss armor follows the same room curve as the mobs (enemyScale in balance.js), normalized to the room 10 boss
+  const hp=Math.round(def.hp*enemyScale(stage,sortie.ri,sortie.rule).boss);
   boss={kind,form,def,model:m,pos:new V3(0,0,-6),vel:new V3(),hp,maxHp:hp,r:def.r,t:0,flash:0,atk:'enter',atkT:99,phase:1,barrier:0,barrierCd:9,y:32,base:def.fly||0,spinA:0,beam:null,yaw:0,walk:0,lastAtk:'',stun:0,born:1,burn:0,slow:0,jz:juiceState(),dropY:0,sc:m.g.scale.x,jumpY:0,vuln:0,reflectT:0,spdK:1,wallA:[0,0,0]};
   // Hive Carrier rotors and Ophanim Throne eyes are parts you can shoot out
   if(form==='hive'){ boss.rotors=m.rotors.map(r=>({m:r,hp:hp*.1,alive:true})); m.bay.material=m.bay.material.clone(); }
@@ -161,9 +161,9 @@ function updateBoss(dt){
 }
 function bossDeath(){
   const def=boss.def; score+=[5000,8000,12000,16000][stage]; kills++; hideBeams(); fizzleRoom(); boss.jumpY=0; boss.reflectT=0;
-  const gm=Math.round(def.gems*.5); P.gems+=gm; sortie.gems+=gm;
+  const gm=Math.round(def.gems*ECON.bossGems); P.gems+=gm; sortie.gems+=gm; logEarn('gems','boss',gm);
   state='bossdeath'; stateT=3.2; boss.final=false; buzz(200); hitstop(120,true);
-  dropGold(boss.pos,def.gold*(1+sortie.a*.3)); dropItem(boss.pos);
+  dropGold(boss.pos,def.gold*ECON.bossGold[sortie.a],'boss'); dropItem(boss.pos); gainXp(XP_BOSS);
 }
 function startCine(){
   const kind=room.boss, def=BOSSES[kind];

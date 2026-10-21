@@ -1,9 +1,11 @@
 // Seraph Breaker · skills.js: Run XP, skill roulette (rarity, synergy, reels, reroll), angel and devil offers, orbits and skill effects.
 /* ================= RUN SKILLS / XP ================= */
 // tuned for 30-50 room runs: frequent level-ups early, without maxing everything by mid-run
-const xpNeed=()=>5+Math.floor(sortie.lv*2.6);
+const xpNeed=()=>xpNeedAt(sortie.lv);
 function gainXp(v){ if(!sortie) return; sortie.xp+=v; while(sortie.xp>=xpNeed()){ sortie.xp-=xpNeed(); sortie.lv++; sortie.pendingLv++; } }
-const skillOk=id=>{ const s=RSK[id]; return (player.rs[id]||0)<s.max&&(!s.req||s.req(player.rs)); };
+// a skill is offered while it can rank up; projectile and orbit skills stop at the hard cap (evolutions are trimmed instead, see pshot/buildOrbit)
+const skillOk=(id,rs=player.rs)=>{ const s=RSK[id]; if((rs[id]||0)>=s.max||(s.req&&!s.req(rs))) return false;
+  if(s.rarity!=='legendary'&&(s.proj&&extraProj(rs)+s.proj>BAL.cap.proj||s.orb&&orbCount(rs)+s.orb>BAL.cap.orbit)) return false; return true; };
 // Lucky Coin pushes every roll one tier up
 function rarityWeights(){ const l=player.luck||0; return l?{common:Math.max(20,60-15*l),rare:28+5*l,epic:10+6*l,legendary:2+4*l}:{common:60,rare:28,epic:10,legendary:2}; }
 /* weighted pick: rarity weights 60/28/10/2 are shared by the skills of that rarity that can still be offered;
@@ -21,10 +23,10 @@ function skillOptions(n,rarity){
 }
 function applySkill(id,silent){
   const s=RSK[id]; if(!s) return; const rs=player.rs; rs[id]=(rs[id]||0)+1;
-  if(s.apply) s.apply(player,rs[id]);
+  recalcStats(); if(s.apply) s.apply(player,rs[id]);
   if(!silent){ renderRunSkills(); sfx('lvup'); if(s.rarity==='legendary'){ popText('EVOLVED'); crossBlast(player.pos.clone(),0xffc83a,1); } }
 }
-function applyCurse(id,silent){ const c=CURSES[id]; if(!c||sortie.curses.includes(id)) return; sortie.curses.push(id); if(c.apply) c.apply(player,silent); buildRule(); if(!silent) renderRunSkills(); }
+function applyCurse(id,silent){ const c=CURSES[id]; if(!c||sortie.curses.includes(id)) return; sortie.curses.push(id); recalcStats(); if(c.apply) c.apply(player,silent); buildRule(); if(!silent) renderRunSkills(); }
 // skill + curse + item icons (HUD row and result screen)
 function runIcons(){ const out=[]; if(!player) return out;
   Object.entries(player.rs).forEach(([id,n])=>{ const d=RSK[id]; if(!d) return; const s=document.createElement('span'); s.className='r-'+d.rarity; s.title=d.name; s.innerHTML=svg(d.icon); if(n>1){ const b=document.createElement('b'); b.textContent=n; s.appendChild(b); } out.push(s); });
@@ -37,10 +39,12 @@ function skillCard(id,extra){ const s=RSK[id], rk=player.rs[id]||0; return {id,i
 /* ================= ORBITS + WINGMAN ================= */
 function buildOrbit(){
   orbitG.children.slice().forEach(c=>orbitG.remove(c)); if(!player) return; const rs=player.rs, inf=rs.inferno>0;
-  const nb=(rs.orbit||0)*2+(inf?2:0);
+  // orbiting hitters are hard capped (BAL.cap.orbit): blades first, then fire, ice and bolt orbs
+  let room=BAL.cap.orbit; const take=n=>{ const k=Math.max(0,Math.min(n,room)); room-=k; return k; };
+  const nb=take((rs.orbit||0)*2+(inf?2:0));
   for(let i=0;i<nb;i++){ const b=new THREE.Mesh(G.blade,addMat(inf?0xff7a2a:unit.shot,.9)); if(inf) b.scale.set(1.5,1.4,1.8); b.userData={k:'blade'}; orbitG.add(b); }
   const orb=(k,c,n)=>{ for(let i=0;i<n;i++){ const m=new THREE.Mesh(G.orb,addMat(c,.95)); m.scale.setScalar(1.25); m.add(new THREE.Mesh(G.puff,addMat(c,.3))); m.userData={k,zap:0}; orbitG.add(m); } };
-  orb('fire',0xff7a2a,rs.forb||0); orb('ice',0x9fe8ff,rs.iorb||0); orb('bolt',0xd8f4ff,rs.borb||0);
+  orb('fire',0xff7a2a,take(rs.forb||0)); orb('ice',0x9fe8ff,take(rs.iorb||0)); orb('bolt',0xd8f4ff,take(rs.borb||0));
   for(let i=0;i<(rs.sorb||0)*2;i++){ const m=new THREE.Mesh(box(1,1.3,.14),addMat(0xffa04a,.75)); m.userData={k:'shield'}; orbitG.add(m); }
 }
 function buildWingman(){
@@ -145,7 +149,7 @@ function angelChoice(){
   if(grace){ player.hp=player.maxHp; sparks(player.pos.clone().setY(2),0x7dff9a,14,6); }
   const heal=Math.round(40*player.st.heal);
   const opts=[{icon:'heal',name:'Repair',desc:grace?'Grace already repaired you. Take 15 extra max armor instead.':`Restore ${heal}% of your armor.`,tag:`${Math.ceil(player.hp)}/${player.maxHp} now`,color:'#7dff9a',static:true,
-    act:()=>{ if(grace){ player.maxHp+=15; player.hp+=15; } else player.hp=Math.min(player.maxHp,player.hp+player.maxHp*heal/100); sparks(player.pos.clone().setY(2),0x7dff9a,12,6); npcGone(); }}];
+    act:()=>{ if(grace){ player.extra.hpFlat=(player.extra.hpFlat||0)+15; recalcStats(); } else player.hp=Math.min(player.maxHp,player.hp+player.maxHp*heal/100); sparks(player.pos.clone().setY(2),0x7dff9a,12,6); npcGone(); }}];
   skillOptions(grace?3:2).forEach(id=>opts.push({...skillCard(id),act:()=>{ applySkill(id); npcGone(); }}));
   openChoice({eyebrow:'Sanctuary',title:'The angel offers a blessing',note:'Pick one.',options:opts,spin:true});
 }

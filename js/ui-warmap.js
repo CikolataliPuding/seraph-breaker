@@ -14,7 +14,7 @@ function renderMap(){
     inner.appendChild(b); });
   const A=ARENAS[sel], first=(P.bestRoom[sel]||0)<A.rooms;
   $('shEye').textContent=`ARENA 0${sel+1} · ${A.rooms} ROOMS`; $('shEye').style.color=A.colorCss; $('shName').textContent=A.name;
-  $('shReward').innerHTML=`<i></i>+${first?40+30*sel:10}${first?' first clear':''}`;
+  $('shReward').innerHTML=`<i></i>+${first?ECON.firstClear(sel):ECON.repeatClear(sel)}${first?' first clear':''}`;
   const rooms=$('shRooms'); rooms.innerHTML=''; const t=document.createElement('span'); t.textContent='ROOMS 1-10'; rooms.appendChild(t);
   for(let n=1;n<=10;n++){ const r=arenaRoomType(n), i=document.createElement('i'); i.textContent={combat:'C',angel:'A',elite:'E',boss:'B'}[r]; i.className={combat:'',angel:'a',elite:'e',boss:'b'}[r]; rooms.appendChild(i); }
   const tags=$('shTags'); tags.innerHTML='';

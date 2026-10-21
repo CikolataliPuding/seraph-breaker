@@ -88,10 +88,10 @@ function freeSpot(minFromEntry=6){
 }
 // mobs unlock in the arena's list order as the run goes on (2 at first, one more every 4 rooms)
 function arenaPool(){ const A=ARENAS[sortie.a], ok=A.mobs.filter(t=>ENEMY[t]); return ok.slice(0,Math.min(ok.length,2+Math.floor(sortie.ri/4))); }
-// room budget grows with the room index and the arena number; rooms are short: one wave, two at most
+// room budget (roomBudget in balance.js) grows slowly with the room index and the arena; rooms are short: one wave, two at most
 function composeRoom(elite){
-  const pool=arenaPool(), r=sortie.ri+1, cap=mobileMode?9:11;
-  let budget=3.2+sortie.a*1.5+r*.16; if(elite) budget*=.55;
+  const pool=arenaPool(), cap=mobileMode?9:11;
+  let budget=roomBudget(sortie.a,sortie.ri,elite);
   const list=[]; let guard=0;
   while(budget>.6&&list.length<cap&&guard++<60){ const t=pickOne(pool); if(ENEMY[t].cost<=budget+.4){ list.push(t); budget-=ENEMY[t].cost; } }
   if(list.length<2) list.push(pool[0]);
