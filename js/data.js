@@ -26,6 +26,28 @@ const IC={
   atk:'M14 4l6 6-10 10H4v-6z', armor:'M12 3l8 3v6c0 5-4 8-8 9-4-1-8-4-8-9V6z', vamp:'M12 21s-8-5-8-11a5 5 0 0 1 8-3 5 5 0 0 1 8 3c0 6-8 11-8 11z',
   orbit:'M9 12a3 3 0 1 0 6 0a3 3 0 1 0-6 0M12 2a10 10 0 0 1 10 10M12 22A10 10 0 0 1 2 12', regen:'M4 12a8 8 0 0 1 14-5M20 12a8 8 0 0 1-14 5M18 3v4h-4M6 21v-4h4',
   crit:'M4 12a8 8 0 1 0 16 0a8 8 0 1 0-16 0M12 7v10M7 12h10', heal:'M12 5v14M5 12h14',
+  side:'M12 4v16M4 12h4M16 12h4M6 9l-3 3 3 3M18 9l3 3-3 3', wall:'M20 3v18M3 18l9-12 8 6', poison:'M12 3c3 4 6 7 6 11a6 6 0 0 1-12 0c0-4 3-7 6-11zM10 13h.01M14 16h.01',
+  freeze:'M12 2v20M3 7l18 10M21 7L3 17M9 4l3 2 3-2M9 20l3-2 3 2', headshot:'M12 3a9 9 0 1 0 0 18a9 9 0 1 0 0-18M12 8a4 4 0 1 0 0 8a4 4 0 1 0 0-8M12 1v5M12 18v5M1 12h5M18 12h5',
+  nova:'M12 2l2 6 6-2-4 5 5 4-6 1 1 6-4-4-4 4 1-6-6-1 5-4-4-5 6 2z', shardb:'M12 12L5 5M12 12l7-7M12 12l-7 7M12 12l7 7M12 12V2M12 12v10M2 12h10M12 12h10',
+  goldrush:'M12 3a9 9 0 1 0 0 18a9 9 0 1 0 0-18M12 6v12M15 9c0-1.4-1.3-2-3-2s-3 .8-3 2 1.3 1.8 3 2.2 3 .8 3 2.3-1.3 2-3 2-3-.6-3-2',
+  forb:'M12 2a10 10 0 0 1 10 10M2 12A10 10 0 0 1 12 2M12 8c1.5 2 3 3 3 5a3 3 0 0 1-6 0c0-1.3.8-2 1.4-2.6.4.8.8 1 1.3 1 0-1.2-.4-2.2.3-3.4z',
+  iorb:'M12 2a10 10 0 0 1 10 10M2 12A10 10 0 0 1 12 2M12 8v8M8.5 10l7 4M15.5 10l-7 4', borb:'M12 2a10 10 0 0 1 10 10M2 12A10 10 0 0 1 12 2M13 7l-3 5h4l-3 5',
+  sorb:'M12 2a10 10 0 0 1 10 10M2 12A10 10 0 0 1 12 2M12 8l4 1.5v3c0 2.5-2 4-4 4.5-2-.5-4-2-4-4.5v-3z', wing:'M4 10h16M7 10v3h10v-3M12 13v3M5 6l3 4M19 6l-3 4M9 20h6',
+  meteor:'M20 4L11 13M17 4l-8 8M20 7l-8 8M8 12a4 4 0 1 0 4 4', maxarmor:'M12 3l8 3v6c0 5-4 8-8 9-4-1-8-4-8-9V6zM12 8v8M8 12h8',
+  rage:'M4 20l4-8 3 4 3-9 3 6 3-3', dodge:'M6 20V10a6 6 0 0 1 12 0v10l-3-2-3 2-3-2zM10 10h.01M14 10h.01', life:'M12 21s-8-5-8-11a5 5 0 0 1 8-3 5 5 0 0 1 8 3c0 6-8 11-8 11zM12 9v6M9 12h6',
+  grace:'M8 4a4 1.4 0 1 0 8 0a4 1.4 0 1 0-8 0M12 8v9M6 11l6 2 6-2M9 21l3-4 3 4', trail:'M2 16h6M2 12h4M2 8h6M14 4c2 4 6 6 6 10a5 5 0 0 1-10 0c0-2 1-4 2-5 1 2 2 2 2 2 0-3-1-5 0-7z',
+  dreset:'M3 12h8M3 7h5M3 17h5M20 12a6 6 0 1 1-2-4.5M20 4v4h-4', reflect:'M12 3l8 4v5c0 4-3 7-8 9-5-2-8-5-8-9V7zM7 14l5-5 5 5',
+  hexnova:'M12 2l8.66 5v10L12 22l-8.66-5V7zM12 7v3M12 14v3M7 12h3M14 12h3', sync:'M12 2l3 7 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1zM2 2l4 4',
+  overload:'M12 2l3 7 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1zM12 8v4M12 15h.01', echo:'M8 6a6 6 0 1 0 0 12M14 6a6 6 0 1 1 0 12M11 9l3 3-3 3',
+  storm:'M4 4v16M10 4v16M16 4v16M2 8l2-4 2 4M8 8l2-4 2 4M14 8l2-4 2 4M20 6l2 2-2 2', inferno:'M12 2a10 10 0 1 0 0 20a10 10 0 1 0 0-20M12 6c2 3 4 4 4 7a4 4 0 0 1-8 0c0-2 1-3 2-4 .5 1 1 1.5 2 1.5 0-2-1-3 0-4.5z',
+  halo:'M4 8a8 3 0 1 0 16 0a8 3 0 1 0-16 0M13 12l-3 5h4l-3 5', blood:'M12 21s-8-5-8-11a5 5 0 0 1 8-3 5 5 0 0 1 8 3c0 6-8 11-8 11zM8 11h2l1-3 2 6 1-3h2',
+  glass:'M8 3h8l-1 8a3 3 0 0 1-6 0zM12 14v6M8 21h8M10 6l3 3', berserk:'M6 4l6 8 6-8M12 12v8M8 20h8M4 10l3 1M20 10l-3 1',
+  greed:'M9 4h6l-2 3h-2zM6 14a6 6 0 0 0 12 0c0-3-3-7-6-7s-6 4-6 7zM12 10v7', brittle:'M12 3l8 3v6c0 5-4 8-8 9-4-1-8-4-8-9V6zM12 3l-2 6 4 3-2 5',
+  i_core:'M12 3l8 4.5v9L12 21l-8-4.5v-9zM12 8l4 2.2v4.6L12 17l-4-2.2v-4.6z', i_boot:'M7 3h5v9l7 3v5H5V3zM5 16h14', i_cap:'M6 7h11v10H6zM17 10h2v4h-2M11 9l-2 3h3l-2 3',
+  i_thorn:'M12 3l8 3v6c0 5-4 8-8 9-4-1-8-4-8-9V6zM2 9l3 1M22 9l-3 1M12 1v2M4 19l2-2M20 19l-2-2', i_halo:'M4 8a8 3 0 1 0 16 0a8 3 0 1 0-16 0M12 13l-2 8h4z',
+  i_chip:'M7 7h10v10H7zM10 10h4v4h-4M9 3v4M15 3v4M9 17v4M15 17v4M3 9h4M3 15h4M17 9h4M17 15h4', i_coin:'M12 3a9 9 0 1 0 0 18a9 9 0 1 0 0-18M12 7l1.5 3 3.5.5-2.5 2.5.6 3.5-3.1-1.6-3.1 1.6.6-3.5L7 10.5l3.5-.5z',
+  i_coil:'M4 12c0-3 2-5 4-5s4 2 4 5-2 5-4 5-4-2-4-5zM12 12c0-3 2-5 4-5s4 2 4 5-2 5-4 5', i_reactor:'M12 2v4M12 18v4M5 5l3 3M16 16l3 3M2 12h4M18 12h4M5 19l3-3M16 8l3-3M9 12a3 3 0 1 0 6 0a3 3 0 1 0-6 0',
+  i_scope:'M12 2v6M12 16v6M2 12h6M16 12h6M5 12a7 7 0 1 0 14 0a7 7 0 1 0-14 0', i_aegis:'M12 2l9 4-2 11-7 5-7-5-2-11zM12 7v10M7 10h10', i_cool:'M12 3c3 4 6 7 6 11a6 6 0 0 1-12 0c0-4 3-7 6-11zM9 14h6M12 11v6',
 };
 const svg = k => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="${IC[k]}"/></svg>`;
 const WEAPONS={
@@ -66,43 +88,140 @@ const TREE=[
     {id:'magnet',name:'Salvage magnet',max:2,cost:[250,500],d:'+60% pickup reach, +10% gold'},
     {id:'gadget',name:'Quick deploy',max:2,cost:[600,1100],d:'-12% gadget cooldowns'}]},
 ];
-/* run skills: picked on level-up, from angels and devils; they last for one level */
-const RSK={
-  twin:{name:'Twin Shot',d:'+1 parallel projectile.',max:2},
-  diag:{name:'Diagonal Fire',d:'+2 projectiles at 40°.',max:1},
-  rear:{name:'Rear Guard',d:'+1 projectile behind you.',max:1},
-  pierce:{name:'Piercing Rounds',d:'Projectiles pass through enemies.',max:1},
-  ricochet:{name:'Ricochet',d:'Projectiles bounce to a nearby enemy.',max:2},
-  torch:{name:'Burn Rounds',d:'Hits set enemies on fire for 2.5 s.',max:1},
-  cryo:{name:'Cryo Rounds',d:'Hits slow enemies by 45%.',max:1},
-  arc:{name:'Chain Spark',d:'Hits can arc to a second enemy.',max:2},
-  atk:{name:'Attack Boost',d:'+18% damage.',max:3},
-  sig:{name:'Rapid Cycle',d:'+15% fire rate.',max:3},
-  armor:{name:'Armor Up',d:'+20% max armor and repair 20%.',max:3},
-  vamp:{name:'Vampiric Core',d:'Repair 2% armor per kill.',max:2},
-  orbit:{name:'Orbit Blades',d:'Two blades circle you and cut enemies.',max:2},
-  regen:{name:'Hex Regen',d:'+40% power regeneration.',max:2},
-  dash:{name:'Swift Servos',d:'+12% move speed.',max:2},
-  crit:{name:'Crit Lens',d:'+10% critical chance.',max:2},
+/* core stats: endless gold sink next to the skill tree. Cost grows ×1.45 per level, 30 levels each. */
+const CORE={
+  armor:{name:'Armor',d:'+20 max armor per level',icon:'armor',per:20,unit:''},
+  dmg:{name:'Damage',d:'+4% damage per level',icon:'atk',per:4,unit:'%'},
+  regen:{name:'Power regen',d:'+3% power regeneration per level',icon:'regen',per:3,unit:'%'},
 };
-const RSK_IC={twin:'twin',diag:'diag',rear:'rear',pierce:'pierce',ricochet:'ricochet',torch:'torch',cryo:'cryo',arc:'arc',atk:'atk',sig:'arc',armor:'armor',vamp:'vamp',orbit:'orbit',regen:'regen',dash:'dash',crit:'crit'};
+const CORE_MAX=30, coreCost=lv=>Math.round(100*Math.pow(1.45,lv)/5)*5;
+/* run skills: picked on level-up (skill roulette), from angels and devils. They last for the whole arena run.
+   rarity: common (pure stats) · rare (projectile modifiers, on-kill triggers) · epic (orbits, mechanic-specific) · legendary (evolutions).
+   apply(p,rank) runs once per rank taken. req(rs) gates a skill (evolutions need both parents maxed). Most combat effects read player.rs[id]
+   directly (bullets.js, enemies.js, player.js), so a new skill is: an entry here, an IC icon, and a few lines where it acts. */
+const RARITY={common:{w:60,c:'#d6cfdc',n:'Common'},rare:{w:28,c:'#3ad0ff',n:'Rare'},epic:{w:10,c:'#b070ff',n:'Epic'},legendary:{w:2,c:'#ffc83a',n:'Legendary'}};
+const RSK={
+  // common: pure stats
+  atk:{name:'Attack Boost',d:'+15% damage.',rarity:'common',max:6,icon:'atk',apply:p=>{p.st.dmg*=1.15;}},
+  sig:{name:'Rapid Cycle',d:'+13% fire rate.',rarity:'common',max:4,icon:'arc',apply:p=>{p.st.rate*=.88;}},
+  armor:{name:'Armor Up',d:'+15% max armor and repair 15%.',rarity:'common',max:5,icon:'armor',apply:p=>{ p.maxHp=Math.round(p.maxHp*1.15); p.hp=Math.min(p.maxHp,p.hp+p.maxHp*.15*p.st.heal); }},
+  maxarmor:{name:'Max Armor+',d:'+30 max armor.',rarity:'common',max:5,icon:'maxarmor',apply:p=>{ p.maxHp+=30; p.hp+=30; }},
+  regen:{name:'Hex Regen',d:'+35% power regeneration.',rarity:'common',max:3,icon:'regen',apply:p=>{p.st.regen*=1.35;}},
+  dash:{name:'Swift Servos',d:'+8% move speed.',rarity:'common',max:4,icon:'dash',apply:p=>{p.st.spd*=1.08;}},
+  crit:{name:'Crit Lens',d:'+7% critical chance.',rarity:'common',max:4,icon:'crit',apply:p=>{p.st.crit+=.07;}},
+  dodge:{name:'Dodge',d:'6% chance to ignore a hit.',rarity:'common',max:3,icon:'dodge',apply:p=>{p.st.dodge+=.06;}},
+  goldrush:{name:'Gold Rush',d:'+25% gold.',rarity:'common',max:3,icon:'goldrush',apply:p=>{p.st.goldMul*=1.25;}},
+  sync:{name:'Sync Surge',d:'+20% special charge.',rarity:'common',max:3,icon:'sync',apply:p=>{p.st.sp*=1.2;}},
+  // rare: projectile modifiers and on-kill triggers
+  twin:{name:'Twin Shot',d:'+1 parallel projectile.',rarity:'rare',max:2,icon:'twin'},
+  diag:{name:'Diagonal Fire',d:'+2 projectiles at 40°.',rarity:'rare',max:1,icon:'diag'},
+  side:{name:'Side Fire',d:'+1 projectile to each side.',rarity:'rare',max:1,icon:'side'},
+  rear:{name:'Rear Guard',d:'+1 projectile behind you.',rarity:'rare',max:1,icon:'rear'},
+  pierce:{name:'Piercing Rounds',d:'Projectiles pass through enemies.',rarity:'rare',max:1,icon:'pierce'},
+  ricochet:{name:'Ricochet',d:'Projectiles bounce to a nearby enemy.',rarity:'rare',max:3,icon:'ricochet'},
+  wall:{name:'Wall Bounce',d:'Projectiles bounce off walls and blocks once per rank.',rarity:'rare',max:2,icon:'wall'},
+  torch:{name:'Burn Rounds',d:'Hits set enemies on fire for 2.5 s.',rarity:'rare',max:1,icon:'torch'},
+  cryo:{name:'Cryo Rounds',d:'Hits slow enemies by 45%.',rarity:'rare',max:1,icon:'cryo'},
+  poison:{name:'Poison',d:'Hits stack poison that ticks for 3 s.',rarity:'rare',max:3,icon:'poison'},
+  arc:{name:'Chain Spark',d:'Hits can arc to a second enemy.',rarity:'rare',max:3,icon:'arc'},
+  vamp:{name:'Vampiric Core',d:'Repair 2% armor per kill.',rarity:'rare',max:3,icon:'vamp'},
+  nova:{name:'Death Nova',d:'Enemies explode when they die.',rarity:'rare',max:2,icon:'nova'},
+  shard:{name:'Shard Burst',d:'Dead enemies spray bullets.',rarity:'rare',max:2,icon:'shardb'},
+  rage:{name:'Rage',d:'Up to +25% damage per rank as your armor drops.',rarity:'rare',max:2,icon:'rage'},
+  trail:{name:'Dash Trail',d:'Dashing leaves a trail of fire.',rarity:'rare',max:2,icon:'trail'},
+  dreset:{name:'Dash Reset',d:'Kills can reset your dash (phone: refill a charge).',rarity:'rare',max:2,icon:'dreset'},
+  overload:{name:'Overload Special',d:'Your special hits 30% harder and lasts longer.',rarity:'rare',max:2,icon:'overload',apply:p=>{p.st.spPow*=1.3;}},
+  grace:{name:"Angel's Grace",d:'Angels fully repair you and offer one more skill.',rarity:'rare',max:1,icon:'grace'},
+  // epic: elemental orbits and mechanic-specific
+  orbit:{name:'Orbit Blades',d:'Two blades circle you and cut enemies.',rarity:'epic',max:3,icon:'orbit',apply:()=>buildOrbit()},
+  forb:{name:'Fire Orbit',d:'A fire orb circles you and burns what it touches.',rarity:'epic',max:2,icon:'forb',apply:()=>buildOrbit()},
+  iorb:{name:'Ice Orbit',d:'An ice orb circles you and chills what it touches.',rarity:'epic',max:2,icon:'iorb',apply:()=>buildOrbit()},
+  borb:{name:'Bolt Orbit',d:'A bolt orb circles you and zaps nearby enemies.',rarity:'epic',max:2,icon:'borb',apply:()=>buildOrbit()},
+  sorb:{name:'Shield Orbit',d:'Two plates circle you and block enemy shots.',rarity:'epic',max:2,icon:'sorb',apply:()=>buildOrbit()},
+  wing:{name:'Wingman Drone',d:'A drone flies with you for the whole run.',rarity:'epic',max:2,icon:'wing',apply:()=>buildWingman()},
+  meteor:{name:'Meteor',d:'Hits can call down a meteor strike.',rarity:'epic',max:2,icon:'meteor'},
+  freeze:{name:'Freeze',d:'Cryo hits can freeze enemies solid for a moment.',rarity:'epic',max:2,icon:'freeze',req:rs=>rs.cryo>0},
+  headshot:{name:'Headshot',d:'Small chance to instantly destroy a normal enemy.',rarity:'epic',max:2,icon:'headshot'},
+  life:{name:'Extra Life',d:'Come back once with half your armor.',rarity:'epic',max:1,icon:'life',apply:p=>{p.lives++;}},
+  reflect:{name:'Reflect Hex',d:'Shots your hex shield or barrier blocks fly back. Beams cannot be reflected.',rarity:'epic',max:1,icon:'reflect'},
+  hexnova:{name:'Hex Nova',d:'Overheating the hex shield or breaking the barrier blasts everything near you.',rarity:'epic',max:2,icon:'hexnova'},
+  echo:{name:'Gadget Echo',d:'Gadgets trigger twice.',rarity:'epic',max:1,icon:'echo'},
+  // legendary: evolutions, offered only when both parents are maxed
+  storm:{name:'Bullet Storm',d:'Evolution of Twin Shot + Rapid Cycle: +25% fire rate and every shot fans out.',rarity:'legendary',max:1,icon:'storm',evo:['twin','sig'],apply:p=>{p.st.rate*=.8;}},
+  inferno:{name:'Inferno Ring',d:'Evolution of Burn Rounds + Orbit Blades: blades become a wide ring of fire.',rarity:'legendary',max:1,icon:'inferno',evo:['torch','orbit'],apply:()=>buildOrbit()},
+  halo:{name:'Storm Halo',d:'Evolution of Chain Spark + Bolt Orbit: lightning strikes 3 enemies every second.',rarity:'legendary',max:1,icon:'halo',evo:['arc','borb']},
+  blood:{name:'Blood Engine',d:'Evolution of Vampiric Core + Rage: kills repair 4% and Rage counts double.',rarity:'legendary',max:1,icon:'blood',evo:['vamp','rage']},
+};
+for(const id in RSK){ const s=RSK[id]; if(s.evo&&!s.req) s.req=rs=>s.evo.every(k=>(rs[k]||0)>=RSK[k].max); }
+/* run-only items: elites drop one 25% of the time, bosses always. 4 slots. add/rem are exact inverses so items can be swapped out.
+   shape + color build the small pickup model (items.js). Flags such as p.thorn are read where they act. */
+const ITEMS={
+  plated:{name:'Plated Core',d:'+20% max armor.',rarity:'common',icon:'i_core',shape:'box',color:0x5f7aa8,add:p=>{ p.maxHp=Math.round(p.maxHp*1.2); p.hp=Math.min(p.maxHp,p.hp*1.2); },rem:p=>{ p.maxHp=Math.round(p.maxHp/1.2); p.hp=Math.min(p.hp,p.maxHp); }},
+  servo:{name:'Servo Boots',d:'+10% move speed.',rarity:'common',icon:'i_boot',shape:'cyl',color:0x3a3d48,add:p=>{p.st.spd*=1.1;},rem:p=>{p.st.spd/=1.1;}},
+  cap:{name:'Capacitor',d:'+25% power (125 max).',rarity:'common',icon:'i_cap',shape:'cyl',color:0xff6a1a,add:p=>{p.enMax+=25;},rem:p=>{ p.enMax-=25; p.en=Math.min(p.en,p.enMax); }},
+  coil:{name:'Salvage Coil',d:'Double pickup reach, +15% gold.',rarity:'common',icon:'i_coil',shape:'torus',color:0xffc83a,add:p=>{ p.st.magnet*=2; p.st.goldMul*=1.15; },rem:p=>{ p.st.magnet/=2; p.st.goldMul/=1.15; }},
+  coolant:{name:'Coolant Loop',d:'-25% gadget cooldowns.',rarity:'common',icon:'i_cool',shape:'sphere',color:0x5fe0ff,add:p=>{p.st.gadgetCd*=.75;},rem:p=>{p.st.gadgetCd/=.75;}},
+  minel:{name:'Mine Layer',d:'Every dash drops a proximity mine.',rarity:'rare',icon:'mines',shape:'cyl',color:0x2a2632,add:p=>{p.mineLayer=(p.mineLayer||0)+1;},rem:p=>{p.mineLayer--;}},
+  thorn:{name:'Thorn Plating',d:'Enemies that ram you take 3x the damage back.',rarity:'rare',icon:'i_thorn',shape:'oct',color:0xd5352a,add:p=>{p.thorn=(p.thorn||0)+1;},rem:p=>{p.thorn--;}},
+  halof:{name:'Halo Fragment',d:'Repair 5% armor after every cleared room.',rarity:'rare',icon:'i_halo',shape:'torus',color:0xffd36a,add:p=>{p.haloFrag=(p.haloFrag||0)+1;},rem:p=>{p.haloFrag--;}},
+  overclock:{name:'Overclock Chip',d:'+15% fire rate, but you take 10% more damage.',rarity:'rare',icon:'i_chip',shape:'box',color:0x7dff9a,add:p=>{ p.st.rate/=1.15; p.st.armor*=1.1; },rem:p=>{ p.st.rate*=1.15; p.st.armor/=1.1; }},
+  reactor:{name:'Sync Reactor',d:'Start every room with +30% special charge.',rarity:'rare',icon:'i_reactor',shape:'sphere',color:0xffe14a,add:p=>{p.reactor=(p.reactor||0)+1;},rem:p=>{p.reactor--;}},
+  scope:{name:'Target Scope',d:'+6% crit chance and crits hit 2.5x.',rarity:'rare',icon:'i_scope',shape:'cone',color:0xe8e8ee,add:p=>{ p.st.crit+=.06; p.critMul=2.5; },rem:p=>{ p.st.crit-=.06; p.critMul=2; }},
+  lucky:{name:'Lucky Coin',d:'Skill roulette rolls one rarity tier higher more often.',rarity:'epic',icon:'i_coin',shape:'cyl',color:0xffc83a,add:p=>{p.luck++;},rem:p=>{p.luck--;}},
+  aegis:{name:'Aegis Shard',d:'The first hit you take in each room is blocked.',rarity:'epic',icon:'i_aegis',shape:'oct',color:0xb070ff,add:p=>{ p.aegisN=(p.aegisN||0)+1; p.aegis=true; },rem:p=>{ p.aegisN--; p.aegis=p.aegisN>0&&p.aegis; }},
+};
+RARITY.common.drop=55; RARITY.rare.drop=32; RARITY.epic.drop=13;
+/* devil curses: power now, a lasting cost for the rest of the run */
+const CURSES={
+  glass:{name:'Glass Cannon',d:'+40% damage, -25% max armor.',icon:'glass',apply:p=>{ p.st.dmg*=1.4; p.maxHp=Math.max(30,Math.round(p.maxHp*.75)); p.hp=Math.min(p.hp,p.maxHp); }},
+  berserk:{name:'Berserk',d:'+30% fire rate. Your hex shield and barrier are gone.',icon:'berserk',apply:p=>{ p.st.rate/=1.3; p.st.noHex=true; }},
+  greed:{name:'Greed',d:'+50% gold. Enemies get +15% armor.',icon:'greed',rule:{goldMul:1.5,hpMul:1.15}},
+  brittle:{name:'Brittle',d:'Take +20% damage. Gain a random epic skill.',icon:'brittle',apply:(p,silent)=>{ p.st.armor*=1.2; if(!silent){ const o=skillOptions(1,'epic'); if(o[0]) applySkill(o[0]); } }},
+};
 
-/* stages + levels */
-const D='drone',S='seraph',H='heavy',W='warden';
-const STAGES=[
-  {name:'Outer City', boss:'colossus', hpMul:1, levels:['First Contact','Steel Rain','Wings Over the City'],
-   pools:[[D],[D,D,H],[D,D,S,H]],
+/* arenas: one run each, a flat sequence of short rooms. Room schedule (see arenaRoomType in run.js): boss every 10th room, angel every
+   other 5th, elite around every 7th. mobs unlock in list order as the run goes on; bosses are drawn from the pool, never twice in a row. */
+const ARENAS=[
+  {name:'Outer City', rooms:30, hpMul:1, bossMul:1, mobs:['drone','spark','crawler','heavy','howitzer'], bosses:['colossus','hive','arachne'], rule:{}, ruleTxt:'Training ground: no special rule',
    theme:{bg:0x1d1424,hemiS:0xffd6b8,hemiG:0x2a1d3a,ground:0x5a4c64,city:0xffffff,edge:0xff6a1a,rim:0xff7a40,win:0xffc47a,floor:0xa898b0,wall:0x3a3346,block:0x5e5468,water:0xff7a2a},
    colorCss:'#ff6a1a'},
-  {name:'Night Harbor', boss:'prism', hpMul:1.35, levels:['Low Tide','Watchers','Glass Storm'],
-   pools:[[S,S,D],[W,D,S,D],[W,S,H,D]],
+  {name:'Night Harbor', rooms:40, hpMul:1.3, bossMul:1.25, mobs:['seraph','drone','shardling','warden','lancer','bulwark'], bosses:['prism','arachne','hive'], rule:{shotSpd:1.15,hazards:.35}, ruleTxt:'Enemy shots fly 15% faster',
    theme:{bg:0x0b1726,hemiS:0xb8d4ff,hemiG:0x10203a,ground:0x3e5470,city:0x9ab4e0,edge:0x3ad0ff,rim:0x3a8aff,win:0x9ae4ff,floor:0x86a2c4,wall:0x22344a,block:0x2f5f9a,water:0x1a74e0},
    colorCss:'#3ad0ff'},
-  {name:"Heaven's Gate", boss:'seraph', hpMul:1.75, levels:['The Choir','Iron Faith','Last Light'],
-   pools:[[S,W,S,D],[H,W,S,H],[H,W,S,S,W,D]],
+  {name:"Heaven's Gate", rooms:50, hpMul:1.6, bossMul:1.5, mobs:['seraph','warden','cherub','censer','heavy','ophan'], bosses:['seraph','throne','archon'], rule:{elitePairs:true,hazards:.4}, ruleTxt:'Elites come in pairs',
    theme:{bg:0x2b1a26,hemiS:0xfff0d0,hemiG:0x3a2638,ground:0x7a6670,city:0xe2c8d8,edge:0xffd36a,rim:0xffb060,win:0xfff0b0,floor:0xd8c6cc,wall:0x8a7480,block:0xf0e8f2,water:0xffd36a},
    colorCss:'#ffd36a'},
+  {name:'Fallen Sky', rooms:50, hpMul:1.9, bossMul:1.8, mixed:true, mobs:['drone','spark','seraph','crawler','shardling','warden','heavy','lancer','censer','howitzer','bulwark','cherub','ophan'], bosses:'all', rule:{hazards:.45,corruptElites:true}, ruleTxt:'Both factions, corrupted elites, 2 random modifiers',
+   theme:{bg:0x170e22,hemiS:0xe0c8ff,hemiG:0x22123a,ground:0x4a3a64,city:0xb8a0e0,edge:0xb070ff,rim:0xff4ad0,win:0xd8a0ff,floor:0x9a8ab8,wall:0x2e2244,block:0x5a3a8a,water:0xb070ff},
+   colorCss:'#b070ff'},
 ];
+/* Arena 4 rolls two of these per run */
+const MODS={
+  swift:{name:'Swift shots',d:'Enemy shots +15% speed.',rule:{shotSpd:1.15}},
+  frenzy:{name:'Frenzy',d:'Enemies move 20% faster.',rule:{moveSpd:1.2}},
+  volatile:{name:'Volatile',d:'Enemies burst into slow shots when they die.',rule:{volatile:true}},
+  armored:{name:'Armored',d:'Enemies +20% armor, +25% gold.',rule:{hpMul:1.2,goldMul:1.25}},
+  unstable:{name:'Unstable ground',d:'Floor hazards in every room.',rule:{hazards:1}},
+  twin:{name:'Twin elites',d:'Elites come in pairs.',rule:{elitePairs:true}},
+};
+/* mobs: stats and model. cost = room budget, xp = pilot xp, gold/score per kill. elite:false keeps a mob out of elite rolls. */
+const ENEMY={
+  drone:{name:'Drone',hp:5,r:1.15,speed:3.4,sc:.8,cost:1,xp:1,gold:6,score:100,build:()=>buildMech(0x4c4658,0x9a2c42,0x24202c,0xff2a2a,.8),elite:false},
+  seraph:{name:'Seraph',hp:7,r:1.45,speed:5,sc:1,fly:true,angel:true,cost:1.3,xp:1.3,gold:8,score:150,build:()=>buildSeraph(1)},
+  mini:{name:'Mini seraph',hp:4,r:1.05,speed:6,sc:.7,fly:true,angel:true,cost:.8,xp:0,gold:3,score:60,build:()=>buildSeraph(.7),elite:false,ai:'seraph'},
+  heavy:{name:'Heavy',hp:20,r:1.7,speed:2.4,sc:1.25,cost:2.6,xp:3,gold:16,score:300,build:()=>buildMech(0x5a5244,0xc08a2a,0x2a2620,0xff3030,1.25)},
+  warden:{name:'Warden',hp:11,r:1.45,speed:3,sc:1,fly:true,angel:true,cost:1.9,xp:2,gold:12,score:250,build:()=>buildWarden()},
+  // arena mobs (models from docs/bestiary.html, behavior in enemy-ai.js)
+  spark:{name:'Spark',hp:3,r:.9,speed:7.5,sc:1,cost:.7,xp:.6,gold:4,score:80,build:()=>buildSpark(),elite:false,init:e=>{ e.model.core.material=e.model.core.material.clone(); e.st='roll'; }},
+  crawler:{name:'Crawler',hp:9,r:1.3,speed:5.5,sc:1,cost:1.4,xp:1.4,gold:9,score:160,build:()=>buildCrawler(1),init:e=>{ e.cd=rand(1.5,2.5); }},
+  howitzer:{name:'Howitzer',hp:12,r:1.4,speed:0,sc:1,cost:2.2,xp:2.2,gold:13,score:260,build:()=>buildHowitzer(),init:e=>{ e.cd=rand(1.4,2.4); }},
+  lancer:{name:'Lancer',hp:9,r:1.15,speed:3.2,sc:1.05,cost:2,xp:2,gold:12,score:240,build:()=>buildLancer(),init:e=>{ e.model.laser.material=e.model.laser.material.clone(); e.st='move'; e.stT=rand(1.2,2.2); }},
+  bulwark:{name:'Bulwark',hp:24,r:1.6,speed:1.8,sc:1.15,cost:2.4,xp:2.6,gold:15,score:280,build:()=>buildBulwark(),init:e=>{ e.cd=rand(2,3); }},
+  shardling:{name:'Shardling',hp:8,r:1.2,speed:3,sc:1,fly:true,angel:true,cost:1.6,xp:1.4,gold:9,score:180,build:()=>buildShardling(),init:(e,o)=>{ e.gen=o.gen||0; e.sc=Math.pow(.72,e.gen); e.hp*=Math.pow(.45,e.gen); e.r*=e.sc; }},
+  cherub:{name:'Cherub',hp:7,r:1,speed:4.6,sc:1,fly:true,angel:true,cost:1.5,xp:1.5,gold:10,score:220,build:()=>buildCherub(),elite:false,init:e=>{ e.cd=3; }},
+  censer:{name:'Censer',hp:10,r:1.1,speed:1.8,sc:1,fly:true,angel:true,cost:2,xp:2,gold:12,score:240,build:()=>buildCenser(),init:e=>{ e.cd=rand(1.5,2.5); }},
+  ophan:{name:'Ophan',hp:16,r:1.8,speed:11,sc:1,angel:true,cost:2.8,xp:3,gold:16,score:320,build:()=>buildOphan(1),init:e=>{ e.st='pause'; e.stT=rand(1,2); }},
+};
 const BOSSES={
   colossus:{name:'Iron Colossus',cls:'Class · War machine · Siege frame',epi:'Built to level cities. It walks straight through gunfire and shakes the ground apart.',threat:3,warn:'HOSTILE WAR MACHINE INBOUND',hp:470,r:3.2,fly:0,barrier:false,minion:'drone',gold:220,gems:25,angel:false,
     pool:[['burst','missiles','slam'],['burst','missiles','slam','summon'],['missiles','slam','burst','summon','slam']]},
@@ -110,21 +229,34 @@ const BOSSES={
     pool:[['beam','shards','ring'],['beam','sweep','shards','ring'],['sweep','beam','shards','ring','summon']]},
   seraph:{name:'The Last Seraph',cls:'Class · Angel · Seraph',epi:'The source of every signal. Six wings, one core, and nothing left to lose.',threat:5,warn:'HIGH-ENERGY SIGNAL DESCENDING',hp:860,r:3.0,fly:4.2,barrier:true,minion:'mini',gold:600,gems:60,angel:true,
     pool:[['ring','beam','spiral','aimed'],['ring','beam','spiral','summon','aimed','sweep'],['ring','sweep','spiral','summon','aimed','beam','shards']]},
+  hive:{name:'Hive Carrier',cls:'Class · War machine · Rotor carrier',epi:'A flying hangar with four rotors. It seeds the room with drones and bombs it in straight lines.',threat:3,warn:'ROTOR NOISE OVERHEAD',hp:540,r:3.6,fly:.01,coreY:5,barrier:false,minion:'drone',gold:240,gems:28,angel:false,
+    pool:[['drones','bombline','missiles'],['drones','bombline','missiles','bombline'],['sparks','bombline','drones','missiles','bombline']]},
+  arachne:{name:'Siege Arachne',cls:'Class · War machine · Siege walker',epi:'A Crawler grown to the size of a building. Its head laser sweeps half the room; the space under its belly is the only blind spot.',threat:4,warn:'SEISMIC SIGNATURE CLOSING',hp:600,r:3.4,fly:0,coreY:3.2,barrier:false,minion:'crawler',gold:300,gems:34,angel:false,
+    pool:[['sweep180','mines','burst2'],['sweep180','mines','stomp','burst2'],['sweep180','stomp','mines','burst2','stomp']]},
+  throne:{name:'Ophanim Throne',cls:'Class · Angel · Throne',epi:'Three rings and twenty-four eyes. Every open eye is a gun; shoot them out.',threat:5,warn:'THE THRONE IS WATCHING',hp:880,r:3.4,fly:.01,coreY:3.5,barrier:false,minion:'mini',gold:560,gems:56,angel:true,
+    pool:[['walls','eyes'],['walls','eyes','walls2'],['walls2','eyes','roll','walls','roll']]},
+  archon:{name:'Archon',cls:'Class · Angel · Judge',epi:'An armored knight with a sword of light. Stay out of the lunge, punish the recovery, and stop firing into the shield.',threat:5,warn:'JUDGEMENT DESCENDS',hp:820,r:2.6,fly:.01,coreY:4.6,barrier:false,minion:'seraph',gold:560,gems:56,angel:true,
+    pool:[['wave','lunge','aimed'],['wave','lunge','shieldup','wave'],['lunge','wave','shieldup','lunge','ring']]},
 };
-const LEVEL_ROOMS=['combat','combat','angel','combat','elite'], BOSS_ROOMS=['combat','angel','boss'];
-function levelInfo(n){
-  const s=Math.floor(n/4), k=n%4, Sx=STAGES[s], boss=k===3;
-  return {n,s,k,boss,stage:Sx,name:boss?BOSSES[Sx.boss].name:Sx.levels[k],rooms:boss?BOSS_ROOMS:LEVEL_ROOMS,pool:boss?Sx.pools[2]:Sx.pools[k]};
-}
-/* hand-built room layouts, 9×9 cells of 2 units. Row 0 is the door side, row 8 the entry. # block (stops movement and most shots) · ~ hazard canal (stops movement only) */
+/* corrupted variants: any boss + purple tint, crystal spikes and a few attacks borrowed from another boss. Arena 4 draws from all of them. */
+const CORRUPT_DONOR={colossus:['shards','beam'],prism:['missiles','slam'],seraph:['walls','bombline'],hive:['mines','spiral'],arachne:['bombline','ring'],throne:['spiral','missiles'],archon:['slam','shards']};
+for(const k of Object.keys(CORRUPT_DONOR)){ const b=BOSSES[k], dn=CORRUPT_DONOR[k];
+  BOSSES['x_'+k]=Object.assign({},b,{name:'Corrupted '+b.name.replace(/^The /,''),cls:b.cls+' · Corrupted',epi:'The void got inside it. Same frame, new tricks, more armor.',threat:Math.min(5,b.threat+1),warn:'CORRUPTED SIGNAL · '+b.warn,hp:Math.round(b.hp*1.35),form:k,corrupt:true,gold:Math.round(b.gold*1.3),gems:Math.round(b.gems*1.3),
+    pool:b.pool.map((p,i)=>p.concat(dn.slice(0,i===0?1:2)))}); }
+/* hand-built room layouts: 9 columns × 15 rows of 2-unit cells (a tall rectangle). Row 0 is the door side, the last row the entry.
+   # block (stops movement and most shots) · ~ hazard canal (stops movement only) · . open floor. Keep row 0 and the last two rows open in the middle. */
 const ROOMS=[
-  ['.........','.#.....#.','.........','...#.#...','.........','...#.#...','.........','.#.....#.','.........'],
-  ['.........','..#...#..','.........','~~~...~~~','.........','.........','..##.##..','.........','.........'],
-  ['.........','....#....','.#..#..#.','.........','.##...##.','.........','.#..#..#.','.........','.........'],
-  ['.........','.~~...~~.','.~.....~.','...#.#...','....#....','...#.#...','.~.....~.','.~~...~~.','.........'],
-  ['.........','###...###','.........','....#....','..#...#..','....#....','.........','~~.....~~','.........'],
-  ['.........','.#...#...','.....~~..','.#.......','....#..#.','..~~.....','.......#.','..#......','.........'],
-  ['.........','.........','..#####..','..#...#..','.........','..#...#..','..##.##..','.........','.........'],
-  ['.........','.~~.#.~~.','.~~...~~.','.........','.#.~~~.#.','.........','.~~...~~.','.~~...~~.','.........'],
+  ['.........','.........','.#.....#.','.........','.........','...#.#...','.........','.........','.........','...#.#...','.........','.........','.#.....#.','.........','.........'],
+  ['.........','.........','..#...#..','.........','~~~...~~~','.........','.........','....#....','.........','.........','..##.##..','.........','.........','.........','.........'],
+  ['.........','....#....','.#..#..#.','.........','.........','.##...##.','.........','....#....','.........','.##...##.','.........','.#..#..#.','.........','.........','.........'],
+  ['.........','.~~...~~.','.~.....~.','.........','...#.#...','....#....','...#.#...','.........','.~.....~.','.~~...~~.','.........','...#.#...','.........','.........','.........'],
+  ['.........','.........','###...###','.........','.........','....#....','..#...#..','....#....','.........','.........','~~.....~~','.........','.#.....#.','.........','.........'],
+  ['.........','.#...#...','.....~~..','.........','.#.......','....#..#.','.........','..~~.....','.......#.','.........','..#......','.....~~..','.........','.........','.........'],
+  ['.........','.........','..#####..','..#...#..','.........','.........','..#...#..','..##.##..','.........','.........','.#.....#.','.........','.........','.........','.........'],
+  ['.........','.~~.#.~~.','.~~...~~.','.........','.........','.#.~~~.#.','.........','.........','.~~...~~.','.~~...~~.','.........','....#....','.........','.........','.........'],
+  ['.........','.........','#.......#','#..#.#..#','.........','.........','...~~~...','.........','.........','#..#.#..#','#.......#','.........','.........','.........','.........'],
+  ['.........','..#...#..','.........','....~....','.#..~..#.','....~....','.........','..#...#..','.........','....~....','.#..~..#.','....~....','.........','.........','.........'],
+  ['.........','.........','.##.....#','.........','.....##..','.........','#.......#','.........','..##.....','.........','#.....##.','.........','.........','.........','.........'],
+  ['.........','.........','.~~~.~~~.','.........','.........','..#...#..','...#.#...','....#....','.........','.........','.~~~.~~~.','.........','.........','.........','.........'],
 ];
-const SANCTUM=['.........','.#.....#.','.........','.........','.........','.........','.........','.#.....#.','.........'];
+const SANCTUM=['.........','.........','.#.....#.','.........','.........','.........','.........','.........','.........','.........','.........','.........','.#.....#.','.........','.........'];

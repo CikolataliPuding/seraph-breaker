@@ -83,7 +83,7 @@ const sfxLast={};
 function sfx(kind){
   if(!AU.ctx||AU.ctx.state!=='running'||P.sfx<=0) return;
   const ctx=AU.ctx,t=ctx.currentTime;
-  const gap={shot:.05,hit:.04,coin:.03,torch:.09,zap:.08}[kind]||0;
+  const gap={shot:.05,hit:.04,coin:.03,torch:.09,zap:.08,tick:.05}[kind]||0;
   if(gap&&sfxLast[kind]&&t-sfxLast[kind]<gap) return; sfxLast[kind]=t;
   const osc=(type,f0,f1,dur,peak)=>{ const o=ctx.createOscillator(); o.type=type; o.frequency.setValueAtTime(f0,t); o.frequency.exponentialRampToValueAtTime(f1,t+dur); const g=env(t,peak,.002,dur); o.connect(g); g.connect(AU.sfx); o.start(t); o.stop(t+dur+.05); };
   const nz=(type,f,dur,peak,q=1)=>{ const n=noiseSrc(t,dur),fl=ctx.createBiquadFilter(); fl.type=type; fl.frequency.value=f; fl.Q.value=q; const g=env(t,peak,.002,dur); n.connect(fl); fl.connect(g); g.connect(AU.sfx); };
@@ -105,6 +105,12 @@ function sfx(kind){
     case 'slash': nz('bandpass',3000,.12,.22,1.2); osc('triangle',700,200,.1,.08); break;
     case 'click': osc('square',600,600,.03,.04); break;
     case 'door': osc('triangle',440,880,.25,.12); osc('sine',660,1320,.3,.08); break;
+    case 'perfect': [1568,2093,2637].forEach((f,i)=>{ const o=ctx.createOscillator(); o.type='sine'; o.frequency.value=f; const g=env(t+i*.04,.11,.002,.35); o.connect(g); g.connect(AU.sfx); o.start(t+i*.04); o.stop(t+i*.04+.4); }); nz('highpass',5000,.25,.08); break;
+    case 'tick': osc('square',1400+Math.random()*400,900,.025,.03); break;
+    case 'r_common': osc('triangle',660,700,.12,.08); break;
+    case 'r_rare': [660,990].forEach((f,i)=>{ const o=ctx.createOscillator(); o.type='triangle'; o.frequency.value=f; const g=env(t+i*.05,.09,.003,.16); o.connect(g); g.connect(AU.sfx); o.start(t+i*.05); o.stop(t+i*.05+.2); }); break;
+    case 'r_epic': [523,784,1046].forEach((f,i)=>{ const o=ctx.createOscillator(); o.type='sawtooth'; o.frequency.value=f; const g=env(t+i*.06,.06,.003,.22); o.connect(g); g.connect(AU.sfx); o.start(t+i*.06); o.stop(t+i*.06+.26); }); nz('highpass',4000,.3,.06); break;
+    case 'r_legendary': [523,659,784,1046,1318].forEach((f,i)=>{ const o=ctx.createOscillator(); o.type='square'; o.frequency.value=f; const g=env(t+i*.07,.07,.003,.35); o.connect(g); g.connect(AU.sfx); o.start(t+i*.07); o.stop(t+i*.07+.4); }); osc('sine',80,40,.8,.3); nz('highpass',3000,.6,.1); break;
     case 'lvup': [523,659,784,1046].forEach((f,i)=>{ const o=ctx.createOscillator(); o.type='square'; o.frequency.value=f; const g=env(t+i*.07,.07,.003,.16); o.connect(g); g.connect(AU.sfx); o.start(t+i*.07); o.stop(t+i*.07+.2); }); break;
   }
 }

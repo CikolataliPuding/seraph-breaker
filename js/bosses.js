@@ -1,20 +1,49 @@
-// Seraph Breaker · bosses.js: Boss spawning, attack patterns (bossTick), beams and the cinematic intro.
+// Seraph Breaker · bosses.js: Boss spawning, attack patterns (bossTick), beams, boss parts (rotors, eyes) and the cinematic intro.
 /* ================= BOSSES ================= */
 function spawnBoss(kind){
-  const def=BOSSES[kind]; const m=BOSS_BUILD[kind]();
-  boss={kind,def,model:m,pos:new V3(0,0,-6),vel:new V3(),hp:def.hp,maxHp:def.hp,r:def.r,t:0,flash:0,atk:'enter',atkT:99,phase:1,barrier:0,barrierCd:9,y:32,base:def.fly,spinA:0,beam:null,yaw:0,walk:0,lastAtk:'',stun:0,born:1,burn:0,slow:0};
+  const def=BOSSES[kind], m=BOSS_BUILD[kind](), form=def.form||kind;
+  // boss armor scales with the arena and with how deep into the run this boss room is (room 10, 20, 30...)
+  const hp=Math.round(def.hp*ARENAS[stage].bossMul*(1+(Math.floor((sortie.ri+1)/10)-1)*.45)*(sortie.rule.hpMul||1));
+  boss={kind,form,def,model:m,pos:new V3(0,0,-6),vel:new V3(),hp,maxHp:hp,r:def.r,t:0,flash:0,atk:'enter',atkT:99,phase:1,barrier:0,barrierCd:9,y:32,base:def.fly||0,spinA:0,beam:null,yaw:0,walk:0,lastAtk:'',stun:0,born:1,burn:0,slow:0,jz:juiceState(),dropY:0,sc:m.g.scale.x,jumpY:0,vuln:0,reflectT:0,spdK:1,wallA:[0,0,0]};
+  // Hive Carrier rotors and Ophanim Throne eyes are parts you can shoot out
+  if(form==='hive'){ boss.rotors=m.rotors.map(r=>({m:r,hp:hp*.1,alive:true})); m.bay.material=m.bay.material.clone(); }
+  if(m.eyes) m.eyes.forEach(e=>{ e.hp=hp*.012; e.alive=true; });
   scene.add(m.g,m.shadow); enemies.push(boss);
   $('bossName').textContent=def.name.toUpperCase(); $('bossPh').textContent='PHASE I'; $('bossImg').src=PORTRAIT[kind]||'';
 }
 const toDir=b=>{ const T=tgt(); return new V3(T.x-b.pos.x,0,T.z-b.pos.z).normalize(); };
-const bossCore=b=>new V3(b.pos.x,b.kind==='colossus'?6:b.y,b.pos.z);
+const bossCore=b=>new V3(b.pos.x,b.y+(b.def.coreY!=null?b.def.coreY:b.form==='colossus'?6:0)+(b.jumpY||0),b.pos.z);
+// damage that lands near a rotor or an eye also hurts that part
+function bossPartHit(b,pos,d){
+  if(b.rotors){ let best=null,bd=2.8; for(const r of b.rotors){ if(!r.alive) continue; r.m.getWorldPosition(_tmp2); const dd=Math.hypot(_tmp2.x-pos.x,_tmp2.z-pos.z); if(dd<bd){ bd=dd; best=r; } }
+    if(best){ best.hp-=d; if(best.hp<=0){ best.alive=false; best.m.visible=false; best.m.getWorldPosition(_tmp2); crossBlast(_tmp2.clone(),0xff6a1a,.9); b.spdK*=.78; popText('ROTOR DOWN'); hitstop(60,true); } } }
+  if(b.model.eyes){ let best=null,bd=1.6; for(const e of b.model.eyes){ if(!e.alive) continue; e.w.getWorldPosition(_tmp2); const dd=Math.hypot(_tmp2.x-pos.x,_tmp2.z-pos.z); if(dd<bd){ bd=dd; best=e; } }
+    if(best){ best.hp-=d; if(best.hp<=0){ best.alive=false; best.p.visible=false; best.w.material=toon(0x2a2232); best.w.getWorldPosition(_tmp2); sparks(_tmp2,0xff2a3a,8,6); sfx('hit'); } } }
+}
+const LOCKED_ATK=['stomp','lunge','roll'];
 function bossStartAttack(b){
   const pool=b.def.pool[b.phase-1]; let a=pickOne(pool); if(a===b.lastAtk) a=pickOne(pool);
-  if(a==='summon'&&enemies.length>4) a=pool[0];
-  b.atk=a; b.lastAtk=a; b.atkT=0; b.subT=0; b.slam=0; b.slam2=-1;
+  if(['summon','drones','sparks'].includes(a)&&enemies.length>5) a=pool.find(x=>!['summon','drones','sparks'].includes(x))||pool[0];
+  if(a==='eyes'&&b.model.eyes&&!b.model.eyes.some(e=>e.alive)) a='walls';
+  if(a==='burst'&&!b.model.muzzle) a='aimed';
+  b.atk=a; b.lastAtk=a; b.atkT=0; b.subT=0; b.slam=0; b.slam2=-1; b.waved=0; b.wallA=[rand(0,6),rand(0,6),rand(0,6)];
   if(a==='beam') b.beam={t:0,fire:false,dir:toDir(b),sweep:0,tele:1.1,dur:.9};
   if(a==='sweep'){ const d=toDir(b),s=Math.random()<.5?-1:1,ang=Math.atan2(d.x,d.z)-s*1.15; b.beam={t:0,fire:false,dir:new V3(Math.sin(ang),0,Math.cos(ang)),sweep:s*(b.phase===3?1.7:1.4),tele:.9,dur:1.6}; }
+  // Siege Arachne: head laser sweeps 180° along the ground; the space under its belly is a blind spot
+  if(a==='sweep180'){ const d=toDir(b),s=Math.random()<.5?-1:1,ang=Math.atan2(d.x,d.z)-s*Math.PI/2; b.beam={t:0,fire:false,dir:new V3(Math.sin(ang),0,Math.cos(ang)),sweep:s*Math.PI/1.8,tele:1,dur:1.8,flat:true,blind:true}; }
   if(a==='slam'){ groundRing(b.pos,0xff2236,7,.9); groundRing(b.pos,0xff2236,4,.6); }
+  if(a==='stomp'){ const T=tgt(), tx=clamp(T.x,-AX+4,AX-4), tz=clamp(T.z,-AZ+4,AZ-4); b.stomp={from:b.pos.clone(),to:new V3(tx,0,tz)}; queueBlast(tx,tz,{t:1.1,rad:4.2,dmg:0,hurtP:20,hurtE:false,color:0xff2236,size:1.2}); }
+  if(a==='bombline'){ const T=tgt(), hz=Math.random()<.5, len=hz?2*AX:2*AZ, n=Math.round(len/2.2); teleStrip(new V3(hz?-AX:T.x,0,hz?T.z:-AZ),hz?1:0,hz?0:1,len,2.6,0xff3a2a,1.1+n*.05);
+    for(let i=0;i<n;i++){ const u=-len/2+(i+.5)*len/n; queueBlast(hz?u:T.x,hz?T.z:u,{t:1.1+i*.05,rad:1.5,dmg:0,hurtP:16,hurtE:false,color:0xff5a2a,size:.55}); } }
+  if(a==='lunge'){ const d=toDir(b), len=Math.max(3,Math.min(15,lineLen(b.pos.x,b.pos.z,d.x,d.z,15,1))); b.lunge={dir:d,len,done:0,hit:false}; teleStrip(b.pos,d.x,d.z,len,2.8,0xff2236,.7); }
+  if(a==='roll'){ const d=toDir(b), len=Math.max(4,lineLen(b.pos.x,b.pos.z,d.x,d.z,30,2)-1); b.rollC={dir:d,len,done:0,hit:false,dropT:0}; teleStrip(b.pos,d.x,d.z,len,6,0xffd36a,1); }
+}
+// Archon sword wave: a fan of light shots plus a big slash
+function swordWave(b,ph){
+  const T=tgt(), base=Math.atan2(T.x-b.pos.x,T.z-b.pos.z), n=ph===3?13:9, o=new V3(b.pos.x,1.8,b.pos.z);
+  for(let i=0;i<n;i++){ const a=base+(i/(n-1)-.5)*1.75; shoot('e',o,new V3(Math.sin(a),0,Math.cos(a)),9*eSpd(),12,0xffd36a,{life:3,r:.5,over:true}); }
+  const g=new THREE.Group(), s=new THREE.Mesh(G.slash,addMat(0xffd36a,.9)); s.rotation.x=-Math.PI/2; s.scale.setScalar(1.6); g.add(s); g.position.copy(o); g.rotation.y=base;
+  addFx(g,.25,(f,dt,k)=>{ s.material.opacity=k; s.scale.setScalar(1.6+(1-k)*.6); }); sfx('slash'); shake=Math.max(shake,.3);
 }
 function bossTick(b,dt,to){
   const o=new V3(b.pos.x,1.8,b.pos.z),ph=b.phase,sp=eSpd(),ov=b.def.angel; b.atkT+=dt; b.subT-=dt;
@@ -22,68 +51,125 @@ function bossTick(b,dt,to){
     case 'ring':{ const n=ph===1?20:ph===2?26:32,rings=ph===3?2:1; for(let r=0;r<rings;r++) for(let i=0;i<n;i++){ const a=i/n*Math.PI*2+r*(Math.PI/n)+b.t; shoot('e',o,new V3(Math.sin(a),0,Math.cos(a)),(7+r*2.2)*sp,12,0xff3a5a,{life:4,r:.5,scale:1.15,over:ov}); } crossBlast(o.clone().setY(0),0xff3048,.6); return true; }
     case 'spiral': if(b.subT<=0){ b.subT=ph===3?.06:.09; b.spinA+=.27; const arms=ph===1?3:4; for(let k=0;k<arms;k++){ const a=b.spinA+k*Math.PI*2/arms; shoot('e',o,new V3(Math.sin(a),0,Math.cos(a)),7.5*sp,10,0xff8a3a,{life:4,r:.45,over:ov}); } } return b.atkT>2.6;
     case 'aimed': if(b.subT<=0){ b.subT=.4; const base=Math.atan2(to.x,to.z); for(let i=-1;i<=1;i++){ const a=base+i*.16; shoot('e',o,new V3(Math.sin(a),0,Math.cos(a)),12*sp,12,0xff5a2a,{life:3,r:.45,over:ov}); } } return b.atkT>1.6;
-    case 'burst': if(b.subT<=0){ b.subT=ph===3?.08:.11; b.model.muzzle.getWorldPosition(_tmp2); const mz=_tmp2.clone().setY(1.8); const T=tgt(); const base=Math.atan2(T.x-mz.x,T.z-mz.z)+rand(-.09,.09); shoot('e',mz,new V3(Math.sin(base),0,Math.cos(base)),13,9,0xff5a2a,{life:3,r:.45}); sparks(mz,0xff8a40,2,4); } return b.atkT>1.5;
+    case 'burst': if(b.subT<=0){ b.subT=ph===3?.08:.11; b.model.muzzle.getWorldPosition(_tmp2); const mz=_tmp2.clone().setY(1.8); const T=tgt(); const base=Math.atan2(T.x-mz.x,T.z-mz.z)+rand(-.09,.09); shoot('e',mz,new V3(Math.sin(base),0,Math.cos(base)),13,9,0xff5a2a,{life:3,r:.45}); sparks(mz,0xff8a40,2,4); b.jz.rec.v+=2.5; } return b.atkT>1.5;
+    case 'burst2': if(b.subT<=0){ b.subT=ph===3?.1:.14; const c=b.model.lens?b.model.lens.getWorldPosition(new V3()):bossCore(b), T=tgt(), base=Math.atan2(T.x-c.x,T.z-c.z)+rand(-.06,.06);
+      for(const s of [-1,1]) shoot('e',new V3(c.x+Math.cos(base)*s*.6,1.8,c.z-Math.sin(base)*s*.6),new V3(Math.sin(base),0,Math.cos(base)),12*sp,9,0xff5a2a,{life:3,r:.45}); sparks(c,0xff8a40,2,4); } return b.atkT>1.5;
     case 'missiles':{ const n=ph===1?8:ph===2?12:16; for(let i=0;i<n;i++){ const a=b.yaw+Math.PI+(i/(n-1)-.5)*Math.PI*1.6; const st=o.clone().add(new V3(Math.sin(a)*2,0,Math.cos(a)*2)); shoot('e',st,new V3(Math.sin(a),0,Math.cos(a)),5,11,0xffb040,{life:5,r:.45,home:1.6,turn:2.4,after:11,over:true}); } sparks(o.clone().setY(5),0xffb040,10,6); return true; }
     case 'slam': if(!b.slam&&b.atkT>.9){ b.slam=1; shockwave(b.pos,13,26); crossBlast(b.pos.clone(),0xff3a2a,.8); if(ph===3) b.slam2=.4; } if(b.slam2>0){ b.slam2-=dt; if(b.slam2<=0) shockwave(b.pos,9,26); } return b.atkT>1.5;
-    case 'summon':{ const n=ph===3?3:2; for(let i=0;i<n;i++){ const a=rand(0,Math.PI*2); spawnEnemy(b.def.minion,new V3(clamp(b.pos.x+Math.cos(a)*5,-ARENA+2,ARENA-2),0,clamp(b.pos.z+Math.sin(a)*5,-ARENA+2,ARENA-2))); } return true; }
+    case 'summon':{ const n=ph===3?3:2; for(let i=0;i<n;i++){ const a=rand(0,Math.PI*2); spawnEnemy(b.def.minion,new V3(clamp(b.pos.x+Math.cos(a)*5,-AX+2,AX-2),0,clamp(b.pos.z+Math.sin(a)*5,-AZ+2,AZ-2))); } return true; }
     case 'shards':{ const n=ph>=2?12:8; for(let i=0;i<n;i++){ const a=i/n*Math.PI*2+b.t; shoot('e',o,new V3(Math.sin(a),0,Math.cos(a)),9,12,0x8fd0ff,{life:5,r:.45,delay:.75,after:15+stage*1.5,over:true}); } return true; }
-    case 'beam': case 'sweep': return updateBeam(b,dt);
+    // Hive Carrier
+    case 'drones': case 'sparks':{ const k=b.atk==='drones'?'drone':'spark', n=k==='spark'?5:ph===1?2:3; for(let i=0;i<n;i++){ const a=rand(0,Math.PI*2), r=rand(2,4); spawnEnemy(k,new V3(clamp(b.pos.x+Math.cos(a)*r,-AX+1.5,AX-1.5),0,clamp(b.pos.z+Math.sin(a)*r,-AZ+1.5,AZ-1.5))); } sparks(bossCore(b),0xff6a1a,10,6); sfx('door'); return true; }
+    case 'bombline': return b.atkT>1.3;
+    // Siege Arachne
+    case 'mines':{ const n=ph===1?6:9, c=bossCore(b); for(let i=0;i<n;i++){ const x=rand(-AX+1.5,AX-1.5), z=rand(-AZ+2,AZ-2); if(Math.hypot(x-player.pos.x,z-player.pos.z)<2.5) continue; lobShell(c,new V3(x,0,z),.7+i*.05,0x2a2632,()=>dropEMine(x,z,1)); } sfx('heavy'); return true; }
+    case 'stomp':{ const S=b.stomp, k=Math.min(1,b.atkT/1.1); b.pos.lerpVectors(S.from,S.to,k); b.jumpY=Math.sin(Math.PI*k)*7; if(k>=1&&!S.done){ S.done=1; b.jumpY=0; shockwave(b.pos,12,12); shake=.8; b.jz.pop.v=-9; hitstop(60,true); } return b.atkT>1.6; }
+    // Ophanim Throne: each ring turns its own bullet wall; open eyes fire aimed shots; phase 3 rolls across the room
+    case 'walls': case 'walls2':{ if(b.atkT<.6) return false; if(b.subT<=0){ b.subT=.18; const arms=b.atk==='walls2'?3:2, c=new V3(b.pos.x,1.8,b.pos.z);
+      for(let i=0;i<3;i++){ b.wallA[i]+=(i%2?1:-1)*(.7+.25*i)*.18*(ph===3?1.3:1); for(let k=0;k<arms;k++){ const a=b.wallA[i]+k*Math.PI*2/arms; shoot('e',c,new V3(Math.sin(a),0,Math.cos(a)),(5.5+i*.6)*sp,10,[0xffd36a,0xff8a3a,0xfff0c0][i],{life:3.6,r:.45,over:true}); } } } return b.atkT>3.4; }
+    case 'eyes':{ const alive=b.model.eyes?b.model.eyes.filter(x=>x.alive):[]; if(b.model.eyes&&!alive.length) return true;
+      if(b.subT<=0){ b.subT=.3; for(let k=0;k<3;k++){ let from; if(alive.length){ pickOne(alive).w.getWorldPosition(_tmp2); from=_tmp2.clone(); sparks(from,0xff2a3a,2,3); } else from=bossCore(b); from.y=1.8; const T=tgt(); shoot('e',from,new V3(T.x-from.x,0,T.z-from.z).normalize(),11*sp,11,0xff2a3a,{life:3,r:.42,over:true}); } } return b.atkT>2.4; }
+    case 'roll':{ const R=b.rollC; if(b.atkT<1) return false; const step=16*dt; R.done+=step; b.pos.addScaledVector(R.dir,step);
+      R.dropT-=dt; if(R.dropT<=0){ R.dropT=.18; for(const s of [-1,1]) shoot('e',new V3(b.pos.x,1.4,b.pos.z),new V3(-R.dir.z*s,0,R.dir.x*s),2.6*sp,10,0xffc040,{life:4,r:.45,over:true}); }
+      if(!R.hit&&Math.hypot(player.pos.x-b.pos.x,player.pos.z-b.pos.z)<b.r+.5){ R.hit=true; contactHurt(b,24); }
+      if(R.done>=R.len){ shake=.5; b.jz.pop.v=-6; return true; } return false; }
+    // Archon: sword waves, a telegraphed lunge with a 1.5 s opening after it, and a shield that reflects your shots
+    case 'wave':{ if(b.atkT<.55) return false; if(!b.waved){ b.waved=1; swordWave(b,ph); } if(ph>=2&&b.waved===1&&b.atkT>.85){ b.waved=2; swordWave(b,ph); } return b.atkT>1.3; }
+    case 'lunge':{ const L=b.lunge; if(b.atkT<.7) return false; const step=Math.min(26*dt,L.len-L.done); L.done+=step; b.pos.addScaledVector(L.dir,step);
+      if(!L.hit&&Math.hypot(player.pos.x-b.pos.x,player.pos.z-b.pos.z)<b.r+.6){ L.hit=true; contactHurt(b,24); } if(Math.random()<.6) sparks(bossCore(b).setY(2),0xffd36a,2,4);
+      if(L.done>=L.len-.01){ b.vuln=1.5; b.jz.pop.v=-7; shake=.4; crossBlast(b.pos.clone(),0xffd36a,.7); return true; } return false; }
+    case 'shieldup':{ if(b.atkT<.35) return false; b.reflectT=Math.max(.01,3.35-b.atkT); if(b.atkT>3.35){ b.reflectT=0; return true; } return false; }
+    case 'beam': case 'sweep': case 'sweep180': return updateBeam(b,dt);
   }
   return true;
 }
 function updateBeam(b,dt){
-  const bm=b.beam; bm.t+=dt; const core=bossCore(b);
+  const bm=b.beam; bm.t+=dt;
+  const core=bm.flat&&b.model.lens?b.model.lens.getWorldPosition(new V3()):bossCore(b);
   if(!bm.sweep&&bm.t<bm.tele*.7) bm.dir.lerp(toDir(b),Math.min(1,dt*6)).normalize();
   if(bm.t>=bm.tele&&!bm.fire){ bm.fire=true; shake=.5; buzz(60); sfx('beam'); }
   if(bm.fire&&bm.sweep){ const a=Math.atan2(bm.dir.x,bm.dir.z)+bm.sweep*dt; bm.dir.set(Math.sin(a),0,Math.cos(a)); }
-  const target=new V3(b.pos.x+bm.dir.x*10,1.2,b.pos.z+bm.dir.z*10), dir3=target.clone().sub(core).normalize(), len=core.y/Math.max(.01,-dir3.y), end=core.clone().addScaledVector(dir3,len);
+  let end;
+  if(bm.flat) end=new V3(core.x+bm.dir.x*30,1.2,core.z+bm.dir.z*30);
+  else { const target=new V3(b.pos.x+bm.dir.x*10,1.2,b.pos.z+bm.dir.z*10), dir3=target.clone().sub(core).normalize(); end=core.clone().addScaledVector(dir3,core.y/Math.max(.01,-dir3.y)); }
+  const len=core.distanceTo(end);
   beams.forEach(x=>{ x.position.copy(core); x.lookAt(end); });
   if(!bm.fire){ beamTele.visible=true; const w=.12+Math.sin(bm.t*40)*.04; beamTele.scale.set(w,w,len); beamTele.material.opacity=.4+bm.t*.3; }
   else { beamTele.visible=false; beamOuter.visible=beamCore.visible=true;
     const k=Math.min(1,(bm.t-bm.tele)*8),w=(b.phase===3?1.5:1.15)*k*(1+Math.sin(bm.t*60)*.08); beamOuter.scale.set(w,w,len); beamCore.scale.set(w*.45,w*.45,len);
     if(Math.random()<.5) sparks(end,0xff4a7a,3,8);
     const ax=core.x,az=core.z,vx=end.x-ax,vz=end.z-az,px=player.pos.x,pz=player.pos.z,t=clamp(((px-ax)*vx+(pz-az)*vz)/(vx*vx+vz*vz),0,1),dd=Math.hypot(px-(ax+vx*t),pz-(az+vz*t));
-    if(dd<w+.5&&!player.dead){ const blocked=player.shield&&player.aim.dot(_tmp2.set(-bm.dir.x,0,-bm.dir.z))>.5; if(blocked){ player.en-=60*dt; player.regenDelay=.9; sparks(shieldG.position,0xffa04a,2,6); } else hurt(22); } }
+    const under=bm.blind&&Math.hypot(px-b.pos.x,pz-b.pos.z)<b.r*.95;
+    if(dd<w+.5&&!player.dead&&!under){ const blocked=player.shield&&player.aim.dot(_tmp2.set(-bm.dir.x,0,-bm.dir.z))>.5; if(blocked){ player.en-=60*dt; player.regenDelay=.9; sparks(shieldG.position,0xffa04a,2,6); }
+      // the phone barrier cannot stop a beam, it only halves it while power lasts
+      else if(mobileMode&&!player.st.noHex&&player.en>60){ player.en-=45*dt; player.regenDelay=1.2; hexFlash(core); hurt(11); } else hurt(22); } }
   if(bm.t>bm.tele+bm.dur){ hideBeams(); b.beam=null; return true; }
   return false;
 }
 function updateBoss(dt){
-  const b=boss,m=b.model,def=b.def; b.t+=dt;
+  const b=boss,m=b.model,def=b.def,f=b.form; b.t+=dt;
   if(b.flash>0){b.flash-=dt;if(b.flash<=0)unflash(b);}
   const T=tgt(); const to=_tmp.subVectors(T,b.pos).setY(0); const d=to.length()||1; to.divideScalar(d);
   const pd=Math.hypot(player.pos.x-b.pos.x,player.pos.z-b.pos.z);
   const newPh=b.hp<b.maxHp*.33?3:b.hp<b.maxHp*.66?2:1;
-  if(newPh!==b.phase&&b.atk!=='enter'){ b.phase=newPh; $('bossPh').textContent='PHASE '+['I','II','III'][newPh-1]; groundRing(b.pos,0xff2236,14,1); shake=.6; if(def.barrier) b.barrier=3; b.atk='idle'; b.atkT=.7; b.beam=null; hideBeams(); clearEnemyShots(); }
+  if(newPh!==b.phase&&b.atk!=='enter'){ b.phase=newPh; $('bossPh').textContent='PHASE '+['I','II','III'][newPh-1]; groundRing(b.pos,0xff2236,14,1); shake=.6; hitstop(85,true); b.jz.pop.v=-8; if(def.barrier) b.barrier=3; b.atk='idle'; b.atkT=.7; b.beam=null; b.jumpY=0; b.reflectT=0; b.vuln=0; hideBeams(); clearEnemyShots(); }
   const cool=[1.3,1,.72][b.phase-1];
+  b.vuln=Math.max(0,b.vuln-dt);
   if(b.atk==='enter'){ b.y+=(b.base-b.y)*Math.min(1,dt*2.6); b.atkT-=dt;
-    if(b.atkT<=0){ b.y=b.base; b.atk='idle'; b.atkT=1; groundRing(b.pos,STAGES[stage].theme.edge,16,1.2); crossBlast(b.pos.clone(),0xff6a1a,1.2); shake=.8; buzz(120); } }
-  else if(b.stun>0){ b.stun-=dt; b.vel.multiplyScalar(.9); if(Math.random()<dt*8) sparks(bossCore(b),0x5fe0ff,2,4); b.pos.addScaledVector(b.vel,dt); }
+    if(b.atkT<=0){ b.y=b.base; b.atk='idle'; b.atkT=1; groundRing(b.pos,ARENAS[stage].theme.edge,16,1.2); crossBlast(b.pos.clone(),0xff6a1a,1.2); shake=.8; buzz(120); } }
+  else if(b.stun>0){ b.stun-=dt; b.jumpY=0; b.reflectT=0; b.vel.multiplyScalar(.9); if(Math.random()<dt*8) sparks(bossCore(b),0x5fe0ff,2,4); b.pos.addScaledVector(b.vel,dt); }
   else {
-    if(def.fly){ b.y=b.base+Math.sin(b.t*1.3)*.35; const orbit=new V3(Math.cos(b.t*.25)*7,0,Math.sin(b.t*.25)*7-2); const want=orbit.sub(b.pos).multiplyScalar(.6); if(d<7) want.addScaledVector(to,-4); if(b.beam&&b.beam.fire) want.multiplyScalar(.1); b.vel.lerp(want,Math.min(1,dt*1.5)); }
-    else { const spd=b.phase===3?3.6:2.6; let want; if(d>10) want=to.clone().multiplyScalar(spd); else if(d<5.5) want=to.clone().multiplyScalar(-spd); else want=new V3(-to.z,0,to.x).multiplyScalar(spd*.5); if(b.atk==='slam'||b.atk==='burst') want.multiplyScalar(.1); b.vel.lerp(want,Math.min(1,dt*2)); }
-    b.pos.addScaledVector(b.vel,dt*(b.slow>0?.6:1)); b.pos.x=clamp(b.pos.x,-ARENA+4,ARENA-4); b.pos.z=clamp(b.pos.z,-ARENA+4,ARENA-4);
-    if(pd<b.r+.4){ hurt(18); _tmp2.set(player.pos.x-b.pos.x,0,player.pos.z-b.pos.z).normalize(); player.pos.addScaledVector(_tmp2,2); }
+    const locked=LOCKED_ATK.includes(b.atk);
+    if(locked) b.vel.set(0,0,0);
+    else if(f==='archon'){ b.y=b.base+Math.sin(b.t*1.6)*.2; const spd=b.phase===3?4.2:3.4; let want; if(d>7) want=to.clone().multiplyScalar(spd); else if(d<4.5) want=to.clone().multiplyScalar(-spd); else want=new V3(-to.z,0,to.x).multiplyScalar(spd*.6); if(b.vuln>0||b.atk==='wave'||b.atk==='shieldup') want.multiplyScalar(.1); b.vel.lerp(want,Math.min(1,dt*2.5)); }
+    else if(f==='throne'){ b.y=b.base+Math.sin(b.t*1.1)*.3; const want=new V3(Math.cos(b.t*.3)*3,0,Math.sin(b.t*.3)*3-3).sub(b.pos).multiplyScalar(.5); b.vel.lerp(want,Math.min(1,dt*1.5)); }
+    else if(def.fly){ b.y=b.base+Math.sin(b.t*1.3)*.35; const orbit=new V3(Math.cos(b.t*.25)*7,0,Math.sin(b.t*.25)*7-2); const want=orbit.sub(b.pos).multiplyScalar(.6*b.spdK); if(d<7) want.addScaledVector(to,-4*b.spdK); if(b.beam&&b.beam.fire) want.multiplyScalar(.1); b.vel.lerp(want,Math.min(1,dt*1.5)); }
+    else { const spd=(b.phase===3?3.6:2.6)*(f==='arachne'?.85:1); let want; if(d>10) want=to.clone().multiplyScalar(spd); else if(d<5.5) want=to.clone().multiplyScalar(-spd); else want=new V3(-to.z,0,to.x).multiplyScalar(spd*.5); if(b.atk==='slam'||b.atk==='burst'||b.atk==='burst2'||(b.beam&&b.beam.fire)) want.multiplyScalar(.1); b.vel.lerp(want,Math.min(1,dt*2)); }
+    b.pos.addScaledVector(b.vel,dt*(b.slow>0?.6:1)); b.pos.x=clamp(b.pos.x,-AX+3,AX-3); b.pos.z=clamp(b.pos.z,-AZ+3,AZ-3);
+    // touching the boss hurts (the Arachne's belly is a safe blind spot; lunges and rolls deal their own hit)
+    if(pd<b.r+.4&&f!=='arachne'&&!locked){ contactHurt(b,18); _tmp2.set(player.pos.x-b.pos.x,0,player.pos.z-b.pos.z).normalize(); player.pos.addScaledVector(_tmp2,2); }
     if(def.barrier){ b.barrierCd-=dt; if(b.barrier>0) b.barrier-=dt; if(b.barrierCd<=0&&b.phase>=2){ b.barrier=3.2; b.barrierCd=rand(9,12); } }
-    if(b.atk==='idle'){ b.atkT-=dt; if(b.atkT<=0) bossStartAttack(b); } else if(bossTick(b,dt,to)){ b.atk='idle'; b.atkT=cool; }
+    if(b.atk==='idle'){ b.atkT-=dt; if(b.atkT<=0&&b.vuln<=0) bossStartAttack(b); } else if(bossTick(b,dt,to)){ b.atk='idle'; b.atkT=cool; }
   }
-  m.g.position.set(b.pos.x,b.y,b.pos.z); m.shadow.position.set(b.pos.x,.03,b.pos.z); m.shadow.scale.setScalar(clamp(1-(b.y-b.base)/30,.2,1));
-  b.yaw=lerpAngle(b.yaw,Math.atan2(to.x,to.z),Math.min(1,dt*(def.fly?2:3))); m.g.rotation.y=b.yaw;
-  if(b.kind==='colossus'){ stepMech(m,b,b.vel.length(),dt,3);
-    if(b.atk==='slam'){ const k=b.atkT<.9?b.atkT/.9:Math.max(0,1-(b.atkT-.9)*3); m.hips.position.y=1.6-.45*k; m.arms[0].rotation.x=-2.6*k; m.arms[1].rotation.x=-1.45-1.2*k; } }
-  else if(b.kind==='prism'){ m.crystal.rotation.y+=dt*.7; m.ring.rotation.z+=dt*.6; m.ring.rotation.x=Math.PI/2+Math.sin(b.t*.8)*.3; m.shards.forEach((s,i)=>{ const a=b.t*1.2+i/6*Math.PI*2; s.position.set(Math.cos(a)*4,Math.sin(b.t*2+i)*.6,Math.sin(a)*4); s.rotation.y+=dt*3; }); m.core.scale.setScalar(1+Math.sin(b.t*(4+b.phase*2))*.1); }
-  else { m.rings[0].rotation.set(b.t*.9,b.t*.5,0); m.rings[1].rotation.set(-b.t*.6,0,b.t*.7); m.halo.rotation.z+=dt; m.wings.children.forEach((w,i)=>{ w.rotation.z=w.userData.base+Math.sin(b.t*2+i)*.12*w.userData.s; }); m.core.scale.setScalar(1+Math.sin(b.t*(4+b.phase*2))*.08); }
-  if(m.shield){ m.shield.visible=b.barrier>0; if(b.barrier>0){ m.shield.rotation.z+=dt; m.shield.children.forEach((c,i)=>{ c.material.opacity=(i<3?.8:.18)*(.6+Math.sin(b.t*20+i)*.4); }); } }
+  m.g.position.set(b.pos.x,b.y+b.jumpY,b.pos.z); m.shadow.position.set(b.pos.x,.03,b.pos.z); m.shadow.scale.setScalar(clamp(1-(b.y+b.jumpY-b.base)/30,.2,1));
+  const faceDir=b.atk==='lunge'&&b.lunge?b.lunge.dir:b.atk==='roll'&&b.rollC?b.rollC.dir:to;
+  b.yaw=lerpAngle(b.yaw,Math.atan2(faceDir.x,faceDir.z),Math.min(1,dt*(def.fly?2:3))); m.g.rotation.y=b.yaw;
+  applyJuice(m.g,b.jz,dt,b.sc);
+  if(f==='colossus'){ stepMech(m,b,b.vel.length(),dt,3); mechLean(m,b.jz,dt,b.vel.x*.5,b.vel.z*.5,b.yaw,b.yaw);
+    // slam wind-up: crouch, raise both arms, tremble at the top, then smash down
+    if(b.atk==='slam'){ const k=b.atkT<.9?b.atkT/.9:Math.max(0,1-(b.atkT-.9)*3), tr=b.atkT>.6&&b.atkT<.9?Math.sin(b.t*60)*.05:0; m.hips.position.y=1.6-.45*k; m.arms[0].rotation.x=-2.6*k+tr; m.arms[1].rotation.x=-1.45-1.2*k-tr; m.torso.rotation.x=-.25*k; if(!b.slamHit&&b.atkT>=.9){ b.slamHit=1; b.jz.pop.v=-9; } }
+    else b.slamHit=0;
+    if(b.atk==='burst'){ spring(b.jz.rec,0,dt,20,.4); m.arms[1].rotation.x-=b.jz.rec.x*.3; } }
+  else if(f==='prism'){ m.crystal.rotation.y+=dt*.7; m.ring.rotation.z+=dt*.6; m.ring.rotation.x=Math.PI/2+Math.sin(b.t*.8)*.3; m.shards.forEach((s,i)=>{ const a=b.t*1.2+i/6*Math.PI*2; s.position.set(Math.cos(a)*4,Math.sin(b.t*2+i)*.6,Math.sin(a)*4); s.rotation.y+=dt*3; }); m.core.scale.setScalar(1+Math.sin(b.t*(4+b.phase*2))*.1); }
+  else if(f==='seraph'){ m.rings[0].rotation.set(b.t*.9,b.t*.5,0); m.rings[1].rotation.set(-b.t*.6,0,b.t*.7); m.halo.rotation.z+=dt; m.wings.children.forEach((w,i)=>{ w.rotation.z=w.userData.base+Math.sin(b.t*2+i)*.12*w.userData.s; }); m.core.scale.setScalar(1+Math.sin(b.t*(4+b.phase*2))*.08); }
+  else if(f==='hive'){ b.rotors.forEach(r=>{ if(r.alive) r.m.rotation.y+=dt*26*b.spdK; }); m.body.position.y=5+Math.sin(b.t*1.4)*.25; m.bay.material.opacity=b.atk==='drones'||b.atk==='sparks'||b.atk==='bombline'?.95:.55+Math.sin(b.t*5)*.3; }
+  else if(f==='arachne'){ const mv=Math.max(Math.min(1,b.vel.length()/2),b.atk==='stomp'?1:0); m.legs.forEach(l=>{ l.rotation.z=Math.sin(b.t*7+l.userData.i*1.6)*.14*mv; }); m.body.position.y=1.15+Math.abs(Math.sin(b.t*7))*.05*mv;
+    const tel=b.beam&&!b.beam.fire; m.lens.scale.setScalar(tel?1.6+Math.sin(b.t*40)*.3:1+Math.sin(b.t*6)*.15);
+    m.tur.rotation.y=b.beam?Math.atan2(b.beam.dir.x,b.beam.dir.z)-b.yaw:lerpAngle(m.tur.rotation.y,0,Math.min(1,dt*4)); }
+  else if(f==='throne'){ const spin=b.atk==='walls'||b.atk==='walls2'?3:1; m.rings.forEach((r,i)=>{ if(i===0) r.rotation.z+=dt*1.2*spin; if(i===1) r.rotation.x+=dt*spin; if(i===2) r.rotation.y+=dt*.8*spin; }); m.core.rotation.y+=dt*2;
+    if(m.wings) m.wings.children.forEach((w,i)=>{ w.rotation.z=w.userData.base+Math.sin(b.t*1.8+i)*.1*w.userData.s; });
+    if(b.atk==='roll'&&b.atkT>1) m.body.rotation.x+=dt*16/2.4; else m.body.rotation.x*=Math.pow(.05,dt); }
+  else if(f==='archon'){ m.halo.rotation.z+=dt; m.wings.children.forEach((w,i)=>{ w.rotation.z=w.userData.base+Math.sin(b.t*2+i)*.1*w.userData.s; });
+    // wind-ups: the sword rises before a wave, the knight crouches before the lunge and kneels while it is open
+    let by=4.6,swx=-.25+Math.sin(b.t*1.1)*.15,swz=-.35;
+    if(b.atk==='wave'){ const k=b.atkT<.55?b.atkT/.55:Math.max(0,1-(b.atkT-.55)*4); swx=-.25-1.6*k; swz=-.35-.6*k; }
+    if(b.atk==='lunge'){ by-=.6*Math.min(1,b.atkT/.7); swx=.9; if(b.atkT<.7) m.body.position.x=Math.sin(b.t*60)*.05; else m.body.position.x=0; }
+    if(b.vuln>0){ by-=1.2; swx=.6; swz=-1; if(Math.random()<dt*8) sparks(bossCore(b),0x5fe0ff,2,4); }
+    m.body.position.y+=(by-m.body.position.y)*Math.min(1,dt*10); m.sword.rotation.x+=(swx-m.sword.rotation.x)*Math.min(1,dt*12); m.sword.rotation.z+=(swz-m.sword.rotation.z)*Math.min(1,dt*12);
+    const sh=b.reflectT>0; m.shield.position.lerp(_tmp2.set(sh?0:-1.75,sh?.4:.1,sh?1.6:.7),Math.min(1,dt*10)); m.shield.rotation.y+=((sh?0:-.4)-m.shield.rotation.y)*Math.min(1,dt*10); m.shield.scale.setScalar(sh?1.35+Math.sin(b.t*20)*.03:1); }
+  if(m.shield&&def.barrier){ m.shield.visible=b.barrier>0; if(b.barrier>0){ m.shield.rotation.z+=dt; m.shield.children.forEach((c,i)=>{ c.material.opacity=(i<3?.8:.18)*(.6+Math.sin(b.t*20+i)*.4); }); } }
 }
 function bossDeath(){
-  const def=boss.def; score+=[5000,8000,12000][stage]; kills++; hideBeams(); clearEnemyShots();
-  state='bossdeath'; stateT=3.2; boss.final=false; buzz(200);
-  dropGold(boss.pos,def.gold);
+  const def=boss.def; score+=[5000,8000,12000,16000][stage]; kills++; hideBeams(); clearEnemyShots(); boss.jumpY=0; boss.reflectT=0;
+  const gm=Math.round(def.gems*.5); P.gems+=gm; sortie.gems+=gm;
+  state='bossdeath'; stateT=3.2; boss.final=false; buzz(200); hitstop(120,true);
+  dropGold(boss.pos,def.gold*(1+sortie.a*.3)); dropItem(boss.pos);
 }
 function startCine(){
-  const kind=STAGES[stage].boss, def=BOSSES[kind];
+  const kind=room.boss, def=BOSSES[kind];
   spawnBoss(kind);
   $('cineImg').src=PORTRAIT[kind]||''; $('cineName').textContent=def.name; $('cineClass').textContent=def.cls; $('cineEpi').textContent=def.epi;
-  $('cineThreat').textContent='THREAT '+'■'.repeat(def.threat)+'□'.repeat(5-def.threat)+` · LEVEL ${String(sortie.n+1).padStart(2,'0')}/12`;
+  $('cineThreat').textContent='THREAT '+'■'.repeat(def.threat)+'□'.repeat(5-def.threat)+` · ROOM ${sortie.ri+1}/${sortie.N}`;
   const c=$('cine'); c.hidden=false; requestAnimationFrame(()=>c.classList.add('on'));
   state='cine'; stateT=5; refreshControls();
 }

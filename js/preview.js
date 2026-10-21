@@ -20,9 +20,12 @@ function renderPreview(t){
 const PORTRAIT={};
 function makePortraits(){
   for(const kind of Object.keys(BOSSES)){
-    const m=BOSS_BUILD[kind](); if(m.shield) m.shield.visible=false; if(kind==='colossus') animMech(m,0,0);
+    const m=BOSS_BUILD[kind](), form=BOSSES[kind].form||kind; if(m.shield&&BOSSES[kind].barrier) m.shield.visible=false; if(form==='colossus') animMech(m,0,0);
     const sc=new THREE.Scene(); stdLights(sc); sc.add(m.g); m.g.rotation.y=-.5;
+    // frame the body only (auras and telegraph rings are left out of the bounds)
+    const hid=[]; m.g.traverse(o=>{ if(o.userData.nofit) hid.push([o,o.parent]); }); hid.forEach(([o,p])=>p.remove(o));
     const bb=new THREE.Box3().setFromObject(m.g), c=bb.getCenter(new V3()), s=bb.getSize(new V3());
+    hid.forEach(([o,p])=>p.add(o));
     const pc=new THREE.PerspectiveCamera(30,1,.1,500), dist=Math.max(s.x,s.y,s.z)/(2*Math.tan(15*Math.PI/180))*.95;
     pc.position.set(c.x+dist*.2,c.y+dist*.1,c.z+dist); pc.lookAt(c);
     pv.r.setSize(320,320,false); pv.r.render(sc,pc);

@@ -1,39 +1,27 @@
-// Seraph Breaker · ui-warmap.js: War Map level select, plus the armory, skill tree, frames and system panels.
-/* ================= WAR MAP (C) ================= */
-const MAP_H=740;
-const nodePos=i=>({x:[22,50,78,50][i%4], y:MAP_H-70-i*55});
+// Seraph Breaker · ui-warmap.js: Arena select, plus the armory, skill tree, frames and system panels.
+/* ================= ARENA SELECT ================= */
 function renderMap(){
-  if(selLevel>Math.min(P.progress,11)) selLevel=Math.min(P.progress,11);
-  $('mapProg').textContent=`CAMPAIGN · ${P.progress}/12 CLEAR`;
+  const sel=clamp(P.selArena,0,P.arenas-1); P.selArena=sel;
+  $('mapProg').textContent=`ARENAS · ${P.arenas}/${ARENAS.length} OPEN`;
   const inner=$('mapInner'); inner.innerHTML='';
-  STAGES.forEach((S,s)=>{ const top=nodePos(s*4+3).y-46, bot=s===0?MAP_H:nodePos(s*4-1).y-46; const b=document.createElement('div'); b.className='band'; b.style.top=top+'px'; b.style.height=(bot-top)+'px'; b.style.background=`linear-gradient(180deg,${S.colorCss}26,${S.colorCss}08)`; const l=document.createElement('span'); l.style.color=S.colorCss; l.textContent=`0${s+1} · ${S.name.toUpperCase()}`; b.appendChild(l); inner.appendChild(b); });
-  const pts=Array.from({length:12},(_,i)=>nodePos(i)), pstr=pts.map(p=>`${p.x},${p.y}`).join(' '), done=pts.slice(0,Math.min(P.progress+1,12)).map(p=>`${p.x},${p.y}`).join(' ');
-  inner.insertAdjacentHTML('beforeend',`<svg class="mapPath" viewBox="0 0 100 ${MAP_H}" preserveAspectRatio="none" aria-hidden="true"><polyline points="${pstr}" fill="none" stroke="rgba(255,255,255,.2)" stroke-width="3" stroke-dasharray="2 7" vector-effect="non-scaling-stroke"/><polyline points="${done}" fill="none" stroke="#ff6a1a" stroke-width="4" vector-effect="non-scaling-stroke"/></svg>`);
-  for(let i=0;i<12;i++){
-    const inf=levelInfo(i), p=pts[i], b=document.createElement('button');
-    const isDone=i<P.progress, isOpen=i===P.progress, locked=i>P.progress;
-    b.className='mnode'+(inf.boss?' boss':'')+(isDone?' done':isOpen?' open':' lock')+(i===selLevel?' sel':'');
-    b.id='mn'+i; b.style.left=p.x+'%'; b.style.top=p.y+'px';
-    b.setAttribute('aria-label',`Level ${i+1}: ${inf.name}${locked?' (locked)':isDone?' (cleared)':''}`);
-    if(inf.boss){ const img=document.createElement('img'); img.src=PORTRAIT[inf.stage.boss]||''; img.alt=''; b.appendChild(img); } else b.textContent=i+1;
-    b.onclick=()=>{ if(locked) return; selLevel=i; sfx('click'); renderMap(); };
-    inner.appendChild(b);
-    if(isOpen){ const y=document.createElement('div'); y.className='youAre'; y.style.left=p.x+'%'; y.style.top=(p.y-(inf.boss?36:26))+'px'; y.textContent='NEXT'; inner.appendChild(y); }
-  }
-  const inf=levelInfo(selLevel), first=selLevel===P.progress;
-  $('shEye').textContent=`LEVEL ${String(selLevel+1).padStart(2,'0')} · ${inf.stage.name.toUpperCase()}`; $('shEye').style.color=inf.stage.colorCss;
-  $('shName').textContent=inf.name;
-  const rw=inf.boss?(first?BOSSES[inf.stage.boss].gems:8):(first?5+inf.s*2:1);
-  $('shReward').innerHTML=`<i></i>+${rw}${first?' first clear':''}`;
-  const rooms=$('shRooms'); rooms.innerHTML=''; const lab={combat:['C',''],angel:['A','a'],elite:['E','e'],boss:['B','b']};
-  const t=document.createElement('span'); t.textContent='ROOMS'; rooms.appendChild(t);
-  inf.rooms.forEach(r=>{ const i=document.createElement('i'); i.textContent=lab[r][0]; if(lab[r][1]) i.className=lab[r][1]; rooms.appendChild(i); });
-  const tags=$('shTags'); tags.innerHTML=''; const names={drone:'Drone',seraph:'Seraph',heavy:'Heavy',warden:'Warden'};
-  [...new Set(inf.pool)].forEach(e=>{ const s=document.createElement('span'); s.textContent=names[e]; tags.appendChild(s); });
-  if(inf.boss){ const s=document.createElement('span'); s.style.borderColor='var(--alert)'; s.style.color='var(--alert)'; s.textContent='Boss · '+inf.name; tags.appendChild(s); }
-  $('launchBtn').textContent=`Launch level ${selLevel+1} ▸`;
+  ARENAS.forEach((A,i)=>{ const locked=i>=P.arenas, best=P.bestRoom[i]||0, done=best>=A.rooms;
+    const b=document.createElement('button'); b.className='arena'+(locked?' lock':'')+(i===sel?' sel':'')+(done?' done':''); b.id='ar'+i; b.style.setProperty('--c',A.colorCss);
+    b.innerHTML=`<span class="n"></span><b></b><span class="r"></span><span class="bp"></span><span class="pr"><i style="width:${Math.min(100,best/A.rooms*100)}%"></i></span>`;
+    b.querySelector('.n').textContent=`0${i+1} · ${A.rooms} ROOMS`+(locked?' · LOCKED':done?' · CLEARED':'');
+    b.querySelector('b').textContent=A.name; b.querySelector('.r').textContent=locked?`Clear ${ARENAS[i-1].name} to unlock`:`Best room ${best}/${A.rooms} · ${A.ruleTxt}`;
+    const bp=b.querySelector('.bp'); arenaBossPool(i).slice(0,i===3?7:3).forEach(k=>{ const img=document.createElement('img'); img.src=PORTRAIT[k]||''; img.alt=BOSSES[k].name; img.title=BOSSES[k].name; bp.appendChild(img); });
+    b.onclick=()=>{ if(locked) return; P.selArena=i; sfx('click'); delete $('launchBtn').dataset.arm; renderMap(); };
+    inner.appendChild(b); });
+  const A=ARENAS[sel], first=(P.bestRoom[sel]||0)<A.rooms;
+  $('shEye').textContent=`ARENA 0${sel+1} · ${A.rooms} ROOMS`; $('shEye').style.color=A.colorCss; $('shName').textContent=A.name;
+  $('shReward').innerHTML=`<i></i>+${first?40+30*sel:10}${first?' first clear':''}`;
+  const rooms=$('shRooms'); rooms.innerHTML=''; const t=document.createElement('span'); t.textContent='ROOMS 1-10'; rooms.appendChild(t);
+  for(let n=1;n<=10;n++){ const r=arenaRoomType(n), i=document.createElement('i'); i.textContent={combat:'C',angel:'A',elite:'E',boss:'B'}[r]; i.className={combat:'',angel:'a',elite:'e',boss:'b'}[r]; rooms.appendChild(i); }
+  const tags=$('shTags'); tags.innerHTML='';
+  A.mobs.filter(e=>ENEMY[e]).forEach(e=>{ const s=document.createElement('span'); s.textContent=ENEMY[e].name; tags.appendChild(s); });
+  const r=document.createElement('span'); r.style.borderColor=A.colorCss; r.style.color=A.colorCss; r.textContent=A.ruleTxt; tags.appendChild(r);
+  if(!$('launchBtn').dataset.arm) $('launchBtn').textContent=`Launch ${A.name} ▸`;
 }
-function scrollMapToSel(){ const sc=$('mapScroll'), p=nodePos(selLevel); sc.scrollTop=Math.max(0,p.y-sc.clientHeight/2); }
 
 /* armory / skills / frames / system */
 let armed=null;
@@ -64,7 +52,19 @@ function renderArmory(){
     }); };
   mk($('gridW'),WEAPONS,'w'); mk($('gridG'),GADGETS,'g');
 }
+function renderCore(){
+  const el=$('coreHangar'); el.innerHTML='';
+  Object.entries(CORE).forEach(([k,d])=>{ const lv=P.core[k], max=lv>=CORE_MAX, cost=coreCost(lv);
+    const b=document.createElement('button'); b.className='coreRow'+(max?' max':'')+(!max&&P.gold<cost?' poor':''); b.id='core_'+k;
+    b.innerHTML=`<span class="ic">${svg(d.icon)}</span><span class="t"><b></b><small></small></span><span class="lv"></span><span class="cost"></span>`;
+    b.querySelector('b').textContent=d.name; b.querySelector('small').textContent=`${d.d} · now +${lv*d.per}${d.unit}`;
+    b.querySelector('.lv').textContent=`${lv}/${CORE_MAX}`;
+    b.querySelector('.cost').innerHTML=max?'MAXED':`<span class="cur gold"><i></i>${cost.toLocaleString()}</span>`;
+    b.disabled=max; b.onclick=()=>{ if(max||P.gold<cost) return; P.gold-=cost; P.core[k]=lv+1; sfx('gem'); persist(); renderMenu(); };
+    el.appendChild(b); });
+}
 function renderTree(container){
+  renderCore();
   $('sGold').textContent=P.gold.toLocaleString(); container.innerHTML=''; const wrap=document.createElement('div'); wrap.className='tree';
   TREE.forEach(br=>{ const col=document.createElement('div'); col.className='branch'; col.style.setProperty('--c',br.c); const h=document.createElement('h3'); h.textContent=br.branch; col.appendChild(h);
     br.nodes.forEach((n,i)=>{ const rk=P.skills[n.id]||0, unlocked=i===0||(P.skills[br.nodes[i-1].id]||0)>0, max=rk>=n.max, cost=max?0:n.cost[rk];
@@ -93,7 +93,10 @@ function renderFrames(){
   item('sp','Special',SPECIALS[P.unit].name,()=>{});
   [0,1].forEach(i=>{ const g=P.gadgets[i]; item(g||'hook','Gadget '+(i+1),g?GADGETS[g].name:'Empty slot',()=>openView('armory')); });
 }
-function renderSystem(){ $('volM').value=Math.round(P.music*100); $('volMo').textContent=Math.round(P.music*100); $('volS').value=Math.round(P.sfx*100); $('volSo').textContent=Math.round(P.sfx*100); }
+function renderSystem(){ $('volM').value=Math.round(P.music*100); $('volMo').textContent=Math.round(P.music*100); $('volS').value=Math.round(P.sfx*100); $('volSo').textContent=Math.round(P.sfx*100);
+  document.querySelectorAll('#ctrlSeg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.c===P.ctrl)); $('autoG').checked=P.autoGadget; }
+document.querySelectorAll('#ctrlSeg button').forEach(b=>b.onclick=()=>{ P.ctrl=b.dataset.c; sfx('click'); persist(); setMode(); renderSystem(); });
+$('autoG').onchange=e=>{ P.autoGadget=e.target.checked; persist(); };
 $('pilotIn').addEventListener('input',e=>{ const v=e.target.value.replace(/[^\p{L}\p{N} _\-.]/gu,'').slice(0,14); if(v!==e.target.value) e.target.value=v; P.pilot=v.trim(); $('whoName').textContent=P.pilot||'[CALLSIGN]'; });
 $('pilotIn').addEventListener('change',()=>persist());
 $('volM').oninput=e=>{ P.music=e.target.value/100; $('volMo').textContent=e.target.value; setVolumes(); };
