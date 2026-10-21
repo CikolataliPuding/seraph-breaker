@@ -184,11 +184,12 @@ function updatePlayer(dt,canAct){
   } else hookLine.visible=hookHead.visible=false;
   if(!mobileMode) shieldG.visible=p.shield;
   if(p.shield){ shieldG.position.copy(p.pos).addScaledVector(p.aim,1.7).setY(1.9); shieldG.lookAt(_tmp.copy(shieldG.position).add(p.aim)); const t=performance.now()/1000; shRings.forEach((r,i)=>{ const k=((t*1.6+i/3)%1); r.scale.setScalar(.3+k*1.4); r.material.opacity=(1-k)*.9; }); }
-  const collectAll=!enemies.length&&!spawnQ.length;
+  // once the room is clear every pickup (heal orbs and items too) flies to you
+  const collectAll=(room&&room.cleared)||(!enemies.length&&!spawnQ.length);
   for(let i=pickups.length-1;i>=0;i--){ const q=pickups[i]; q.t+=dt;
     if(q.t<.45){ q.vel.y-=22*dt; q.m.position.addScaledVector(q.vel,dt); q.m.position.x=clamp(q.m.position.x,-AX+.5,AX-.5); q.m.position.z=clamp(q.m.position.z,-AZ+.5,AZ-.5); if(q.m.position.y<.6){ q.m.position.y=.6; q.vel.y=0; q.vel.multiplyScalar(.5);} }
     else { const d=Math.hypot(p.pos.x-q.m.position.x,p.pos.z-q.m.position.z);
-      if((q.kind!=='heal'&&q.kind!=='item'&&(d<p.st.magnet||collectAll))||(q.kind==='heal'&&d<1.8)||(q.kind==='item'&&(collectAll||d<2))){ _tmp.set(p.pos.x-q.m.position.x,1.4-q.m.position.y,p.pos.z-q.m.position.z); const sp=Math.max(8,22-d*2); q.m.position.addScaledVector(_tmp.normalize(),Math.min(d,sp*dt)); }
+      if(collectAll||(q.kind!=='heal'&&q.kind!=='item'&&d<p.st.magnet)||(q.kind==='heal'&&d<1.8)||(q.kind==='item'&&d<2)){ _tmp.set(p.pos.x-q.m.position.x,1.4-q.m.position.y,p.pos.z-q.m.position.z); const sp=Math.max(8,22-d*2); q.m.position.addScaledVector(_tmp.normalize(),Math.min(d,sp*dt)); }
       else q.m.position.y=.9+Math.sin(q.t*3+i)*.2;
       if(d<1.1){ scene.remove(q.m); pickups.splice(i,1); collect(q); continue; } }
     q.m.rotation.y+=dt*3;

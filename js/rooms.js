@@ -74,6 +74,13 @@ function updateHazards(dt){
       if(pin&&h.cd<=0){ h.cd=h.kind==='vent'?.5:.6; hurt(h.kind==='vent'?10:6); }
       if(h.kind==='vent') for(const e of enemies){ if(!e.dead&&!e.fly&&e!==boss&&Math.hypot(e.pos.x-h.x,e.pos.z-h.z)<1.4) e.burn=Math.max(e.burn,1); } } }
 }
+// room clear: leftover enemy mines, floor hazards, enemy shots and pending enemy blasts fizzle out harmlessly
+function fizzleRoom(){
+  emines.forEach(m=>{ sparks(m.g.position.clone().setY(.4),0xa79fae,3,3); roomGroup.remove(m.g); }); emines.length=0;
+  hazards.forEach(h=>{ h.warn.visible=h.act.visible=false; }); hazards.length=0;
+  for(let i=blasts.length-1;i>=0;i--){ const b=blasts[i]; if(!b.hurtP) continue; scene.remove(b.ring); blasts.splice(i,1); }
+  for(let i=bullets.length-1;i>=0;i--){ const b=bullets[i]; if(b.from!=='e') continue; sparks(b.m.position,0xa79fae,1,3); killBullet(i); }
+}
 function openDoor(){ if(!door||door.open) return; door.open=true; door.bar.material.color.setHex(0x5fe0ff); door.bar.material.opacity=.25; door.arrow.visible=true; sfx('door'); toast('Room clear','Door open'); }
 function freeSpot(minFromEntry=6){
   for(let i=0;i<60;i++){ const x=rand(-AX+1.5,AX-1.5), z=rand(-AZ+1.5,AZ-3.5); if(inBlock(x,z,1)) continue; if(Math.hypot(x,z-(AZ-1.5))<minFromEntry) continue; if(player&&Math.hypot(x-player.pos.x,z-player.pos.z)<5) continue; return new V3(x,0,z); }

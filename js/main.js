@@ -6,7 +6,7 @@ function roomUpdate(dt,edt){
   if(spawnQ.length&&!enemies.length){ spawnWave(spawnQ); spawnQ=[]; toast('Second wave'); }
   updateEnemies(edt); updateEMines(edt,performance.now()/1000); updateHazards(dt);
   if(room.type!=='boss'&&room.type!=='angel'&&!room.cleared&&!enemies.length&&!spawnQ.length){
-    room.cleared=true; if(typeof onRoomClear==='function') onRoomClear();
+    room.cleared=true; fizzleRoom(); if(typeof onRoomClear==='function') onRoomClear();
     openDoor(); saveRun(sortie.ri+1);
     if(!room.hurt&&Math.random()<.35&&arenaRoomType(sortie.ri+2)==='combat') spawnNpc('devil',new V3(rand(-3,3),0,-2));
   }
@@ -39,7 +39,7 @@ function frame(now){
     else if(state==='bossdeath'){ const b=boss; stateT-=dt;
       b.model.g.position.set(b.pos.x+rand(-.15,.15),b.y,b.pos.z+rand(-.15,.15));
       if(Math.random()<dt*7){ const p=bossCore(b).add(new V3(rand(-3,3),rand(-3,3),rand(-3,3))); crossBlast(p.setY(Math.max(.2,p.y-3)),Math.random()<.5?0xff2236:0xffd36a,rand(.6,1.1)); }
-      if(stateT<=.8&&!b.final){ b.final=true; crossBlast(b.pos.clone().setY(0),0xff2236,3); hitstop(110,true); shatter(b.model,b.pos,0,0,{max:mobileMode?10:22,spd:1.6,cy:b.y+2,crystal:b.def.angel?0xffd36a:0}); scene.remove(b.model.g,b.model.shadow); enemies.slice().forEach(e=>{ if(e!==b&&!e.dead) killEnemy(e); }); enemies.length=0; }
+      if(stateT<=.8&&!b.final){ b.final=true; crossBlast(b.pos.clone().setY(0),0xff2236,3); hitstop(110,true); shatter(b.model,b.pos,0,0,{max:mobileMode?10:22,spd:1.6,cy:b.y+2,crystal:b.def.angel?0xffd36a:0}); scene.remove(b.model.g,b.model.shadow); enemies.slice().forEach(e=>{ if(e!==b&&!e.dead) killEnemy(e,true); }); enemies.length=0; }
       if(stateT<=0){ boss=null; $('bossHud').hidden=true; pickups.slice().forEach(q=>{ if(q.kind!=='heal'&&q.kind!=='item') collect(q); if(q.kind!=='item'){ scene.remove(q.m); q.gone=true; } }); for(let i=pickups.length-1;i>=0;i--) if(pickups[i].gone) pickups.splice(i,1);
         // the final boss ends the arena; earlier bosses open the door to the next room
         if(sortie.ri>=sortie.N-1) arenaComplete(); else { state='fight'; room.cleared=true; if(typeof onRoomClear==='function') onRoomClear(); openDoor(); saveRun(sortie.ri+1); refreshControls(); } } }
@@ -85,7 +85,7 @@ function frame(now){
             if(b.wall>0){ b.wall--; const dn=b.vel.x*fx+b.vel.z*fz; b.vel.x-=2*dn*fx; b.vel.z-=2*dn*fz; p.x+=fx*.6; p.z+=fz*.6; b.m.lookAt(p.clone().add(b.vel)); } else gone=true; break; } }
           // Archon shield phase: your shots fly back at you
           if(e===boss&&boss.reflectT>0){ const v=new V3(player.pos.x-p.x,0,player.pos.z-p.z).normalize(); shoot('e',p.clone().setY(1.8),v,13*eSpd(),9,0xffd36a,{life:2.4,r:.42,over:true}); sparks(p,0xffd36a,2,4); gone=true; break; }
-          hitEnemy(e,b.dmg,p.clone());
+          hitEnemy(e,b.dmg,p.clone(),false,b.proc,b.flat);
           if(b.pierce&&!shieldPad) b.hit.add(e);
           else if(b.bounce>0&&!shieldPad){ b.bounce--; b.hit.add(e); const nx=nearestFoe(e.pos,8,null,b.hit); if(nx){ const sp=b.vel.length(); b.vel.set(nx.pos.x-p.x,0,nx.pos.z-p.z).setLength(sp); b.m.lookAt(p.clone().add(b.vel)); b.life=Math.max(b.life,.6); } else { gone=true; } break; }
           else { gone=true; break; } } }

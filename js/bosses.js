@@ -56,10 +56,10 @@ function bossTick(b,dt,to){
       for(const s of [-1,1]) shoot('e',new V3(c.x+Math.cos(base)*s*.6,1.8,c.z-Math.sin(base)*s*.6),new V3(Math.sin(base),0,Math.cos(base)),12*sp,9,0xff5a2a,{life:3,r:.45}); sparks(c,0xff8a40,2,4); } return b.atkT>1.5;
     case 'missiles':{ const n=ph===1?8:ph===2?12:16; for(let i=0;i<n;i++){ const a=b.yaw+Math.PI+(i/(n-1)-.5)*Math.PI*1.6; const st=o.clone().add(new V3(Math.sin(a)*2,0,Math.cos(a)*2)); shoot('e',st,new V3(Math.sin(a),0,Math.cos(a)),5,11,0xffb040,{life:5,r:.45,home:1.6,turn:2.4,after:11,over:true}); } sparks(o.clone().setY(5),0xffb040,10,6); return true; }
     case 'slam': if(!b.slam&&b.atkT>.9){ b.slam=1; shockwave(b.pos,13,26); crossBlast(b.pos.clone(),0xff3a2a,.8); if(ph===3) b.slam2=.4; } if(b.slam2>0){ b.slam2-=dt; if(b.slam2<=0) shockwave(b.pos,9,26); } return b.atkT>1.5;
-    case 'summon':{ const n=ph===3?3:2; for(let i=0;i<n;i++){ const a=rand(0,Math.PI*2); spawnEnemy(b.def.minion,new V3(clamp(b.pos.x+Math.cos(a)*5,-AX+2,AX-2),0,clamp(b.pos.z+Math.sin(a)*5,-AZ+2,AZ-2))); } return true; }
+    case 'summon':{ const n=ph===3?3:2; for(let i=0;i<n;i++){ const a=rand(0,Math.PI*2); spawnEnemy(b.def.minion,new V3(clamp(b.pos.x+Math.cos(a)*5,-AX+2,AX-2),0,clamp(b.pos.z+Math.sin(a)*5,-AZ+2,AZ-2)),false,{minion:true}); } return true; }
     case 'shards':{ const n=ph>=2?12:8; for(let i=0;i<n;i++){ const a=i/n*Math.PI*2+b.t; shoot('e',o,new V3(Math.sin(a),0,Math.cos(a)),9,12,0x8fd0ff,{life:5,r:.45,delay:.75,after:15+stage*1.5,over:true}); } return true; }
     // Hive Carrier
-    case 'drones': case 'sparks':{ const k=b.atk==='drones'?'drone':'spark', n=k==='spark'?5:ph===1?2:3; for(let i=0;i<n;i++){ const a=rand(0,Math.PI*2), r=rand(2,4); spawnEnemy(k,new V3(clamp(b.pos.x+Math.cos(a)*r,-AX+1.5,AX-1.5),0,clamp(b.pos.z+Math.sin(a)*r,-AZ+1.5,AZ-1.5))); } sparks(bossCore(b),0xff6a1a,10,6); sfx('door'); return true; }
+    case 'drones': case 'sparks':{ const k=b.atk==='drones'?'drone':'spark', n=k==='spark'?5:ph===1?2:3; for(let i=0;i<n;i++){ const a=rand(0,Math.PI*2), r=rand(2,4); spawnEnemy(k,new V3(clamp(b.pos.x+Math.cos(a)*r,-AX+1.5,AX-1.5),0,clamp(b.pos.z+Math.sin(a)*r,-AZ+1.5,AZ-1.5)),false,{minion:true}); } sparks(bossCore(b),0xff6a1a,10,6); sfx('door'); return true; }
     case 'bombline': return b.atkT>1.3;
     // Siege Arachne
     case 'mines':{ const n=ph===1?6:9, c=bossCore(b); for(let i=0;i<n;i++){ const x=rand(-AX+1.5,AX-1.5), z=rand(-AZ+2,AZ-2); if(Math.hypot(x-player.pos.x,z-player.pos.z)<2.5) continue; lobShell(c,new V3(x,0,z),.7+i*.05,0x2a2632,()=>dropEMine(x,z,1)); } sfx('heavy'); return true; }
@@ -160,7 +160,7 @@ function updateBoss(dt){
   if(m.shield&&def.barrier){ m.shield.visible=b.barrier>0; if(b.barrier>0){ m.shield.rotation.z+=dt; m.shield.children.forEach((c,i)=>{ c.material.opacity=(i<3?.8:.18)*(.6+Math.sin(b.t*20+i)*.4); }); } }
 }
 function bossDeath(){
-  const def=boss.def; score+=[5000,8000,12000,16000][stage]; kills++; hideBeams(); clearEnemyShots(); boss.jumpY=0; boss.reflectT=0;
+  const def=boss.def; score+=[5000,8000,12000,16000][stage]; kills++; hideBeams(); fizzleRoom(); boss.jumpY=0; boss.reflectT=0;
   const gm=Math.round(def.gems*.5); P.gems+=gm; sortie.gems+=gm;
   state='bossdeath'; stateT=3.2; boss.final=false; buzz(200); hitstop(120,true);
   dropGold(boss.pos,def.gold*(1+sortie.a*.3)); dropItem(boss.pos);

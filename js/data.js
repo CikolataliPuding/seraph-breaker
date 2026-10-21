@@ -153,6 +153,11 @@ const RSK={
   blood:{name:'Blood Engine',d:'Evolution of Vampiric Core + Rage: kills repair 4% and Rage counts double.',rarity:'legendary',max:1,icon:'blood',evo:['vamp','rage']},
 };
 for(const id in RSK){ const s=RSK[id]; if(s.evo&&!s.req) s.req=rs=>s.evo.every(k=>(rs[k]||0)>=RSK[k].max); }
+/* on-kill procs: damage is a share of the dying enemy's max armor (by rank), capped at cap × the room's enemy armor scale.
+   It ignores your damage multipliers, and kills made by any proc never trigger on-kill procs again (proc depth 1). */
+const PROC_KILL={nova:{pct:[.25,.4],rad:[3.4,4],cap:8},shard:{pct:[.12,.18],n:[6,8],cap:4}};
+// Shardling splits and boss summons are worth this share of a normal kill (gold, xp, drop chances)
+const SPLIT_REWARD=.3;
 /* run-only items: elites drop one 25% of the time, bosses always. 4 slots. add/rem are exact inverses so items can be swapped out.
    shape + color build the small pickup model (items.js). Flags such as p.thorn are read where they act. */
 const ITEMS={

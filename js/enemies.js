@@ -1,6 +1,8 @@
 // Seraph Breaker · enemies.js: Enemy spawning, damage (hitEnemy), kills and pickups.
 /* ================= ENEMIES ================= */
 const enemyCap=()=>mobileMode?16:22;
+// enemy armor multiplier of the current room (arena, room index, curses and modifiers)
+const roomHpScale=()=>ARENAS[stage].hpMul*(1+(sortie?sortie.ri:0)*.022)*(sortie&&sortie.rule.hpMul||1);
 // spawns a mob from ENEMY (data.js). Returns null when the room is at its entity cap (splits, summons and chains respect it).
 function spawnEnemy(type,pos,elite=false,o={}){
   const def=ENEMY[type]; if(!def) return null;
@@ -11,8 +13,8 @@ function spawnEnemy(type,pos,elite=false,o={}){
   if(type==='heavy'){ e.cd=rand(1.5,2.5); e.side=1; }
   if(type==='warden') e.cd=rand(1.8,2.8);
   if(def.init) def.init(e,o);
-  const R=sortie?sortie.rule:{}, hm=ARENAS[stage].hpMul*(1+(sortie?sortie.ri:0)*.022)*(R.hpMul||1);
-  e.hp*=hm*(o.hpK||1); e.pos=pos.clone(); e.vel=new V3(); e.flash=0; e.t=0; e.born=0; e.yaw=0; e.stun=0; e.wake=.9; e.burn=0; e.slow=0;
+  const R=sortie?sortie.rule:{}, hm=roomHpScale();
+  e.hp*=hm*(o.hpK||1); if(o.minion) e.minion=true; e.pos=pos.clone(); e.vel=new V3(); e.flash=0; e.t=0; e.born=0; e.yaw=0; e.stun=0; e.wake=.9; e.burn=0; e.slow=0;
   // juice: springs, knockback, and the drop-in from the light pillar
   e.jz=juiceState(); e.kx=e.kz=0; e.hdx=0; e.hdz=0; e.dropY=o.noDrop?0:9; e.dropV=0; e.standT=0; e.heavyK=def.cost>=2?.45:1;
   if(o.noDrop){ e.born=.5; e.wake=.3; }
@@ -29,13 +31,14 @@ function spawnEnemy(type,pos,elite=false,o={}){
 }
 function flashModel(e){ e.model.mats.forEach(m=>m.emissive.setHex(0xffffff)); e.flash=.07; }
 function unflash(e){ e.model.mats.forEach(m=>m.emissive.setHex(0)); }
-function hitEnemy(e,d,pos,dot,noProc){
+// noProc: damage from a proc (no on-hit procs, and a kill from it triggers no on-kill procs). flat: no crit, Rage or boss bonus.
+function hitEnemy(e,d,pos,dot,noProc,flat){
   if(!e||e.dead) return;
-  if(e===boss){ if(boss.atk==='enter'||state==='cine') return; if(boss.barrier>0){ if(!dot) sparks(pos,0xffa04a,3,5); return; } d*=player.st.boss; if(boss.vuln>0) d*=1.6; if(boss.reflectT>0) d*=.3; }
+  if(e===boss){ if(boss.atk==='enter'||state==='cine') return; if(boss.barrier>0){ if(!dot) sparks(pos,0xffa04a,3,5); return; } if(!flat) d*=player.st.boss; if(boss.vuln>0) d*=1.6; if(boss.reflectT>0) d*=.3; }
   const rs=player.rs;
-  let crit=false; if(!dot&&Math.random()<player.st.crit){ d*=player.critMul||2; crit=true; }
+  let crit=false; if(!dot&&!flat&&Math.random()<player.st.crit){ d*=player.critMul||2; crit=true; }
   // Rage (doubled by Blood Engine): more damage as your armor drops
-  if(rs.rage) d*=1+.25*rs.rage*(rs.blood?2:1)*(1-player.hp/player.maxHp);
+  if(rs.rage&&!flat) d*=1+.25*rs.rage*(rs.blood?2:1)*(1-player.hp/player.maxHp);
   if(e.shieldT>0) d*=.5;
   // Headshot: small chance to instantly destroy a normal enemy
   if(rs.headshot&&!dot&&e!==boss&&!e.elite&&Math.random()<.015*rs.headshot){ d=e.hp+1; crit=true; sparks(pos,0xffffff,10,8); }
@@ -53,13 +56,14 @@ function hitEnemy(e,d,pos,dot,noProc){
       if(rs.meteor&&player.meteorCd<=0&&Math.random()<.04*rs.meteor){ player.meteorCd=.5; queueBlast(e.pos.x,e.pos.z,{t:.55,rad:3.4,dmg:16*player.st.dmg,color:0xff8a30,size:1}); }
       if(rs.arc&&Math.random()<(rs.arc>1?.35:.2)){ const t=nearestFoe(e.pos,6,null,new Set([e])); if(t){ bolt(pos.clone().setY(2),t.pos.clone().setY(2),0xbfe8ff); hitEnemy(t,d*.6,t.pos.clone().setY(2),false,true); } } } }
   if(e===boss&&!dot) bossPartHit(boss,pos,d);
-  if(e.hp<=0) killEnemy(e);
+  if(e.hp<=0) killEnemy(e,noProc);
 }
 function aoe(pos,rad,dmg,stun=0,knock=0){ for(const e of enemies.slice()){ if(e.dead)continue; const d=Math.hypot(e.pos.x-pos.x,e.pos.z-pos.z); if(d<rad+e.r*.6){ if(stun&&e!==boss) e.stun=Math.max(e.stun,stun); if(knock&&e!==boss&&d>.01){ e.pos.x+=(e.pos.x-pos.x)/d*knock; e.pos.z+=(e.pos.z-pos.z)/d*knock; } hitEnemy(e,dmg,e.pos.clone().setY(2)); } } }
-function killEnemy(e){
-  e.dead=true;
+// byProc: the kill came from a proc (or is a cleanup kill), so on-kill procs do not fire again
+function killEnemy(e,byProc){
+  if(e.dead) return; e.dead=true;
   if(e===boss){ bossDeath(); return; }
-  if(e.type==='spark'&&!e.boomed){ e.boomed=true; queueBlast(e.pos.x,e.pos.z,{t:.12,rad:2.6,dmg:10*ARENAS[stage].hpMul,color:0xffa040,size:.8,skip:e}); }
+  if(e.type==='spark'&&!e.boomed){ e.boomed=true; queueBlast(e.pos.x,e.pos.z,{t:.12,rad:2.6,dmg:10*ARENAS[stage].hpMul,color:0xffa040,size:.8,skip:e,flat:true}); }
   if(e.ring) e.ring.visible=false;
   // Shardlings split into two smaller copies, twice (capped per room)
   if(e.type==='shardling'&&(e.gen||0)<2){ let n=0; for(const o of enemies) if(o.type==='shardling'&&!o.dead) n++; for(const s of [-1,1]){ if(n++>=10) break; const c=spawnEnemy('shardling',new V3(clamp(e.pos.x+s*.9,-AX+1,AX-1),0,clamp(e.pos.z,-AZ+1,AZ-1)),false,{gen:(e.gen||0)+1,noDrop:true}); if(c){ c.kx=s*7; c.kz=rand(-3,3); c.elite=false; } } }
@@ -69,20 +73,24 @@ function killEnemy(e){
   if(!(player.od>0||player.lance>0)) player.sp=Math.min(100,player.sp+5*player.st.sp);
   const rs=player.rs;
   if(rs.vamp) player.hp=Math.min(player.maxHp,player.hp+player.maxHp*(.02*rs.vamp+(rs.blood?.04:0)));
-  if(rs.nova) queueBlast(e.pos.x,e.pos.z,{t:.14,rad:3+.6*rs.nova,dmg:(6+5*rs.nova)*player.st.dmg,color:0xff5a2a,size:.7,skip:e});
-  if(rs.shard){ const n=4+2*rs.shard,o=rand(0,1); for(let i=0;i<n;i++){ const a=(i+o)/n*Math.PI*2; shoot('p',e.pos.clone().setY(1.8),new V3(Math.sin(a),0,Math.cos(a)),22,1.6*player.st.dmg,unit.shot,{life:.5}); } }
+  // Death Nova and Shard Burst: a share of the dying enemy's max armor, capped, no damage multipliers, no further chains
+  if(!byProc){ const cap=k=>PROC_KILL[k].cap*roomHpScale(), rk=(k,a)=>a[Math.min(a.length,rs[k])-1];
+    if(rs.nova) queueBlast(e.pos.x,e.pos.z,{t:.14,rad:rk('nova',PROC_KILL.nova.rad),dmg:Math.min(e.maxHp*rk('nova',PROC_KILL.nova.pct),cap('nova')),flat:true,color:0xff5a2a,size:.7,skip:e});
+    if(rs.shard){ const n=rk('shard',PROC_KILL.shard.n),o=rand(0,1),dmg=Math.min(e.maxHp*rk('shard',PROC_KILL.shard.pct),cap('shard')); for(let i=0;i<n;i++){ const a=(i+o)/n*Math.PI*2; shoot('p',e.pos.clone().setY(1.8),new V3(Math.sin(a),0,Math.cos(a)),22,dmg,unit.shot,{life:.5,proc:true,flat:true}); } } }
   if(rs.dreset&&Math.random()<.35*rs.dreset){ if(mobileMode) player.dashCh=Math.min(player.dashMax,player.dashCh+1); else player.dashCd=0; }
   const angel=e.angel;
   crossBlast(e.pos.clone().setY(.2),angel?0xffd36a:0xff5a2a,def.cost>=2||e.elite?1.3:.9);
   if(e.elite) hitstop(75,true);
   shatter(e.model,e.pos,e.hdx,e.hdz,{crystal:angel?0xffd36a:0,cy:angel?2.2:1.4});
   scene.remove(e.model.g,e.model.shadow); enemies.splice(enemies.indexOf(e),1);
-  const g=def.gold*(1+stage*.4)*mul*(sortie.rule.goldMul||1);
+  // Shardling splits and boss summons pay a reduced share, so one Shardling is not worth seven kills
+  const rw=e.gen||e.minion?SPLIT_REWARD:1;
+  const g=def.gold*(1+stage*.4)*mul*(sortie.rule.goldMul||1)*rw;
   dropGold(e.pos,g);
-  if(Math.random()<(e.elite?.3:def.cost>=2.5?.05:.015)) dropPick(e.pos,'gem',1);
+  if(Math.random()<(e.elite?.3:def.cost>=2.5?.05:.015)*rw) dropPick(e.pos,'gem',1);
   if(e.elite&&Math.random()<.25) dropItem(e.pos);
-  if(Math.random()<.12) dropPick(e.pos,'heal',16);
-  if(def.xp) gainXp(def.xp*mul*(1+sortie.a*.12)*(e.gen?.35:1));
+  if(Math.random()<.12*rw) dropPick(e.pos,'heal',16);
+  if(def.xp) gainXp(def.xp*mul*(1+sortie.a*.12)*rw);
 }
 function dropPick(pos,kind,v){
   let m;

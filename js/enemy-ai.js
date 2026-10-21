@@ -12,9 +12,9 @@ function lobShell(from,to,dur,color,onLand){ const m=new THREE.Mesh(G.orb,basic(
 // contact damage, with Thorn Plating paying it back
 function contactHurt(e,d){ const before=player.hp; hurt(d); if(player.thorn&&player.hp<before&&!e.dead) hitEnemy(e,d*3*player.st.dmg,e.pos.clone().setY(2),false,true); }
 // Spark explosion: hurts you only when it detonates on its own; it always hurts other enemies (chain reactions are queued and capped)
-function sparkBoom(e){ if(e.boomed) return; e.boomed=true; queueBlast(e.pos.x,e.pos.z,{t:.02,rad:2.6,dmg:10*ARENAS[stage].hpMul,hurtP:16,color:0xffa040,size:.8,skip:e}); killEnemy(e); }
+function sparkBoom(e){ if(e.boomed) return; e.boomed=true; queueBlast(e.pos.x,e.pos.z,{t:.02,rad:2.6,dmg:10*ARENAS[stage].hpMul,hurtP:16,color:0xffa040,size:.8,skip:e,flat:true}); killEnemy(e,true); }
 /* enemy mines (Crawler, Siege Arachne) */
-function dropEMine(x,z,arm=.8){ if(emines.length>=14) return; x=clamp(x,-AX+.6,AX-.6); z=clamp(z,-AZ+.6,AZ-.6);
+function dropEMine(x,z,arm=.8){ if(emines.length>=14||room&&room.cleared) return; x=clamp(x,-AX+.6,AX-.6); z=clamp(z,-AZ+.6,AZ-.6);
   const g=new THREE.Group(); part(new THREE.CylinderGeometry(.4,.45,.16,8),toon(0x2a2632),g,0,.08,0,.05); const l=new THREE.Mesh(new THREE.SphereGeometry(.12,8,6),basic(0xff3a2a,false)); l.position.y=.2; g.add(l);
   const ring=new THREE.Mesh(G.ring,addMat(0xff3a2a,.3)); ring.rotation.x=-Math.PI/2; ring.position.y=.04; ring.scale.setScalar(1.5); g.add(ring); g.position.set(x,0,z); roomGroup.add(g); emines.push({g,l,x,z,arm,life:12}); }
 function updateEMines(dt,t){ for(let i=emines.length-1;i>=0;i--){ const m=emines[i]; m.arm-=dt; m.life-=dt; m.l.visible=Math.floor(t*(m.arm>0?3:8))%2===0;

@@ -8,7 +8,7 @@ function shoot(from,pos,dir,speed,dmg,color,o={}){
   else { const c=new THREE.Mesh(G.orb,basic(0xffffff,false)); c.scale.setScalar(.5); m.add(c); if(o.scale) m.scale.setScalar(o.scale); }
   scene.add(m);
   const bounce=o.bounce||0;
-  bullets.push({m,from,vel:dir.clone().multiplyScalar(speed),dmg,life:o.life||2.2,r:o.r||.45,wall:o.wall||0,tag:o.tag||'',pierce:!!o.pierce,hit:(o.pierce||bounce)?new Set():null,home:o.home||0,turn:o.turn||2,after:o.after||speed,delay:o.delay||0,seek:o.seek||null,grav:!!o.grav,over:!!o.over,bounce});
+  bullets.push({m,from,vel:dir.clone().multiplyScalar(speed),dmg,life:o.life||2.2,r:o.r||.45,wall:o.wall||0,tag:o.tag||'',pierce:!!o.pierce,proc:!!o.proc,flat:!!o.flat,hit:(o.pierce||bounce)?new Set():null,home:o.home||0,turn:o.turn||2,after:o.after||speed,delay:o.delay||0,seek:o.seek||null,grav:!!o.grav,over:!!o.over,bounce});
 }
 // player projectiles go through the run skills (twin / diagonal / side / rear / storm / pierce / ricochet / wall bounce)
 function pshot(mz,dir,speed,dmg,color,o={}){

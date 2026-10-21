@@ -53,8 +53,20 @@ Bir dosyada en üst seviyede tanımlanan her şey (fonksiyonlar, `const`/`let`) 
 | `js/debug.js` | `?debug=1` ile açılan test paneli |
 | `js/main.js` | Oyun döngüsü (`frame`) ve başlatma. Her zaman en son yüklenir. |
 
-Yeni bir dosya eklersen `index.html`'de doğru sıraya bir `<script src="js/...">` satırı ekle.
+Yeni bir dosya eklersen `index.html`'de doğru sıraya bir `<script src="js/...?v=N">` satırı ekle (aynı `?v=` numarasıyla).
 Bir dosyanın en üst seviyesinde, sonraki bir dosyada tanımlanan bir şeyi hemen çağırma; öyle bir kod gerekiyorsa `js/main.js` içindeki başlatma bölümüne koy.
+
+### Sürüm numarası (cache busting)
+
+`index.html` içindeki her `css/` ve `js/` bağlantısının sonunda `?v=N` var (örneğin `js/main.js?v=9`). Tarayıcılar ve GitHub Pages
+dosyaları önbellekte tutar; numara değişmezse oyuncular eski kodu görmeye devam eder (eski "12 rooms" HUD'u böyle kaldı).
+**Her sürümde (main'e giden her PR'da) bu numarayı bir artır**, bütün satırlarda aynı olsun. Tek komutla:
+
+```bash
+sed -i -E 's/\?v=[0-9]+/?v=10/g' index.html
+```
+
+Oyun içinde System menüsünde "Build N" yazar; oyuncu eski sürümdeyse buradan anlaşılır.
 
 Kolay başlangıç fikirleri:
 

@@ -78,13 +78,14 @@ function reflectShot(b){ const v=b.vel.clone().setY(0); if(v.lengthSq()<.01) ret
 // Hex Nova: overheating the hex shield or breaking the phone barrier blasts everything nearby
 function hexNova(){ const p=player; aoe(p.pos,6,(14+6*(p.rs.hexnova||1))*p.st.dmg,.6,2.5); clearEnemyShots(p.pos,6); crossBlast(p.pos.clone(),0xffa04a,1.1); }
 // delayed blasts: meteors, Death Nova, Spark explosions. Queued so chain reactions spread over frames and stay capped.
-function queueBlast(x,z,o){ if(blasts.length>=40) return; const ring=new THREE.Mesh(G.ring,addMat(o.color||0xff6a1a,.9)); ring.rotation.x=-Math.PI/2; ring.position.set(x,.07,z); ring.scale.setScalar(o.rad); scene.add(ring); blasts.push({x,z,t:o.t||.15,max:o.t||.15,rad:o.rad,dmg:o.dmg,color:o.color||0xff6a1a,hurtP:o.hurtP||0,hurtE:o.hurtE!==false,size:o.size||.8,ring,skip:o.skip||null}); }
+// every blast is a proc: it hits with noProc, so its kills never chain into more on-kill procs. flat blasts skip crit and Rage too.
+function queueBlast(x,z,o){ if(blasts.length>=40) return; const ring=new THREE.Mesh(G.ring,addMat(o.color||0xff6a1a,.9)); ring.rotation.x=-Math.PI/2; ring.position.set(x,.07,z); ring.scale.setScalar(o.rad); scene.add(ring); blasts.push({x,z,t:o.t||.15,max:o.t||.15,rad:o.rad,dmg:o.dmg,color:o.color||0xff6a1a,hurtP:o.hurtP||0,hurtE:o.hurtE!==false,size:o.size||.8,ring,skip:o.skip||null,flat:!!o.flat}); }
 function updateBlasts(dt){
   for(let i=blasts.length-1;i>=0;i--){ const b=blasts[i]; b.t-=dt; const k=1-b.t/b.max; b.ring.material.opacity=.4+Math.sin(k*30)*.3; b.ring.scale.setScalar(b.rad*(1.15-k*.15));
     if(b.t>0) continue;
     scene.remove(b.ring); blasts.splice(i,1); const pos=new V3(b.x,0,b.z);
     crossBlast(pos,b.color,b.size);
-    if(b.hurtE) for(const e of enemies.slice()){ if(e.dead||e===b.skip) continue; if(Math.hypot(e.pos.x-b.x,e.pos.z-b.z)<b.rad+e.r*.5) hitEnemy(e,b.dmg,e.pos.clone().setY(2),false,true); }
+    if(b.hurtE) for(const e of enemies.slice()){ if(e.dead||e===b.skip) continue; if(Math.hypot(e.pos.x-b.x,e.pos.z-b.z)<b.rad+e.r*.5) hitEnemy(e,b.dmg,e.pos.clone().setY(2),false,true,b.flat); }
     if(b.hurtP&&player&&!player.dead&&Math.hypot(player.pos.x-b.x,player.pos.z-b.z)<b.rad+.5) hurt(b.hurtP); }
 }
 function clearBlasts(){ blasts.forEach(b=>scene.remove(b.ring)); blasts.length=0; trails.forEach(t=>scene.remove(t.m)); trails.length=0; }
@@ -95,11 +96,12 @@ function updateTrails(dt){ for(let i=trails.length-1;i>=0;i--){ const t=trails[i
   if(t.t<=0){ scene.remove(t.m); t.m.geometry.dispose(); trails.splice(i,1); } } }
 
 /* ================= CHOICE SCREEN + ROULETTE ================= */
-// cards spin like slot reels (result is decided before the spin); a tap, click or key skips the spin
-let spin=null, ignoreClickUntil=0;
-const REEL_H=46;
+// cards spin like slot reels (result is decided before the spin); a tap, click or key skips the spin.
+// Only a fresh press that starts after the screen opened (plus a short grace) counts: held keys auto-repeat and held mouse buttons are ignored.
+let spin=null, ignoreClickUntil=0, choiceOpenT=0;
+const REEL_H=46, SKIP_GRACE=250;
 function openChoice(cfg){
-  if(state!=='choice') choiceBack=state; state='choice'; resetTouch(); for(const k in keys)keys[k]=false; mouseDown=rightDown=false;
+  if(state!=='choice') choiceBack=state; state='choice'; choiceOpenT=performance.now(); resetTouch(); for(const k in keys)keys[k]=false; mouseDown=rightDown=false;
   $('chEye').textContent=cfg.eyebrow; $('chTitle').textContent=cfg.title; $('chNote').textContent=cfg.note||'';
   const rr=$('chReroll'); rr.hidden=!cfg.reroll; if(cfg.reroll){ rr.textContent=`Reroll · ${sortie.rerolls} left`; rr.disabled=sortie.rerolls<1; rr.onclick=()=>{ if(spin&&spin.left>0||sortie.rerolls<1) return; sortie.rerolls--; sfx('click'); cfg.reroll(); }; }
   const list=$('chList'); list.innerHTML='';
@@ -125,8 +127,9 @@ function openChoice(cfg){
 }
 function stopReel(c){ if(!spin||c.done) return; c.done=true; clearTimeout(c.timer); c.reel.style.transition='none'; c.reel.style.transform=`translateY(${-c.n*REEL_H}px)`; c.b.classList.add('stop'); sfx('r_'+(c.rarity||'common')); spin.left--; if(c.rarity==='legendary') buzz(60); }
 function skipSpin(){ if(!spin||spin.left<=0) return false; spin.cards.forEach(stopReel); ignoreClickUntil=performance.now()+350; return true; }
-$('choice').addEventListener('pointerdown',e=>{ if(skipSpin()){ e.preventDefault(); e.stopPropagation(); } },true);
-addEventListener('keydown',e=>{ if(state==='choice'&&skipSpin()){ e.preventDefault(); e.stopPropagation(); } },true);
+const freshPress=e=>performance.now()-choiceOpenT>=SKIP_GRACE&&!e.repeat;
+$('choice').addEventListener('pointerdown',e=>{ if(freshPress(e)&&skipSpin()){ e.preventDefault(); e.stopPropagation(); } },true);
+addEventListener('keydown',e=>{ if(state!=='choice'||!spin) return; if(['ShiftLeft','ShiftRight','ControlLeft','ControlRight','AltLeft','AltRight','MetaLeft','MetaRight'].includes(e.code)) return; if(freshPress(e)&&skipSpin()){ e.preventDefault(); e.stopPropagation(); } },true);
 
 function showLevelUp(){
   sortie.pendingLv--;
