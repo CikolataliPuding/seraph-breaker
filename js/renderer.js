@@ -7,9 +7,18 @@ renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 const scene=new THREE.Scene();
 scene.background=new THREE.Color(0x1d1424); scene.fog=new THREE.Fog(0x1d1424,48,95);
 const cam=new THREE.OrthographicCamera(-10,10,10,-10,.1,300);
-const CAM_OFF=new V3(30,30,30), camTarget=new V3();
-let camZoom=1;
-function resize(){ const w=innerWidth,h=innerHeight,a=w/h; renderer.setSize(w,h,false); const vs=a<1?25:(h<520?17:22); cam.left=-vs*a/2; cam.right=vs*a/2; cam.top=vs/2; cam.bottom=-vs/2; cam.updateProjectionMatrix(); }
+// desktop: isometric diamond view. Phone: axis-aligned, pitched 57° and zoomed so the whole room width fits the screen.
+const CAM_OFF=new V3(30,30,30), camTarget=new V3(), MPITCH=57*Math.PI/180, CAM_OFF_M=new V3(0,Math.sin(MPITCH),Math.cos(MPITCH)).multiplyScalar(40);
+let camZoom=1, camVS=22;
+function fitCamera(){ const w=innerWidth,h=innerHeight,a=w/h; let vs;
+  if(mobileMode) vs=a<1?(2*AX+2.6)/a:(2*AZ+3)*Math.sin(MPITCH)+3.2; else vs=a<1?25:(h<520?17:22);
+  camVS=vs; cam.left=-vs*a/2; cam.right=vs*a/2; cam.top=vs/2; cam.bottom=-vs/2; cam.updateProjectionMatrix(); }
+// phone camera follows the player along the room's length only, with a little look-ahead toward the door
+// when the whole room fits (portrait), its door edge sits just under the top HUD and the free space is left at the bottom for thumbs
+function mobileCamZ(z){ const s=Math.sin(MPITCH), top=(camVS/2-(innerWidth<innerHeight?camVS*.14:2.5))/s, vd=camVS/s;
+  if(2*AZ+3<=top+vd/2) return top>0?top-AZ-1.2:0;
+  const a=-AZ-2+vd/2-1.2, b=AZ+2-vd/2-1.2; return clamp(z-2.5,Math.min(a,b),Math.max(a,b)); }
+function resize(){ renderer.setSize(innerWidth,innerHeight,false); fitCamera(); }
 addEventListener('resize',resize); resize();
 const hemi=new THREE.HemisphereLight(0xffd6b8,0x2a1d3a,.75); scene.add(hemi);
 const sun=new THREE.DirectionalLight(0xffe6cc,.95); sun.castShadow=true; const sm=isTouch?1024:2048; sun.shadow.mapSize.set(sm,sm);
@@ -31,8 +40,9 @@ function part(geo,mat,parent,x=0,y=0,z=0,t=.09){
 const blob=r=>{ const m=new THREE.Mesh(new THREE.CircleGeometry(r,18),new THREE.MeshBasicMaterial({color:0,transparent:true,opacity:.34,depthWrite:false})); m.rotation.x=-Math.PI/2; m.position.y=.03; return m; };
 
 /* world: ground + city ring */
-let ARENA=24, hazardMat=null;
-const OUTW=6, ROOM_R=13, BOSS_R=16, OUT_DPS=6;
+let AX=9, AZ=15, hazardMat=null; // half-width (x) and half-depth (z) of the current room; the door is at z=-AZ
+const CITY_R=24;
+const OUTW=6, ROOM_X=9, ROOM_Z=15, BOSS_X=10, BOSS_Z=14, OUT_DPS=6; // rooms are tall rectangles: 9 columns × 15 rows of 2-unit cells
 let groundMat,cityMat,winInst,tileTex;
 (function buildWorld(){
   const cv=document.createElement('canvas'); cv.width=cv.height=256; const g=cv.getContext('2d');
@@ -48,9 +58,9 @@ let groundMat,cityMat,winInst,tileTex;
   tileTex=new THREE.CanvasTexture(tc); tileTex.wrapS=tileTex.wrapT=THREE.RepeatWrapping;
   const tones=[0x4a4256,0x3c3648,0x5a4e60,0x463e52,0x655868].map(c=>new THREE.Color(c));
   const blocks=[],wins=[],reach=isTouch?13:18;
-  for(let x=-ARENA-reach;x<=ARENA+reach;x+=4.5) for(let z=-ARENA-reach;z<=ARENA+reach;z+=4.5){
-    if(Math.abs(x)<ARENA+2.5&&Math.abs(z)<ARENA+2.5) continue; if(Math.random()<.22) continue;
-    const near=(x>ARENA||z>ARENA), h=near?rand(.6,2.2):rand(3,15), w=rand(2.4,3.8), d=rand(2.4,3.8), px=x+rand(-.4,.4), pz=z+rand(-.4,.4);
+  for(let x=-CITY_R-reach;x<=CITY_R+reach;x+=4.5) for(let z=-CITY_R-reach;z<=CITY_R+reach;z+=4.5){
+    if(Math.abs(x)<CITY_R+2.5&&Math.abs(z)<CITY_R+2.5) continue; if(Math.random()<.22) continue;
+    const near=(x>CITY_R||z>CITY_R), h=near?rand(.6,2.2):rand(3,15), w=rand(2.4,3.8), d=rand(2.4,3.8), px=x+rand(-.4,.4), pz=z+rand(-.4,.4);
     blocks.push({px,pz,w,h,d,c:tones[(Math.random()*tones.length)|0]});
     if(h>4){ const n=Math.floor(h/1.6); for(let i=1;i<n;i++) if(Math.random()>.45) wins.push({px,pz,w:w*.7,y:i*1.6,d:d+.04}); }
   }
@@ -64,4 +74,4 @@ let groundMat,cityMat,winInst,tileTex;
   wins.forEach((w,i)=>{ dm.position.set(w.px,w.y,w.pz); dm.scale.set(w.w,.18,w.d); dm.updateMatrix(); winInst.setMatrixAt(i,dm.matrix); });
   winInst.count=wins.length; scene.add(winInst);
 })();
-function applyTheme(i){ const t=STAGES[i].theme; scene.background.setHex(t.bg); scene.fog.color.setHex(t.bg); hemi.color.setHex(t.hemiS); hemi.groundColor.setHex(t.hemiG); groundMat.color.setHex(t.ground); cityMat.color.setHex(t.city); rim.color.setHex(t.rim); winInst.material.color.setHex(t.win); }
+function applyTheme(i){ const t=ARENAS[i].theme; scene.background.setHex(t.bg); scene.fog.color.setHex(t.bg); hemi.color.setHex(t.hemiS); hemi.groundColor.setHex(t.hemiG); groundMat.color.setHex(t.ground); cityMat.color.setHex(t.city); rim.color.setHex(t.rim); winInst.material.color.setHex(t.win); }

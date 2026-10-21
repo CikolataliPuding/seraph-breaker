@@ -104,7 +104,9 @@
           <p class="note">The soundtrack is synthesized live in your browser, so it is original and free of copyright claims.</p>
           <p class="note">Progress is saved in this browser only.</p>
           <div class="keys desk"><kbd>WASD</kbd> move · <kbd>Mouse</kbd> aim · <kbd>Click</kbd> fire · <kbd>Space</kbd> dash · <kbd>Shift</kbd>/<kbd>RMB</kbd> barrier · <kbd>Q</kbd> special · <kbd>E</kbd><kbd>R</kbd> gadgets · <kbd>P</kbd> pause</div>
-          <div class="keys tonly">Left thumb moves. Right thumb drags to aim and fire; hold still to auto-aim. Buttons: SP special, G1/G2 gadgets, DASH, HEX barrier.</div>
+          <div class="keys tonly">Drag anywhere in the lower screen to move. Let go to stop and auto-fire at the nearest enemy in sight. Flick the stick or double-tap to dash (2 charges). The barrier blocks a shot on its own while power is above 60. Big button: special. Small buttons: gadgets.</div>
+          <div class="fld"><span>Controls</span><div class="seg" id="ctrlSeg"><button data-c="auto">Auto</button><button data-c="mobile">Phone</button><button data-c="desktop">Desktop</button></div></div>
+          <label class="chk"><input type="checkbox" id="autoG"> Auto-use gadgets (phone mode)</label>
           <div class="row"><button class="btn ghost" id="fsBtn">Fullscreen</button><button class="btn ghost" id="resetBtn">Reset all progress</button></div>
         </div>
       </section>
@@ -158,19 +160,17 @@
 </div>
 
 <div id="touch" hidden>
-  <div class="ghostStk" id="ghL">◀ move</div>
-  <div class="ghostStk" id="ghR">aim + fire ▶</div>
   <div class="stk" id="stkM" hidden><i></i></div>
-  <div class="stk" id="stkA" hidden><i></i></div>
-  <div class="tcl">
-    <div class="tb" id="tSP">SP</div>
-    <div class="tb" id="tDash">DASH</div>
-    <div class="tb" id="tG1">G1</div>
-    <div class="tb" id="tHex">HEX</div>
-    <div class="tb" id="tG2">G2</div>
+  <div class="dpips" id="dashPips"><b></b><b></b></div>
+  <div class="mhint" id="mHint">Drag to move · let go to fire · flick or double-tap to dash</div>
+  <div class="mbtns">
+    <div class="tb sm" id="tG2"></div>
+    <div class="tb sm" id="tG1"></div>
+    <div class="tb big" id="tSP">SP</div>
   </div>
   <div class="tb" id="tPause">II</div>
 </div>
+<div class="hud" id="pop"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="js/core.js"></script>
@@ -181,6 +181,7 @@
 <script src="js/models.js"></script>
 <script src="js/preview.js"></script>
 <script src="js/input.js"></script>
+<script src="js/mobile.js"></script>
 <script src="js/state.js"></script>
 <script src="js/fx.js"></script>
 <script src="js/juice.js"></script>

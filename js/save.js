@@ -1,7 +1,7 @@
 // Seraph Breaker · save.js: Save/load of player progress in localStorage (key and fields must stay compatible with existing saves).
 /* ================= SAVE ================= */
 const SAVE_KEY='seraph-breaker-save-v2';
-const DEF_P={v:3,rev:0,pilot:'',unit:'azure',c1:null,c2:null,gold:0,gems:0,skills:{},owned:{},weapon:'sig',gadgets:['',''],music:.55,sfx:.7,best:0,clears:0,progress:0};
+const DEF_P={v:3,rev:0,pilot:'',unit:'azure',c1:null,c2:null,gold:0,gems:0,skills:{},owned:{},weapon:'sig',gadgets:['',''],music:.55,sfx:.7,best:0,clears:0,progress:0,ctrl:'auto',autoGadget:false};
 const freshP = () => JSON.parse(JSON.stringify(DEF_P));
 function normP(d){
   const p=freshP();
@@ -14,6 +14,7 @@ function normP(d){
   p.gold=Math.max(0,Math.floor(+p.gold||0)); p.gems=Math.max(0,Math.floor(+p.gems||0));
   p.progress=clamp(Math.floor(+p.progress||0),0,12);
   p.pilot=String(p.pilot||'').slice(0,14);
+  if(!['auto','mobile','desktop'].includes(p.ctrl)) p.ctrl='auto'; p.autoGadget=!!p.autoGadget;
   return p;
 }
 let P=freshP();

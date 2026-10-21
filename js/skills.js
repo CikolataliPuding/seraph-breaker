@@ -27,7 +27,7 @@ function openChoice(cfg){
     b.onclick=()=>{ $('choice').hidden=true; state=choiceBack; o.act(); refreshControls(); };
     list.appendChild(b); });
   $('choice').hidden=false; refreshControls();
-  setTimeout(()=>{ const f=$('ch0'); if(f&&!isTouch) f.focus(); },50);
+  setTimeout(()=>{ const f=$('ch0'); if(f&&!mobileMode) f.focus(); },50);
 }
 function showLevelUp(){
   sortie.pendingLv--;
@@ -46,3 +46,7 @@ function devilChoice(){
   opts.push({icon:'rear',name:'Walk away',desc:'Keep your armor. The offer is gone for good.',tag:'Decline',color:'#a79fae',act:()=>npcGone()});
   openChoice({eyebrow:'A flawless room draws attention',title:'The devil makes an offer',note:'Power now, at the cost of max armor.',options:opts});
 }
+// Reflect Hex: a blocked shot flies back as your own (beams cannot be reflected)
+function reflectShot(b){ const v=b.vel.clone().setY(0); if(v.lengthSq()<.01) return; v.negate().normalize(); shoot('p',b.m.position.clone().setY(1.8),v,24,Math.max(2,b.dmg*.5)*player.st.dmg,0xffa04a,{life:1.2}); }
+// Hex Nova: overheating the hex shield or breaking the phone barrier blasts everything nearby
+function hexNova(){ const p=player; aoe(p.pos,6,(14+6*(p.rs.hexnova||1))*p.st.dmg,.6,2.5); clearEnemyShots(p.pos,6); crossBlast(p.pos.clone(),0xffa04a,1.1); }

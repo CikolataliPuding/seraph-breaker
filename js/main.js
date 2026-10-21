@@ -12,7 +12,7 @@ function roomUpdate(dt,edt){
   }
   if(npc){ npc.t+=dt; npc.m.g.position.y=Math.sin(npc.t*2)*.25; npc.m.g.rotation.y+=dt*.6;
     if(!npc.used&&Math.hypot(player.pos.x-npc.pos.x,player.pos.z-npc.pos.z)<2.4){ npc.used=true; if(npc.kind==='angel') angelChoice(); else devilChoice(); return; } }
-  if(door&&door.open){ door.arrow.position.y=.25+Math.sin(performance.now()/200)*.15; if(player.pos.z<-ARENA+.3&&Math.abs(player.pos.x)<1.4) goNextRoom(); }
+  if(door&&door.open){ door.arrow.position.y=.25+Math.sin(performance.now()/200)*.15; if(player.pos.z<-AZ+.3&&Math.abs(player.pos.x)<1.4) goNextRoom(); }
   if(room.completeT>0){ room.completeT-=dt; if(room.completeT<=0) levelComplete(); }
   if(sortie.pendingLv>0&&state==='fight') showLevelUp();
 }
@@ -63,7 +63,7 @@ function frame(now){
     else if(b.seek){ if(b.seek.dead) b.seek=nearestFoe(b.m.position,14); if(b.seek){ const sp=b.vel.length(); _tmp.set(b.seek.pos.x-b.m.position.x,0,b.seek.pos.z-b.m.position.z).setLength(sp); b.vel.lerp(_tmp,Math.min(1,bdt*b.turn)).setLength(sp); b.m.lookAt(b.m.position.clone().add(b.vel)); } }
     b.m.position.addScaledVector(b.vel,bdt);
     const p=b.m.position;
-    if(b.life<=0||Math.abs(p.x)>ARENA+OUTW||Math.abs(p.z)>ARENA+OUTW){ if(b.grav) makeHole(p); else if(b.life>0) sparks(p,b.from==='p'?unit.shot:0xff8a40,2,3); killBullet(i); continue; }
+    if(b.life<=0||Math.abs(p.x)>AX+OUTW||Math.abs(p.z)>AZ+OUTW){ if(b.grav) makeHole(p); else if(b.life>0) sparks(p,b.from==='p'?unit.shot:0xff8a40,2,3); killBullet(i); continue; }
     if(!b.over&&obstacles.length&&inBlock(p.x,p.z,0,'block')){ if(b.grav) makeHole(p); sparks(p,b.from==='p'?unit.shot:0xff8a40,3,4); killBullet(i); continue; }
     if(b.from==='p'){
       let gone=false;
@@ -76,8 +76,8 @@ function frame(now){
       if(gone) killBullet(i);
     } else if(player&&!player.dead){
       _tmp.set(p.x-player.pos.x,0,p.z-player.pos.z); const d=_tmp.length();
-      if(player.shield&&d<2.6&&d>.01&&_tmp.divideScalar(d).dot(player.aim)>.45){ sparks(p,0xffa04a,4,5); player.en-=7; player.regenDelay=.9; sfx('shield'); killBullet(i); continue; }
-      if(d<.75+b.r*.5){ hurt(b.dmg); killBullet(i); continue; }
+      if(player.shield&&d<2.6&&d>.01&&_tmp.divideScalar(d).dot(player.aim)>.45){ sparks(p,0xffa04a,4,5); player.en-=7; player.regenDelay=.9; sfx('shield'); if(player.rs.reflect) reflectShot(b); killBullet(i); continue; }
+      if(d<.75+b.r*.5){ if(player.dashT>.04){ perfectDodge(); continue; } if(tryBarrier(b)){ killBullet(i); continue; } hurt(b.dmg); killBullet(i); continue; }
     }
   }
   if(dt>0) for(let i=shocks.length-1;i>=0;i--){ const s=shocks[i]; s.r+=s.speed*edt; const k=1-s.r/s.max; s.ring.scale.setScalar(s.r); s.wall.scale.set(s.r,.9,s.r); s.ring.material.opacity=k; s.wall.material.opacity=k*.55;
@@ -87,9 +87,9 @@ function frame(now){
   for(let i=fx.length-1;i>=0;i--){ const f=fx[i]; if(dt>0) f.life-=dt; const k=Math.max(0,f.life/f.max); f.upd(f,dt,k); if(f.life<=0){ scene.remove(f.obj); if(f.dispose&&f.obj.geometry) f.obj.geometry.dispose(); fx.splice(i,1); } }
   let want=1;
   if(state==='cine'&&boss){ camTarget.lerp(_tmp.set(boss.pos.x,boss.kind==='colossus'?3:boss.y*.5,boss.pos.z),Math.min(1,(dt||.016)*3)); want=1.55; }
-  else if(player&&!player.dead&&dt>0){ _tmp.copy(player.pos).addScaledVector(player.aim,isTouch?1:1.5); camTarget.lerp(_tmp,Math.min(1,dt*5)); }
+  else if(player&&!player.dead&&dt>0){ if(mobileMode) _tmp.set(0,0,mobileCamZ(player.pos.z)); else _tmp.copy(player.pos).addScaledVector(player.aim,1.5); camTarget.lerp(_tmp,Math.min(1,dt*5)); }
   camZoom+=(want-camZoom)*Math.min(1,(dt||.016)*3); if(Math.abs(cam.zoom-camZoom)>.001){ cam.zoom=camZoom; cam.updateProjectionMatrix(); }
-  cam.position.copy(camTarget).add(CAM_OFF);
+  cam.position.copy(camTarget).add(mobileMode?CAM_OFF_M:CAM_OFF);
   if(shake>0){ cam.position.x+=rand(-1,1)*shake; cam.position.y+=rand(-1,1)*shake*.6; shake=Math.max(0,shake-(dt||.016)*1.8); }
   cam.lookAt(camTarget);
   sun.position.copy(camTarget).add(_sunOff); sun.target.position.copy(camTarget);
@@ -103,13 +103,14 @@ function frame(now){
     if(boss) $('bossBar').firstElementChild.style.width=Math.max(0,boss.hp/boss.maxHp*100)+'%';
     const spReady=p.sp>=100&&!busy(); $('abQ').classList.toggle('ready',spReady); $('abQ').style.setProperty('--cd',1-p.sp/100); $('tSP').classList.toggle('ready',spReady); $('tSP').style.setProperty('--cd',1-p.sp/100);
     [0,1].forEach(i=>{ const g=P.gadgets[i]; const f=g?p.gcd[i]/(GADGETS[g].cd*p.st.gadgetCd):0; $(i?'abR':'abE').style.setProperty('--cd',f); $(i?'tG2':'tG1').style.setProperty('--cd',f); });
-    const df=p.dashCd/(1.4*p.st.dashCd); $('abS').style.setProperty('--cd',df); $('tDash').style.setProperty('--cd',df);
+    const df=p.dashCd/(1.4*p.st.dashCd); $('abS').style.setProperty('--cd',df);
+    if(mobileMode){ const pp=$('dashPips').children; for(let i=0;i<pp.length;i++){ pp[i].className=i<p.dashCh?'f':i===p.dashCh?'c':''; pp[i].style.setProperty('--k',i===p.dashCh?p.dashRc/(1.5*p.st.dashCd):0); } }
   }
   renderer.render(scene,cam);
 }
 
 /* boot */
-initTouchControls();
+initMobile();
 initDebug();
 applyTheme(0);
 makePortraits();

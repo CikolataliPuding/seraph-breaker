@@ -7,12 +7,12 @@ function clearWorld(){
   if(player){ scene.remove(player.model.g,player.model.shadow); player=null; }
   orbitG.children.slice().forEach(c=>orbitG.remove(c));
   shieldG.visible=false; pBeamO.visible=pBeamC.visible=false; chargeOrb.visible=false; odRing.visible=false; hookLine.visible=hookHead.visible=false;
-  camZoom=1; cam.zoom=1; cam.updateProjectionMatrix(); ARENA=24; room=null;
+  camZoom=1; cam.zoom=1; cam.updateProjectionMatrix(); AX=9; AZ=15; room=null;
 }
 function refreshControls(){
   const on=playing()&&state!=='cine'&&state!=='choice';
   ['hudL','hudR','xpTrack','rsBar'].forEach(id=>$(id).hidden=!on);
-  $('abBar').hidden=!on||isTouch; $('touch').hidden=!on||!isTouch;
+  $('abBar').hidden=!on||mobileMode; $('touch').hidden=!on||!mobileMode;
   $('bossHud').hidden=!(on&&boss&&state!=='bossdeath');
   if(on) renderAbilityIcons();
 }
@@ -24,7 +24,7 @@ function launchLevel(n){
   $('uName').innerHTML=''; const nm=document.createElement('span'); nm.textContent=P.pilot||'Pilot'; const sm=document.createElement('small'); sm.textContent=' · '+unit.name; const lv=document.createElement('em'); lv.id='lvTxt'; lv.textContent='LV 1'; $('uName').append(nm,sm,lv);
   sortie={n,rooms:inf.rooms,ri:0,xp:0,lv:1,pendingLv:0,gold:0,gems:0,start:performance.now()};
   score=0; kills=0; playTime=0;
-  buildRoom(ROOM_R,SANCTUM,true); player.pos.set(0,0,ARENA-1.5); camTarget.copy(player.pos);
+  buildRoom(ROOM_X,ROOM_Z,SANCTUM,true); player.pos.set(0,0,AZ-1.5); camTarget.copy(player.pos);
   $('cardNum').textContent=`STAGE 0${stage+1} · LEVEL ${String(n+1).padStart(2,'0')}/12`; $('cardT').textContent=inf.name; $('cardS').textContent=`${inf.stage.name} · ${inf.rooms.length} rooms`;
   const c=$('card'); c.hidden=false; const inner=c.firstElementChild; inner.style.animation='none'; void inner.offsetWidth; inner.style.animation='';
   state='card'; stateT=2; refreshControls(); playTrack('battle');

@@ -2,7 +2,7 @@
 /* ================= ENEMIES ================= */
 function spawnEnemy(type,pos,elite=false){
   let e; castShadows=false;
-  const hm=STAGES[stage].hpMul*(1+(sortie?levelInfo(sortie.n).k:0)*.08);
+  const hm=ARENAS[stage].hpMul*(1+(sortie?levelInfo(sortie.n).k:0)*.08);
   if(type==='seraph') e={type,model:buildSeraph(1),hp:7,r:1.45,speed:5,st:'hover',stT:rand(1.5,3),side:Math.random()<.5?-1:1,sc:1,fly:true};
   else if(type==='mini') e={type:'seraph',mini:true,model:buildSeraph(.7),hp:4,r:1.05,speed:6,st:'hover',stT:rand(.8,1.6),side:Math.random()<.5?-1:1,sc:.7,fly:true};
   else if(type==='heavy') e={type,model:buildMech(0x5a5244,0xc08a2a,0x2a2620,0xff3030,1.25),hp:20,r:1.7,speed:2.4,cd:rand(1.5,2.5),side:1,walk:0,sc:1.25};
@@ -20,7 +20,7 @@ function spawnEnemy(type,pos,elite=false){
   const angel=e.fly;
   const p=new THREE.Mesh(box(1.2,30,1.2),addMat(angel?0xffe7a0:0xff5a3a,.7)); p.position.set(pos.x,15,pos.z);
   addFx(p,.6,(f,dt,k)=>{ p.scale.x=p.scale.z=k*1.2+.05; p.material.opacity=k*.7; });
-  groundRing(pos,STAGES[stage].theme.edge,2.5,.5);
+  groundRing(pos,ARENAS[stage].theme.edge,2.5,.5);
   return e;
 }
 function flashModel(e){ e.model.mats.forEach(m=>m.emissive.setHex(0xffffff)); e.flash=.07; }

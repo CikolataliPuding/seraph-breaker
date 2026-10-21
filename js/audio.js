@@ -105,6 +105,7 @@ function sfx(kind){
     case 'slash': nz('bandpass',3000,.12,.22,1.2); osc('triangle',700,200,.1,.08); break;
     case 'click': osc('square',600,600,.03,.04); break;
     case 'door': osc('triangle',440,880,.25,.12); osc('sine',660,1320,.3,.08); break;
+    case 'perfect': [1568,2093,2637].forEach((f,i)=>{ const o=ctx.createOscillator(); o.type='sine'; o.frequency.value=f; const g=env(t+i*.04,.11,.002,.35); o.connect(g); g.connect(AU.sfx); o.start(t+i*.04); o.stop(t+i*.04+.4); }); nz('highpass',5000,.25,.08); break;
     case 'lvup': [523,659,784,1046].forEach((f,i)=>{ const o=ctx.createOscillator(); o.type='square'; o.frequency.value=f; const g=env(t+i*.07,.07,.003,.16); o.connect(g); g.connect(AU.sfx); o.start(t+i*.07); o.stop(t+i*.07+.2); }); break;
   }
 }

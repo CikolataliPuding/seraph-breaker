@@ -1,7 +1,7 @@
 // Seraph Breaker · enemy-ai.js: Enemy behaviour (drones, heavies, wardens, seraphs).
 /* ================= ENEMY AI ================= */
 function updateEnemies(dt){
-  const T=tgt(), small=ARENA<12;
+  const T=tgt(), small=AZ<10;
   for(const e of enemies.slice()){
     if(e.dead) continue;
     if(e===boss){ updateBoss(dt); continue; }
@@ -52,7 +52,7 @@ function updateEnemies(dt){
     for(const o of enemies){ if(o===e||o.dead)continue; const dx=e.pos.x-o.pos.x,dz=e.pos.z-o.pos.z,dd=Math.hypot(dx,dz),mn=(e.r+o.r)*.8; if(dd<mn&&dd>.001){ const k=o===boss?1:.5; e.pos.x+=dx/dd*(mn-dd)*k; e.pos.z+=dz/dd*(mn-dd)*k; } }
     e.pos.addScaledVector(e.vel,dt*(e.slow>0?.55:1));
     if(!e.fly) pushOut(e.pos,e.r*.55);
-    e.pos.x=clamp(e.pos.x,-ARENA+1,ARENA-1); e.pos.z=clamp(e.pos.z,-ARENA+1,ARENA-1);
+    e.pos.x=clamp(e.pos.x,-AX+1,AX-1); e.pos.z=clamp(e.pos.z,-AZ+1,AZ-1);
     m.g.position.set(e.pos.x,e.dropY,e.pos.z); m.g.rotation.y=e.yaw; m.shadow.position.set(e.pos.x,.03,e.pos.z); m.shadow.scale.setScalar(1/(1+e.dropY*.15));
     if(m.legs&&m.hips){ stepMech(m,e,e.vel.length(),dt,e.sc); mechLean(m,e.jz,dt,e.vel.x,e.vel.z,e.yaw,e.yaw);
       // heavies crouch before the fan, drones raise the rifle; both stand up after landing

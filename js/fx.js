@@ -3,7 +3,7 @@
 const G={pB:box(.14,.14,1),pBig:box(.32,.32,1.6),pel:box(.16,.16,.6),mis:box(.16,.16,.5),orb:new THREE.SphereGeometry(.3,10,8),gorb:new THREE.SphereGeometry(.45,14,10),spark:box(.16,.16,.16),plane:new THREE.PlaneGeometry(1,1),ring:new THREE.RingGeometry(.86,1,48),wall:new THREE.CylinderGeometry(1,1,1,48,1,true),coin:new THREE.CylinderGeometry(.26,.26,.07,12),gem:new THREE.OctahedronGeometry(.3,0),puff:new THREE.SphereGeometry(.35,8,6),slash:new THREE.RingGeometry(1.9,3.6,22,1,-Math.PI/2-1.2,2.4),blade:box(.9,.1,.25)};
 function addFx(obj,life,upd,dispose){ scene.add(obj); fx.push({obj,life,max:life,upd,dispose}); }
 function sparks(pos,color,n=8,spd=7){
-  if(isTouch) n=Math.ceil(n*.6);
+  if(mobileMode) n=Math.ceil(n*.6);
   for(let i=0;i<n;i++){ const m=new THREE.Mesh(G.spark,basic(color,true)); m.position.copy(pos); const v=new V3(rand(-1,1),rand(.2,1.4),rand(-1,1)).normalize().multiplyScalar(rand(.4,1)*spd);
     addFx(m,rand(.25,.55),(f,dt,k)=>{ v.y-=18*dt; m.position.addScaledVector(v,dt); m.scale.setScalar(k*1.4); }); }
 }
@@ -34,4 +34,5 @@ function beamFlash(from,to,color,w){
   const g=new THREE.Group(); g.add(o,c);
   addFx(g,.28,(f,dt,k)=>{ o.scale.set(w*k,w*k,len); c.scale.set(w*.4*k,w*.4*k,len); o.material.opacity=k*.8; c.material.opacity=k; });
 }
+function popText(txt){ const el=$('pop'); el.textContent=txt; el.classList.remove('on'); void el.offsetWidth; el.classList.add('on'); }
 function toast(big,small=''){ const t=$('toast'); t.innerHTML=''; if(small){ const s=document.createElement('small'); s.textContent=small; t.appendChild(s); } t.appendChild(document.createTextNode(big)); t.classList.add('on'); toastT=1.6; }

@@ -6,7 +6,7 @@ function renderMap(){
   if(selLevel>Math.min(P.progress,11)) selLevel=Math.min(P.progress,11);
   $('mapProg').textContent=`CAMPAIGN · ${P.progress}/12 CLEAR`;
   const inner=$('mapInner'); inner.innerHTML='';
-  STAGES.forEach((S,s)=>{ const top=nodePos(s*4+3).y-46, bot=s===0?MAP_H:nodePos(s*4-1).y-46; const b=document.createElement('div'); b.className='band'; b.style.top=top+'px'; b.style.height=(bot-top)+'px'; b.style.background=`linear-gradient(180deg,${S.colorCss}26,${S.colorCss}08)`; const l=document.createElement('span'); l.style.color=S.colorCss; l.textContent=`0${s+1} · ${S.name.toUpperCase()}`; b.appendChild(l); inner.appendChild(b); });
+  ARENAS.forEach((S,s)=>{ const top=nodePos(s*4+3).y-46, bot=s===0?MAP_H:nodePos(s*4-1).y-46; const b=document.createElement('div'); b.className='band'; b.style.top=top+'px'; b.style.height=(bot-top)+'px'; b.style.background=`linear-gradient(180deg,${S.colorCss}26,${S.colorCss}08)`; const l=document.createElement('span'); l.style.color=S.colorCss; l.textContent=`0${s+1} · ${S.name.toUpperCase()}`; b.appendChild(l); inner.appendChild(b); });
   const pts=Array.from({length:12},(_,i)=>nodePos(i)), pstr=pts.map(p=>`${p.x},${p.y}`).join(' '), done=pts.slice(0,Math.min(P.progress+1,12)).map(p=>`${p.x},${p.y}`).join(' ');
   inner.insertAdjacentHTML('beforeend',`<svg class="mapPath" viewBox="0 0 100 ${MAP_H}" preserveAspectRatio="none" aria-hidden="true"><polyline points="${pstr}" fill="none" stroke="rgba(255,255,255,.2)" stroke-width="3" stroke-dasharray="2 7" vector-effect="non-scaling-stroke"/><polyline points="${done}" fill="none" stroke="#ff6a1a" stroke-width="4" vector-effect="non-scaling-stroke"/></svg>`);
   for(let i=0;i<12;i++){
@@ -93,7 +93,10 @@ function renderFrames(){
   item('sp','Special',SPECIALS[P.unit].name,()=>{});
   [0,1].forEach(i=>{ const g=P.gadgets[i]; item(g||'hook','Gadget '+(i+1),g?GADGETS[g].name:'Empty slot',()=>openView('armory')); });
 }
-function renderSystem(){ $('volM').value=Math.round(P.music*100); $('volMo').textContent=Math.round(P.music*100); $('volS').value=Math.round(P.sfx*100); $('volSo').textContent=Math.round(P.sfx*100); }
+function renderSystem(){ $('volM').value=Math.round(P.music*100); $('volMo').textContent=Math.round(P.music*100); $('volS').value=Math.round(P.sfx*100); $('volSo').textContent=Math.round(P.sfx*100);
+  document.querySelectorAll('#ctrlSeg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.c===P.ctrl)); $('autoG').checked=P.autoGadget; }
+document.querySelectorAll('#ctrlSeg button').forEach(b=>b.onclick=()=>{ P.ctrl=b.dataset.c; sfx('click'); persist(); setMode(); renderSystem(); });
+$('autoG').onchange=e=>{ P.autoGadget=e.target.checked; persist(); };
 $('pilotIn').addEventListener('input',e=>{ const v=e.target.value.replace(/[^\p{L}\p{N} _\-.]/gu,'').slice(0,14); if(v!==e.target.value) e.target.value=v; P.pilot=v.trim(); $('whoName').textContent=P.pilot||'[CALLSIGN]'; });
 $('pilotIn').addEventListener('change',()=>persist());
 $('volM').oninput=e=>{ P.music=e.target.value/100; $('volMo').textContent=e.target.value; setVolumes(); };

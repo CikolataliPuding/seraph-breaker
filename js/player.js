@@ -10,17 +10,29 @@ function makePlayer(){
   const c=paint(); const m=buildMech(c.c1,c.c2,c.c3,c.eye,1,P.unit); scene.add(m.g,m.shadow);
   const st=computeStats();
   player={model:m,pos:new V3(0,0,6),vel:new V3(),st,hp:st.maxHp,maxHp:st.maxHp,en:100,overheat:0,regenDelay:0,fireCd:0,dashT:0,dashCd:0,dashDir:new V3(),inv:0,shield:false,aim:new V3(-1,0,-1).normalize(),aimOk:false,yaw:Math.PI,walk:0,dead:false,flash:0,
-    sp:0,od:0,leap:null,lance:0,lanceDir:new V3(),charge:0,prevFire:false,lunge:0,slashSide:1,hook:null,jump:null,gcd:[0,0],secondUsed:false,rs:{},orbA:0,jz:juiceState(),kick:new V3(),wasDash:false};
+    sp:0,od:0,leap:null,lance:0,lanceDir:new V3(),charge:0,prevFire:false,lunge:0,slashSide:1,hook:null,jump:null,gcd:[0,0],secondUsed:false,rs:{},orbA:0,jz:juiceState(),kick:new V3(),wasDash:false,dashCh:2,dashMax:2,dashRc:0,still:0,perfect:false};
   odRing.material.color.setHex(0xffe14a); pBeamO.material.color.setHex(unit.shot);
   buildOrbit(); renderRunSkills();
 }
 function busy(){ const p=player; return p.leap||p.jump||(p.hook&&p.hook.phase==='pull')||p.lance>0; }
-function tryDash(){
+// desktop: dash costs power and has a cooldown. Phone: 2 charges that recharge, no power cost.
+function tryDash(dir){
   if(state!=='fight'||!player||player.dead||paused||busy()) return;
-  const p=player; if(p.overheat>0||p.en<35||p.dashCd>0) return;
-  p.en-=35; p.regenDelay=.9; p.dashT=.17; p.dashCd=1.4*p.st.dashCd;
-  const mv=moveVec(); p.dashDir.copy(mv.lengthSq()>.01?mv:p.aim).normalize();
+  const p=player;
+  if(mobileMode){ if(p.dashCh<1) return; p.dashCh--; }
+  else { if(p.overheat>0||p.en<35||p.dashCd>0) return; p.en-=35; p.regenDelay=.9; }
+  p.dashT=.17; p.dashCd=1.4*p.st.dashCd; p.perfect=false;
+  const mv=dir&&dir.isVector3?dir:moveVec(); p.dashDir.copy(mv.lengthSq()>.01?mv:p.aim).normalize();
   groundRing(p.pos,unit.shot,2,.35); sfx('dash');
+  // perfect dodge: an enemy shot was about to land (within ~0.15 s)
+  for(const b of bullets){ if(b.from!=='e') continue; const rx=p.pos.x-b.m.position.x,rz=p.pos.z-b.m.position.z,vv=b.vel.x*b.vel.x+b.vel.z*b.vel.z; if(vv<1) continue;
+    const t=(rx*b.vel.x+rz*b.vel.z)/vv; if(t<0||t>.18) continue; if(Math.hypot(rx-b.vel.x*t,rz-b.vel.z*t)<.75+b.r*.5+.35){ perfectDodge(); break; } }
+  if(!p.perfect) for(const s of shocks){ const dd=Math.hypot(p.pos.x-s.x,p.pos.z-s.z); if(!s.hit&&dd>s.r&&dd-s.r<s.speed*.15+.7){ perfectDodge(); break; } }
+}
+function perfectDodge(){
+  const p=player; if(!p||p.perfect) return; p.perfect=true;
+  slowmo(.4); if(!(p.od>0||p.lance>0)) p.sp=Math.min(100,p.sp+15); sfx('perfect'); buzz(25);
+  groundRing(p.pos,0xffffff,3.2,.45); groundRing(p.pos,unit.shot,2,.3); popText('PERFECT');
 }
 function trySpecial(){
   if(state!=='fight'||!player||player.dead||paused||busy()) return;
@@ -28,8 +40,8 @@ function trySpecial(){
   p.sp=0; sfx('special'); buzz(80);
   if(P.unit==='azure'){ p.od=5; groundRing(p.pos,0xffe14a,6,.6); }
   else if(P.unit==='crimson'){
-    let to; if(p.aimOk&&!isTouch) to=aimPt.clone().setY(0); else to=p.pos.clone().addScaledVector(p.aim,7);
-    const d=to.clone().sub(p.pos); if(d.length()>9) d.setLength(9); to=p.pos.clone().add(d); to.x=clamp(to.x,-ARENA+1,ARENA-1); to.z=clamp(to.z,-ARENA+1,ARENA-1);
+    let to; if(p.aimOk&&!mobileMode) to=aimPt.clone().setY(0); else to=p.pos.clone().addScaledVector(p.aim,7);
+    const d=to.clone().sub(p.pos); if(d.length()>9) d.setLength(9); to=p.pos.clone().add(d); to.x=clamp(to.x,-AX+1,AX-1); to.z=clamp(to.z,-AZ+1,AZ-1);
     p.leap={from:p.pos.clone(),to,t:0,dur:.5};
   }
   else { p.lance=2.4; p.lanceDir.copy(p.aim); sfx('beam'); }
@@ -41,7 +53,7 @@ function useGadget(slot){
   switch(id){
     case 'hook': p.hook={phase:'out',dist:0,dir:p.aim.clone(),pos:p.pos.clone().setY(2),target:null,end:null}; sfx('dash'); break;
     case 'mines': for(let i=0;i<3;i++){ const a=i/3*Math.PI*2+p.yaw; const pos=p.pos.clone().add(new V3(Math.cos(a)*1.6,0,Math.sin(a)*1.6)); const g=new THREE.Group(); part(new THREE.CylinderGeometry(.45,.5,.18,8),toon(0x2a2632),g,0,.09,0,.06); const l=new THREE.Mesh(new THREE.SphereGeometry(.13,8,6),basic(0xff2a2a,false)); l.position.y=.22; g.add(l); g.position.copy(pos); scene.add(g); mines.push({g,l,pos,arm:.6,life:25}); } break;
-    case 'jets': { let dir=moveVec(); if(dir.lengthSq()<.01) dir=p.aim.clone(); const to=p.pos.clone().addScaledVector(dir.clone().normalize(),8); to.x=clamp(to.x,-ARENA+1,ARENA-1); to.z=clamp(to.z,-ARENA+1,ARENA-1); p.jump={from:p.pos.clone(),to,t:0,dur:.75}; groundRing(p.pos,0xffa04a,2.5,.4); sfx('dash'); break; }
+    case 'jets': { let dir=moveVec(); if(dir.lengthSq()<.01) dir=p.aim.clone(); const to=p.pos.clone().addScaledVector(dir.clone().normalize(),8); to.x=clamp(to.x,-AX+1,AX-1); to.z=clamp(to.z,-AZ+1,AZ-1); p.jump={from:p.pos.clone(),to,t:0,dur:.75}; groundRing(p.pos,0xffa04a,2.5,.4); sfx('dash'); break; }
     case 'decoy': { if(decoy) scene.remove(decoy.m.g); const c=paint(); castShadows=false; const m=buildMech(c.c1,c.c2,c.c3,c.eye,1,P.unit); castShadows=true; const holo=addMat(0x5fe0ff,.35); m.g.traverse(o=>{ if(o.isMesh) o.material=o.material===outlineMat?addMat(0x5fe0ff,.12):holo; }); m.g.position.copy(p.pos); m.g.rotation.y=p.yaw; animMech(m,0,0); scene.add(m.g); decoy={m,pos:p.pos.clone(),t:5}; groundRing(p.pos,0x5fe0ff,3,.5); break; }
     case 'emp': { clearEnemyShots(p.pos,9); for(const e of enemies){ if(e.dead)continue; if(Math.hypot(e.pos.x-p.pos.x,e.pos.z-p.pos.z)<9+e.r){ if(e===boss){ boss.stun=.9; if(boss.beam){ boss.beam=null; hideBeams(); boss.atk='idle'; boss.atkT=1.2; } } else e.stun=2.5; flashModel(e); } }
       groundRing(p.pos,0x5fe0ff,9,.6); groundRing(p.pos,0xffffff,7,.4); sfx('zap'); shake=.3; break; }
@@ -49,12 +61,14 @@ function useGadget(slot){
     case 'chrono': chrono=4; groundRing(p.pos,0x5fe0ff,14,1); sfx('special'); break;
   }
 }
-const _mv=new V3();
+const _mv=new V3(),_jv=new V3();
 function moveVec(){
   let x=0,z=0;
-  if(keys.KeyW||keys.ArrowUp){x-=1;z-=1} if(keys.KeyS||keys.ArrowDown){x+=1;z+=1} if(keys.KeyA||keys.ArrowLeft){x-=1;z+=1} if(keys.KeyD||keys.ArrowRight){x+=1;z-=1}
+  // desktop camera is isometric (W = up-left on the ground); the phone camera looks straight at the door (W = -z)
+  if(mobileMode){ if(keys.KeyW||keys.ArrowUp)z-=1; if(keys.KeyS||keys.ArrowDown)z+=1; if(keys.KeyA||keys.ArrowLeft)x-=1; if(keys.KeyD||keys.ArrowRight)x+=1; }
+  else { if(keys.KeyW||keys.ArrowUp){x-=1;z-=1} if(keys.KeyS||keys.ArrowDown){x+=1;z+=1} if(keys.KeyA||keys.ArrowLeft){x-=1;z+=1} if(keys.KeyD||keys.ArrowRight){x+=1;z-=1} }
   const kl=Math.hypot(x,z); if(kl>0){x/=kl;z/=kl;}
-  const s=tc.move; if(s.id!==null&&Math.hypot(s.x,s.y)>.12){ x+=(s.x+s.y)/Math.SQRT2; z+=(-s.x+s.y)/Math.SQRT2; }
+  if(mobileMode){ joyVec(_jv); x+=_jv.x; z+=_jv.z; }
   _mv.set(x,0,z); const l=_mv.length(); if(l>1)_mv.divideScalar(l); return _mv;
 }
 function nearestFoe(from,maxD=1e9,cone=null,skip=null){ let best=null,bd=maxD*maxD; for(const e of enemies){ if(e.dead||e.born<.4||(skip&&skip.has(e)))continue; const dx=e.pos.x-from.x,dz=e.pos.z-from.z,d=dx*dx+dz*dz; if(d>=bd)continue; if(cone){ const l=Math.sqrt(d)||1; if((dx*cone.x+dz*cone.z)/l<cone.c) continue; } bd=d; best=e; } return best; }
@@ -72,20 +86,25 @@ function zeroHp(){
   p.hp=0; p.dead=true; crossBlast(p.pos.clone(),unit.shot,1.6); hitstop(120,true); shatter(p.model,p.pos,0,0,{max:14,spd:1.2}); scene.remove(p.model.g,p.model.shadow); state='dying'; stateT=1.8; shieldG.visible=false; pBeamO.visible=pBeamC.visible=false; chargeOrb.visible=false; buzz(300);
 }
 const _tmp=new V3(),_tmp2=new V3(),_mz=new V3();
-function shotDir(mz){ const p=player; if(p.aimOk&&!isTouch){ _tmp2.set(aimPt.x-mz.x,0,aimPt.z-mz.z); if(_tmp2.lengthSq()>2.2) return _tmp2.normalize().clone(); } return p.aim.clone(); }
+function shotDir(mz){ const p=player; if(p.aimOk&&!mobileMode){ _tmp2.set(aimPt.x-mz.x,0,aimPt.z-mz.z); if(_tmp2.lengthSq()>2.2) return _tmp2.normalize().clone(); } return p.aim.clone(); }
 function updatePlayer(dt,canAct){
   const p=player; if(p.dead) return;
   p.inv=Math.max(0,p.inv-dt); p.dashCd=Math.max(0,p.dashCd-dt); p.gcd[0]=Math.max(0,p.gcd[0]-dt); p.gcd[1]=Math.max(0,p.gcd[1]-dt);
   p.overheat=Math.max(0,p.overheat-dt); p.regenDelay=Math.max(0,p.regenDelay-dt);
   if(p.flash>0){p.flash-=dt;if(p.flash<=0)unflash(p);}
-  const a=tc.aim; let touchFire=false; p.aimOk=false;
-  if(a.id!==null){ touchFire=true;
-    if(Math.hypot(a.x,a.y)>.3) p.aim.set(a.x+a.y,0,-a.x+a.y).normalize();
-    else { const f=nearestFoe(p.pos); if(f){ _tmp.subVectors(f.pos,p.pos).setY(0); if(_tmp.lengthSq()>.01) p.aim.copy(_tmp.normalize()); } } }
-  else if(usedMouse&&!isTouch){ ray.setFromCamera(ndc,cam); if(ray.ray.intersectPlane(aimPlane,aimPt)){ p.aimOk=true; _tmp.set(aimPt.x-p.pos.x,0,aimPt.z-p.pos.z); if(_tmp.lengthSq()>.3) p.aim.copy(_tmp.normalize()); } }
-  else if(isTouch){ const mv=moveVec(); if(mv.lengthSq()>.05) p.aim.copy(mv).normalize(); }
+  let touchFire=false; p.aimOk=false;
+  if(mobileMode){
+    if(p.dashCh<p.dashMax){ p.dashRc+=dt; if(p.dashRc>=1.5*p.st.dashCd){ p.dashRc=0; p.dashCh++; } }
+    if(hexFlashT>0){ hexFlashT-=dt; if(hexFlashT<=0) shieldG.visible=false; }
+    // moving = not firing. Standing still auto-fires at the nearest enemy in sight and slowly steadies the aim (+fire rate).
+    const mv=moveVec();
+    if(canAct&&mv.lengthSq()>.04){ p.aim.copy(mv).normalize(); p.still=0; }
+    else { p.still+=dt; const f=canAct?autoTarget():null; if(f){ _tmp.subVectors(f.pos,p.pos).setY(0); if(_tmp.lengthSq()>.01) p.aim.copy(_tmp.normalize()); touchFire=autoRangeOk(f); } }
+    if(canAct) autoGadgets();
+  }
+  else if(usedMouse){ ray.setFromCamera(ndc,cam); if(ray.ray.intersectPlane(aimPlane,aimPt)){ p.aimOk=true; _tmp.set(aimPt.x-p.pos.x,0,aimPt.z-p.pos.z); if(_tmp.lengthSq()>.3) p.aim.copy(_tmp.normalize()); } }
   const fireIn=canAct&&(mouseDown||keys.KeyJ||touchFire);
-  const wantShield=canAct&&(keys.ShiftLeft||keys.ShiftRight||rightDown||tc.shield)&&!busy();
+  const wantShield=canAct&&!mobileMode&&!p.st.noHex&&(keys.ShiftLeft||keys.ShiftRight||rightDown)&&!busy();
   p.shield=wantShield&&p.overheat<=0&&p.en>0;
   if(p.shield){ p.en-=42*p.st.hexDrain*dt; p.regenDelay=.9; if(p.en<=0){ p.en=0; p.overheat=2.2; p.regenDelay=1.4; p.shield=false; sparks(p.pos.clone().setY(2),0xff4a3a,10,6); } }
   else if(p.regenDelay<=0) p.en=Math.min(100,p.en+12*p.st.regen*dt);
@@ -111,9 +130,8 @@ function updatePlayer(dt,canAct){
     pushOut(p.pos,.7);
   }
   // the mat has no walls: past the boundary line the hazard zone drains armor every second
-  const OUT=ARENA+OUTW;
-  p.pos.x=clamp(p.pos.x,-OUT,OUT); p.pos.z=clamp(p.pos.z,-OUT,OUT);
-  const outside=Math.abs(p.pos.x)>ARENA||Math.abs(p.pos.z)>ARENA, atDoor=door&&door.open&&Math.abs(p.pos.x)<1.6&&p.pos.z<0;
+  p.pos.x=clamp(p.pos.x,-AX-OUTW,AX+OUTW); p.pos.z=clamp(p.pos.z,-AZ-OUTW,AZ+OUTW);
+  const outside=Math.abs(p.pos.x)>AX||Math.abs(p.pos.z)>AZ, atDoor=door&&door.open&&Math.abs(p.pos.x)<1.6&&p.pos.z<0;
   if(outside&&!atDoor&&air===0&&canAct){
     p.hp-=OUT_DPS*p.st.armor*dt; if(room) room.hurt=true;
     if(!p.outWarn){ p.outWarn=true; toast('Out of bounds','Get back on the mat'); sfx('hurt'); buzz(60); }
@@ -152,16 +170,16 @@ function updatePlayer(dt,canAct){
   if(p.hook){ const h=p.hook;
     if(h.phase==='out'){ h.dist+=44*dt; h.pos.copy(p.pos).setY(2).addScaledVector(h.dir,h.dist);
       for(const e of enemies){ if(e.dead||e.born<.4)continue; if(Math.hypot(e.pos.x-h.pos.x,e.pos.z-h.pos.z)<e.r+.4){ h.target=e; h.phase='pull'; break; } }
-      if(h.phase==='out'&&(h.dist>=14||Math.abs(h.pos.x)>ARENA-1||Math.abs(h.pos.z)>ARENA-1||inBlock(h.pos.x,h.pos.z,0,'block'))){ h.phase='pull'; h.end=new V3(clamp(h.pos.x-h.dir.x,-ARENA+1,ARENA-1),0,clamp(h.pos.z-h.dir.z,-ARENA+1,ARENA-1)); } }
+      if(h.phase==='out'&&(h.dist>=14||Math.abs(h.pos.x)>AX-1||Math.abs(h.pos.z)>AZ-1||inBlock(h.pos.x,h.pos.z,0,'block'))){ h.phase='pull'; h.end=new V3(clamp(h.pos.x-h.dir.x,-AX+1,AX-1),0,clamp(h.pos.z-h.dir.z,-AZ+1,AZ-1)); } }
     const hp=h.target&&!h.target.dead?h.target.pos.clone().setY(2):h.phase==='pull'?h.end.clone().setY(2):h.pos;
     const arr=hookLineGeo.attributes.position.array; arr[0]=p.pos.x;arr[1]=2+air;arr[2]=p.pos.z;arr[3]=hp.x;arr[4]=hp.y;arr[5]=hp.z; hookLineGeo.attributes.position.needsUpdate=true;
     hookLine.visible=hookHead.visible=true; hookHead.position.copy(hp); hookHead.lookAt(hp.clone().add(h.dir)); hookHead.rotateX(Math.PI/2);
   } else hookLine.visible=hookHead.visible=false;
-  shieldG.visible=p.shield;
+  if(!mobileMode) shieldG.visible=p.shield;
   if(p.shield){ shieldG.position.copy(p.pos).addScaledVector(p.aim,1.7).setY(1.9); shieldG.lookAt(_tmp.copy(shieldG.position).add(p.aim)); const t=performance.now()/1000; shRings.forEach((r,i)=>{ const k=((t*1.6+i/3)%1); r.scale.setScalar(.3+k*1.4); r.material.opacity=(1-k)*.9; }); }
   const collectAll=!enemies.length&&!spawnQ.length;
   for(let i=pickups.length-1;i>=0;i--){ const q=pickups[i]; q.t+=dt;
-    if(q.t<.45){ q.vel.y-=22*dt; q.m.position.addScaledVector(q.vel,dt); q.m.position.x=clamp(q.m.position.x,-ARENA+.5,ARENA-.5); q.m.position.z=clamp(q.m.position.z,-ARENA+.5,ARENA-.5); if(q.m.position.y<.6){ q.m.position.y=.6; q.vel.y=0; q.vel.multiplyScalar(.5);} }
+    if(q.t<.45){ q.vel.y-=22*dt; q.m.position.addScaledVector(q.vel,dt); q.m.position.x=clamp(q.m.position.x,-AX+.5,AX-.5); q.m.position.z=clamp(q.m.position.z,-AZ+.5,AZ-.5); if(q.m.position.y<.6){ q.m.position.y=.6; q.vel.y=0; q.vel.multiplyScalar(.5);} }
     else { const d=Math.hypot(p.pos.x-q.m.position.x,p.pos.z-q.m.position.z);
       if((q.kind!=='heal'&&(d<p.st.magnet||collectAll))||(q.kind==='heal'&&d<1.8)){ _tmp.set(p.pos.x-q.m.position.x,1.4-q.m.position.y,p.pos.z-q.m.position.z); const sp=Math.max(8,22-d*2); q.m.position.addScaledVector(_tmp.normalize(),Math.min(d,sp*dt)); }
       else q.m.position.y=.9+Math.sin(q.t*3+i)*.2;
@@ -178,7 +196,7 @@ function collect(q){
 function weaponUpdate(dt,fireIn){
   const p=player,m=p.model;
   const wp=P.weapon==='sig'?P.unit:P.weapon;
-  const rateM=p.st.rate*(p.od>0?.4:1), dmg=p.st.dmg*(p.od>0?1.3:1);
+  const rateM=p.st.rate*(p.od>0?.4:1)*(mobileMode?1-.15*Math.min(1,p.still/1.2):1), dmg=p.st.dmg*(p.od>0?1.3:1);
   p.fireCd-=dt;
   m.muzzle.getWorldPosition(_mz); const mz=_mz.clone(); const dir=shotDir(mz); const base=Math.atan2(dir.x,dir.z);
   const col=unit.shot;
@@ -190,6 +208,8 @@ function weaponUpdate(dt,fireIn){
       if(p.rs.twin||p.rs.diag||p.rs.rear) pshot(mz,dir,30,1.6*dmg,col,{geo:G.pel,life:.55}); shake=Math.max(shake,.08); fired(5,1.4); sfx('heavy'); } break;
     case 'verdant': if(fireIn&&p.fireCd<=0){ p.fireCd=.42*rateM; pshot(mz,dir,27,3.8*dmg,col,{geo:G.pBig,life:1.2,r:.8,pierce:true}); shake=Math.max(shake,.1); fired(3.5,1.2); p.kick.addScaledVector(dir,-4.5); sfx('heavy'); } break;
     case 'rail':
+      // phone: charges while standing and releases on its own at full charge
+      if(mobileMode&&fireIn&&p.charge>=1) fireIn=false;
       if(fireIn&&p.fireCd<=0){ p.charge=Math.min(1,p.charge+dt/.9); chargeOrb.visible=true; chargeOrb.position.copy(mz); chargeOrb.scale.setScalar(.4+p.charge*1.4); chargeOrb.material.color.setHex(p.charge>=1?0xffffff:col); }
       else if(!fireIn&&p.prevFire&&p.charge>.08){ const c=p.charge; p.charge=0; chargeOrb.visible=false; p.fireCd=.3*rateM;
         const end=mz.clone().addScaledVector(dir,40); const d=(4+20*Math.pow(c,1.5))*dmg;
@@ -198,7 +218,7 @@ function weaponUpdate(dt,fireIn){
       else if(!fireIn){ p.charge=0; chargeOrb.visible=false; }
       break;
     case 'torch':
-      if(fireIn){ const n=isTouch?1:2; for(let i=0;i<n;i++){ const a=base+rand(-.32,.32); const pm=new THREE.Mesh(G.puff,addMat(Math.random()<.5?0xff8a30:0xffd040,.8)); pm.position.copy(mz); const v=new V3(Math.sin(a),rand(-.05,.1),Math.cos(a)).multiplyScalar(rand(12,16)); addFx(pm,.38,(f,dt,k)=>{ pm.position.addScaledVector(v,dt); pm.scale.setScalar(.5+(1-k)*2.4); pm.material.opacity=k*.75; }); }
+      if(fireIn){ const n=mobileMode?1:2; for(let i=0;i<n;i++){ const a=base+rand(-.32,.32); const pm=new THREE.Mesh(G.puff,addMat(Math.random()<.5?0xff8a30:0xffd040,.8)); pm.position.copy(mz); const v=new V3(Math.sin(a),rand(-.05,.1),Math.cos(a)).multiplyScalar(rand(12,16)); addFx(pm,.38,(f,dt,k)=>{ pm.position.addScaledVector(v,dt); pm.scale.setScalar(.5+(1-k)*2.4); pm.material.opacity=k*.75; }); }
         for(const e of enemies.slice()){ if(e.dead)continue; const dx=e.pos.x-p.pos.x,dz=e.pos.z-p.pos.z,d=Math.hypot(dx,dz); if(d<6.8+e.r*.5&&d>.01&&(dx*dir.x+dz*dir.z)/d>.82){ hitEnemy(e,20*dmg*dt,e.pos,true); if(p.rs.torch) e.burn=2.5; if(p.rs.cryo) e.slow=1.3; } }
         for(let i=bullets.length-1;i>=0;i--){ const b=bullets[i]; if(b.from!=='e')continue; const dx=b.m.position.x-p.pos.x,dz=b.m.position.z-p.pos.z,d=Math.hypot(dx,dz); if(d<3.5&&d>.01&&(dx*dir.x+dz*dir.z)/d>.8) killBullet(i); }
         sfx('torch'); }
