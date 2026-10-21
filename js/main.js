@@ -6,19 +6,20 @@ function roomUpdate(dt,edt){
   if(spawnQ.length&&!enemies.length){ spawnWave(spawnQ); spawnQ=[]; toast('Second wave'); }
   updateEnemies(edt); updateEMines(edt,performance.now()/1000); updateHazards(dt);
   if(room.type!=='boss'&&room.type!=='angel'&&!room.cleared&&!enemies.length&&!spawnQ.length){
-    room.cleared=true; if(typeof onRoomClear==='function') onRoomClear();
-    openDoor(); saveRun(sortie.ri+1);
+    roomCleared();
     if(!room.hurt&&Math.random()<.35&&arenaRoomType(sortie.ri+2)==='combat') spawnNpc('devil',new V3(rand(-3,3),0,-2));
   }
+  // after the clear: pickups fly in, then queued level-ups and item swaps open one after another, then the door opens
+  if(room.doorPending){ room.clearT+=dt; if(room.clearT>.6&&(room.clearT>3||!pickups.some(q=>q.kind==='item'))&&!pumpChoices()){ room.doorPending=false; openDoor(); saveRun(sortie.ri+1); } if(state!=='fight') return; }
+  else if(room.cleared&&choiceQ.length&&pumpChoices()) return;
   if(npc){ npc.t+=dt; npc.m.g.position.y=Math.sin(npc.t*2)*.25; npc.m.g.rotation.y+=dt*.6;
     if(!npc.used&&Math.hypot(player.pos.x-npc.pos.x,player.pos.z-npc.pos.z)<2.4){ npc.used=true; if(npc.kind==='angel') angelChoice(); else devilChoice(); return; } }
   if(door&&door.open){ door.arrow.position.y=.25+Math.sin(performance.now()/200)*.15; if(player.pos.z<-AZ+.3&&Math.abs(player.pos.x)<1.4) goNextRoom(); }
-  if(sortie.pendingLv>0&&state==='fight') showLevelUp();
 }
 function frame(now){
   requestAnimationFrame(frame);
   let dt=Math.min(.033,(now-last)/1000); last=now;
-  if(paused||state==='choice'||state==='result') dt=0;
+  const rawDt=dt; if(paused||state==='choice'||state==='result') dt=0;
   const rdt=dt; hsCool=Math.max(0,hsCool-rdt);
   // hitstop freezes the simulation while rendering continues; slow motion only slows enemies and their shots
   if(dt>0&&hitstopT>0){ hitstopT-=dt; dt=0; }
@@ -30,8 +31,10 @@ function frame(now){
   if(toastT>0){ toastT-=dt||.016; if(toastT<=0) $('toast').classList.remove('on'); }
   if(player&&dt>0){
     const act=state==='fight';
-    if(['fight','card','warn','cine','bossdeath','trans'].includes(state)){ updatePlayer(dt,act); playTime+=dt; }
-    if(state==='card'){ stateT-=dt; if(stateT<=0){ $('card').hidden=true; startRoom(sortie.ri); } }
+    if(['fight','card','warn','cine','bossdeath','trans','prep'].includes(state)){ updatePlayer(dt,act); playTime+=dt; }
+    // a resumed run first shows the level-ups it saved, then starts the room
+    if(state==='card'){ stateT-=dt; if(stateT<=0){ $('card').hidden=true; state='prep'; } }
+    else if(state==='prep'){ if(!pumpChoices()) startRoom(sortie.ri); }
     else if(state==='warn'){ stateT-=dt; if(stateT<=0){ $('warn').hidden=true; startCine(); } }
     else if(state==='cine'){ stateT-=dt; updateBoss(dt); if(stateT<=0) endCine(); }
     else if(state==='trans'){ stateT-=dt; if(!sortie.swapped&&stateT<=.22){ sortie.swapped=true; const f=sortie.force; sortie.force=null; startRoom(sortie.ri+1,f); } }
@@ -39,12 +42,11 @@ function frame(now){
     else if(state==='bossdeath'){ const b=boss; stateT-=dt;
       b.model.g.position.set(b.pos.x+rand(-.15,.15),b.y,b.pos.z+rand(-.15,.15));
       if(Math.random()<dt*7){ const p=bossCore(b).add(new V3(rand(-3,3),rand(-3,3),rand(-3,3))); crossBlast(p.setY(Math.max(.2,p.y-3)),Math.random()<.5?0xff2236:0xffd36a,rand(.6,1.1)); }
-      if(stateT<=.8&&!b.final){ b.final=true; crossBlast(b.pos.clone().setY(0),0xff2236,3); hitstop(110,true); shatter(b.model,b.pos,0,0,{max:mobileMode?10:22,spd:1.6,cy:b.y+2,crystal:b.def.angel?0xffd36a:0}); scene.remove(b.model.g,b.model.shadow); enemies.slice().forEach(e=>{ if(e!==b&&!e.dead) killEnemy(e); }); enemies.length=0; }
+      if(stateT<=.8&&!b.final){ b.final=true; crossBlast(b.pos.clone().setY(0),0xff2236,3); hitstop(110,true); shatter(b.model,b.pos,0,0,{max:mobileMode?10:22,spd:1.6,cy:b.y+2,crystal:b.def.angel?0xffd36a:0}); scene.remove(b.model.g,b.model.shadow); enemies.slice().forEach(e=>{ if(e!==b&&!e.dead) killEnemy(e,true); }); enemies.length=0; }
       if(stateT<=0){ boss=null; $('bossHud').hidden=true; pickups.slice().forEach(q=>{ if(q.kind!=='heal'&&q.kind!=='item') collect(q); if(q.kind!=='item'){ scene.remove(q.m); q.gone=true; } }); for(let i=pickups.length-1;i>=0;i--) if(pickups[i].gone) pickups.splice(i,1);
-        // the final boss ends the arena; earlier bosses open the door to the next room
-        if(sortie.ri>=sortie.N-1) arenaComplete(); else { state='fight'; room.cleared=true; if(typeof onRoomClear==='function') onRoomClear(); openDoor(); saveRun(sortie.ri+1); refreshControls(); } } }
+        // the final boss ends the arena (queued level-ups no longer matter); earlier bosses clear the room: choices, then the door
+        if(sortie.ri>=sortie.N-1){ logRoomEnd('clear'); arenaComplete(); } else { state='fight'; roomCleared(); refreshControls(); } } }
     else if(state==='dying'){ stateT-=dt; updateEnemies(edt); if(stateT<=0) showResult(false); }
-    player.meteorCd=Math.max(0,(player.meteorCd||0)-dt);
     updateBlasts(edt); updateTrails(dt);
     for(const e of enemies){ if(e.dead) continue; if(e.psnT>0){ e.psnT-=dt; hitEnemy(e,e.psn*.8*player.st.dmg*dt,e.pos,true); if(Math.random()<dt*6) sparks(e.pos.clone().setY(2),0x8aff5a,1,3); if(e.dead) continue; } if(e.burn>0){ e.burn-=dt; hitEnemy(e,3*player.st.dmg*dt,e.pos,true); if(Math.random()<dt*8) sparks(e.pos.clone().setY(2),0xff7a2a,1,3); } if(e.slow>0) e.slow-=dt; }
     if(decoy){ decoy.t-=dt; decoy.m.g.visible=Math.floor(decoy.t*12)%5!==0; if(decoy.t<=0){ scene.remove(decoy.m.g); decoy=null; } }
@@ -85,9 +87,9 @@ function frame(now){
             if(b.wall>0){ b.wall--; const dn=b.vel.x*fx+b.vel.z*fz; b.vel.x-=2*dn*fx; b.vel.z-=2*dn*fz; p.x+=fx*.6; p.z+=fz*.6; b.m.lookAt(p.clone().add(b.vel)); } else gone=true; break; } }
           // Archon shield phase: your shots fly back at you
           if(e===boss&&boss.reflectT>0){ const v=new V3(player.pos.x-p.x,0,player.pos.z-p.z).normalize(); shoot('e',p.clone().setY(1.8),v,13*eSpd(),9,0xffd36a,{life:2.4,r:.42,over:true}); sparks(p,0xffd36a,2,4); gone=true; break; }
-          hitEnemy(e,b.dmg,p.clone());
+          hitEnemy(e,b.dmg,p.clone(),false,b.proc,b.flat);
           if(b.pierce&&!shieldPad) b.hit.add(e);
-          else if(b.bounce>0&&!shieldPad){ b.bounce--; b.hit.add(e); const nx=nearestFoe(e.pos,8,null,b.hit); if(nx){ const sp=b.vel.length(); b.vel.set(nx.pos.x-p.x,0,nx.pos.z-p.z).setLength(sp); b.m.lookAt(p.clone().add(b.vel)); b.life=Math.max(b.life,.6); } else { gone=true; } break; }
+          else if(b.bounce>0&&!shieldPad){ b.bounce--; b.hit.add(e); b.dmg*=BAL.proc.ricochet.falloff; const nx=nearestFoe(e.pos,8,null,b.hit); if(nx){ const sp=b.vel.length(); b.vel.set(nx.pos.x-p.x,0,nx.pos.z-p.z).setLength(sp); b.m.lookAt(p.clone().add(b.vel)); b.life=Math.max(b.life,.6); } else { gone=true; } break; }
           else { gone=true; break; } } }
       if(gone) killBullet(i);
     } else if(player&&!player.dead){
@@ -100,8 +102,10 @@ function frame(now){
   if(dt>0) for(let i=shocks.length-1;i>=0;i--){ const s=shocks[i]; s.r+=s.speed*edt; const k=1-s.r/s.max; s.ring.scale.setScalar(s.r); s.wall.scale.set(s.r,.9,s.r); s.ring.material.opacity=k; s.wall.material.opacity=k*.55;
     if(player&&!player.dead&&!s.hit){ const dd=Math.hypot(player.pos.x-s.x,player.pos.z-s.z); if(Math.abs(dd-s.r)<.7){ s.hit=true; hurt(16); } }
     if(s.r>=s.max){ scene.remove(s.ring,s.wall); shocks.splice(i,1); } }
-  updateJuice(dt);
-  for(let i=fx.length-1;i>=0;i--){ const f=fx[i]; if(dt>0) f.life-=dt; const k=Math.max(0,f.life/f.max); f.upd(f,dt,k); if(f.life<=0){ scene.remove(f.obj); if(f.dispose&&f.obj.geometry) f.obj.geometry.dispose(); fx.splice(i,1); } }
+  // behind the choice screen the world keeps moving in slow motion (effects and debris only; nothing can hurt you)
+  const fxdt=state==='choice'&&!paused?rawDt*.15:dt;
+  updateJuice(fxdt);
+  for(let i=fx.length-1;i>=0;i--){ const f=fx[i]; if(fxdt>0) f.life-=fxdt; const k=Math.max(0,f.life/f.max); f.upd(f,fxdt,k); if(f.life<=0){ scene.remove(f.obj); if(f.dispose&&f.obj.geometry) f.obj.geometry.dispose(); fx.splice(i,1); } }
   let want=1;
   if(state==='cine'&&boss){ camTarget.lerp(_tmp.set(boss.pos.x,bossCore(boss).y*.5,boss.pos.z),Math.min(1,(dt||.016)*3)); want=1.55; }
   else if(player&&!player.dead&&dt>0){ if(mobileMode) _tmp.set(0,0,mobileCamZ(player.pos.z)); else _tmp.copy(player.pos).addScaledVector(player.aim,1.5); camTarget.lerp(_tmp,Math.min(1,dt*5)); }
@@ -116,7 +120,7 @@ function frame(now){
     const spv=p.od>0?p.od/5*100:p.lance>0?p.lance/2.4*100:p.sp; $('spBar').firstElementChild.style.width=spv+'%'; $('spBar').classList.toggle('ready',p.sp>=100); $('spLbl').textContent=SPECIALS[P.unit].name; $('spTxt').textContent=p.sp>=100?'READY':Math.floor(p.sp)+'%';
     $('roomTxt').textContent=String(sortie.ri+1).padStart(2,'0'); $('roomN').textContent='/'+sortie.N;
     $('arTxt').textContent=ARENAS[sortie.a].name.toUpperCase(); $('goldTxt').textContent=P.gold.toLocaleString(); $('gemTxt').textContent=P.gems;
-    $('xpFill').style.width=(sortie.xp/xpNeed()*100)+'%'; const lv=$('lvTxt'); if(lv) lv.textContent='LV '+sortie.lv;
+    $('xpFill').style.width=(sortie.xp/xpNeed()*100)+'%'; const lr=$('lvReady'), pl=sortie.pendingLv; lr.hidden=!pl; if(pl) lr.textContent=pl>1?`LEVEL READY ×${pl}`:'LEVEL READY'; const lv=$('lvTxt'); if(lv) lv.textContent='LV '+sortie.lv;
     if(boss) $('bossBar').firstElementChild.style.width=Math.max(0,boss.hp/boss.maxHp*100)+'%';
     const spReady=p.sp>=100&&!busy(); $('abQ').classList.toggle('ready',spReady); $('abQ').style.setProperty('--cd',1-p.sp/100); $('tSP').classList.toggle('ready',spReady); $('tSP').style.setProperty('--cd',1-p.sp/100);
     [0,1].forEach(i=>{ const g=P.gadgets[i]; const f=g?p.gcd[i]/(GADGETS[g].cd*p.st.gadgetCd):0; $(i?'abR':'abE').style.setProperty('--cd',f); $(i?'tG2':'tG1').style.setProperty('--cd',f); });

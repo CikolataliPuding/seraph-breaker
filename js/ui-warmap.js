@@ -14,7 +14,7 @@ function renderMap(){
     inner.appendChild(b); });
   const A=ARENAS[sel], first=(P.bestRoom[sel]||0)<A.rooms;
   $('shEye').textContent=`ARENA 0${sel+1} · ${A.rooms} ROOMS`; $('shEye').style.color=A.colorCss; $('shName').textContent=A.name;
-  $('shReward').innerHTML=`<i></i>+${first?40+30*sel:10}${first?' first clear':''}`;
+  $('shReward').innerHTML=`<i></i>+${first?ECON.firstClear(sel):ECON.repeatClear(sel)}${first?' first clear':''}`;
   const rooms=$('shRooms'); rooms.innerHTML=''; const t=document.createElement('span'); t.textContent='ROOMS 1-10'; rooms.appendChild(t);
   for(let n=1;n<=10;n++){ const r=arenaRoomType(n), i=document.createElement('i'); i.textContent={combat:'C',angel:'A',elite:'E',boss:'B'}[r]; i.className={combat:'',angel:'a',elite:'e',boss:'b'}[r]; rooms.appendChild(i); }
   const tags=$('shTags'); tags.innerHTML='';
@@ -93,7 +93,7 @@ function renderFrames(){
   item('sp','Special',SPECIALS[P.unit].name,()=>{});
   [0,1].forEach(i=>{ const g=P.gadgets[i]; item(g||'hook','Gadget '+(i+1),g?GADGETS[g].name:'Empty slot',()=>openView('armory')); });
 }
-function renderSystem(){ $('volM').value=Math.round(P.music*100); $('volMo').textContent=Math.round(P.music*100); $('volS').value=Math.round(P.sfx*100); $('volSo').textContent=Math.round(P.sfx*100);
+function renderSystem(){ $('buildTxt').textContent='Build '+BUILD+'.'; $('volM').value=Math.round(P.music*100); $('volMo').textContent=Math.round(P.music*100); $('volS').value=Math.round(P.sfx*100); $('volSo').textContent=Math.round(P.sfx*100);
   document.querySelectorAll('#ctrlSeg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.c===P.ctrl)); $('autoG').checked=P.autoGadget; }
 document.querySelectorAll('#ctrlSeg button').forEach(b=>b.onclick=()=>{ P.ctrl=b.dataset.c; sfx('click'); persist(); setMode(); renderSystem(); });
 $('autoG').onchange=e=>{ P.autoGadget=e.target.checked; persist(); };

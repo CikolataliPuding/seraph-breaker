@@ -28,9 +28,10 @@ Bir dosyada en üst seviyede tanımlanan her şey (fonksiyonlar, `const`/`let`) 
 |---|---|
 | `js/core.js` | Her yerde kullanılan küçük yardımcılar (`$`, `rand`, `clamp`, `isTouch`, `mobileMode` ...) |
 | `js/data.js` | **Oyun verisi.** Birimler (`UNITS`), silahlar (`WEAPONS`), aletler (`GADGETS`), yetenek ağacı (`TREE`), Core statlar (`CORE`), arenalar (`ARENAS`, `MODS`), düşmanlar (`ENEMY`), koşu yetenekleri (`RSK`, `RARITY`), şeytan lanetleri (`CURSES`), eşyalar (`ITEMS`), bosslar (`BOSSES` + corrupted varyantlar), oda düzenleri (`ROOMS`), ikonlar (`IC`). Katkıların çoğu buradan başlar. |
+| `js/balance.js` | Denge sistemi: stat kovaları (aynı stattaki bonuslar toplanır, kovalar çarpılır), soft/hard cap'ler, proc limitleri, düşman ölçek eğrisi (`enemyScale`), oyuncu güç tahmini (`powerEstimate`), ekonomi yardımcıları. Sayılar `data.js` içindeki `BAL`, `SCALE`, `XP_NEED`, `ECON`'da. |
 | `js/save.js` | Kayıt (localStorage). Yeni alanlar `DEF_P`'ye varsayılanla eklenir, eski kayıtlar `normP` ile açılır. |
 | `js/audio.js` | Tarayıcıda üretilen müzik (`TRACKS`) ve ses efektleri (`sfx`) |
-| `js/renderer.js` | Three.js sahnesi, kamera (bilgisayar: izometrik, telefon: dik ve odaya sığan), ışıklar, şehir; oda boyutları (`ROOM_X`, `ROOM_Z`, `BOSS_X`, `BOSS_Z`) |
+| `js/renderer.js` | Three.js sahnesi, kamera (bilgisayar: izometrik, telefon: dik ve odaya sığan), ışıklar, şehir; oda boyutları (`ROOM_X`, `ROOM_Z`, `BOSS_X`, `BOSS_Z`, telefonda `ROOM_X_M`, `BOSS_X_M`) |
 | `js/models.js` | Mecha, melek, arena mobları ve boss 3D modelleri (`buildMech`, `BOSS_BUILD`, `corruptModel`). Yeni modellerin kaynağı `docs/bestiary.html`. |
 | `js/preview.js` | Hangardaki dönen mecha ve boss portreleri |
 | `js/input.js` | Klavye ve fare |
@@ -53,15 +54,27 @@ Bir dosyada en üst seviyede tanımlanan her şey (fonksiyonlar, `const`/`let`) 
 | `js/debug.js` | `?debug=1` ile açılan test paneli |
 | `js/main.js` | Oyun döngüsü (`frame`) ve başlatma. Her zaman en son yüklenir. |
 
-Yeni bir dosya eklersen `index.html`'de doğru sıraya bir `<script src="js/...">` satırı ekle.
+Yeni bir dosya eklersen `index.html`'de doğru sıraya bir `<script src="js/...?v=N">` satırı ekle (aynı `?v=` numarasıyla).
 Bir dosyanın en üst seviyesinde, sonraki bir dosyada tanımlanan bir şeyi hemen çağırma; öyle bir kod gerekiyorsa `js/main.js` içindeki başlatma bölümüne koy.
+
+### Sürüm numarası (cache busting)
+
+`index.html` içindeki her `css/` ve `js/` bağlantısının sonunda `?v=N` var (örneğin `js/main.js?v=9`). Tarayıcılar ve GitHub Pages
+dosyaları önbellekte tutar; numara değişmezse oyuncular eski kodu görmeye devam eder (eski "12 rooms" HUD'u böyle kaldı).
+**Her sürümde (main'e giden her PR'da) bu numarayı bir artır**, bütün satırlarda aynı olsun. Tek komutla:
+
+```bash
+sed -i -E 's/\?v=[0-9]+/?v=10/g' index.html
+```
+
+Oyun içinde System menüsünde "Build N" yazar; oyuncu eski sürümdeyse buradan anlaşılır.
 
 Kolay başlangıç fikirleri:
 
-- **Yeni oda düzeni:** `js/data.js` içindeki `ROOMS` listesine 15 satır × 9 karakterlik yeni bir harita ekle. `#` blok, `~` kanal, `.` boş alan. İlk satır kapı tarafı, son satır giriş tarafı; ilk satırın ve son iki satırın ortası boş kalsın.
-- **Denge ayarı:** Silah hasarları `js/player.js` içindeki `weaponUpdate`, düşman canları `js/data.js` içindeki `ENEMY`, boss canları `BOSSES`, arena zorluğu `ARENAS` (`hpMul`, `bossMul`) ve `js/rooms.js` içindeki `composeRoom`.
-- **Yeni koşu yeteneği:** `js/data.js` içindeki `RSK` listesine `{name, d, rarity, max, icon, apply}` ile ekle, ikonunu `IC`'ye koy. Stat yetenekleri sadece `apply` ister; özel etkiler `player.rs.<id>` okunarak `js/enemies.js` (`hitEnemy`, `killEnemy`) ya da `js/bullets.js` içine yazılır.
-- **Yeni eşya:** `ITEMS` listesine `{name, d, rarity, icon, shape, color, add, rem}` ekle. `add` ve `rem` birbirinin tersi olmalı ki eşya takas edilebilsin.
+- **Yeni oda düzeni:** `js/data.js` içindeki `ROOMS` listesine 15 satır × 11 karakterlik yeni bir harita ekle. `#` blok, `~` kanal, `.` boş alan. İlk satır kapı tarafı, son satır giriş tarafı; ilk satırın ve son iki satırın ortası boş kalsın.
+- **Denge ayarı:** Silah hasarları `js/player.js` içindeki `weaponUpdate`, düşman canları `js/data.js` içindeki `ENEMY`, boss canları `BOSSES`, arena zorluğu `ARENAS` (`hpMul`, `dmgMul`, `bossMul`), odadan odaya büyüme `SCALE`, cap'ler `BAL`, ekonomi `ECON`. Bir değişikliğin etkisini görmek için `?debug=1` ile açıp konsolda `DBG.sim()` çalıştır.
+- **Yeni koşu yeteneği:** `js/data.js` içindeki `RSK` listesine `{name, d, rarity, max, icon, bonus}` ile ekle (`apply` sadece yan etkiler için; `bonus` cap'lere ve kart önizlemesine kendiliğinden girer), ikonunu `IC`'ye koy. Stat yetenekleri sadece `bonus` ister; özel etkiler `player.rs.<id>` okunarak `js/enemies.js` (`hitEnemy`, `killEnemy`) ya da `js/bullets.js` içine yazılır.
+- **Yeni eşya:** `ITEMS` listesine `{name, d, rarity, icon, shape, color, bonus}` ekle. Stat dışı bayraklar için `add` ve `rem` kullan; birbirinin tersi olmalı ki eşya takas edilebilsin.
 - **Yeni düşman:** `ENEMY` listesine ekle, `js/enemy-ai.js` içindeki `AI` ve `ANIM` tablolarına birer fonksiyon yaz, bir arenanın `mobs` listesine koy.
 
 ## İyi bir PR için

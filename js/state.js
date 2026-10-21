@@ -5,7 +5,7 @@ const enemies=[],bullets=[],fx=[],pickups=[],shocks=[],mines=[],holes=[];
 let decoy=null,buddy=null,wingman=null,chrono=0,npc=null,obstacles=[],door=null,stage=0;
 const blasts=[],trails=[],emines=[],hazards=[];
 let stateT=0,spawnQ=[],score=0,kills=0,playTime=0,shake=0,toastT=0,choiceBack='fight';
-const playing=()=>['card','warn','cine','fight','trans','bossdeath','dying','choice'].includes(state);
+const playing=()=>['card','prep','warn','cine','fight','trans','bossdeath','dying','choice'].includes(state);
 const ray=new THREE.Raycaster(), aimPlane=new THREE.Plane(new V3(0,1,0),-2.3), aimPt=new V3();
 const eSpd=()=>(1+stage*.08)*(sortie&&sortie.rule.shotSpd||1);
 const tgt=()=>decoy?decoy.pos:player.pos;

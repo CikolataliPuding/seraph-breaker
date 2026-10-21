@@ -1,19 +1,22 @@
 // Seraph Breaker · skills.js: Run XP, skill roulette (rarity, synergy, reels, reroll), angel and devil offers, orbits and skill effects.
 /* ================= RUN SKILLS / XP ================= */
 // tuned for 30-50 room runs: frequent level-ups early, without maxing everything by mid-run
-const xpNeed=()=>5+Math.floor(sortie.lv*2.6);
+const xpNeed=()=>xpNeedAt(sortie.lv);
 function gainXp(v){ if(!sortie) return; sortie.xp+=v; while(sortie.xp>=xpNeed()){ sortie.xp-=xpNeed(); sortie.lv++; sortie.pendingLv++; } }
-const skillOk=id=>{ const s=RSK[id]; return (player.rs[id]||0)<s.max&&(!s.req||s.req(player.rs)); };
+// a skill is offered while it can rank up; projectile and orbit skills stop at the hard cap (evolutions are trimmed instead, see pshot/buildOrbit)
+const skillOk=(id,rs=player.rs)=>{ const s=RSK[id]; if((rs[id]||0)>=s.max||(s.req&&!s.req(rs))) return false;
+  if(s.rarity!=='legendary'&&(s.proj&&extraProj(rs)+s.proj>BAL.cap.proj||s.orb&&orbCount(rs)+s.orb>BAL.cap.orbit)) return false; return true; };
 // Lucky Coin pushes every roll one tier up
-function rarityWeights(){ const l=player.luck||0; return l?{common:Math.max(20,60-15*l),rare:28+5*l,epic:10+6*l,legendary:2+4*l}:{common:60,rare:28,epic:10,legendary:2}; }
+function rarityWeights(l=player.luck||0){ return l?{common:Math.max(20,60-15*l),rare:28+5*l,epic:10+6*l,legendary:2+4*l}:{common:60,rare:28,epic:10,legendary:2}; }
 /* weighted pick: rarity weights 60/28/10/2 are shared by the skills of that rarity that can still be offered;
    skills you own (and evolutions you unlocked) get x2.5; if any owned skill can rank up, one of the cards is always such an upgrade */
-function skillOptions(n,rarity){
-  const rw=rarityWeights(), ids=Object.keys(RSK).filter(id=>skillOk(id)&&(!rarity||RSK[id].rarity===rarity));
+// ctx defaults to the live player; the debug simulation passes its own {rs,luck}
+function skillOptions(n,rarity,ctx=player){
+  const prs=ctx.rs, rw=rarityWeights(ctx.luck||0), ids=Object.keys(RSK).filter(id=>skillOk(id,prs)&&(!rarity||RSK[id].rarity===rarity));
   const cnt={}; ids.forEach(id=>cnt[RSK[id].rarity]=(cnt[RSK[id].rarity]||0)+1);
-  const w=id=>{ const r=RSK[id].rarity; return rw[r]/cnt[r]*((player.rs[id]||RSK[id].evo)?2.5:1); };
+  const w=id=>{ const r=RSK[id].rarity; return rw[r]/cnt[r]*((prs[id]||RSK[id].evo)?2.5:1); };
   const pick=list=>{ let t=0; list.forEach(id=>t+=w(id)); let x=Math.random()*t; for(const id of list){ x-=w(id); if(x<=0) return id; } return list[list.length-1]; };
-  const out=[], pool=ids.slice(), ups=pool.filter(id=>player.rs[id]);
+  const out=[], pool=ids.slice(), ups=pool.filter(id=>prs[id]);
   if(ups.length&&n>1&&!rarity){ const id=pick(ups); out.push(id); pool.splice(pool.indexOf(id),1); }
   while(out.length<n&&pool.length){ const id=pick(pool); out.push(id); pool.splice(pool.indexOf(id),1); }
   for(let i=out.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0; [out[i],out[j]]=[out[j],out[i]]; }
@@ -21,26 +24,26 @@ function skillOptions(n,rarity){
 }
 function applySkill(id,silent){
   const s=RSK[id]; if(!s) return; const rs=player.rs; rs[id]=(rs[id]||0)+1;
-  if(s.apply) s.apply(player,rs[id]);
+  recalcStats(); if(s.apply) s.apply(player,rs[id]);
   if(!silent){ renderRunSkills(); sfx('lvup'); if(s.rarity==='legendary'){ popText('EVOLVED'); crossBlast(player.pos.clone(),0xffc83a,1); } }
 }
-function applyCurse(id,silent){ const c=CURSES[id]; if(!c||sortie.curses.includes(id)) return; sortie.curses.push(id); if(c.apply) c.apply(player,silent); buildRule(); if(!silent) renderRunSkills(); }
+function applyCurse(id,silent){ const c=CURSES[id]; if(!c||sortie.curses.includes(id)) return; sortie.curses.push(id); recalcStats(); if(c.apply) c.apply(player,silent); buildRule(); if(!silent) renderRunSkills(); }
 // skill + curse + item icons (HUD row and result screen)
-function runIcons(){ const out=[]; if(!player) return out;
-  Object.entries(player.rs).forEach(([id,n])=>{ const d=RSK[id]; if(!d) return; const s=document.createElement('span'); s.className='r-'+d.rarity; s.title=d.name; s.innerHTML=svg(d.icon); if(n>1){ const b=document.createElement('b'); b.textContent=n; s.appendChild(b); } out.push(s); });
-  if(sortie) sortie.curses.forEach(id=>{ const d=CURSES[id]; if(!d) return; const s=document.createElement('span'); s.className='curse'; s.title=d.name; s.innerHTML=svg(d.icon); out.push(s); });
-  if(sortie&&sortie.items) sortie.items.forEach(it=>{ const d=typeof ITEMS!=='undefined'&&ITEMS[it.id||it]; if(!d) return; const s=document.createElement('span'); s.className='it r-'+d.rarity; s.title=d.name; s.innerHTML=svg(d.icon); out.push(s); });
-  return out; }
+function runIcons(){ return buildEntries().map((en,i)=>{ const s=document.createElement('span'); s.className=en.cls; s.dataset.i=i; s.setAttribute('aria-label',en.name); s.innerHTML=svg(en.icon);
+  const n=en.kind==='skill'?player.rs[en.id]:0; if(n>1){ const b=document.createElement('b'); b.textContent=n; s.appendChild(b); } return s; }); }
 function renderRunSkills(){ const bar=$('rsBar'); bar.innerHTML=''; bar.append(...runIcons()); }
-function skillCard(id,extra){ const s=RSK[id], rk=player.rs[id]||0; return {id,icon:s.icon,name:s.name,desc:s.d+(extra||''),rarity:s.rarity,tag:`${RARITY[s.rarity].n} · `+(rk?`Rank ${rk+1}/${s.max}`:'New')}; }
+// roulette card for a run skill: rank pips and a value preview for stat skills ("Damage +18% → +36%")
+function skillCard(id,extra){ const s=RSK[id], rk=player.rs[id]||0; return {id,icon:s.icon,name:s.name,desc:s.d+(extra||''),rarity:s.rarity,tag:`${RARITY[s.rarity].n} · `+(rk?`Rank ${rk+1}/${s.max}`:'New'),pips:{rank:rk,max:s.max},pv:bonusPreview(s.bonus)}; }
 
 /* ================= ORBITS + WINGMAN ================= */
 function buildOrbit(){
   orbitG.children.slice().forEach(c=>orbitG.remove(c)); if(!player) return; const rs=player.rs, inf=rs.inferno>0;
-  const nb=(rs.orbit||0)*2+(inf?2:0);
+  // orbiting hitters are hard capped (BAL.cap.orbit): blades first, then fire, ice and bolt orbs
+  let room=BAL.cap.orbit; const take=n=>{ const k=Math.max(0,Math.min(n,room)); room-=k; return k; };
+  const nb=take((rs.orbit||0)*2+(inf?2:0));
   for(let i=0;i<nb;i++){ const b=new THREE.Mesh(G.blade,addMat(inf?0xff7a2a:unit.shot,.9)); if(inf) b.scale.set(1.5,1.4,1.8); b.userData={k:'blade'}; orbitG.add(b); }
   const orb=(k,c,n)=>{ for(let i=0;i<n;i++){ const m=new THREE.Mesh(G.orb,addMat(c,.95)); m.scale.setScalar(1.25); m.add(new THREE.Mesh(G.puff,addMat(c,.3))); m.userData={k,zap:0}; orbitG.add(m); } };
-  orb('fire',0xff7a2a,rs.forb||0); orb('ice',0x9fe8ff,rs.iorb||0); orb('bolt',0xd8f4ff,rs.borb||0);
+  orb('fire',0xff7a2a,take(rs.forb||0)); orb('ice',0x9fe8ff,take(rs.iorb||0)); orb('bolt',0xd8f4ff,take(rs.borb||0));
   for(let i=0;i<(rs.sorb||0)*2;i++){ const m=new THREE.Mesh(box(1,1.3,.14),addMat(0xffa04a,.75)); m.userData={k:'shield'}; orbitG.add(m); }
 }
 function buildWingman(){
@@ -78,13 +81,14 @@ function reflectShot(b){ const v=b.vel.clone().setY(0); if(v.lengthSq()<.01) ret
 // Hex Nova: overheating the hex shield or breaking the phone barrier blasts everything nearby
 function hexNova(){ const p=player; aoe(p.pos,6,(14+6*(p.rs.hexnova||1))*p.st.dmg,.6,2.5); clearEnemyShots(p.pos,6); crossBlast(p.pos.clone(),0xffa04a,1.1); }
 // delayed blasts: meteors, Death Nova, Spark explosions. Queued so chain reactions spread over frames and stay capped.
-function queueBlast(x,z,o){ if(blasts.length>=40) return; const ring=new THREE.Mesh(G.ring,addMat(o.color||0xff6a1a,.9)); ring.rotation.x=-Math.PI/2; ring.position.set(x,.07,z); ring.scale.setScalar(o.rad); scene.add(ring); blasts.push({x,z,t:o.t||.15,max:o.t||.15,rad:o.rad,dmg:o.dmg,color:o.color||0xff6a1a,hurtP:o.hurtP||0,hurtE:o.hurtE!==false,size:o.size||.8,ring,skip:o.skip||null}); }
+// every blast is a proc: it hits with noProc, so its kills never chain into more on-kill procs. flat blasts skip crit and Rage too.
+function queueBlast(x,z,o){ if(blasts.length>=40) return; const ring=new THREE.Mesh(G.ring,addMat(o.color||0xff6a1a,.9)); ring.rotation.x=-Math.PI/2; ring.position.set(x,.07,z); ring.scale.setScalar(o.rad); scene.add(ring); blasts.push({x,z,t:o.t||.15,max:o.t||.15,rad:o.rad,dmg:o.dmg,color:o.color||0xff6a1a,hurtP:o.hurtP||0,hurtE:o.hurtE!==false,size:o.size||.8,ring,skip:o.skip||null,flat:!!o.flat}); }
 function updateBlasts(dt){
   for(let i=blasts.length-1;i>=0;i--){ const b=blasts[i]; b.t-=dt; const k=1-b.t/b.max; b.ring.material.opacity=.4+Math.sin(k*30)*.3; b.ring.scale.setScalar(b.rad*(1.15-k*.15));
     if(b.t>0) continue;
     scene.remove(b.ring); blasts.splice(i,1); const pos=new V3(b.x,0,b.z);
     crossBlast(pos,b.color,b.size);
-    if(b.hurtE) for(const e of enemies.slice()){ if(e.dead||e===b.skip) continue; if(Math.hypot(e.pos.x-b.x,e.pos.z-b.z)<b.rad+e.r*.5) hitEnemy(e,b.dmg,e.pos.clone().setY(2),false,true); }
+    if(b.hurtE) for(const e of enemies.slice()){ if(e.dead||e===b.skip) continue; if(Math.hypot(e.pos.x-b.x,e.pos.z-b.z)<b.rad+e.r*.5) hitEnemy(e,b.dmg,e.pos.clone().setY(2),false,true,b.flat); }
     if(b.hurtP&&player&&!player.dead&&Math.hypot(player.pos.x-b.x,player.pos.z-b.z)<b.rad+.5) hurt(b.hurtP); }
 }
 function clearBlasts(){ blasts.forEach(b=>scene.remove(b.ring)); blasts.length=0; trails.forEach(t=>scene.remove(t.m)); trails.length=0; }
@@ -95,24 +99,31 @@ function updateTrails(dt){ for(let i=trails.length-1;i>=0;i--){ const t=trails[i
   if(t.t<=0){ scene.remove(t.m); t.m.geometry.dispose(); trails.splice(i,1); } } }
 
 /* ================= CHOICE SCREEN + ROULETTE ================= */
-// cards spin like slot reels (result is decided before the spin); a tap, click or key skips the spin
-let spin=null, ignoreClickUntil=0;
-const REEL_H=46;
+/* minimal choice screen: the world stays visible (darkened, slowed) and compact cards slide up from the bottom.
+   Each card: rarity edge, icon slot reel (the result is decided before the spin), name, one-line effect, value preview and rank pips.
+   Only a fresh press that starts after the screen opened (plus a short grace) skips the spin: held keys auto-repeat and held mouse buttons are ignored.
+   Desktop: 1/2/3 pick a card, R rerolls. */
+let spin=null, ignoreClickUntil=0, choiceOpenT=0, chCfg=null;
+const REEL_H=44, SKIP_GRACE=250;
 function openChoice(cfg){
-  if(state!=='choice') choiceBack=state; state='choice'; resetTouch(); for(const k in keys)keys[k]=false; mouseDown=rightDown=false;
+  if(state!=='choice') choiceBack=state; state='choice'; choiceOpenT=performance.now(); chCfg=cfg; resetTouch(); for(const k in keys)keys[k]=false; mouseDown=rightDown=false;
+  hideRsPop();
   $('chEye').textContent=cfg.eyebrow; $('chTitle').textContent=cfg.title; $('chNote').textContent=cfg.note||'';
-  const rr=$('chReroll'); rr.hidden=!cfg.reroll; if(cfg.reroll){ rr.textContent=`Reroll · ${sortie.rerolls} left`; rr.disabled=sortie.rerolls<1; rr.onclick=()=>{ if(spin&&spin.left>0||sortie.rerolls<1) return; sortie.rerolls--; sfx('click'); cfg.reroll(); }; }
-  const list=$('chList'); list.innerHTML='';
-  const ids=Object.keys(RSK);
+  const rr=$('chReroll'); rr.hidden=!cfg.reroll;
+  if(cfg.reroll){ rr.innerHTML=`<kbd>R</kbd>Reroll · ${sortie.rerolls}`; rr.disabled=sortie.rerolls<1; rr.onclick=rerollChoice; }
+  const list=$('chList'); list.innerHTML=''; list.classList.toggle('many',cfg.options.length>3);
+  const icons=Object.keys(RSK).map(id=>RSK[id].icon);
   spin={cards:[],left:0,tick:0};
-  cfg.options.forEach((o,i)=>{ const b=document.createElement('button'); b.className='card rcard'+(o.rarity?' rr-'+o.rarity:''); b.id='ch'+i;
-    b.style.setProperty('--c',o.rarity?RARITY[o.rarity].c:(o.color||'var(--signal)'));
-    b.innerHTML=`<div class="reelWin"><div class="reel"></div></div><div class="tag"></div><p></p>`;
-    const reel=b.querySelector('.reel'), doSpin=cfg.spin&&!o.static;
-    const ent=(icon,name)=>{ const d=document.createElement('div'); d.className='ent'; d.innerHTML=`<div class="ic">${svg(icon)}</div><div class="n"></div>`; d.querySelector('.n').textContent=name; reel.appendChild(d); };
-    const n=doSpin?10+i*3:0; for(let k=0;k<n;k++){ const f=RSK[pickOne(ids)]; ent(f.icon,f.name); } ent(o.icon,o.name);
-    b.querySelector('.tag').textContent=o.tag||''; b.querySelector('p').textContent=o.desc;
-    b.onclick=()=>{ if(spin&&spin.left>0) return; if(performance.now()<ignoreClickUntil) return; spin=null; $('choice').hidden=true; state=choiceBack; o.act(); refreshControls(); };
+  cfg.options.forEach((o,i)=>{ const b=document.createElement('button'); b.className='rcard'+(o.rarity?' rr-'+o.rarity:''); b.id='ch'+i; b.type='button';
+    b.style.setProperty('--c',o.rarity?RARITY[o.rarity].c:(o.color||'var(--signal)')); b.style.setProperty('--i',i);
+    b.innerHTML=`<span class="ic"><span class="reel"></span></span><span class="body"><span class="top"><b class="n"></b><span class="tag"></span></span><span class="d"></span><span class="pv"></span></span><span class="pips"></span><kbd class="key">${i+1}</kbd>`;
+    const reel=b.querySelector('.reel'), doSpin=cfg.spin&&!o.static, n=doSpin?10+i*3:0;
+    const ent=icon=>{ const d=document.createElement('i'); d.innerHTML=svg(icon); reel.appendChild(d); };
+    for(let k=0;k<n;k++) ent(pickOne(icons)); ent(o.icon);
+    b.querySelector('.n').textContent=o.name; b.querySelector('.tag').textContent=o.tag||''; b.querySelector('.d').textContent=o.desc;
+    const pv=b.querySelector('.pv'); (o.pv||[]).forEach(l=>{ const r=document.createElement('span'); r.innerHTML=`<em></em> <s></s> → <b></b>`; r.querySelector('em').textContent=l.label; r.querySelector('s').textContent=l.from; r.querySelector('b').textContent=l.to; pv.appendChild(r); });
+    if(o.pips){ const pp=b.querySelector('.pips'); for(let k=0;k<o.pips.max;k++){ const q=document.createElement('i'); q.className=k<o.pips.rank?'f':k===o.pips.rank?'nx':''; pp.appendChild(q); } }
+    b.onclick=()=>pickChoice(i);
     list.appendChild(b);
     if(doSpin){ spin.left++; const dur=.5+i*.17; spin.cards.push({b,reel,n,dur,rarity:o.rarity}); reel.style.transform='translateY(0)'; }
     else b.classList.add('stop');
@@ -121,19 +132,42 @@ function openChoice(cfg){
   if(spin.left){ requestAnimationFrame(()=>requestAnimationFrame(()=>{ if(!spin) return; spin.cards.forEach(c=>{ c.reel.style.transition=`transform ${c.dur}s cubic-bezier(.12,.8,.22,1)`; c.reel.style.transform=`translateY(${-c.n*REEL_H}px)`; c.timer=setTimeout(()=>stopReel(c),c.dur*1000); }); }));
     const tick=()=>{ if(!spin||spin.left<=0) return; sfx('tick'); spin.tick=setTimeout(tick,70); }; tick(); }
   else spin=null;
-  setTimeout(()=>{ const f=$('ch0'); if(f&&!mobileMode) f.focus(); },50);
 }
+function pickChoice(i){
+  const o=chCfg&&chCfg.options[i]; if(!o||state!=='choice') return;
+  if(spin&&spin.left>0) return; if(performance.now()<ignoreClickUntil) return;
+  spin=null; chCfg=null; $('choice').hidden=true; state=choiceBack; o.act(); refreshControls();
+}
+function rerollChoice(){ if(!chCfg||!chCfg.reroll||spin&&spin.left>0||sortie.rerolls<1) return; sortie.rerolls--; sfx('click'); chCfg.reroll(); }
 function stopReel(c){ if(!spin||c.done) return; c.done=true; clearTimeout(c.timer); c.reel.style.transition='none'; c.reel.style.transform=`translateY(${-c.n*REEL_H}px)`; c.b.classList.add('stop'); sfx('r_'+(c.rarity||'common')); spin.left--; if(c.rarity==='legendary') buzz(60); }
 function skipSpin(){ if(!spin||spin.left<=0) return false; spin.cards.forEach(stopReel); ignoreClickUntil=performance.now()+350; return true; }
-$('choice').addEventListener('pointerdown',e=>{ if(skipSpin()){ e.preventDefault(); e.stopPropagation(); } },true);
-addEventListener('keydown',e=>{ if(state==='choice'&&skipSpin()){ e.preventDefault(); e.stopPropagation(); } },true);
+const freshPress=e=>performance.now()-choiceOpenT>=SKIP_GRACE&&!e.repeat;
+const MOD_KEYS=['ShiftLeft','ShiftRight','ControlLeft','ControlRight','AltLeft','AltRight','MetaLeft','MetaRight'];
+$('choice').addEventListener('pointerdown',e=>{ if(freshPress(e)&&skipSpin()){ e.preventDefault(); e.stopPropagation(); } },true);
+addEventListener('keydown',e=>{
+  if(state!=='choice'||MOD_KEYS.includes(e.code)) return;
+  // a press during the spin only skips it (number keys and R included); after the spin 1/2/3 pick and R rerolls
+  if(spin&&spin.left>0){ if(freshPress(e)&&skipSpin()){ e.preventDefault(); e.stopPropagation(); } return; }
+  if(e.repeat||performance.now()<ignoreClickUntil) return;
+  const m=/^(?:Digit|Numpad)([1-9])$/.exec(e.code); if(m){ e.preventDefault(); e.stopPropagation(); pickChoice(+m[1]-1); return; }
+  if(e.code==='KeyR'&&chCfg&&chCfg.reroll){ e.preventDefault(); e.stopPropagation(); rerollChoice(); }
+},true);
 
+/* ================= LEVEL-UP QUEUE ================= */
+// level-ups and item swaps wait for the room to be clear (after the boss dies in boss rooms); never mid-fight. They open one after another
+// before the door opens. choiceQ holds other queued choices (item swaps) as functions that open them.
+const choiceQ=[];
+function pumpChoices(){ if(state!=='fight'&&state!=='prep') return false;
+  if(sortie.pendingLv>0){ showLevelUp(); return true; }
+  if(choiceQ.length){ choiceQ.shift()(); return true; }
+  return false; }
 function showLevelUp(){
   sortie.pendingLv--;
-  const roll=()=>{ const opts=skillOptions(3).map(id=>({...skillCard(id),act:()=>applySkill(id)})); return opts; };
+  const roll=()=>skillOptions(3).map(id=>({...skillCard(id),act:()=>applySkill(id)}));
   const opts=roll();
   if(!opts.length){ player.hp=Math.min(player.maxHp,player.hp+player.maxHp*.2); return; }
-  const cfg={eyebrow:`Pilot level ${Math.max(2,sortie.lv-sortie.pendingLv)}`,title:'Skill roulette',note:'Skills last for the whole run.',options:opts,spin:true};
+  const more=sortie.pendingLv;
+  const cfg={eyebrow:`Pilot level ${Math.max(2,sortie.lv-more)}`+(more?` · ${more} more queued`:''),title:'Skill roulette',note:'Skills last for the whole run.',options:opts,spin:true};
   cfg.reroll=()=>{ cfg.options=roll(); openChoice(cfg); };
   openChoice(cfg);
 }
@@ -142,13 +176,51 @@ function angelChoice(){
   if(grace){ player.hp=player.maxHp; sparks(player.pos.clone().setY(2),0x7dff9a,14,6); }
   const heal=Math.round(40*player.st.heal);
   const opts=[{icon:'heal',name:'Repair',desc:grace?'Grace already repaired you. Take 15 extra max armor instead.':`Restore ${heal}% of your armor.`,tag:`${Math.ceil(player.hp)}/${player.maxHp} now`,color:'#7dff9a',static:true,
-    act:()=>{ if(grace){ player.maxHp+=15; player.hp+=15; } else player.hp=Math.min(player.maxHp,player.hp+player.maxHp*heal/100); sparks(player.pos.clone().setY(2),0x7dff9a,12,6); npcGone(); }}];
+    act:()=>{ if(grace){ player.extra.hpFlat=(player.extra.hpFlat||0)+15; recalcStats(); } else player.hp=Math.min(player.maxHp,player.hp+player.maxHp*heal/100); sparks(player.pos.clone().setY(2),0x7dff9a,12,6); npcGone(); }}];
   skillOptions(grace?3:2).forEach(id=>opts.push({...skillCard(id),act:()=>{ applySkill(id); npcGone(); }}));
   openChoice({eyebrow:'Sanctuary',title:'The angel offers a blessing',note:'Pick one.',options:opts,spin:true});
 }
 function devilChoice(){
   const free=Object.keys(CURSES).filter(c=>!sortie.curses.includes(c)), opts=[];
-  while(opts.length<2&&free.length){ const id=free.splice((Math.random()*free.length)|0,1)[0], c=CURSES[id]; opts.push({icon:c.icon,name:c.name,desc:c.d,tag:'Curse · lasts the whole run',color:'#e8243c',act:()=>{ applyCurse(id); sfx('lvup'); crossBlast(player.pos.clone(),0xe8243c,.8); npcGone(); }}); }
+  while(opts.length<2&&free.length){ const id=free.splice((Math.random()*free.length)|0,1)[0], c=CURSES[id];
+    opts.push({icon:c.icon,name:c.name,desc:c.d,tag:'Curse · whole run',color:'#e8243c',pv:bonusPreview(c.bonus),act:()=>{ applyCurse(id); sfx('lvup'); crossBlast(player.pos.clone(),0xe8243c,.8); npcGone(); }}); }
   opts.push({icon:'rear',name:'Walk away',desc:'Keep things as they are. The offer is gone for good.',tag:'Decline',color:'#a79fae',act:()=>npcGone()});
   openChoice({eyebrow:'A flawless room draws attention',title:'The devil makes an offer',note:'Power now, at a price you pay until the run ends.',options:opts});
+}
+
+/* ================= BUILD PANEL ================= */
+// the skill / curse / item boxes: a small popover with details (hover on desktop, tap on phone; never click on desktop, left click fires)
+function buildEntries(){ const out=[]; if(!player) return out;
+  Object.entries(player.rs).forEach(([id,n])=>{ const d=RSK[id]; if(!d) return; const rk=Math.min(n,d.max);
+    out.push({kind:'skill',id,icon:d.icon,name:d.name,cls:'r-'+d.rarity,sub:`${RARITY[d.rarity].n} · Rank ${rk}/${d.max}`,effect:effectText(d.bonus,rk)||d.d,desc:d.bonus?d.d.replace(/\.$/,'')+' per rank.':''}); });
+  if(sortie) sortie.curses.forEach(id=>{ const d=CURSES[id]; if(!d) return; out.push({kind:'curse',id,icon:d.icon,name:d.name,cls:'curse',sub:'Devil curse · whole run',effect:effectText(d.bonus,1,true)||d.d,cost:d.cost}); });
+  if(sortie&&sortie.items) sortie.items.forEach(it=>{ const id=it.id||it, d=ITEMS[id]; if(!d) return; out.push({kind:'item',id,icon:d.icon,name:d.name,cls:'it r-'+d.rarity,sub:`${RARITY[d.rarity].n} item`,effect:d.d}); });
+  return out; }
+// "Damage +36% · Fire rate +13%" for a bonus at a rank (gains only for curses: the cost is listed on its own)
+function effectText(bonus,rank,gainsOnly){ if(!bonus) return ''; const pc=v=>(v>=0?'+':'-')+Math.round(Math.abs(v)*100)+'%';
+  return Object.entries(bonus).filter(([k,v])=>!gainsOnly||(k!=='taken'&&v>0)).map(([k,v])=>`${BUCKET_TXT[k]||k} ${k==='hpFlat'||k==='en'?'+'+Math.round(v*rank):k==='taken'?pc(v*rank)+' taken':pc(v*rank)}`).join(' · '); }
+function hideRsPop(){ const p=$('rsPop'); if(p) p.hidden=true; }
+function showRsPop(el){
+  const en=buildEntries()[+el.dataset.i], p=$('rsPop'); if(!en||!p) return;
+  p.innerHTML=`<b></b><small></small><span class="ef"></span>`; p.className='hud '+en.cls;
+  p.querySelector('b').textContent=en.name; p.querySelector('small').textContent=en.sub; p.querySelector('.ef').textContent=en.effect;
+  if(en.cost){ const c=document.createElement('span'); c.className='cost'; c.textContent='Cost: '+en.cost; p.appendChild(c); }
+  p.hidden=false; const r=el.getBoundingClientRect(), w=p.offsetWidth, h=p.offsetHeight;
+  p.style.left=clamp(r.right-w,8,innerWidth-w-8)+'px'; p.style.top=clamp(r.bottom+6,8,innerHeight-h-8)+'px';
+}
+(()=>{ const bar=$('rsBar');
+  bar.addEventListener('pointerover',e=>{ if(e.pointerType!=='mouse') return; const s=e.target.closest('span[data-i]'); if(s) showRsPop(s); });
+  bar.addEventListener('pointerout',e=>{ if(e.pointerType==='mouse'&&!bar.contains(e.relatedTarget)) hideRsPop(); });
+  bar.addEventListener('pointerdown',e=>{ if(e.pointerType==='mouse') return; const s=e.target.closest('span[data-i]'); if(!s) return; e.stopPropagation(); const p=$('rsPop'); if(!p.hidden&&p.dataset.for===s.dataset.i){ hideRsPop(); return; } p.dataset.for=s.dataset.i; showRsPop(s); });
+  addEventListener('pointerdown',e=>{ if(!e.target.closest||!e.target.closest('#rsBar')) hideRsPop(); },true);
+})();
+// pause screen: the whole build with details, plus the stat buckets it adds up to
+function renderPauseBuild(){
+  const el=$('pauseBuild'); if(!el) return; el.innerHTML=''; if(!player) return;
+  const b=player.bonus||{}, st=document.createElement('div'); st.className='bStats';
+  st.textContent=['dmg','rate','crit','hp','spd','dodge'].map(k=>`${BUCKET_TXT[k]} ${bucketVal(k,b)}`).join(' · ');
+  el.appendChild(st);
+  const list=buildEntries(); if(!list.length){ const n=document.createElement('p'); n.className='note'; n.textContent='No run skills yet. Level up by clearing rooms.'; el.appendChild(n); return; }
+  list.forEach(en=>{ const r=document.createElement('div'); r.className='bRow '+en.cls; r.innerHTML=`<span class="bi">${svg(en.icon)}</span><span class="bt"><b></b><small></small><span></span></span>`;
+    r.querySelector('b').textContent=en.name; r.querySelector('small').textContent=en.sub; r.querySelector('.bt span').textContent=en.effect+(en.cost?' · Cost: '+en.cost:''); el.appendChild(r); });
 }

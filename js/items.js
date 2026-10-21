@@ -18,10 +18,15 @@ function itemModel(id){
 }
 function dropItem(pos,id){ id=id||rollItem(); if(!id) return; const m=itemModel(id); m.position.set(pos.x,1,pos.z); scene.add(m);
   const a=rand(0,Math.PI*2); pickups.push({m,kind:'item',id,v:0,t:0,life:1e9,vel:new V3(Math.cos(a)*2,rand(6,8),Math.sin(a)*2)}); sfx('gem'); groundRing(pos,new THREE.Color(RARITY[ITEMS[id].rarity].c).getHex(),2.5,.6); }
-function addItem(id,silent){ const d=ITEMS[id]; if(!d||sortie.items.includes(id)) return; sortie.items.push(id); if(d.add) d.add(player); if(!silent){ renderRunSkills(); sfx('lvup'); popText(d.name.toUpperCase()); } }
-function removeItem(id){ const i=sortie.items.indexOf(id); if(i<0) return; sortie.items.splice(i,1); const d=ITEMS[id]; if(d&&d.rem) d.rem(player); renderRunSkills(); }
-// picking up a 5th item asks which one to drop
+function addItem(id,silent){ const d=ITEMS[id]; if(!d||sortie.items.includes(id)) return; sortie.items.push(id); if(d.add) d.add(player); recalcStats(); if(!silent){ renderRunSkills(); sfx('lvup'); popText(d.name.toUpperCase()); } }
+function removeItem(id){ const i=sortie.items.indexOf(id); if(i<0) return; sortie.items.splice(i,1); const d=ITEMS[id]; if(d&&d.rem) d.rem(player); recalcStats(); renderRunSkills(); }
+// picking up a 5th item asks which one to drop; the choice waits in the queue until the room is clear (never mid-fight)
 function takeItem(id){
+  if(sortie.items.length<ITEM_SLOTS){ addItem(id); return; }
+  if(choiceQ.some(f=>f.item===id)) return; const f=()=>itemSwap(id); f.item=id; choiceQ.push(f);
+}
+function itemSwap(id){
+  if(sortie.items.includes(id)) return;
   if(sortie.items.length<ITEM_SLOTS){ addItem(id); return; }
   const n=ITEMS[id], card=(x,act,tag)=>({icon:ITEMS[x].icon,name:ITEMS[x].name,desc:ITEMS[x].d,rarity:ITEMS[x].rarity,tag,act});
   const opts=sortie.items.map(x=>card(x,()=>{ removeItem(x); addItem(id); },'Drop this one'));

@@ -7,7 +7,7 @@ function clearWorld(){
   if(player){ scene.remove(player.model.g,player.model.shadow); player=null; }
   orbitG.children.slice().forEach(c=>orbitG.remove(c));
   shieldG.visible=false; pBeamO.visible=pBeamC.visible=false; chargeOrb.visible=false; odRing.visible=false; hookLine.visible=hookHead.visible=false;
-  camZoom=1; cam.zoom=1; cam.updateProjectionMatrix(); AX=9; AZ=15; room=null;
+  camZoom=1; cam.zoom=1; cam.updateProjectionMatrix(); AX=roomHalfX(); AZ=ROOM_Z; room=null;
 }
 function refreshControls(){
   const on=playing()&&state!=='cine'&&state!=='choice';
@@ -17,16 +17,18 @@ function refreshControls(){
   if(on) renderAbilityIcons();
 }
 function hideOverlays(){ ['menu','result','pause','card','warn','cine','choice'].forEach(id=>$(id).hidden=true); $('cine').classList.remove('on'); }
-function goNextRoom(){ if(state!=='fight') return; saveRun(sortie.ri+1); state='trans'; stateT=.45; sortie.swapped=false; $('fade').classList.add('on'); resetTouch(); }
+function goNextRoom(){ if(state!=='fight') return; logRoomEnd('exit'); saveRun(sortie.ri+1); state='trans'; stateT=.45; sortie.swapped=false; $('fade').classList.add('on'); resetTouch(); }
 function showResult(win,bonusG=0,first=false){
   state='result'; refreshControls(); resetTouch(); playTrack('menu');
   const A=ARENAS[sortie.a], reached=Math.min(sortie.ri+1,sortie.N);
-  if(!win){ clearRun(); if(reached>(P.bestRoom[sortie.a]||0)) P.bestRoom[sortie.a]=reached; if(score>P.best) P.best=score; }
+  if(!win){ logRoomEnd('death'); clearRun(); if(reached>(P.bestRoom[sortie.a]||0)) P.bestRoom[sortie.a]=reached; }
   $('resEye').textContent=`Arena 0${sortie.a+1} · ${A.name}`+(win?' · clear':'');
   $('resTitle').innerHTML=win?'Arena <em>Clear</em>':'Signal <em>Lost</em>';
   $('resEarn').innerHTML=`<span class="cur gold"><i></i>+${sortie.gold}</span><span class="cur gem"><i></i>+${sortie.gems}</span>`+(win&&bonusG?`<small>${first?'First clear bonus':'Clear bonus'}: ${bonusG} diamonds</small>`:'')+(!win?'<small>Gold and diamonds you picked up are kept.</small>':'');
   const mm=Math.floor(playTime/60),ss=Math.floor(playTime%60).toString().padStart(2,'0');
-  const st=$('resStats'); st.innerHTML=''; [['Pilot',P.pilot||'Pilot'],['Frame',unit.name],['Rooms',`${reached} / ${sortie.N}`],['Best',`${P.bestRoom[sortie.a]||0} / ${sortie.N}`],['Pilot level',sortie.lv],['Kills',kills],['Score',String(score).padStart(6,'0')],['Time',`${mm}:${ss}`]].forEach(([a,b])=>{ const s=document.createElement('span'); s.textContent=a; const v=document.createElement('b'); v.textContent=b; st.append(s,v); });
+  const rs=runScore(win);
+  const st=$('resStats'); st.innerHTML=''; [['Pilot',P.pilot||'Pilot'],['Frame',unit.name],['Rooms cleared',`${rs.rooms} / ${sortie.N}`],['Best room',`${P.bestRoom[sortie.a]||0} / ${sortie.N}`],['Pilot level',sortie.lv],['Kills',kills],['Time',`${mm}:${ss}`],['Damage taken',rs.taken],
+    ['Run score',rs.total.toLocaleString()],['',`${rs.rooms} room${rs.rooms===1?"":"s"} × ${RUN_SCORE.room} · speed +${rs.speed} · damage −${rs.dmg}`]].forEach(([a,b],i,arr)=>{ const s=document.createElement('span'); s.textContent=a; const v=document.createElement('b'); v.textContent=b; if(i>=arr.length-2){ s.className=v.className='rsc'; } st.append(s,v); });
   const kit=$('resKit'); kit.innerHTML=''; kit.append(...runIcons());
   const nb=$('resNext'), a=sortie.a;
   if(win&&a+1<ARENAS.length){ nb.textContent='Next arena ▸'; nb.onclick=()=>launchArena(a+1); }
@@ -34,7 +36,13 @@ function showResult(win,bonusG=0,first=false){
   persist();
   $('result').hidden=false;
 }
-function togglePause(){ if(!playing()||state==='cine'||state==='choice') return; paused=!paused; $('pause').hidden=!paused; resetTouch(); for(const k in keys)keys[k]=false; mouseDown=rightDown=false; if(paused) persist(); }
+/* run score (result screen only): RUN_SCORE.room per cleared room, plus RUN_SCORE.speed per second under par (RUN_SCORE.par seconds a room),
+   minus RUN_SCORE.dmg per armor point lost */
+const RUN_SCORE={room:1000,par:40,speed:10,dmg:2};
+function runScore(win){ const rooms=win?sortie.N:sortie.ri+(room&&room.cleared?1:0), taken=Math.round(sortie.dmgTaken||0);
+  const speed=Math.round(Math.max(0,rooms*RUN_SCORE.par-playTime)*RUN_SCORE.speed), dmg=taken*RUN_SCORE.dmg;
+  return {rooms,taken,speed,dmg,total:Math.max(0,rooms*RUN_SCORE.room+speed-dmg)}; }
+function togglePause(){ if(!playing()||state==='cine'||state==='choice') return; paused=!paused; $('pause').hidden=!paused; resetTouch(); hideRsPop(); for(const k in keys)keys[k]=false; mouseDown=rightDown=false; if(paused){ renderPauseBuild(); persist(); } }
 function toMenu(view){ persist(); hideOverlays(); clearWorld(); state='menu'; paused=false; refreshControls(); applyTheme(0); playTrack('menu'); openView(view||'home'); $('menu').hidden=false; }
 $('resumeBtn').onclick=togglePause;
 // Save & exit keeps the run at the last cleared room; Abandon ends it (loot already picked up is kept)
