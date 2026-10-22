@@ -12,11 +12,13 @@ function renderMap(){
     const bp=b.querySelector('.bp'); arenaBossPool(i).slice(0,i===3?7:3).forEach(k=>{ const img=document.createElement('img'); img.src=PORTRAIT[k]||''; img.alt=BOSSES[k].name; img.title=BOSSES[k].name; bp.appendChild(img); });
     b.onclick=()=>{ if(locked) return; P.selArena=i; sfx('click'); delete $('launchBtn').dataset.arm; renderMap(); };
     inner.appendChild(b); });
-  const A=ARENAS[sel], first=(P.bestRoom[sel]||0)<A.rooms;
-  $('shEye').textContent=`ARENA 0${sel+1} · ${A.rooms} ROOMS`; $('shEye').style.color=A.colorCss; $('shName').textContent=A.name;
-  $('shReward').innerHTML=`<i></i>+${first?ECON.firstClear(sel):ECON.repeatClear(sel)}${first?' first clear':''}`;
+  const A=ARENAS[sel], first=(P.bestRoom[sel]||0)<A.rooms, fm=farmMul(sel);
+  $('shEye').textContent=`ARENA 0${sel+1} · ${A.rooms} ROOMS`+(fm<1?` · REWARDS ${Math.round(fm*100)}%`:''); $('shEye').style.color=A.colorCss; $('shName').textContent=A.name;
+  $('shReward').innerHTML=`<i></i>+${first?ECON.firstClear(sel):Math.round(ECON.repeatClear(sel)*fm)}${first?' first clear':''}`;
   const rooms=$('shRooms'); rooms.innerHTML=''; const t=document.createElement('span'); t.textContent='ROOMS 1-10'; rooms.appendChild(t);
-  for(let n=1;n<=10;n++){ const r=arenaRoomType(n), i=document.createElement('i'); i.textContent={combat:'C',angel:'A',elite:'E',boss:'B'}[r]; i.className={combat:'',angel:'a',elite:'e',boss:'b'}[r]; rooms.appendChild(i); }
+  // one 10-room block of PACING: C combat, ! a special room (ambush, waves, survive, hunt, traps, dark), T the next boss's teaching room
+  for(let n=1;n<=10;n++){ const c=PACING[n], i=document.createElement('i'), sp=c.kinds&&c.kinds.some(k=>k!=='normal'&&k!=='teach');
+    i.textContent=c.boss?'B':c.angel?'A':c.elite?'E':c.kinds.includes('teach')?'T':sp?'!':'C'; i.className=c.boss?'b':c.angel?'a':c.elite?'e':sp?'s':''; i.title=c.kinds?c.kinds.map(k=>ROOM_KINDS[k].name).join(' / '):''; rooms.appendChild(i); }
   const tags=$('shTags'); tags.innerHTML='';
   A.mobs.filter(e=>ENEMY[e]).forEach(e=>{ const s=document.createElement('span'); s.textContent=ENEMY[e].name; tags.appendChild(s); });
   const r=document.createElement('span'); r.style.borderColor=A.colorCss; r.style.color=A.colorCss; r.textContent=A.ruleTxt; tags.appendChild(r);
@@ -93,7 +95,7 @@ function renderFrames(){
   item('sp','Special',SPECIALS[P.unit].name,()=>{});
   [0,1].forEach(i=>{ const g=P.gadgets[i]; item(g||'hook','Gadget '+(i+1),g?GADGETS[g].name:'Empty slot',()=>openView('armory')); });
 }
-function renderSystem(){ $('buildTxt').textContent='Build '+BUILD+'.'; $('volM').value=Math.round(P.music*100); $('volMo').textContent=Math.round(P.music*100); $('volS').value=Math.round(P.sfx*100); $('volSo').textContent=Math.round(P.sfx*100);
+function renderSystem(){ $('buildTxt').textContent='Build '+BUILD+'.'; renderTester(); $('volM').value=Math.round(P.music*100); $('volMo').textContent=Math.round(P.music*100); $('volS').value=Math.round(P.sfx*100); $('volSo').textContent=Math.round(P.sfx*100);
   document.querySelectorAll('#ctrlSeg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.c===P.ctrl)); document.querySelectorAll('#shSeg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.s===P.mshield)); $('autoG').checked=P.autoGadget; }
 document.querySelectorAll('#ctrlSeg button').forEach(b=>b.onclick=()=>{ P.ctrl=b.dataset.c; sfx('click'); persist(); setMode(); renderSystem(); });
 document.querySelectorAll('#shSeg button').forEach(b=>b.onclick=()=>{ P.mshield=b.dataset.s; sfx('click'); persist(); renderSystem(); refreshControls(); });
@@ -104,9 +106,17 @@ $('volM').oninput=e=>{ P.music=e.target.value/100; $('volMo').textContent=e.targ
 $('volS').oninput=e=>{ P.sfx=e.target.value/100; $('volSo').textContent=e.target.value; setVolumes(); };
 $('volM').onchange=$('volS').onchange=()=>persist();
 $('fsBtn').onclick=()=>{ try{ const r=document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen(); r&&r.catch&&r.catch(()=>{}); }catch(e){} };
+// Reset my progress: a fresh pilot, but the beta badge and the tester code (and its flag) stay
 let resetArm=false;
-$('resetBtn').onclick=()=>{ if(!resetArm){ resetArm=true; $('resetBtn').textContent='Tap again to erase everything'; setTimeout(()=>{ resetArm=false; $('resetBtn').textContent='Reset all progress'; },4000); return; }
-  const rev=P.rev; P=freshP(); P.rev=rev; resetArm=false; $('resetBtn').textContent='Reset all progress'; persist(); rebuildPreview(); renderMenu(); };
+$('resetBtn').onclick=()=>{ if(!resetArm){ resetArm=true; $('resetBtn').textContent='Tap again to erase your progress'; setTimeout(()=>{ resetArm=false; $('resetBtn').textContent='Reset my progress'; },4000); return; }
+  const keep={rev:P.rev,beta:P.beta,testerCode:P.testerCode,testerSave:P.testerSave,testerTools:P.testerTools}; P=freshP(); Object.assign(P,keep); resetArm=false; $('resetBtn').textContent='Reset my progress'; clearRun(); persist(); rebuildPreview(); renderMenu(); };
+/* tester code: only its SHA-256 is in the code (tester.js). Unlocked: a toggle for the in-game tester tools (reloads the page). */
+function renderTester(){ const ok=testerOK(), n=$('testerNote'); $('testerToolsL').hidden=!ok; $('testerTools').checked=P.testerTools; $('testerBtn').textContent=ok?'Lock':'Unlock';
+  $('testerIn').hidden=ok; n.className='note'+(ok?' ok':''); n.textContent=ok?'Tester mode unlocked. Runs with tester tools are flagged and never count for rankings.':'For testers only. Tester runs are flagged and never count for rankings.'; }
+$('testerBtn').onclick=()=>{ if(testerOK()){ lockTester(); renderTester(); if(DEBUG) location.reload(); return; }
+  const ok=unlockTester($('testerIn').value); $('testerIn').value=''; renderTester(); if(!ok){ const n=$('testerNote'); n.className='note bad'; n.textContent='That code is not valid.'; } sfx('click'); };
+$('testerIn').addEventListener('keydown',e=>{ if(e.code==='Enter') $('testerBtn').click(); });
+$('testerTools').onchange=e=>{ P.testerTools=e.target.checked; persist(); location.reload(); };
 function renderAbilityIcons(){
   $('abQ').querySelector('span').innerHTML=svg('sp');
   [0,1].forEach(i=>{ const g=P.gadgets[i], el=$(i?'abR':'abE'); el.querySelector('span').innerHTML=g?svg(g):''; el.classList.toggle('empty',!g); const t=$(i?'tG2':'tG1'); t.classList.toggle('off',!g); t.innerHTML=g?svg(g):''; });

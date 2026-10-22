@@ -2,10 +2,24 @@
 /* ================= MAIN LOOP ================= */
 let last=performance.now(),hudT=0;
 const _sunOff=new V3(-6,32,3);
+/* combat room kinds while the room runs: ambush drop, waves (next one when the room thins out, or through the gates on a timer),
+   Survive (endless spawns until the timer ends; the leftovers fizzle), Hunt (the elite escapes when the timer ends) */
+function roomKinds(dt){
+  if(room.ambush){ room.ambushT-=dt; if(room.ambushT<=0){ spawnWave(room.ambush,'ambush'); room.ambush=null; toast('Ambush!'); sfx('door'); } return; }
+  const alive=enemies.filter(e=>!e.dead&&!e.minion).length;
+  if(spawnQ.length){ room.waveT=(room.waveT==null?99:room.waveT)-dt; if(!alive||room.waveMode==='gate'&&(alive<=2||room.waveT<=0)){ spawnWave(spawnQ.shift(),room.waveMode); room.waveT=9; toast(room.waveMode==='gate'?'Reinforcements':'Second wave'); } }
+  const T=room.timer; if(!T||room.cleared) return; T.t-=dt;
+  if(room.kind==='survive'){ const K=ROOM_KINDS.survive, cap=K.cap[clamp(sortie.a,0,K.cap.length-1)]-(mobileMode?1:0); room.spawnT-=dt;
+    if(T.t>1.5&&room.spawnT<=0&&alive<cap){ room.spawnT=rand(1,1.6); const pool=arenaPool(), e=spawnEnemy(pickOne(pool),freeSpot()); if(e) e.rw=K.reward; }
+    if(T.t<=0){ room.timer=null; for(const e of enemies.slice()){ if(e.dead||e===boss) continue; e.noLoot=true; killEnemy(e,true); } spawnQ=[]; toast('Survived','Room clear'); refreshControls(); } }
+  if(room.kind==='hunt'){ const h=enemies.find(e=>e.hunt&&!e.dead);
+    if(!h){ room.timer=null; toast('Caught'); refreshControls(); }
+    else if(T.t<=0){ room.timer=null; crossBlast(h.pos.clone(),0xb070ff,.8); h.dead=true; dropToken(h); if(h.plate) dropPlate(h); scene.remove(h.model.g,h.model.shadow); enemies.splice(enemies.indexOf(h),1); toast('Escaped','The elite got away'); refreshControls(); } }
+}
 function roomUpdate(dt,edt){
-  if(spawnQ.length&&!enemies.length){ spawnWave(spawnQ); spawnQ=[]; toast('Second wave'); }
-  updateEnemies(edt); updateEMines(edt,performance.now()/1000); updateHazards(dt);
-  if(room.type!=='boss'&&room.type!=='angel'&&!room.cleared&&!enemies.length&&!spawnQ.length){
+  if(room.type!=='boss'&&room.type!=='angel') roomKinds(dt);
+  updateEnemies(edt); updateEMines(edt,performance.now()/1000); updateHazards(dt); updateTraps(dt);
+  if(room.type!=='boss'&&room.type!=='angel'&&!room.cleared&&!enemies.length&&!spawnQ.length&&!room.ambush&&!(room.timer&&room.kind==='survive')){
     roomCleared();
     if(!room.hurt&&Math.random()<.35&&arenaRoomType(sortie.ri+2)==='combat') spawnNpc('devil',new V3(rand(-3,3),0,-2));
   }
@@ -18,7 +32,14 @@ function roomUpdate(dt,edt){
 }
 function frame(now){
   requestAnimationFrame(frame);
-  let dt=clamp((now-last)/1000,0,.033); last=now;
+  const raw=clamp((now-last)/1000,0,.033); last=now;
+  // debug fast-forward (DBG.turbo): several fixed simulation steps per drawn frame, for measurement runs in a headless browser
+  const n=typeof DBG!=='undefined'&&DBG.turbo>1?DBG.turbo:1;
+  for(let i=0;i<n;i++) tick(n>1?1/30:raw,now+i*33);
+  if(!(typeof DBG!=='undefined'&&DBG.noRender)) renderer.render(scene,cam);
+}
+function tick(dt,now){
+  if(BOT.on) botTick(dt);
   const rawDt=dt; if(paused||state==='choice'||state==='result') dt=0;
   const rdt=dt; hsCool=Math.max(0,hsCool-rdt);
   // hitstop freezes the simulation while rendering continues; slow motion only slows enemies and their shots
@@ -111,7 +132,7 @@ function frame(now){
     if(s.r>=s.max){ scene.remove(s.ring,s.wall); shocks.splice(i,1); } }
   // behind the choice screen the world keeps moving in slow motion (effects and debris only; nothing can hurt you)
   const fxdt=state==='choice'&&!paused?rawDt*.15:dt;
-  updateJuice(fxdt);
+  updateJuice(fxdt); updateDust(fxdt);
   for(let i=fx.length-1;i>=0;i--){ const f=fx[i]; if(fxdt>0) f.life-=fxdt; const k=Math.max(0,f.life/f.max); f.upd(f,fxdt,k); if(f.life<=0){ scene.remove(f.obj); if(f.dispose&&f.obj.geometry) f.obj.geometry.dispose(); fx.splice(i,1); } }
   let want=1;
   if(state==='cine'&&boss){ camTarget.lerp(_tmp.set(boss.pos.x,bossCore(boss).y*.5,boss.pos.z),Math.min(1,(dt||.016)*3)); want=1.55; }
@@ -129,17 +150,28 @@ function frame(now){
     $('arTxt').textContent=ARENAS[sortie.a].name.toUpperCase(); $('goldTxt').textContent=P.gold.toLocaleString(); $('gemTxt').textContent=P.gems;
     $('xpFill').style.width=(sortie.xp/xpNeed()*100)+'%'; const lr=$('lvReady'), pl=sortie.pendingLv; lr.hidden=!pl; if(pl) lr.textContent=pl>1?`LEVEL READY ×${pl}`:'LEVEL READY'; const lv=$('lvTxt'); if(lv) lv.textContent='LV '+sortie.lv;
     if(boss) $('bossBar').firstElementChild.style.width=Math.max(0,boss.hp/boss.maxHp*100)+'%';
+    else if(room&&room.timer){ const T=room.timer; $('bossName').textContent=T.name; $('bossPh').textContent=Math.ceil(Math.max(0,T.t))+' s'; $('bossBar').firstElementChild.style.width=Math.max(0,T.t/T.max*100)+'%'; }
     const spReady=p.sp>=100&&!busy(); $('abQ').classList.toggle('ready',spReady); $('abQ').style.setProperty('--cd',1-p.sp/100); $('tSP').classList.toggle('ready',spReady); $('tSP').style.setProperty('--cd',1-p.sp/100);
     [0,1].forEach(i=>{ const g=P.gadgets[i]; const f=g?p.gcd[i]/(GADGETS[g].cd*p.st.gadgetCd):0; $(i?'abR':'abE').style.setProperty('--cd',f); $(i?'tG2':'tG1').style.setProperty('--cd',f); });
     const df=p.dashCd/(1.4*p.st.dashCd); $('abS').style.setProperty('--cd',df);
     // phone barrier charges (Auto): 2 pips like the dash pips
     if(mobileMode){ const bp=$('barPips').children, bc=barrierCharges(), au=barrierAuto(); $('barPips').hidden=!au; if(au) for(let i=0;i<bp.length;i++){ bp[i].className=i<bc.n?'f':i===bc.n?'c':''; bp[i].style.setProperty('--k',i===bc.n?bc.k:0); } }
+    if(mobileMode){ const dbt=$('tDash'); dbt.classList.toggle('empty',p.dashCh<1); dbt.style.setProperty('--cd',p.dashCh<1?1-p.dashRc/(1.5*p.st.dashCd):0); }
     if(mobileMode){ const pp=$('dashPips').children; for(let i=0;i<pp.length;i++){ pp[i].className=i<p.dashCh?'f':i===p.dashCh?'c':''; pp[i].style.setProperty('--k',i===p.dashCh?p.dashRc/(1.5*p.st.dashCd):0); } }
   }
   updateCrosshair(rawDt);
-  renderer.render(scene,cam);
+  if(room&&room.dark) updateDark();
 }
 
+/* dark rooms: a screen overlay with a hole of light around the pilot (bigger on phones) */
+const darkR=()=>{ const L=ROOM_KINDS.dark.light; return mobileMode?L.m:L.d; };
+let darkOn=false; const _dk=new V3(),_dk2=new V3();
+function setDark(on){ darkOn=on; $('dark').hidden=!on; }
+function updateDark(){ if(!player||player.dead){ return; } if(!darkOn) setDark(true);
+  const p=_dk.copy(player.pos).setY(1).project(cam), x=(p.x+1)/2*innerWidth, y=(1-p.y)/2*innerHeight, R=darkR();
+  _dk2.setFromMatrixColumn(cam.matrixWorld,0).setY(0).normalize().multiplyScalar(R).add(player.pos).setY(1).project(cam); const rx=Math.abs((_dk2.x+1)/2*innerWidth-x);
+  _dk2.setFromMatrixColumn(cam.matrixWorld,2).setY(0).normalize().multiplyScalar(R).add(player.pos).setY(1).project(cam); const ry=Math.max(rx*.4,Math.abs((1-_dk2.y)/2*innerHeight-y));
+  $('dark').style.background=`radial-gradient(ellipse ${rx.toFixed(0)}px ${ry.toFixed(0)}px at ${x.toFixed(0)}px ${y.toFixed(0)}px,rgba(5,3,10,0) 55%,rgba(5,3,10,.55) 80%,rgba(5,3,10,.9) 100%)`; }
 /* boot */
 initMobile();
 initDebug();

@@ -1,7 +1,7 @@
 // Seraph Breaker · flow.js: Level flow: launching a level, room transitions, results, pause.
 /* ================= LEVEL FLOW ================= */
 function clearWorld(){
-  clearEnemiesAndShots(); clearRoom(); clearJuice();
+  clearEnemiesAndShots(); clearRoom(); clearJuice(); clearDust(); clearTraps();
   fx.forEach(f=>{ scene.remove(f.obj); if(f.dispose&&f.obj.geometry) f.obj.geometry.dispose(); }); fx.length=0;
   if(buddy){ scene.remove(buddy.g); buddy=null; } if(wingman){ scene.remove(wingman.g); wingman=null; } chrono=0; clearBlasts();
   if(player){ scene.remove(player.model.g,player.model.shadow); player=null; }
@@ -13,7 +13,7 @@ function refreshControls(){
   const on=playing()&&state!=='cine'&&state!=='choice';
   ['hudL','hudR','xpTrack','rsBar'].forEach(id=>$(id).hidden=!on);
   $('abBar').hidden=!on||mobileMode; $('touch').hidden=!on||!mobileMode; $('tSH').hidden=P.mshield!=='manual';
-  $('bossHud').hidden=!(on&&boss&&state!=='bossdeath');
+  $('bossHud').hidden=!(on&&(boss||room&&room.timer)&&state!=='bossdeath'); $('bossHud').classList.toggle('timer',!boss&&!!(room&&room.timer));
   if(on) renderAbilityIcons();
 }
 function hideOverlays(){ ['menu','result','pause','card','warn','cine','choice'].forEach(id=>$(id).hidden=true); $('cine').classList.remove('on'); }
@@ -24,7 +24,8 @@ function showResult(win,bonusG=0,first=false){
   if(!win){ logRoomEnd('death'); clearRun(); if(reached>(P.bestRoom[sortie.a]||0)) P.bestRoom[sortie.a]=reached; }
   $('resEye').textContent=`Arena 0${sortie.a+1} · ${A.name}`+(win?' · clear':'');
   $('resTitle').innerHTML=win?'Arena <em>Clear</em>':'Signal <em>Lost</em>';
-  $('resEarn').innerHTML=`<span class="cur gold"><i></i>+${sortie.gold}</span><span class="cur gem"><i></i>+${sortie.gems}</span>`+(win&&bonusG?`<small>${first?'First clear bonus':'Clear bonus'}: ${bonusG} diamonds</small>`:'')+(!win?'<small>Gold and diamonds you picked up are kept.</small>':'');
+  $('resEarn').innerHTML=`<span class="cur gold"><i></i>+${sortie.gold}</span><span class="cur gem"><i></i>+${sortie.gems}</span>`+(win&&bonusG?`<small>${first?'First clear bonus':'Clear bonus'}: ${bonusG} diamonds</small>`:'')+(!win?'<small>Gold and diamonds you picked up are kept.</small>':'')
+    +(sortie.farm<1?`<small>Replay below your highest arena: rewards ${Math.round(sortie.farm*100)}%</small>`:'')+(sortie.tester?'<small>Tester run: flagged, never ranked</small>':'');
   const mm=Math.floor(playTime/60),ss=Math.floor(playTime%60).toString().padStart(2,'0');
   const rs=runScore(win);
   const st=$('resStats'); st.innerHTML=''; [['Pilot',P.pilot||'Pilot'],['Frame',unit.name],['Rooms cleared',`${rs.rooms} / ${sortie.N}`],['Best room',`${P.bestRoom[sortie.a]||0} / ${sortie.N}`],['Pilot level',sortie.lv],['Kills',kills],['Time',`${mm}:${ss}`],['Damage taken',rs.taken],

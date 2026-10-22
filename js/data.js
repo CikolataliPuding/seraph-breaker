@@ -173,8 +173,8 @@ const BAL={
 };
 /* enemy scaling inside an arena: armor and damage grow exponentially with the room index (on top of the arena's hpMul / dmgMul),
    the room budget (how many enemies) grows slowly. Bosses use the same curve, normalized so the room 10 boss keeps its listed armor and damage;
-   the arena's final boss gets finalHp / finalDmg on top. */
-const SCALE={hp:.063,dmg:.042,bossRef:9,finalHp:1.5,finalDmg:1.25,budget:{base:3.4,arena:1.1,room:.07,elite:.55}};
+   the arena's final boss gets finalHp / finalDmg on top. mob: extra armor for every room mob (not bosses), so enemies live long enough to attack. */
+const SCALE={mob:1.5,hp:.063,dmg:.042,bossRef:9,finalHp:1.5,finalDmg:1.25,budget:{base:4.6,arena:1.1,room:.07,elite:.55}};
 // pilot xp per level: base + per × level (about one level every 1-2 rooms)
 const XP_NEED={base:6,per:.35}, XP_BOSS=10;
 /* economy: target earnings for one full run of each arena without gold bonuses (first-clear diamonds come on top, once).
@@ -187,6 +187,8 @@ const ECON={
   clearGold:[6,9,12,15],              // per cleared combat/elite room
   gemChance:{small:.008,big:.03,elite:.2},
   firstClear:a=>40+30*a, repeatClear:a=>5+5*a,
+  // farm check (tester.js farmMul): gold and diamonds when replaying an arena 0 / 1 / 2+ below your highest unlocked one
+  farm:[1,.6,.3],
 };
 /* run-only items: elites drop one 25% of the time, bosses always. 4 slots. Stat effects are a bonus:{} like run skills (same buckets and caps);
    add/rem only set flags and must be exact inverses so items can be swapped out. shape + color build the small pickup model (items.js).
@@ -216,19 +218,20 @@ const CURSES={
   brittle:{name:'Brittle',d:'Take +20% damage. Gain a random epic skill.',cost:'+20% damage taken',icon:'brittle',bonus:{taken:.2},apply:(p,silent)=>{ if(!silent){ const o=skillOptions(1,'epic'); if(o[0]) applySkill(o[0]); } }},
 };
 
-/* arenas: one run each, a flat sequence of short rooms. hpMul/dmgMul/bossMul multiply the room curve (SCALE below). Room schedule (see arenaRoomType in run.js): boss every 10th room, angel every
-   other 5th, elite around every 7th. mobs unlock in list order as the run goes on; bosses are drawn from the pool, never twice in a row. */
+/* arenas: one run each, a flat sequence of short rooms. hpMul/dmgMul/bossMul multiply the room curve (SCALE below). The room schedule follows PACING
+   (see roomSpec in run.js): every 10-room block ends with a boss. mobs unlock in list order as the run goes on (3 at first, one more every 4 rooms);
+   bosses are drawn from the pool, never twice in a row, and planned ahead so the rooms before a boss can teach it. */
 const ARENAS=[
-  {name:'Outer City', rooms:30, hpMul:1, dmgMul:1, bossMul:1, mobs:['drone','spark','crawler','heavy','howitzer'], bosses:['colossus','hive','arachne'], rule:{}, ruleTxt:'Training ground: no special rule',
+  {name:'Outer City', rooms:30, hpMul:1, dmgMul:1, bossMul:1, mobs:['drone','spark','lancer','crawler','heavy','howitzer'], bosses:['colossus','hive','arachne'], rule:{}, trap:'saw', ruleTxt:'Training ground: no special rule',
    theme:{bg:0x1d1424,hemiS:0xffd6b8,hemiG:0x2a1d3a,ground:0x5a4c64,city:0xffffff,edge:0xff6a1a,rim:0xff7a40,win:0xffc47a,floor:0xa898b0,wall:0x3a3346,block:0x5e5468,water:0xff7a2a},
    colorCss:'#ff6a1a'},
-  {name:'Night Harbor', rooms:40, hpMul:1.3, dmgMul:1.15, bossMul:1.25, mobs:['seraph','drone','shardling','warden','lancer','bulwark'], bosses:['prism','arachne','hive'], rule:{shotSpd:1.15,hazards:.35}, ruleTxt:'Enemy shots fly 15% faster',
+  {name:'Night Harbor', rooms:40, hpMul:1.3, dmgMul:1.15, bossMul:1.25, mobs:['seraph','drone','lancer','warden','shardling','bulwark'], bosses:['prism','arachne','hive'], rule:{shotSpd:1.15,hazards:.35}, trap:'spike', ruleTxt:'Enemy shots fly 15% faster',
    theme:{bg:0x0b1726,hemiS:0xb8d4ff,hemiG:0x10203a,ground:0x3e5470,city:0x9ab4e0,edge:0x3ad0ff,rim:0x3a8aff,win:0x9ae4ff,floor:0x86a2c4,wall:0x22344a,block:0x2f5f9a,water:0x1a74e0},
    colorCss:'#3ad0ff'},
-  {name:"Heaven's Gate", rooms:50, hpMul:1.6, dmgMul:1.3, bossMul:1.5, mobs:['seraph','warden','cherub','censer','heavy','ophan'], bosses:['seraph','throne','archon'], rule:{elitePairs:true,hazards:.4}, ruleTxt:'Elites come in pairs',
+  {name:"Heaven's Gate", rooms:50, hpMul:1.6, dmgMul:1.3, bossMul:1.5, mobs:['seraph','cherub','warden','censer','heavy','ophan'], bosses:['seraph','throne','archon'], rule:{elitePairs:true,hazards:.4}, trap:'pillar', ruleTxt:'Elites come in pairs',
    theme:{bg:0x2b1a26,hemiS:0xfff0d0,hemiG:0x3a2638,ground:0x7a6670,city:0xe2c8d8,edge:0xffd36a,rim:0xffb060,win:0xfff0b0,floor:0xd8c6cc,wall:0x8a7480,block:0xf0e8f2,water:0xffd36a},
    colorCss:'#ffd36a'},
-  {name:'Fallen Sky', rooms:50, hpMul:1.9, dmgMul:1.45, bossMul:1.8, mixed:true, mobs:['drone','spark','seraph','crawler','shardling','warden','heavy','lancer','censer','howitzer','bulwark','cherub','ophan'], bosses:'all', rule:{hazards:.45,corruptElites:true}, ruleTxt:'Both factions, corrupted elites, 2 random modifiers',
+  {name:'Fallen Sky', rooms:50, hpMul:1.9, dmgMul:1.45, bossMul:1.8, mixed:true, mobs:['drone','lancer','seraph','spark','crawler','cherub','shardling','warden','heavy','censer','howitzer','bulwark','ophan'], bosses:'all', rule:{hazards:.45,corruptElites:true}, trap:'mix', ruleTxt:'Both factions, corrupted elites, 2 random modifiers',
    theme:{bg:0x170e22,hemiS:0xe0c8ff,hemiG:0x22123a,ground:0x4a3a64,city:0xb8a0e0,edge:0xb070ff,rim:0xff4ad0,win:0xd8a0ff,floor:0x9a8ab8,wall:0x2e2244,block:0x5a3a8a,water:0xb070ff},
    colorCss:'#b070ff'},
 ];
@@ -241,23 +244,99 @@ const MODS={
   unstable:{name:'Unstable ground',d:'Floor hazards in every room.',rule:{hazards:1}},
   twin:{name:'Twin elites',d:'Elites come in pairs.',rule:{elitePairs:true}},
 };
-/* mobs: stats and model. cost = room budget, xp = pilot xp, gold/score per kill. elite:false keeps a mob out of elite rolls. */
+/* mobs: stats and model. cost = room budget, xp = pilot xp, gold/score per kill. elite:false keeps a mob out of elite rolls. mass: inertia (see MOVE).
+   role (enemy-ai.js): kiter (holds band [near,far] with line of sight) · sniper (long lanes) · tank (pushes in to hold, slams or fans) ·
+   charger (predicts you and locks a telegraphed charge) · flanker (commits to an orbit, goes for your side and back, hides between bursts) ·
+   artillery (lobbed shots, punishes standing still) · denial (area fire) · support (stays behind the others) · rusher (Spark: fuse when close).
+   tag: 'move' = forces you to move (chargers, artillery, area denial, slams), 'focus' = demands attention (sniper, support). See COMPS. */
 const ENEMY={
-  drone:{name:'Drone',hp:5,r:1.15,speed:3.4,sc:.8,cost:1,xp:1,gold:6,score:100,build:()=>buildMech(0x4c4658,0x9a2c42,0x24202c,0xff2a2a,.8),elite:false},
-  seraph:{name:'Seraph',hp:7,r:1.45,speed:5,sc:1,fly:true,angel:true,cost:1.3,xp:1.3,gold:8,score:150,build:()=>buildSeraph(1)},
-  mini:{name:'Mini seraph',hp:4,r:1.05,speed:6,sc:.7,fly:true,angel:true,cost:.8,xp:0,gold:3,score:60,build:()=>buildSeraph(.7),elite:false,ai:'seraph'},
-  heavy:{name:'Heavy',hp:20,r:1.7,speed:2.4,sc:1.25,cost:2.6,xp:3,gold:16,score:300,build:()=>buildMech(0x5a5244,0xc08a2a,0x2a2620,0xff3030,1.25)},
-  warden:{name:'Warden',hp:11,r:1.45,speed:3,sc:1,fly:true,angel:true,cost:1.9,xp:2,gold:12,score:250,build:()=>buildWarden()},
+  drone:{name:'Drone',mass:.9,role:'kiter',band:[6,10.5],hp:5,r:1.15,speed:3.4,sc:.8,cost:1,xp:1,gold:6,score:100,build:()=>buildDrone(),elite:false},
+  seraph:{name:'Seraph',tag:'move',mass:.7,role:'charger',band:[5,8],hp:7,r:1.45,speed:5,sc:1,fly:true,angel:true,cost:1.3,xp:1.3,gold:8,score:150,build:()=>buildSeraph(1)},
+  mini:{name:'Mini seraph',mass:.5,role:'charger',band:[4.5,7],hp:4,r:1.05,speed:6,sc:.7,fly:true,angel:true,cost:.8,xp:0,gold:3,score:60,build:()=>buildSeraph(.7),elite:false,ai:'seraph'},
+  heavy:{name:'Heavy',tag:'move',mass:2.6,role:'tank',hold:4.2,slam:4.6,hp:20,r:1.7,speed:2.4,sc:1.25,cost:2.6,xp:3,gold:16,score:300,build:()=>buildHeavy()},
+  warden:{name:'Warden',tag:'move',mass:1.4,role:'denial',band:[8,12],hp:11,r:1.45,speed:3,sc:1,fly:true,angel:true,cost:1.9,xp:2,gold:12,score:250,build:()=>buildWarden()},
   // arena mobs (models from docs/bestiary.html, behavior in enemy-ai.js)
-  spark:{name:'Spark',hp:3,r:.9,speed:7.5,sc:1,cost:.7,xp:.6,gold:4,score:80,build:()=>buildSpark(),elite:false,init:e=>{ e.model.core.material=e.model.core.material.clone(); e.st='roll'; }},
-  crawler:{name:'Crawler',hp:9,r:1.3,speed:5.5,sc:1,cost:1.4,xp:1.4,gold:9,score:160,build:()=>buildCrawler(1),init:e=>{ e.cd=rand(1.5,2.5); }},
-  howitzer:{name:'Howitzer',hp:12,r:1.4,speed:0,sc:1,cost:2.2,xp:2.2,gold:13,score:260,build:()=>buildHowitzer(),init:e=>{ e.cd=rand(1.4,2.4); }},
-  lancer:{name:'Lancer',hp:9,r:1.15,speed:3.2,sc:1.05,cost:2,xp:2,gold:12,score:240,build:()=>buildLancer(),init:e=>{ e.model.laser.material=e.model.laser.material.clone(); e.st='move'; e.stT=rand(1.2,2.2); }},
-  bulwark:{name:'Bulwark',hp:24,r:1.6,speed:1.8,sc:1.15,cost:2.4,xp:2.6,gold:15,score:280,build:()=>buildBulwark(),init:e=>{ e.cd=rand(2,3); }},
-  shardling:{name:'Shardling',hp:8,r:1.2,speed:3,sc:1,fly:true,angel:true,cost:1.6,xp:1.4,gold:9,score:180,build:()=>buildShardling(),init:(e,o)=>{ e.gen=o.gen||0; e.sc=Math.pow(.72,e.gen); e.hp*=Math.pow(.45,e.gen); e.r*=e.sc; }},
-  cherub:{name:'Cherub',hp:7,r:1,speed:4.6,sc:1,fly:true,angel:true,cost:1.5,xp:1.5,gold:10,score:220,build:()=>buildCherub(),elite:false,init:e=>{ e.cd=3; }},
-  censer:{name:'Censer',hp:10,r:1.1,speed:1.8,sc:1,fly:true,angel:true,cost:2,xp:2,gold:12,score:240,build:()=>buildCenser(),init:e=>{ e.cd=rand(1.5,2.5); }},
-  ophan:{name:'Ophan',hp:16,r:1.8,speed:11,sc:1,angel:true,cost:2.8,xp:3,gold:16,score:320,build:()=>buildOphan(1),init:e=>{ e.st='pause'; e.stT=rand(1,2); }},
+  spark:{name:'Spark',tag:'move',mass:.45,role:'rusher',fuse:.55,hp:3,r:.9,speed:7.5,sc:1,cost:.7,xp:.6,gold:4,score:80,build:()=>buildSpark(),elite:false,init:e=>{ e.model.core.material=e.model.core.material.clone(); e.st='roll'; }},
+  crawler:{name:'Crawler',tag:'move',mass:.55,role:'flanker',band:[5.5,8],hp:9,r:1.3,speed:5.5,sc:1,cost:1.4,xp:1.4,gold:9,score:160,build:()=>buildCrawler(1),init:e=>{ e.cd=rand(1.5,2.5); }},
+  howitzer:{name:'Howitzer',tag:'move',mass:3,role:'artillery',hp:12,r:1.4,speed:0,sc:1,cost:2.2,xp:2.2,gold:13,score:260,build:()=>buildHowitzer(),init:e=>{ e.cd=rand(1.4,2.4); }},
+  lancer:{name:'Lancer',tag:'focus',mass:1.1,role:'sniper',band:[11,17],hp:9,r:1.15,speed:3.2,sc:1.05,cost:2,xp:2,gold:12,score:240,build:()=>buildLancer(),init:e=>{ e.model.laser.material=e.model.laser.material.clone(); e.st='move'; e.stT=rand(1.2,2.2); }},
+  bulwark:{name:'Bulwark',mass:2.8,role:'tank',hold:3.4,hp:24,r:1.6,speed:1.8,sc:1.15,cost:2.4,xp:2.6,gold:15,score:280,build:()=>buildBulwark(),init:e=>{ e.cd=rand(2,3); }},
+  shardling:{name:'Shardling',mass:.9,role:'kiter',band:[6,10],hp:8,r:1.2,speed:3,sc:1,fly:true,angel:true,cost:1.6,xp:1.4,gold:9,score:180,build:()=>buildShardling(),init:(e,o)=>{ e.gen=o.gen||0; e.sc=Math.pow(.72,e.gen); e.hp*=Math.pow(.45,e.gen); e.r*=e.sc; }},
+  cherub:{name:'Cherub',tag:'focus',mass:.6,role:'support',hp:7,r:1,speed:4.6,sc:1,fly:true,angel:true,cost:1.5,xp:1.5,gold:10,score:220,build:()=>buildCherub(),elite:false,init:e=>{ e.cd=3; }},
+  censer:{name:'Censer',tag:'move',mass:1.3,role:'artillery',band:[8,12],hp:10,r:1.1,speed:1.8,sc:1,fly:true,angel:true,cost:2,xp:2,gold:12,score:240,build:()=>buildCenser(),init:e=>{ e.cd=rand(1.5,2.5); }},
+  ophan:{name:'Ophan',tag:'move',mass:2,role:'charger',band:[6,10],hp:16,r:1.8,speed:11,sc:1,angel:true,cost:2.8,xp:3,gold:16,score:320,build:()=>buildOphan(1),init:e=>{ e.st='pause'; e.stT=rand(1,2); }},
+};
+/* enemy AI by arena (index = arena). react: seconds an enemy must see you before it fires · lead: how much of your movement its aim and charges
+   predict (0 = where you are, 1 = perfect intercept; arena 1 barely leads) · aggr: how often flankers go for your back and tanks push in · tokens: enemies that may attack at once
+   (the rest reposition) · read: attacks come faster while your dash is recharging (arena 3+ read the player). */
+const AI_LV=[
+  {react:.45,lead:.2,aggr:.4,tokens:3,read:0},
+  {react:.35,lead:.45,aggr:.6,tokens:4,read:0},
+  {react:.27,lead:.7,aggr:.8,tokens:4,read:.4},
+  {react:.2,lead:.9,aggr:1,tokens:5,read:.8},
+];
+/* enemy movement feel (enemy-ai.js steer): accel = how fast a mass-1 enemy reaches the velocity it wants (units/s²), brake = stopping is this much
+   faster, turn = how fast a mass-1 walker turns its body before it walks (rad/s). Every enemy divides both by its ENEMY mass (heavy = slow, light = agile).
+   Flyers use an underdamped spring instead (fly.f stiffness, fly.z damping < 1), so they overshoot a little and settle. */
+const MOVE={accel:30,brake:1.6,turn:10,fly:{f:6.5,z:.5}};
+/* ================= LEVEL DESIGN ================= */
+/* combat room compositions by arena (rooms.js composeRoom). Every combat room has at least one enemy that forces you to move (tag 'move') and one
+   that demands attention (tag 'focus': sniper, support). A template is its core: enemy types, or 'move' / 'focus' for any unlocked one of that tag.
+   The room budget then fills up from the unlocked arena pool. Templates whose core is not unlocked yet are skipped. */
+const COMPS=[
+  [{name:'Crossfire',core:['lancer','crawler','drone']},{name:'Siege',core:['howitzer','drone','focus']},{name:'Rush',core:['spark','spark','spark','focus']},
+   {name:'Push',core:['heavy','drone','focus']},{name:'Pincer',core:['crawler','crawler','focus']},{name:'Skirmish',core:['move','focus','drone']}],
+  [{name:'Strafe run',core:['seraph','seraph','lancer']},{name:'Shield wall',core:['bulwark','lancer','drone']},{name:'Rings',core:['warden','lancer','drone']},
+   {name:'Splinter',core:['shardling','seraph','focus']},{name:'Skirmish',core:['move','focus','drone']}],
+  [{name:'Choir',core:['cherub','seraph','seraph']},{name:'Censure',core:['censer','cherub','warden']},{name:'Wheel',core:['ophan','cherub','seraph']},
+   {name:'Bastion',core:['heavy','cherub','warden']},{name:'Skirmish',core:['move','focus','seraph']}],
+  [{name:'Lanes',core:['lancer','ophan','drone']},{name:'Medics',core:['cherub','heavy','spark','spark']},{name:'Siege line',core:['howitzer','bulwark','lancer']},
+   {name:'Hunters',core:['crawler','crawler','cherub','censer']},{name:'Judgement',core:['warden','lancer','seraph']},{name:'Skirmish',core:['move','focus','move']}],
+];
+/* the rooms right before a boss teach its patterns with smaller versions (core of the teaching room, see PACING) */
+const BOSS_TEACH={
+  colossus:['heavy','heavy','drone','drone'],          // slams with shockwaves, spread shots, gunfire
+  hive:['spark','spark','spark','howitzer','drone'],    // swarms and bombs from above
+  arachne:['crawler','crawler','lancer'],               // mines, flanking, a laser that tracks you
+  prism:['lancer','lancer','shardling'],                // beams and shards
+  seraph:['seraph','seraph','warden','cherub'],         // charges and rings
+  throne:['ophan','warden','censer'],                   // rolls and bullet walls
+  archon:['seraph','bulwark','warden'],                 // lunges, a shield to flank, waves
+};
+/* room kinds. minRoom / minArena gate them early on. Ambush: they come from the sides and from behind. Reinforcements: waves arrive through gates.
+   Survive: hold out for time seconds against endless spawns (spawns pay reward × the normal kill). Hunt: an elite flees and escapes after time
+   seconds. Gauntlet: few enemies (budget × k), many traps. Dark: you only see what is within light units (light.m on phones). */
+const ROOM_KINDS={
+  normal:{name:'Hostiles'},
+  ambush:{name:'Ambush',sub:'From the sides and behind',minRoom:2},
+  reinforce:{name:'Reinforcements',sub:'Waves through the gates',minRoom:3,waves:3},
+  survive:{name:'Survive',sub:'Hold out',minRoom:8,time:20,reward:.4,cap:[5,6,7,7]},
+  hunt:{name:'Hunt',sub:'The elite runs. Catch it.',minRoom:7,time:16},
+  gauntlet:{name:'Trap gauntlet',sub:'Few enemies, many traps',minRoom:3,k:.55},
+  dark:{name:'Dark room',sub:'Stay close to the light',minRoom:11,light:{d:8.5,m:9}},
+  teach:{name:'Hostiles'},
+};
+/* pacing inside every 10-room block (index = position in the block, 10 = boss): the kinds it can roll and a budget multiplier.
+   Tension comes in waves: a breather after the boss, a first spike, the angel, a climb, a hard room and a teaching room before the next boss. */
+const PACING=[null,
+  {kinds:['normal'],k:.8},
+  {kinds:['normal','ambush'],k:1},
+  {kinds:['reinforce','ambush','gauntlet'],k:1.1},
+  {kinds:['normal','dark'],k:1},
+  {angel:true},
+  {kinds:['normal','reinforce','ambush'],k:1.05},
+  {elite:true,kinds:['normal','hunt'],k:1},
+  {kinds:['survive','dark','gauntlet','ambush'],k:1.15},
+  {kinds:['teach'],k:1.2},
+  {boss:true},
+];
+/* elite affixes: every elite rolls 1-2 (corrupted elites 1), shown on its nameplate. Effects live in enemies.js / enemy-ai.js. */
+const AFFIX={
+  swift:{name:'Swift',d:'Moves 40% faster and attacks more often.'},
+  shielded:{name:'Shielded',d:'A barrier soaks most damage until it breaks, then comes back.'},
+  volatile:{name:'Volatile',d:'Explodes when it dies. Do not stand close.'},
+  blinker:{name:'Blinker',d:'Teleports every few seconds.'},
+  summoner:{name:'Summoner',d:'Calls in small helpers.'},
 };
 const BOSSES={
   colossus:{name:'Iron Colossus',cls:'Class · War machine · Siege frame',epi:'Built to level cities. It walks straight through gunfire and shakes the ground apart.',threat:3,warn:'HOSTILE WAR MACHINE INBOUND',hp:470,r:3.2,fly:0,barrier:false,minion:'drone',gold:220,gems:25,angel:false,
@@ -281,7 +360,11 @@ for(const k of Object.keys(CORRUPT_DONOR)){ const b=BOSSES[k], dn=CORRUPT_DONOR[
   BOSSES['x_'+k]=Object.assign({},b,{name:'Corrupted '+b.name.replace(/^The /,''),cls:b.cls+' · Corrupted',epi:'The void got inside it. Same frame, new tricks, more armor.',threat:Math.min(5,b.threat+1),warn:'CORRUPTED SIGNAL · '+b.warn,hp:Math.round(b.hp*1.35),form:k,corrupt:true,gold:Math.round(b.gold*1.3),gems:Math.round(b.gems*1.3),
     pool:b.pool.map((p,i)=>p.concat(dn.slice(0,i===0?1:2)))}); }
 /* hand-built room layouts: 11 columns × 15 rows of cells (22 × 30 units on desktop, 20 × 30 on phones). Row 0 is the door side, the last row the entry.
-   # block (stops movement and most shots) · ~ hazard canal (stops movement only) · . open floor. Keep row 0 and the last two rows open in the middle. */
+   # block (stops movement and most shots) · ~ trap (walkable; a run of ~ is one trap: a saw rail, spike tiles or light pillars by arena, see TRAPS)
+   · . open floor. Keep row 0 and the last two rows open in the middle. */
+/* trap tiles (traps.js). dmg: to you (the room damage curve applies) · edmg: to enemies (× the room's enemy armor scale) · cd: seconds between hits
+   on the same target. saw: speed along its rail, r: blade radius. spike / pillar: idle, warn (the telegraph) and act seconds. */
+const TRAPS={saw:{dmg:12,edmg:3,cd:.5,speed:4.2,r:.75},spike:{dmg:12,edmg:3,cd:.6,idle:2.2,warn:.8,act:.9},pillar:{dmg:14,edmg:3.5,cd:.6,idle:2.6,warn:.95,act:1.1}};
 const ROOMS=[
   ['...........','...........','..#.....#..','...........','...........','....#.#....','...........','...........','...........','....#.#....','...........','...........','..#.....#..','...........','...........'],
   ['...........','...........','...#...#...','...........','.~~~...~~~.','...........','...........','.....#.....','...........','...........','...##.##...','...........','...........','...........','...........'],

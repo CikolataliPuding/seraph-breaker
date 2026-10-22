@@ -201,7 +201,7 @@ button.card:hover,button.card:focus-visible{border-color:var(--c,var(--signal));
 .tags span{padding:3px 9px;border:1px solid rgba(255,255,255,.18);font-size:14px}
 .rooms{display:flex;gap:4px;align-items:center;font-family:var(--f-data);font-size:11px;color:var(--dim);letter-spacing:.1em;flex-wrap:wrap}
 .rooms i{display:inline-grid;place-items:center;min-width:26px;height:20px;padding:0 4px;border:1px solid var(--line);font-style:normal;color:var(--paper)}
-.rooms i.a{border-color:var(--sp);color:var(--sp)} .rooms i.e{border-color:var(--gold);color:var(--gold)} .rooms i.b{border-color:var(--alert);color:var(--alert)}
+.rooms i.a{border-color:var(--sp);color:var(--sp)} .rooms i.s{border-color:var(--gem);color:var(--gem)} .rooms i.e{border-color:var(--gold);color:var(--gold)} .rooms i.b{border-color:var(--alert);color:var(--alert)}
 
 #card{background:rgba(5,3,7,.9);pointer-events:none;text-align:left;place-items:center}
 #card .c{display:grid;gap:10px;animation:cardIn 2s ease both}
@@ -272,7 +272,10 @@ button.card:hover,button.card:focus-visible{border-color:var(--c,var(--signal));
 /* hold-to-shield button (Mobile shield: Manual) */
 .tb.sh{width:62px;height:62px;border-color:#ffa04a;color:#ffa04a} .tb.sh.on{background:rgba(255,160,74,.35);box-shadow:0 0 16px rgba(255,160,74,.8)}
 .tb.sh[hidden]{display:none}
-.mhint{position:absolute;left:0;right:0;bottom:calc(64px + env(safe-area-inset-bottom,0px));text-align:center;font-family:var(--f-data);font-size:11px;letter-spacing:.08em;color:rgba(243,238,230,.45);pointer-events:none;padding-inline:max(24px,calc(env(safe-area-inset-right,0px) + 110px))}
+/* aimed dash button (phone): left of the special button */
+.tb.dash{position:absolute;right:calc(max(14px,env(safe-area-inset-right,0px)) + 96px);bottom:calc(22px + env(safe-area-inset-bottom,0px));width:66px;height:66px;border-color:var(--unit);color:var(--unit)}
+.tb.dash.on{background:rgba(255,255,255,.25)} .tb.dash.empty{opacity:.45}
+.mhint{position:absolute;left:0;right:0;bottom:calc(104px + env(safe-area-inset-bottom,0px));text-align:center;font-family:var(--f-data);font-size:11px;letter-spacing:.08em;color:rgba(243,238,230,.45);pointer-events:none;padding-inline:max(24px,calc(env(safe-area-inset-right,0px) + 110px))}
 .mbtns{position:absolute;right:max(14px,env(safe-area-inset-right,0px));bottom:calc(22px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;align-items:center;gap:12px}
 .tb.sm{width:54px;height:54px}
 .tb.big{width:84px;height:84px;font-size:18px}
@@ -438,3 +441,12 @@ body.aiming,body.aiming #gl{cursor:none}
 #xhair .hm::after{transform:rotate(-45deg)}
 #xhair.hit .hm{opacity:1}
 #xhair.rail .rg{left:-13px;top:-13px;width:26px;height:26px;background:conic-gradient(var(--c) calc(var(--k,0)*360deg),rgba(255,255,255,.18) 0);box-shadow:none;-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 3px),#000 calc(100% - 3px));mask:radial-gradient(farthest-side,transparent calc(100% - 3px),#000 calc(100% - 3px))}
+
+/* dark rooms (main.js updateDark): the light hole follows the pilot; HUD stays above */
+#dark{position:fixed;inset:0;pointer-events:none;z-index:1}
+#bossHud.timer .bossThumb{display:none} #bossHud.timer{grid-template-columns:1fr} #bossHud.timer .lbl{color:var(--gem)} #bossHud.timer #bossBar{grid-column:1} #bossHud.timer #bossBar i{background:var(--gem)}
+/* beta tester badge (saves from before the AI and level update) and the tester code field */
+.badge{display:inline-block;margin-left:6px;padding:1px 6px;border:1px solid var(--gold);color:var(--gold);font-style:normal;font-size:10px;letter-spacing:.16em}
+.row.tester{flex-wrap:nowrap} #testerIn{appearance:none;flex:1;min-width:0;border:1px solid var(--line);background:rgba(12,9,16,.7);color:var(--paper);font-family:var(--f-data);font-size:15px;padding:9px 10px;text-transform:uppercase;letter-spacing:.08em;border-radius:0}
+#testerIn:focus{outline:none;border-color:var(--signal)} #testerNote.ok{color:var(--sp)} #testerNote.bad{color:var(--alert)}
+#dbg select.w,#dbg input.w{width:72px}

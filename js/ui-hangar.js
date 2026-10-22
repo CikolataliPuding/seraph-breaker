@@ -12,7 +12,7 @@ function openView(v){
 function renderMenu(){
   document.documentElement.style.setProperty('--unit',unitCss());
   $('wGold').textContent=P.gold.toLocaleString(); $('wGems').textContent=P.gems.toLocaleString();
-  $('whoName').textContent=P.pilot||'[CALLSIGN]'; $('avatar').textContent=String(P.arenas).padStart(2,'0');
+  $('whoName').textContent=P.pilot||'[CALLSIGN]'; $('avatar').textContent=String(P.arenas).padStart(2,'0'); $('betaBadge').hidden=!P.beta;
   if(view==='home') renderHome(); if(view==='map') renderMap(); if(view==='armory') renderArmory(); if(view==='skills') renderTree($('treeHangar')); if(view==='frames') renderFrames(); if(view==='system') renderSystem();
 }
 function renderHome(){
