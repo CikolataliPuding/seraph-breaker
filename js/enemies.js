@@ -36,7 +36,7 @@ function unflash(e){ e.model.mats.forEach(m=>m.emissive.setHex(0)); }
 function hitEnemy(e,d,pos,dot,noProc,flat){
   // player death wins: DoTs, queued blasts, orbits and procs stop dealing damage once the pilot is down
   if(!e||e.dead||!player||player.dead) return;
-  if(e===boss){ if(boss.atk==='enter'||state==='cine') return; if(boss.barrier>0){ if(!dot) sparks(pos,0xffa04a,3,5); return; } if(!flat) d*=player.st.boss; if(boss.vuln>0) d*=1.6; if(boss.reflectT>0) d*=.3; }
+  if(e===boss){ if(boss.atk==='enter'||boss.immune||state==='cine') return; if(boss.barrier>0){ if(!dot) sparks(pos,0xffa04a,3,5); return; } if(!flat) d*=player.st.boss; if(boss.vuln>0) d*=1.6; if(boss.reflectT>0) d*=.3; }
   const rs=player.rs;
   let crit=false; if(!dot&&!flat&&Math.random()<player.st.crit){ d*=player.critMul||2; crit=true; }
   // Rage (doubled by Blood Engine): more damage as your armor drops

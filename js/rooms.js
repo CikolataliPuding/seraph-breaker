@@ -44,6 +44,13 @@ function buildRoom(hx,hz,grid,withDoor){
 function buildBossRoom(){
   buildRoom(roomHalfX(true),BOSS_Z,null,true);
   const t=ARENAS[stage].theme, bm=toon(t.block), px=AX*.65;
+  // High-Co plays a concert: same four cover spots, but they are amp stacks, and the stage, lights and crowd sit around the mat
+  hcArena=null;
+  if(room&&BOSSES[room.boss]&&(BOSSES[room.boss].form||room.boss)==='highco'){
+    const covers=[[-px,-6.5],[px,-6.5],[-px,6.5],[px,6.5]];
+    covers.forEach(([x,z])=>obstacles.push({x0:x-.9,x1:x+.9,z0:z-.9,z1:z+.9,kind:'block'}));
+    hcArena=buildHighCoArena(AX,AZ,covers); roomGroup.add(hcArena.g); return;
+  }
   [[-px,-6.5],[px,-6.5],[-px,6.5],[px,6.5]].forEach(([x,z])=>{ const b=part(box(1.8,2.2,1.8),bm,roomGroup,x,1.1,z,.1); const s=new THREE.Mesh(box(1.84,.14,1.84),basic(t.edge,false)); s.position.y=.8; b.add(s); obstacles.push({x0:x-.9,x1:x+.9,z0:z-.9,z1:z+.9,kind:'block'}); });
   [[7.6,8],[3.2,3.35]].forEach(([a,b])=>{ const hx=new THREE.Mesh(new THREE.RingGeometry(a,b,6),addMat(t.edge,.25)); hx.rotation.x=-Math.PI/2; hx.rotation.z=Math.PI/6; hx.position.y=.03; roomGroup.add(hx); });
 }

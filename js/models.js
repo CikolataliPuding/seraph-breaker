@@ -1,4 +1,4 @@
-// Seraph Breaker · models.js: 3D models: mechs, angels, arena mobs and bosses (from docs/bestiary.html), corrupted variants and the devil.
+// Seraph Breaker · models.js: 3D models: mechs, angels, arena mobs and bosses (from docs/bestiary.html), High-Co and his concert stage, corrupted variants and the devil.
 /* ================= MODELS ================= */
 function buildMech(c1,c2,c3,eye,scale=1,frame=''){
   const g=new THREE.Group(); const M1=toon(c1),M2=toon(c2),M3=toon(c3),ME=basic(eye,false);
@@ -296,6 +296,278 @@ function buildArchon(){
   const halo=new THREE.Mesh(new THREE.TorusGeometry(.8,.07,6,32),basic(0xffd36a,false)); halo.rotation.x=Math.PI/2; halo.position.y=3.1; body.add(halo);
   return {g,body,sword,shield,wings,halo,mats:[MW,MG,MD,ML],shadow:blob(2.2)};
 }
+/* ---- High-Co (rock frontman boss, Main Stage) ---- */
+// High-Co: rock frontman boss in two stages.
+// Stage 1: shaved sides, spiky black top with a blue-dyed mullet, orange eye paint, chinstrap beard, white tank top, fishnet sleeves.
+// Stage 2: shaved sides, long silver hair swept back, blue war paint across the eyes, full beard, black buckled vest and harness,
+//          feather pauldrons, tattooed bare arms, black claw gloves, huge black feathered wings.
+// Same skeleton as buildMech (hips/torso/head/arms/legs/shins), so animMech and stepMech drive it unchanged.
+// m.laser is a hidden beam on the mic (like the Lancer's); turn it on for the laser attack.
+const highcoTex={};
+// skin texture baked on a small canvas: optional sleeve tattoo swirls and a white fishnet grid on top
+function skinTex(net,tattoo){
+  const k=(net?'n':'')+(tattoo?'t':''); if(highcoTex[k]) return highcoTex[k];
+  const cv=document.createElement('canvas'); cv.width=cv.height=64; const g=cv.getContext('2d');
+  g.fillStyle='#e0b89c'; g.fillRect(0,0,64,64);
+  if(tattoo){ g.strokeStyle='#4a5660'; g.lineWidth=5; g.lineCap='round';
+    [[4,10,30,4,58,16],[2,30,24,20,60,36],[6,52,34,40,60,58],[14,0,10,30,22,64]].forEach(([a,b,c,d,e,f])=>{ g.beginPath(); g.moveTo(a,b); g.quadraticCurveTo(c,d,e,f); g.stroke(); });
+    g.fillStyle='#5a3a44'; g.beginPath(); g.arc(40,26,7,0,Math.PI*2); g.fill(); }
+  if(net){ g.strokeStyle='#ffffff'; g.lineWidth=2;
+    for(let i=-64;i<128;i+=16){ g.beginPath(); g.moveTo(i,0); g.lineTo(i+64,64); g.moveTo(i,64); g.lineTo(i+64,0); g.stroke(); } }
+  return highcoTex[k]=new THREE.CanvasTexture(cv);
+}
+function buildHighCo(stage=1,scale=2.6){
+  const g=new THREE.Group(), s2=stage===2; let rageStripe=null, MW, MC, MV;
+  const skin=(net,tat)=>new THREE.MeshToonMaterial({color:0xffffff,map:skinTex(net,tat),gradientMap:grad});
+  const MF=toon(0xe0b89c), MZ=toon(0x8a7468), MH=toon(0x120e16), MU=toon(0x3a6ad8), MS=toon(0xbcb8c8), MK=toon(0x1e1a24);
+  const MG=toon(0xc8c2cc), MD=toon(0x4a4450), MB=toon(0xc0904a), ML=toon(0x3a2e2a); // silver hair, dark streak, brass, leather
+  const MT=toon(s2?0x24212c:0xf2f0f4), MP=toon(s2?0x1e1a24:0xe8e6ee);
+  const MA=s2?skin(false,true):skin(true,false), MAT=s2?MA:skin(true,true); // arm skin: fishnet (stage 1) / tattoo sleeves (stage 2)
+  const feather=(w,len,mat,parent,x,y,z,rz,t=.04)=>{ const geo=new THREE.OctahedronGeometry(1,0); geo.scale(w/2,len/2,.03); geo.translate(0,-len/2,0);
+    const f=part(geo,mat,parent,x,y,z,t); f.rotation.z=rz; return f; };
+  const hips=new THREE.Group(); hips.position.y=1.6; g.add(hips);
+  const torso=new THREE.Group(); hips.add(torso);
+  part(box(.8,.42,.5),MP,torso,0,.15,0);
+  part(box(1.0,.82,.58),MT,torso,0,.76,0);
+  if(s2){
+    part(box(.88,.22,.6),MK,torso,0,.36,0,.04); // wide belt with studs
+    for(let i=0;i<5;i++) part(box(.05,.05,.03),MS,torso,-.3+i*.15,.36,.3,0);
+    [.62,.8,.98].forEach(y=>part(box(.12,.06,.04),MB,torso,-.14,y,.3,.02)); // vest buckles
+    part(box(.84,.2,.66),ML,torso,0,1.1,0,.05); // leather harness collar
+    [-1,1].forEach(s=>part(box(.12,.1,.04),MB,torso,s*.15,1.1,.34,.02));
+    // feather pauldrons
+    [-1,1].forEach(s=>{ const p=new THREE.Group(); p.position.set(s*.52,1.18,0); torso.add(p);
+      for(let i=0;i<7;i++){ const z=-.24+i*.08; feather(.18,.5+(i%2)*.15,i%2?MD:MH,p,s*(.05+(i%3)*.04),.06,z,s*(1.1+(i%3)*.35),.03); } });
+  } else {
+    part(box(.84,.1,.54),MK,torso,0,.34,0,.04); part(box(.16,.11,.04),MS,torso,0,.34,.28,.02);
+    part(box(.42,.16,.05),MF,torso,0,1.08,.28,.02); [-1,1].forEach(s=>part(box(.14,.08,.6),MT,torso,s*.36,1.2,0,.02)); // neckline + straps
+  }
+  part(box(.26,.28,.26),MF,torso,0,1.28,0,.05);
+
+  // head: oversized so the face reads from the iso camera
+  const head=new THREE.Group(); head.position.set(0,1.5,.04); head.scale.setScalar(1.35); torso.add(head);
+  part(box(.36,.44,.42),MF,head,0,.1,0,.06);
+  [-1,1].forEach(s=>{ part(box(.02,.2,.34),MZ,head,s*.185,.22,-.03,0); part(box(.05,.12,.08),MF,head,s*.2,.1,-.02,.02); }); // shaved sides + ears
+  part(box(.08,.1,.07),MF,head,0,.08,.225,.02); // nose
+  if(s2){ // blue war paint band across both eyes, white edge on top
+    part(box(.39,.1,.03),basic(0x2a7cff,false),head,0,.17,.215,0);
+    part(box(.39,.025,.03),basic(0xeef4ff,false),head,0,.23,.217,0);
+    rageStripe=part(box(.39,.03,.03),basic(0xe0202a,false),head,0,.11,.217,0); rageStripe.visible=false; // red edge under the band, rage only
+    [-1,1].forEach(s=>part(box(.07,.03,.03),basic(0x0a0610,false),head,s*.085,.165,.222,0));
+  } else [-1,1].forEach(s=>{
+    const b=part(box(.15,.05,.05),MH,head,s*.09,.255,.215,.02); b.rotation.z=s*.3;
+    const sh=part(box(.15,.075,.03),basic(0xff4a1a,false),head,s*.09,.18,.215,0); sh.rotation.z=s*.25; // eye paint
+    const ln=part(box(.15,.025,.035),basic(0x0a0610,false),head,s*.09,.14,.217,0); ln.rotation.z=s*.2; // liner
+  });
+  part(box(.22,.04,.05),MH,head,0,.0,.225,.02); // mustache
+  [-1,1].forEach(s=>part(box(.04,.1,.05),MH,head,s*.11,-.05,.225,.02));
+  const mouth=new THREE.Mesh(box(.15,.12,.03),basic(0x5a0a14,false)); mouth.position.set(0,-.07,.212); head.add(mouth);
+  const jaw=new THREE.Group(); jaw.position.set(0,-.04,0); head.add(jaw);
+  part(box(.3,.12,.3),MF,jaw,0,-.1,.06,.04);
+  if(s2){ // full beard with a grey streak
+    part(box(.38,.26,.22),MH,jaw,0,-.17,.1,.04);
+    part(box(.26,.22,.16),MH,jaw,0,-.38,.12,.04);
+    part(box(.08,.3,.04),MD,jaw,0,-.3,.21,0);
+  } else { // chinstrap along the jaw into a goatee
+    [-1,1].forEach(s=>part(box(.04,.2,.2),MH,head,s*.17,0,.08,.02));
+    part(box(.3,.04,.2),MH,jaw,0,-.17,.08,.02);
+    part(box(.07,.18,.05),MH,jaw,0,-.2,.215,.02);
+  }
+  // hair: strands on pivots so they can whip on a headbang
+  const hair=[];
+  const strand=(x,y,z,segs,rx,rz)=>{ const p=new THREE.Group(); p.position.set(x,y,z); p.rotation.set(rx,0,rz); head.add(p);
+    let yy=0; segs.forEach(([w,len,d,mat,kz])=>{ const m=part(box(w,len,d),mat,p,0,yy-len/2,0,.04); if(kz) m.rotation.z=kz; yy-=len*.92; });
+    p.userData.rx=rx; p.userData.rz=rz; hair.push(p); return p; };
+  if(!s2){
+    part(box(.26,.1,.46),MH,head,0,.35,-.01,.05);
+    [[-.08,.12,.34],[0,.13,.42],[.08,.12,.34],[-.09,0,.4],[0,0,.5],[.09,0,.4],[-.07,-.14,.38],[0,-.15,.44],[.07,-.14,.38]].forEach(([x,z,l],i)=>{
+      const c=part(new THREE.ConeGeometry(.09,l,4),MH,head,x,.38+l*.4,z,.03); c.rotation.set(-.35-(z<0?.3:0),i*.7,-x*2); });
+    part(box(.3,.34,.12),MH,head,0,.12,-.24,.04); // mullet root
+    [[-.12,.75],[-.04,.9],[.05,.85],[.13,.7]].forEach(([x,l])=>strand(x,-.02,-.25,[[.1,.24,.08,MH],[.1,l,.08,MU]],.15,x*.4));
+    strand(.16,0,-.14,[[.1,.2,.08,MH],[.1,.8,.08,MU]],-.25,.5); // blue lock falling over the shoulder
+  } else {
+    // dark band on top swept back, long silver hair flowing down the back and past the shoulders
+    part(box(.24,.1,.5),MD,head,0,.36,-.02,.04);
+    part(box(.3,.4,.14),MD,head,0,.2,-.24,.04);
+    const wave=(l,mat)=>[[.11,l*.36,.1,mat,.16],[.12,l*.34,.1,mat,-.18],[.11,l*.34,.1,mat,.14]];
+    [[-.14,1.25,MG],[-.05,1.45,MD],[.05,1.4,MG],[.14,1.2,MG]].forEach(([x,l,m],i)=>strand(x,.36,-.18-(i%2)*.04,wave(l,m),.45,x*.4));
+    [-1,1].forEach(s=>{ strand(s*.2,.24,-.12,wave(1.15,MG),.12,s*.14); strand(s*.1,.3,-.26,wave(1.3,s<0?MG:MD),.35,s*.25); }); // behind the ears, down to the shoulders
+  }
+
+  // arms
+  const arms=[];
+  [-1,1].forEach(s=>{
+    part(box(.36,.36,.42),s<0?MAT:MA,torso,s*.58,1.04,0,.06);
+    const arm=new THREE.Group(); arm.position.set(s*.64,.98,0); torso.add(arm);
+    part(box(.26,.6,.28),s<0?MAT:MA,arm,0,-.32,0,.06);
+    part(box(.25,.6,.27),MA,arm,0,-.9,0,.06);
+    if(s2){ part(box(.28,.3,.3),MK,arm,0,-1.06,0,.03); // arm wrap
+      part(box(.24,.26,.26),MK,arm,0,-1.33,0,.05); // claw glove
+      [-.07,0,.07].forEach(x=>{ const c=part(new THREE.ConeGeometry(.03,.12,4),MS,arm,x,-1.36,.15,0); c.rotation.x=Math.PI/2; }); }
+    else { part(box(.28,.06,.3),MT,arm,0,-1.18,0,.02); part(box(.22,.24,.24),MF,arm,0,-1.33,0,.05); }
+    arms.push(arm);
+  });
+  // hand mic with a cable; the laser beam comes out of its head
+  const mic=new THREE.Group(); mic.position.set(0,-1.4,.08); arms[1].add(mic);
+  part(new THREE.CylinderGeometry(.045,.035,.42,8),MS,mic,0,-.15,0,.03);
+  part(new THREE.SphereGeometry(.085,10,8),MK,mic,0,-.4,0,.03);
+  part(box(.02,.5,.02),MK,mic,0,.25,-.06,0);
+  const muzzle=new THREE.Object3D(); muzzle.position.y=-.5; mic.add(muzzle);
+  const lc=s2?0x4a9cff:0xff5a1a, laser=new THREE.Group(); laser.position.y=-.5; mic.add(laser);
+  const beam=new THREE.Mesh(box(.05,12,.05),basic(0xffffff,true,.95)); beam.position.y=-6; laser.add(beam);
+  const glow=new THREE.Mesh(box(.16,12,.16),basic(lc,true,.6)); glow.position.y=-6; laser.add(glow);
+  laser.traverse(o=>o.userData.nofit=1); laser.visible=false;
+
+  // legs
+  const legs=[],shins=[];
+  [-1,1].forEach(s=>{
+    const leg=new THREE.Group(); leg.position.set(s*.22,0,0); hips.add(leg);
+    part(box(.34,.8,.38),MP,leg,0,-.4,0,.06);
+    const shin=new THREE.Group(); shin.position.y=-.8; leg.add(shin);
+    part(box(.32,.6,.36),MP,shin,0,-.28,0,.06);
+    part(box(.36,.3,.55),MK,shin,0,-.67,.07,.05);
+    legs.push(leg); shins.push(shin);
+  });
+
+  // stage 2: black feathered wings. A bone arcs up and out; feathers hang from it, growing longer toward the tip,
+  // with a row of shorter coverts in front and small ones along the bone.
+  let wings=null;
+  if(s2){
+    wings=[]; MW=toon(0x16121c); MC=toon(0x2c2436); MV=toon(0x3a3046); // black by default, setHighCoRage turns them red
+    [-1,1].forEach(s=>{ const root=new THREE.Group(); root.position.set(s*.25,1.0,-.36); root.rotation.x=-.2; torso.add(root);
+      const N=9, bone=u=>[s*(.2+u*2.3), .2+Math.sin(u*Math.PI*.8)*1.4]; // arc from shoulder blade up and out
+      for(let i=0;i<N;i++){ const u=i/(N-1), [x,y]=bone(u); feather(.52,1.0+u*1.7,MW,root,x,y,0,s*(u*.9-.15)); } // primaries
+      for(let i=0;i<7;i++){ const u=i/6*.85, [x,y]=bone(u); feather(.46,.7+u*.6,MC,root,x,y+.05,.05,s*(u*.7-.1)); } // coverts
+      for(let i=0;i<6;i++){ const u=i/5*.9, [x,y]=bone(u); feather(.34,.45,MV,root,x,y+.12,.08,s*.4); } // small feathers on the bone
+      root.userData.s=s; wings.push(root); });
+  }
+  g.scale.setScalar(scale);
+  return {g,hips,torso,head,jaw,mouth,hair,arms,legs,shins,muzzle,rifle:mic,mic,laser,wings,wingMats:wings&&[MW,MC,MV],rageStripe,stage,rage:false,mats:[MF,MH,MT,MP],shadow:blob(.8*scale),kind:'highco'};
+}
+// Stage 2 rage: black wings turn crimson (coverts stay black) and a red stripe shows under the war paint.
+const HC_WINGS={calm:[0x16121c,0x2c2436,0x3a3046],rage:[0x9a1424,0x16121c,0x5a0c18]};
+function setHighCoRage(m,on){
+  if(!m.wingMats) return; m.rage=on;
+  m.wingMats.forEach((mat,i)=>mat.color.setHex(HC_WINGS[on?'rage':'calm'][i])); m.rageStripe.visible=on;
+}
+// Spawn prop: striped parachute in world units. Hang it over the boss (canopy top ~7 above the harness).
+function buildHighCoChute(){
+  const g=new THREE.Group(), canopy=new THREE.Group(); canopy.position.y=6.2; g.add(canopy);
+  const cols=[0xd2382a,0xf2f0f4,0x1e1a24,0xf2f0f4], N=12;
+  for(let i=0;i<N;i++){ const geo=new THREE.SphereGeometry(3.4,3,4,i/N*Math.PI*2,Math.PI*2/N,0,Math.PI*.42);
+    part(geo,toon(cols[i%4]),canopy,0,0,0,.08).scale.y=.6; }
+  const lines=[]; for(let i=0;i<8;i++){ const a=i/8*Math.PI*2, x=Math.cos(a)*3.1, z=Math.sin(a)*3.1, top=new V3(x,6.2+1.6*.0+.9,z);
+    const len=top.length(), l=new THREE.Mesh(box(.04,len,.04),basic(0x1e1a24,false)); l.position.copy(top).multiplyScalar(.5); l.lookAt(top); l.rotateX(Math.PI/2); g.add(l); lines.push(l); }
+  return {g,canopy,lines};
+}
+// Stage 2 summon: a pole bursts out of the floor with a spinning dancer that hurts everything around it.
+// Kept anonymous on purpose (faceless visor, band tee): it is a stage gag, not any real person.
+function buildHighCoPole(){
+  const g=new THREE.Group();
+  const MS=toon(0xd8d4e0), MK=toon(0x1e1a24), MR=toon(0xd2382a), MF=toon(0xe0b89c), MH=toon(0x5a2a3a);
+  part(new THREE.CylinderGeometry(1.1,1.3,.3,16),MK,g,0,.15,0,.06);
+  const ringB=part(new THREE.TorusGeometry(1.15,.06,6,32),MR,g,0,.32,0,0); ringB.rotation.x=Math.PI/2;
+  const pole=part(new THREE.CylinderGeometry(.16,.16,9,10),MS,g,0,4.8,0,.05);
+  const cap=new THREE.Mesh(new THREE.SphereGeometry(.3,12,8),basic(0xff3048,false)); cap.position.y=9.4; g.add(cap);
+  cap.add(new THREE.Mesh(new THREE.SphereGeometry(.55,12,8),basic(0xff3048,true,.35)));
+  // dancer on a spinning collar, built small and blocky like the arena mobs
+  const spin=new THREE.Group(); spin.position.y=4.2; g.add(spin);
+  const d=new THREE.Group(); d.position.x=.7; spin.add(d); d.scale.setScalar(1.7);
+  const body=new THREE.Group(); d.add(body); body.rotation.z=.35;
+  part(box(.5,.62,.32),MK,body,0,0,0,.05); // band tee
+  part(box(.26,.22,.04),basic(0xd2382a,false),body,0,.06,.17,0); // tee logo
+  part(box(.18,.12,.18),MF,body,0,.37,0,.04);
+  const head=new THREE.Group(); head.position.y=.62; body.add(head);
+  part(box(.34,.36,.34),MF,head,0,0,0,.05);
+  part(box(.38,.14,.38),MH,head,0,.16,-.02,.04);
+  part(box(.3,.08,.04),basic(0xff5a8a,false),head,0,.0,.18,0); // visor glow, no face
+  const tail=new THREE.Group(); tail.position.set(0,.12,-.18); head.add(tail);
+  part(box(.12,.6,.1),MH,tail,0,-.3,0,.04); tail.rotation.x=.9;
+  const armU=new THREE.Group(); armU.position.set(-.3,.25,0); body.add(armU); armU.rotation.z=2.5; // gripping the pole above
+  part(box(.14,.55,.14),MF,armU,0,-.28,0,.04);
+  const armF=new THREE.Group(); armF.position.set(.3,.25,0); body.add(armF); armF.rotation.z=-1.6; // free arm thrown out
+  part(box(.14,.55,.14),MF,armF,0,-.28,0,.04);
+  [-1,1].forEach(s=>{ const leg=new THREE.Group(); leg.position.set(s*.13,-.3,0); body.add(leg); leg.rotation.z=s*.6+.5;
+    part(box(.18,.75,.2),MK,leg,0,-.38,0,.04); part(box(.2,.14,.3),MR,leg,0,-.78,.05,.03); });
+  // damage aura on the floor
+  const aura=new THREE.Mesh(new THREE.RingGeometry(3.8,4.1,48),addMat(0xff3048,.7)); aura.rotation.x=-Math.PI/2; aura.position.y=.06; aura.userData.nofit=1; g.add(aura);
+  const fill=new THREE.Mesh(new THREE.CircleGeometry(3.8,48),addMat(0xff3048,.12)); fill.rotation.x=-Math.PI/2; fill.position.y=.05; fill.userData.nofit=1; g.add(fill);
+  return {g,pole,spin,dancer:d,body,tail,aura,fill,cap,shadow:blob(1.3)};
+}
+// High-Co boss room: a night concert. The stage sits behind the door edge (-z), the crowd behind the front edge (+z), so the
+// playable mat stays open except the amp stacks (covers: [x,z] centers, 1.8 square) that block the Metal Scream.
+// Tall props stay on the far sides of the iso camera (-x, -z) so they never hide the fight. Decor casts no shadows.
+function buildHighCoArena(X,Z,covers){
+  const g=new THREE.Group(), cs=castShadows; castShadows=false;
+  const MK=toon(0x1e1a24), MD=toon(0x2c2834), MS=toon(0x9a96a6), MR=toon(0xd2382a), MW=toon(0x4a4450);
+  // floor: dark stage boards
+  const cv=document.createElement('canvas'); cv.width=cv.height=128; const c2=cv.getContext('2d');
+  c2.fillStyle='#2e2836'; c2.fillRect(0,0,128,128); c2.fillStyle='#352e3e'; for(let i=0;i<8;i++) if(i%2) c2.fillRect(0,i*16,128,16);
+  c2.strokeStyle='#241e2a'; c2.lineWidth=2; for(let i=0;i<=8;i++){ c2.beginPath(); c2.moveTo(0,i*16); c2.lineTo(128,i*16); c2.stroke(); }
+  const tex=new THREE.CanvasTexture(cv); tex.wrapS=tex.wrapT=THREE.RepeatWrapping; tex.repeat.set(X/2,Z/2);
+  const floor=new THREE.Mesh(new THREE.PlaneGeometry(2*X,2*Z),new THREE.MeshToonMaterial({map:tex,gradientMap:grad})); floor.rotation.x=-Math.PI/2; floor.position.y=.015; floor.receiveShadow=true; g.add(floor);
+  // light pools sweeping across the floor
+  const pools=[0,1,2,3].map(()=>{ const p=new THREE.Mesh(new THREE.CircleGeometry(2.6,32),addMat(0xff3048,.16)); p.rotation.x=-Math.PI/2; p.position.y=.04; g.add(p); return p; });
+  // main stage behind the door: drum riser, amp walls, LED wall
+  const st=new THREE.Group(); st.position.z=-Z-4.2; g.add(st);
+  part(box(2*X+4,1.4,6),MD,st,0,.7,0,.1);
+  const led=new THREE.Mesh(box(2*X+4,.12,.06),addMat(0xff3048,.9)); led.position.set(0,1.25,3.03); st.add(led);
+  part(box(3,.7,2),MK,st,0,1.75,1.8,.06);
+  part(box(4,.8,3),MW,st,0,1.8,-.8,.08);
+  const kit=new THREE.Group(); kit.position.set(0,2.2,-.8); st.add(kit);
+  part(new THREE.CylinderGeometry(.75,.75,.6,14),MR,kit,0,.4,0,.05).rotation.x=Math.PI/2;
+  [[-1.1,.9,.35],[1.1,.9,.35],[-.6,1.1,-.4],[.6,1.1,-.4]].forEach(([x,y,r])=>part(new THREE.CylinderGeometry(r,r,.3,12),MK,kit,x,y-.4,.3,.04));
+  [-1.6,1.6].forEach(x=>{ part(box(.05,1.4,.05),MS,kit,x,.6,.2,0); part(new THREE.CylinderGeometry(.5,.5,.04,14),toon(0xd9a520),kit,x,1.3,.2,.03).rotation.z=.2; });
+  const amp=(parent,x,y,z,w=1.6,h=1.2,d=.9)=>{ const a=part(box(w,h,d),MK,parent,x,y,z,.06);
+    const gr=new THREE.Mesh(box(w*.82,h*.7,.02),basic(0x0a0610,false)); gr.position.z=d/2+.01; a.add(gr);
+    part(box(w,.1,d+.02),MS,a,0,h/2-.05,0,0); return a; };
+  [-1,1].forEach(s=>{ for(let i=0;i<4;i++) for(let j=0;j<2;j++) amp(st,s*(X-2.2-i*1.7),2+j*1.2,-1.6); });
+  const sc=document.createElement('canvas'); sc.width=512; sc.height=160; const sx=sc.getContext('2d');
+  sx.fillStyle='#120a16'; sx.fillRect(0,0,512,160); sx.font='bold 110px Impact, Arial Black, sans-serif'; sx.textAlign='center'; sx.textBaseline='middle';
+  sx.fillStyle='#ff3048'; sx.fillText('HIGH-CO',256,84); sx.strokeStyle='#ffd0d6'; sx.lineWidth=3; sx.strokeText('HIGH-CO',256,84);
+  part(box(13,4.6,.4),MK,st,0,6.6,-2.6,.1);
+  const screen=new THREE.Mesh(new THREE.PlaneGeometry(12.4,4),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(sc)})); screen.position.set(0,6.6,-2.38); st.add(screen);
+  // lighting truss over the stage lip; moving heads throw light cones into the room
+  const truss=new THREE.Group(); truss.position.z=-Z-2.2; g.add(truss);
+  [-1,1].forEach(s=>part(box(.5,12,.5),MS,truss,s*(X+1.5),6,0,.05));
+  part(box(2*X+3.5,.5,.5),MS,truss,0,12,0,.05);
+  const heads=[], cones=[];
+  for(let i=0;i<6;i++){ const h=new THREE.Group(); h.position.set(-X+1.5+i*(2*X-3)/5,11.6,0); truss.add(h); part(box(.5,.5,.5),MK,h,0,0,0,.04);
+    const cone=new THREE.Mesh(new THREE.ConeGeometry(2.2,12,20,1,true),addMat(0xff3048,.12)); cone.position.y=-6; h.add(cone); heads.push(h); cones.push(cone); }
+  // pyro on the stage lip, bursting on the beat
+  const pyro=[-1,1].map(s=>{ const p=new THREE.Group(); p.position.set(s*(X-1),1.4,-Z-1.8); g.add(p); part(box(.8,.3,.8),MK,p,0,0,0,.04);
+    const f=new THREE.Mesh(new THREE.ConeGeometry(.5,4,10,1,true),addMat(0xff8a2a,.8)); f.position.y=2.1; f.rotation.x=Math.PI; p.add(f);
+    const f2=new THREE.Mesh(new THREE.ConeGeometry(.28,3,10,1,true),addMat(0xffe08a,.9)); f2.position.y=1.6; f2.rotation.x=Math.PI; p.add(f2);
+    p.userData.flame=[f,f2]; return p; });
+  // line-array speaker towers (none on the near +x/+z corner)
+  [[-1,-Z*.45],[-1,Z*.45],[1,-Z*.45]].forEach(([s,z])=>{ const t=new THREE.Group(); t.position.set(s*(X+1.6),0,z); g.add(t);
+    part(box(.3,8,.3),MS,t,0,4,0,.03);
+    for(let i=0;i<5;i++){ const b=part(box(1.4,.6,1.1),MK,t,-s*.5,7.6-i*.62,0,.05); b.rotation.z=s*i*.05; } });
+  // barrier and crowd beyond the front edge (one row on phones)
+  for(let x=-X;x<X;x+=2) part(box(1.9,1.1,.15),MS,g,x+1,.55,Z+.8,.04);
+  const crowd=[], tones=[0x24202c,0x2e2836,0x1a1620,0x3a2e3a].map(c=>toon(c)), skin=toon(0xc8a088);
+  for(let r=0;r<(mobileMode?1:2);r++) for(let x=-X-1;x<=X+1;x+=1.3){ const p=new THREE.Group(); p.position.set(x+(r%2)*.65+Math.random()*.3,0,Z+2.2+r*1.3); g.add(p);
+    const M=pickOne(tones), up=Math.random()<.5;
+    part(box(.6,.9,.4),M,p,0,1.1,0,.04); part(box(.38,.4,.38),skin,p,0,1.8,0,.04);
+    [-1,1].forEach(s=>{ const a=part(box(.16,.6,.16),M,p,s*.38,up?1.75:1.1,0,0); if(up) a.rotation.z=-s*.3; });
+    if(Math.random()<.25){ const ph=new THREE.Mesh(box(.12,.2,.03),basic(0xd8f0ff,false)); ph.position.set(.4,2.15,.1); p.add(ph); }
+    p.userData.ph=Math.random()*6; crowd.push(p); }
+  // amp stacks on the mat: cover from the Metal Scream
+  (covers||[]).forEach(([x,z])=>{ const c=new THREE.Group(); c.position.set(x,0,z); g.add(c); amp(c,0,.65,0,1.8,1.3,1.8); amp(c,0,1.95,0,1.6,1.2,1.6); });
+  castShadows=cs;
+  return {g,pools,heads,cones,pyro,crowd,led};
+}
+// arena life per phase: I warm red/blue, II cold white/violet (the black angel), III all red (rage, faster crowd, constant pyro)
+const HC_LIGHT=[[0xff3048,0x4a9cff],[0xe8e0ff,0x8a6aff],[0xff2030,0xff2030]];
+function animateHighCoArena(a,t,phase){
+  const L=HC_LIGHT[phase-1]||HC_LIGHT[0], rage=phase===3;
+  a.pools.forEach((p,i)=>{ const k=t*.5+i*1.7; p.position.set(Math.sin(k)*7,.04,Math.cos(k*.8+i)*11); p.material.color.setHex(L[i%2]); });
+  a.heads.forEach((h,i)=>{ h.rotation.z=Math.sin(t*.9+i)*.45; h.rotation.x=.25+Math.cos(t*.7+i*.6)*.25; });
+  a.cones.forEach((c,i)=>c.material.color.setHex(L[i%2]));
+  a.crowd.forEach(p=>{ p.position.y=Math.max(0,Math.sin(t*(rage?9:6)+p.userData.ph))*.35; });
+  const beat=rage||(t%2.4)<.35; a.pyro.forEach(p=>p.userData.flame.forEach(f=>{ f.visible=beat; f.scale.y=.8+Math.random()*.4; }));
+  a.led.material.opacity=.6+.4*Math.abs(Math.sin(t*4));
+}
 // Corrupted variant look: purple tint, crystal spikes and a void aura. Works on any model (mobs, bosses).
 function corruptModel(m,amt=.45){
   const tint=new THREE.Color(0x6a1a5a); m.g.traverse(o=>{ if(o.isMesh&&o.material&&o.material.isMeshToonMaterial) o.material.color.lerp(tint,amt); });
@@ -308,5 +580,5 @@ function corruptModel(m,amt=.45){
 }
 // generalized bestiary buildCorrupted: any boss model + purple tint, crystal spikes and a void aura
 const buildCorrupted=kind=>corruptModel(BOSS_BUILD[kind](),.45);
-const BOSS_BUILD={colossus:buildColossus,prism:buildPrism,seraph:buildSeraphBoss,hive:buildHive,arachne:buildArachne,throne:buildThrone,archon:buildArchon};
+const BOSS_BUILD={colossus:buildColossus,prism:buildPrism,seraph:buildSeraphBoss,hive:buildHive,arachne:buildArachne,throne:buildThrone,archon:buildArchon,highco:()=>buildHighCo(1)};
 for(const k in BOSSES) if(BOSSES[k].form&&!BOSS_BUILD[k]) BOSS_BUILD[k]=()=>buildCorrupted(BOSSES[k].form);

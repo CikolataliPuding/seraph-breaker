@@ -68,7 +68,7 @@ function losClear(ax,az,bx,bz){
 // nearest visible enemy; near-ties (within 1.5 units) go to the one with the lowest HP
 function autoTarget(){
   const p=player; let best=null,bd=1e9;
-  for(const e of enemies){ if(e.dead||e.born<.4||e.dropY>0) continue; if(e===boss&&(boss.atk==='enter'||state==='cine')) continue;
+  for(const e of enemies){ if(e.dead||e.born<.4||e.dropY>0) continue; if(e===boss&&(boss.atk==='enter'||boss.immune||state==='cine')) continue;
     const d=Math.hypot(e.pos.x-p.pos.x,e.pos.z-p.pos.z)-e.r*.5; if(d>bd+1.5) continue;
     if(!losClear(p.pos.x,p.pos.z,e.pos.x,e.pos.z)) continue;
     if(!best||d<bd-1.5||(Math.abs(d-bd)<=1.5&&e.hp<best.hp)){ if(d<bd) bd=d; best=e; } }
