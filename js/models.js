@@ -62,26 +62,61 @@ function stepMech(m,o,spd,dt,scale,dir=1){
   animMech(m,o.walk||0,o.walkAmt||0);
   return fall;
 }
+/* Seraph (charger): a crystal with a forward lance, a glowing core ring, feathered wings and trailing ribbons that stream behind it.
+   Damage states (m.breaks): two ribbons fall off below 50% armor, an inner wing below 25%. */
 function buildSeraph(scale=1){
   const g=new THREE.Group(); const body=new THREE.Group(); body.position.y=2.1; g.add(body);
-  const MW=toon(0xeee8f4),MD=toon(0x2a2232);
+  const MW=toon(0xeee8f4),MD=toon(0x2a2232),MG=toon(0xd9c9ff);
   const crystal=part(new THREE.OctahedronGeometry(.8,0),MW,body,0,0,0,.1); crystal.scale.y=1.6;
   part(new THREE.OctahedronGeometry(.32,0),MD,body,0,-1.25,0,.06);
+  const lance=part(new THREE.ConeGeometry(.17,1.15,5),MD,body,0,-.15,.95,.05); lance.rotation.x=Math.PI/2;
   const core=new THREE.Mesh(new THREE.SphereGeometry(.28,14,10),basic(0xff2a3a,false)); core.position.z=.55; body.add(core);
+  const ring=new THREE.Mesh(new THREE.TorusGeometry(.4,.045,6,20),basic(0xff5a6a,true,.85)); ring.position.z=.58; body.add(ring);
   const halo=new THREE.Mesh(new THREE.TorusGeometry(.6,.05,6,32),basic(0xffd36a,false)); halo.rotation.x=Math.PI/2; halo.position.y=1.75; body.add(halo);
   const wings=[];
-  [-1,1].forEach(s=>{ const w=part(box(1.5,.08,.5),MW,body,s*1.1,.3,-.2,.06); w.rotation.z=s*.5; wings.push(w); const w2=part(box(1.1,.06,.36),MW,body,s*.95,-.15,-.2,.05); w2.rotation.z=s*.15; wings.push(w2); });
+  [-1,1].forEach(s=>{ const w=part(box(1.5,.08,.5),MW,body,s*1.1,.3,-.2,.06); w.rotation.z=s*.5; wings.push(w);
+    [0,1].forEach(k=>part(box(.42,.05,.28),MG,w,s*(.55+k*.32),-.02,-.28-k*.06,.03));
+    const w2=part(box(1.1,.06,.36),MW,body,s*.95,-.15,-.2,.05); w2.rotation.z=s*.15; wings.push(w2); });
+  const ribbons=[-1,0,1].map(i=>{ const p=new THREE.Group(); p.position.set(i*.26,-1.35,-.2); body.add(p); part(box(.09,1,.04),MG,p,0,-.5,0,.03); return p; });
   g.scale.setScalar(scale);
-  return {g,body,core,halo,wings,mats:[MW,MD],shadow:blob(.8*scale)};
+  return {g,body,core,ring,halo,wings,ribbons,mats:[MW,MD,MG],shadow:blob(.8*scale),breaks:[{o:ribbons[0],at:.5},{o:ribbons[2],at:.5},{o:wings[1],at:.25}]};
 }
+/* Warden (area denial): an eye orb inside gold rings, ringed by four petal shields that open before it fires, a glowing iris
+   and three chains swaying under it. Damage states: two petals fall off below 50% armor, the outer ring below 25%. */
 function buildWarden(){
   const g=new THREE.Group(); const body=new THREE.Group(); body.position.y=2.6; g.add(body);
-  const MW=toon(0xe8e2f0),MG=toon(0xd4a640);
+  const MW=toon(0xe8e2f0),MG=toon(0xd4a640),MD=toon(0x2a2232);
   part(new THREE.SphereGeometry(.7,16,12),MW,body,0,0,0,.1);
   const eye=new THREE.Mesh(new THREE.TorusGeometry(.3,.09,8,24),basic(0xff2a3a,false)); eye.position.z=.66; body.add(eye);
+  const iris=new THREE.Mesh(new THREE.TorusGeometry(.42,.03,6,24),basic(0xff5a3a,true,.7)); iris.position.z=.62; body.add(iris);
   const pupil=new THREE.Mesh(new THREE.SphereGeometry(.12,10,8),basic(0x0a0610,false)); pupil.position.z=.7; body.add(pupil);
   const r1=part(new THREE.TorusGeometry(1.1,.07,6,40),MG,body,0,0,0,.05), r2=part(new THREE.TorusGeometry(1.35,.05,6,40),MG,body,0,0,0,.04);
-  return {g,body,rings:[r1,r2],eye,mats:[MW,MG],shadow:blob(.9)};
+  const petals=[0,1,2,3].map(i=>{ const p=new THREE.Group(); p.rotation.z=i*Math.PI/2+Math.PI/4; body.add(p); const pl=part(box(.34,.5,.1),MW,p,0,.72,.18,.04); pl.rotation.x=-.35; part(box(.2,.08,.12),MG,pl,0,.2,.02,.02); return p; });
+  const chains=[0,1,2].map(i=>{ const a=i/3*Math.PI*2, c=new THREE.Group(); c.position.set(Math.cos(a)*.35,-.6,Math.sin(a)*.35); body.add(c); for(let k=0;k<3;k++) part(box(.08,.22,.08),k%2?MG:MD,c,0,-.15-k*.24,0,.02); return c; });
+  return {g,body,rings:[r1,r2],eye,iris,petals,chains,mats:[MW,MG,MD],shadow:blob(.9),breaks:[{o:petals[0],at:.5},{o:petals[2],at:.5},{o:r2,at:.25}]};
+}
+/* Drone (kiter): a light rifle scout. A backpack with a swaying antenna and a turning sensor dish makes it read from above,
+   a red visor and a rifle lamp glow. Damage states: antenna and dish break off below 50% armor, the whole pack below 25%. */
+function buildDrone(){
+  const m=buildMech(0x4c4658,0x9a2c42,0x24202c,0xff2a2a,.8), [M1,M2,M3]=m.mats, ME=basic(0xff3a2a,false);
+  const pack=part(box(.8,.72,.42),M3,m.torso,0,.85,-.58); part(box(.6,.12,.3),M2,pack,0,.4,0,.04);
+  const ant=new THREE.Group(); ant.position.set(-.25,.42,-.05); pack.add(ant); part(box(.06,1.15,.06),M3,ant,0,.57,0,.03); const tip=new THREE.Mesh(box(.13,.13,.13),ME); tip.position.y=1.16; ant.add(tip);
+  const dish=new THREE.Group(); dish.position.set(.28,.46,0); pack.add(dish); const dd=part(new THREE.CylinderGeometry(.28,.08,.12,10),M1,dish,0,.14,0,.04); dd.rotation.x=.6;
+  const vis=new THREE.Mesh(box(.42,.06,.04),ME); vis.position.set(0,.2,.27); m.head.add(vis);
+  const lamp=new THREE.Mesh(box(.1,.1,.1),basic(0xffd06a,false)); lamp.position.set(0,-.25,.18); m.rifle.add(lamp);
+  const cab=part(new THREE.CylinderGeometry(.04,.04,1.1,6),M3,m.torso,.6,.6,-.38,0); cab.rotation.set(.9,0,-.5);
+  m.ant=ant; m.dish=dish; m.breaks=[{o:ant,at:.5},{o:dish,at:.5},{o:pack,at:.25}]; return m;
+}
+/* Heavy (tank / slammer): wide pauldrons that swing with the stride, a slam fist on the left arm, a triple fan barrel on the right
+   and back vents that glow and flare during a wind-up. Damage states: one pauldron below 50% armor, the vents and the other pauldron below 25%. */
+function buildHeavy(){
+  const m=buildMech(0x5a5244,0xc08a2a,0x2a2620,0xff3030,1.25), [M1,M2,M3]=m.mats, MG=basic(0xff7a2a,false);
+  const pauls=[-1,1].map(s=>{ const p=new THREE.Group(); p.position.set(s*.98,1.42,0); m.torso.add(p); part(box(.78,.18,1.02),M2,p,s*.1,0,0,.05); part(box(.12,.6,.92),M1,p,s*.46,-.32,0,.05); return p; });
+  const fist=part(box(.62,.56,.64),M2,m.arms[0],0,-1.36,0,.06); part(box(.68,.12,.68),M3,fist,0,-.24,0,.04);
+  [-1,0,1].forEach(i=>part(box(.12,.5,.12),M3,m.rifle,i*.13,-.95,.06,.03));
+  const vents=new THREE.Group(); vents.position.set(0,.85,-.52); m.torso.add(vents); part(box(1,.62,.26),M3,vents,0,0,0,.05);
+  const glows=[-.3,0,.3].map(x=>{ const v=new THREE.Mesh(box(.18,.4,.05),MG); v.position.set(x,0,-.15); vents.add(v); return v; });
+  m.pauls=pauls; m.glows=glows; m.breaks=[{o:pauls[0],at:.5},{o:vents,at:.25},{o:pauls[1],at:.25}]; return m;
 }
 function buildShield(size){ const sh=new THREE.Group(); for(let i=0;i<3;i++) sh.add(new THREE.Mesh(new THREE.RingGeometry(size+i*.6,size+.25+i*.6,6),addMat(0xff7a2a,.8))); sh.add(new THREE.Mesh(new THREE.CircleGeometry(size,6),addMat(0xff7a2a,.18))); sh.visible=false; return sh; }
 function buildColossus(){

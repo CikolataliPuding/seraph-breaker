@@ -248,10 +248,10 @@ const MODS={
    artillery (lobbed shots, punishes standing still) · denial (area fire) · support (stays behind the others) · rusher (Spark: fuse when close).
    tag: 'move' = forces you to move (chargers, artillery, area denial, slams), 'focus' = demands attention (sniper, support). See COMPS. */
 const ENEMY={
-  drone:{name:'Drone',mass:.9,role:'kiter',band:[6,10.5],hp:5,r:1.15,speed:3.4,sc:.8,cost:1,xp:1,gold:6,score:100,build:()=>buildMech(0x4c4658,0x9a2c42,0x24202c,0xff2a2a,.8),elite:false},
+  drone:{name:'Drone',mass:.9,role:'kiter',band:[6,10.5],hp:5,r:1.15,speed:3.4,sc:.8,cost:1,xp:1,gold:6,score:100,build:()=>buildDrone(),elite:false},
   seraph:{name:'Seraph',tag:'move',mass:.7,role:'charger',band:[5,8],hp:7,r:1.45,speed:5,sc:1,fly:true,angel:true,cost:1.3,xp:1.3,gold:8,score:150,build:()=>buildSeraph(1)},
   mini:{name:'Mini seraph',mass:.5,role:'charger',band:[4.5,7],hp:4,r:1.05,speed:6,sc:.7,fly:true,angel:true,cost:.8,xp:0,gold:3,score:60,build:()=>buildSeraph(.7),elite:false,ai:'seraph'},
-  heavy:{name:'Heavy',tag:'move',mass:2.6,role:'tank',hold:4.2,slam:4.6,hp:20,r:1.7,speed:2.4,sc:1.25,cost:2.6,xp:3,gold:16,score:300,build:()=>buildMech(0x5a5244,0xc08a2a,0x2a2620,0xff3030,1.25)},
+  heavy:{name:'Heavy',tag:'move',mass:2.6,role:'tank',hold:4.2,slam:4.6,hp:20,r:1.7,speed:2.4,sc:1.25,cost:2.6,xp:3,gold:16,score:300,build:()=>buildHeavy()},
   warden:{name:'Warden',tag:'move',mass:1.4,role:'denial',band:[8,12],hp:11,r:1.45,speed:3,sc:1,fly:true,angel:true,cost:1.9,xp:2,gold:12,score:250,build:()=>buildWarden()},
   // arena mobs (models from docs/bestiary.html, behavior in enemy-ai.js)
   spark:{name:'Spark',tag:'move',mass:.45,role:'rusher',fuse:.55,hp:3,r:.9,speed:7.5,sc:1,cost:.7,xp:.6,gold:4,score:80,build:()=>buildSpark(),elite:false,init:e=>{ e.model.core.material=e.model.core.material.clone(); e.st='roll'; }},

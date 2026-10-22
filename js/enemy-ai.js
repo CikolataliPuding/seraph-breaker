@@ -244,6 +244,10 @@ function crawlGait(m,o,spd,dt,sc){
   return A;
 }
 const ANIM={
+  // secondary motion: the Drone's antenna whips with acceleration, its dish turns; the Heavy's pauldrons swing with the stride, vents flare in a wind-up
+  drone(e,dt,m){ const s=Math.sin(e.byaw), c=Math.cos(e.byaw), af=(e.acx||0)*s+(e.acz||0)*c; if(!m.ant.userData.broken){ m.ant.rotation.x=clamp(af*.03,-.5,.5)+Math.sin(e.t*7)*.06*(e.walkAmt||0); m.ant.rotation.z=Math.sin(e.t*4.3)*.06; } if(!m.dish.userData.broken) m.dish.rotation.y+=dt*(e.see?5:1.5); },
+  heavy(e,dt,m){ const w=e.walk||0, a=e.walkAmt||0; m.pauls.forEach((p,i)=>{ if(!p.userData.broken) p.rotation.x=Math.sin(w+i*Math.PI)*.2*a+(e.jz.lean.x||0)*.6; });
+    const k=teleK(e); m.glows.forEach((g,i)=>g.scale.set(1,1+k*1.6+Math.sin(e.t*30+i)*.15*(k>0?1:.3),1)); },
   // Spark truly rolls: the body turns about the axis across its velocity, as fast as it moves (radius .75)
   spark(e,dt,m){ const sp=Math.hypot(e.vel.x,e.vel.z); if(sp>.05){ _rq.setFromAxisAngle(_rax.set(e.vel.z/sp,0,-e.vel.x/sp),sp*dt/.75); m.body.quaternion.premultiply(_rq); } const bl=e.st==='blink', fk=bl?1-e.stT/e.def.fuse:0, k=Math.sin(e.t*(bl?16+fk*40:9))>0; m.core.material.color.setHex(k?0xffffff:0xffa040); if(bl) m.warn.scale.setScalar(1.55+fk*.2); },
   crawler(e,dt,m){ crawlGait(m,e,e.vel.length(),dt,e.sc); m.tur.rotation.y=lerpAngle(m.tur.rotation.y,(e.aimYaw||e.yaw)-e.yaw,Math.min(1,dt*10)); m.tur.scale.setScalar(e.ph==='tele'?1.12+Math.sin(e.t*40)*.04:1); },
@@ -254,8 +258,12 @@ const ANIM={
   censer(e,dt,m){ m.swing.rotation.z=Math.sin(e.t*1.6)*.28; m.swing.rotation.x=Math.cos(e.t*1.3)*.12; m.orbs.forEach((o,i)=>{ const a=e.t*.8+i*2.1; o.position.set(Math.cos(a)*1.9,-1.4+Math.sin(e.t*1.5+i)*.4,Math.sin(a)*1.9); }); m.glow.scale.setScalar((1+Math.sin(e.t*4)*.12)*(e.ph==='tele'?1.5:1)); },
   ophan(e,dt,m){ if(e.st==='roll') m.body.rotation.x+=e.speed*dt/1.6; else { m.body.rotation.x*=Math.pow(.05,dt); m.rings[0].rotation.z+=dt*(e.st==='tele'?5:1.2); m.rings[1].rotation.x+=dt*(e.st==='tele'?4:1); } m.core.rotation.y+=dt*2; },
   // anticipation: readable wind-ups before attacks
-  warden(e,dt,m){ const wu=teleK(e); m.body.position.y=2.6+Math.sin(e.t*2)*.3-wu*.35; m.rings[0].rotation.x+=dt*(1.5+wu*9); m.rings[1].rotation.y+=dt*(1.1+wu*7); m.body.scale.set(1+wu*.12,1-wu*.1,1+wu*.12); m.eye.scale.setScalar(wu>.3?1.3+Math.sin(e.t*40)*.3:1); },
-  seraph(e,dt,m){ const wn=teleK(e), ch=e.ph==='charge', wa=wingBeat(e,dt,6); m.body.position.y=2.1+Math.sin(e.t*2.5)*.3*(1-wn)+wn*.3; m.body.position.z=-wn*.9; m.body.position.x=wn?Math.sin(e.t*70)*.09*wn:0; m.body.rotation.x=ch?.5:-wn*.35; m.halo.rotation.z+=dt*(2+wn*14); m.wings.forEach((w,i)=>w.rotation.x=ch?-.6:Math.sin(e.wph+i)*(.25+wa*.2)-wn*.5); if(e.ph!=='tele') m.core.scale.setScalar(1); },
+  warden(e,dt,m){ const wu=teleK(e); m.petals.forEach((p,i)=>{ if(!p.userData.broken) p.children[0].rotation.x=-.35-wu*.9; }); m.body.rotation.z+=dt*(.4+wu*3); m.iris.scale.setScalar(1+wu*.5+Math.sin(e.t*5)*.05);
+    m.chains.forEach((c,i)=>{ c.rotation.x=Math.sin(e.t*1.8+i)*.25-(e.acz||0)*.01; c.rotation.z=Math.cos(e.t*1.5+i*2)*.25+(e.acx||0)*.01; });
+    m.body.position.y=2.6+Math.sin(e.t*2)*.3-wu*.35; m.rings[0].rotation.x+=dt*(1.5+wu*9); m.rings[1].rotation.y+=dt*(1.1+wu*7); m.body.scale.set(1+wu*.12,1-wu*.1,1+wu*.12); m.eye.scale.setScalar(wu>.3?1.3+Math.sin(e.t*40)*.3:1); },
+  seraph(e,dt,m){ const wn=teleK(e), ch=e.ph==='charge', wa=wingBeat(e,dt,6); m.body.position.y=2.1+Math.sin(e.t*2.5)*.3*(1-wn)+wn*.3; m.body.position.z=-wn*.9; m.body.position.x=wn?Math.sin(e.t*70)*.09*wn:0; m.body.rotation.x=ch?.5:-wn*.35; m.halo.rotation.z+=dt*(2+wn*14); m.wings.forEach((w,i)=>{ if(!w.userData.broken) w.rotation.x=ch?-.6:Math.sin(e.wph+i)*(.25+wa*.2)-wn*.5; }); if(e.ph!=='tele') m.core.scale.setScalar(1);
+    // ribbons stream behind it (more while charging), the core ring spins up in the wind-up
+    const sp=Math.hypot(e.vel.x,e.vel.z); m.ribbons.forEach((r,i)=>{ if(!r.userData.broken) r.rotation.x=-clamp(sp*.06,0,1.1)+Math.sin(e.t*5+i*1.3)*.12; }); m.ring.rotation.z+=dt*(1.5+wn*12); },
 };
 
 // wing beats speed up with acceleration (returns 0..1, how hard it is pulling)
@@ -290,6 +298,7 @@ function updateEnemies(dt){
     else if(e.stun>0){ if(!e.stunned){ e.stunned=true; interrupt(e); } e.stun-=dt; e.vel.multiplyScalar(e.frozen>0?0:.85); if(e.frozen>0){ e.frozen-=dt; if(e.frozen<=0) unflash(e); } if(Math.random()<dt*6) sparks(e.pos.clone().setY(2.6),0x5fe0ff,1,2); }
     else { e.stunned=false; if(e.affix) affixTick(e,dt); if(e.hunt) huntAI(e,dt,to,d,pd,m); else if(AI[e.type]){ AI[e.type](e,dt,to,d,pd,m); if(e.dead) continue; } }
     if(ANIM[e.type]) ANIM[e.type](e,dt,m);
+    if(e.stumps&&Math.random()<dt*2.5*e.stumps.length){ pickOne(e.stumps).getWorldPosition(_tmp2); sparks(_tmp2.clone(),0xffc070,1,3); }
     if(e.shieldT>0){ e.shieldT-=dt; if(!e.shM){ e.shM=new THREE.Mesh(new THREE.TorusGeometry(e.r*.9,.06,6,28),basic(0xffd36a,true,.8)); e.shM.rotation.x=Math.PI/2; e.shM.position.y=1.4; e.shM.userData.nofit=1; m.g.add(e.shM); } e.shM.visible=true; e.shM.rotation.z+=dt*3; } else if(e.shM) e.shM.visible=false;
     // acceleration (smoothed): bodies lean into it, wings beat faster
     if(dt>0){ const ax=clamp((e.vel.x-(e.pvx||0))/dt,-60,60), az=clamp((e.vel.z-(e.pvz||0))/dt,-60,60), f=Math.min(1,dt*8); e.acx=(e.acx||0)+(ax-(e.acx||0))*f; e.acz=(e.acz||0)+(az-(e.acz||0))*f; e.pvx=e.vel.x; e.pvz=e.vel.z; }

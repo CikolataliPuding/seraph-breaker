@@ -58,6 +58,10 @@ function elitePlate(e){
   sp.scale.set(mobileMode?6.4:5.6,mobileMode?1.6:1.4,1); sp.renderOrder=20; sp.userData.h=(e.fly?4.3:3)*e.sc/(e.def.sc||1)+.4; return sp;
 }
 function dropPlate(e){ if(!e.plate) return; scene.remove(e.plate); e.plate.material.map.dispose(); e.plate.material.dispose(); e.plate=null; }
+// damage states: parts listed in model.breaks fall off once armor drops below their share, and the stump keeps sparking
+function breakParts(e){ const f=e.hp/e.maxHp; for(const b of e.model.breaks){ if(b.done||f>=b.at||!b.o.parent) continue; b.done=true;
+  const st=new THREE.Object3D(); st.position.copy(b.o.position); b.o.parent.add(st); (e.stumps||(e.stumps=[])).push(st);
+  b.o.getWorldPosition(_tmp2); b.o.userData.broken=true; scene.attach(b.o); pushDebris(b.o,new V3(rand(-3,3)+e.hdx*3,rand(5,8),rand(-3,3)+e.hdz*3),rand(.9,1.3),false); sparks(_tmp2.clone(),0xffc070,6,6); sfx('hit'); } }
 function flashModel(e){ e.model.mats.forEach(m=>m.emissive.setHex(0xffffff)); e.flash=.07; }
 function unflash(e){ e.model.mats.forEach(m=>m.emissive.setHex(0)); }
 // noProc: damage from a proc (no on-hit procs, and a kill from it triggers no on-kill procs). flat: no crit, Rage or boss bonus.
@@ -76,6 +80,7 @@ function hitEnemy(e,d,pos,dot,noProc,flat){
   if(rs.headshot&&!dot&&e!==boss&&!e.elite&&Math.random()<Math.min(BAL.cap.headshot,.015*rs.headshot)){ d=e.hp+1; crit=true; sparks(pos,0xffffff,10,8); }
   if(sortie) sortie.dmgDealt=(sortie.dmgDealt||0)+Math.max(0,Math.min(d,e.hp));
   e.hp-=d;
+  if(e.model.breaks&&e!==boss&&e.hp>0) breakParts(e);
   if(!(player.od>0||player.lance>0)) player.sp=Math.min(100,player.sp+d*.55*player.st.sp);
   if(!dot||Math.random()<.12) flashModel(e);
   if(!dot){ xhHit(); const amt=clamp(d/e.maxHp*1.5,.12,1); hitReact(e,pos,crit?Math.max(amt,.5):amt);
