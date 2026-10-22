@@ -34,7 +34,8 @@ function flashModel(e){ e.model.mats.forEach(m=>m.emissive.setHex(0xffffff)); e.
 function unflash(e){ e.model.mats.forEach(m=>m.emissive.setHex(0)); }
 // noProc: damage from a proc (no on-hit procs, and a kill from it triggers no on-kill procs). flat: no crit, Rage or boss bonus.
 function hitEnemy(e,d,pos,dot,noProc,flat){
-  if(!e||e.dead) return;
+  // player death wins: DoTs, queued blasts, orbits and procs stop dealing damage once the pilot is down
+  if(!e||e.dead||!player||player.dead) return;
   if(e===boss){ if(boss.atk==='enter'||state==='cine') return; if(boss.barrier>0){ if(!dot) sparks(pos,0xffa04a,3,5); return; } if(!flat) d*=player.st.boss; if(boss.vuln>0) d*=1.6; if(boss.reflectT>0) d*=.3; }
   const rs=player.rs;
   let crit=false; if(!dot&&!flat&&Math.random()<player.st.crit){ d*=player.critMul||2; crit=true; }
@@ -47,7 +48,7 @@ function hitEnemy(e,d,pos,dot,noProc,flat){
   e.hp-=d;
   if(!(player.od>0||player.lance>0)) player.sp=Math.min(100,player.sp+d*.55*player.st.sp);
   if(!dot||Math.random()<.12) flashModel(e);
-  if(!dot){ const amt=clamp(d/e.maxHp*1.5,.12,1); hitReact(e,pos,crit?Math.max(amt,.5):amt);
+  if(!dot){ xhHit(); const amt=clamp(d/e.maxHp*1.5,.12,1); hitReact(e,pos,crit?Math.max(amt,.5):amt);
     if(crit) hitstop(45); else if(d>=e.maxHp*.35&&e!==boss) hitstop(55); else if(e===boss&&d>=6) hitstop(40);
     sparks(pos,crit?0xffe14a:unit.shot,crit?6:3,6); sfx('hit');
     if(!noProc){
@@ -69,7 +70,7 @@ function killEnemy(e,byProc){
   if(e.ring) e.ring.visible=false;
   // Shardlings split into two smaller copies, twice (capped per room)
   if(e.type==='shardling'&&(e.gen||0)<2){ let n=0; for(const o of enemies) if(o.type==='shardling'&&!o.dead) n++; for(const s of [-1,1]){ if(n++>=10) break; const c=spawnEnemy('shardling',new V3(clamp(e.pos.x+s*.9,-AX+1,AX-1),0,clamp(e.pos.z,-AZ+1,AZ-1)),false,{gen:(e.gen||0)+1,noDrop:true}); if(c){ c.kx=s*7; c.kz=rand(-3,3); c.elite=false; } } }
-  if(sortie.rule.volatile){ const o=rand(0,1); for(let i=0;i<6;i++){ const a=(i+o)/6*Math.PI*2; shoot('e',e.pos.clone().setY(1.6),new V3(Math.sin(a),0,Math.cos(a)),4*eSpd(),8,0xb070ff,{life:3,r:.42,over:true}); } }
+  if(sortie.rule.volatile){ const o=rand(0,1); for(let i=0;i<6;i++){ const a=(i+o)/6*Math.PI*2; shoot('e',e.pos.clone().setY(1.6),new V3(Math.sin(a),0,Math.cos(a)),4*eSpd(),8,0xb070ff,{life:3,r:.42}); } }
   const mul=e.elite?3:1, def=e.def||ENEMY.drone;
   score+=(def.score*(1+stage*.5)*mul)|0; kills++;
   if(!(player.od>0||player.lance>0)) player.sp=Math.min(100,player.sp+5*player.st.sp);

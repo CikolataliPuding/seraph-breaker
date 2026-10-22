@@ -6,20 +6,20 @@ function clearWorld(){
   if(buddy){ scene.remove(buddy.g); buddy=null; } if(wingman){ scene.remove(wingman.g); wingman=null; } chrono=0; clearBlasts();
   if(player){ scene.remove(player.model.g,player.model.shadow); player=null; }
   orbitG.children.slice().forEach(c=>orbitG.remove(c));
-  shieldG.visible=false; pBeamO.visible=pBeamC.visible=false; chargeOrb.visible=false; odRing.visible=false; hookLine.visible=hookHead.visible=false;
+  shieldG.visible=false; pBeamO.visible=pBeamC.visible=false; chargeOrb.visible=false; odRing.visible=false; hookLine.visible=hookHead.visible=false; dashArrow.visible=barRing.visible=false; setCrosshair(false);
   camZoom=1; cam.zoom=1; cam.updateProjectionMatrix(); AX=roomHalfX(); AZ=ROOM_Z; room=null;
 }
 function refreshControls(){
   const on=playing()&&state!=='cine'&&state!=='choice';
   ['hudL','hudR','xpTrack','rsBar'].forEach(id=>$(id).hidden=!on);
-  $('abBar').hidden=!on||mobileMode; $('touch').hidden=!on||!mobileMode;
+  $('abBar').hidden=!on||mobileMode; $('touch').hidden=!on||!mobileMode; $('tSH').hidden=P.mshield!=='manual';
   $('bossHud').hidden=!(on&&boss&&state!=='bossdeath');
   if(on) renderAbilityIcons();
 }
 function hideOverlays(){ ['menu','result','pause','card','warn','cine','choice'].forEach(id=>$(id).hidden=true); $('cine').classList.remove('on'); }
-function goNextRoom(){ if(state!=='fight') return; logRoomEnd('exit'); saveRun(sortie.ri+1); state='trans'; stateT=.45; sortie.swapped=false; $('fade').classList.add('on'); resetTouch(); }
+function goNextRoom(){ if(state!=='fight') return; logRoomEnd('exit'); saveRun(sortie.ri+1); setState('trans'); stateT=.45; sortie.swapped=false; $('fade').classList.add('on'); resetTouch(); }
 function showResult(win,bonusG=0,first=false){
-  state='result'; refreshControls(); resetTouch(); playTrack('menu');
+  setState('result'); refreshControls(); resetTouch(); playTrack('menu');
   const A=ARENAS[sortie.a], reached=Math.min(sortie.ri+1,sortie.N);
   if(!win){ logRoomEnd('death'); clearRun(); if(reached>(P.bestRoom[sortie.a]||0)) P.bestRoom[sortie.a]=reached; }
   $('resEye').textContent=`Arena 0${sortie.a+1} · ${A.name}`+(win?' · clear':'');
@@ -43,7 +43,7 @@ function runScore(win){ const rooms=win?sortie.N:sortie.ri+(room&&room.cleared?1
   const speed=Math.round(Math.max(0,rooms*RUN_SCORE.par-playTime)*RUN_SCORE.speed), dmg=taken*RUN_SCORE.dmg;
   return {rooms,taken,speed,dmg,total:Math.max(0,rooms*RUN_SCORE.room+speed-dmg)}; }
 function togglePause(){ if(!playing()||state==='cine'||state==='choice') return; paused=!paused; $('pause').hidden=!paused; resetTouch(); hideRsPop(); for(const k in keys)keys[k]=false; mouseDown=rightDown=false; if(paused){ renderPauseBuild(); persist(); } }
-function toMenu(view){ persist(); hideOverlays(); clearWorld(); state='menu'; paused=false; refreshControls(); applyTheme(0); playTrack('menu'); openView(view||'home'); $('menu').hidden=false; }
+function toMenu(view){ persist(); hideOverlays(); clearWorld(); setState('menu'); paused=false; refreshControls(); applyTheme(0); playTrack('menu'); openView(view||'home'); $('menu').hidden=false; }
 $('resumeBtn').onclick=togglePause;
 // Save & exit keeps the run at the last cleared room; Abandon ends it (loot already picked up is kept)
 $('quitBtn').onclick=()=>toMenu('home');

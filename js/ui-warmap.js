@@ -94,8 +94,9 @@ function renderFrames(){
   [0,1].forEach(i=>{ const g=P.gadgets[i]; item(g||'hook','Gadget '+(i+1),g?GADGETS[g].name:'Empty slot',()=>openView('armory')); });
 }
 function renderSystem(){ $('buildTxt').textContent='Build '+BUILD+'.'; $('volM').value=Math.round(P.music*100); $('volMo').textContent=Math.round(P.music*100); $('volS').value=Math.round(P.sfx*100); $('volSo').textContent=Math.round(P.sfx*100);
-  document.querySelectorAll('#ctrlSeg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.c===P.ctrl)); $('autoG').checked=P.autoGadget; }
+  document.querySelectorAll('#ctrlSeg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.c===P.ctrl)); document.querySelectorAll('#shSeg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.s===P.mshield)); $('autoG').checked=P.autoGadget; }
 document.querySelectorAll('#ctrlSeg button').forEach(b=>b.onclick=()=>{ P.ctrl=b.dataset.c; sfx('click'); persist(); setMode(); renderSystem(); });
+document.querySelectorAll('#shSeg button').forEach(b=>b.onclick=()=>{ P.mshield=b.dataset.s; sfx('click'); persist(); renderSystem(); refreshControls(); });
 $('autoG').onchange=e=>{ P.autoGadget=e.target.checked; persist(); };
 $('pilotIn').addEventListener('input',e=>{ const v=e.target.value.replace(/[^\p{L}\p{N} _\-.]/gu,'').slice(0,14); if(v!==e.target.value) e.target.value=v; P.pilot=v.trim(); $('whoName').textContent=P.pilot||'[CALLSIGN]'; });
 $('pilotIn').addEventListener('change',()=>persist());

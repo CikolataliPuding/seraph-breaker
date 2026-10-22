@@ -82,7 +82,7 @@ function reflectShot(b){ const v=b.vel.clone().setY(0); if(v.lengthSq()<.01) ret
 function hexNova(){ const p=player; aoe(p.pos,6,(14+6*(p.rs.hexnova||1))*p.st.dmg,.6,2.5); clearEnemyShots(p.pos,6); crossBlast(p.pos.clone(),0xffa04a,1.1); }
 // delayed blasts: meteors, Death Nova, Spark explosions. Queued so chain reactions spread over frames and stay capped.
 // every blast is a proc: it hits with noProc, so its kills never chain into more on-kill procs. flat blasts skip crit and Rage too.
-function queueBlast(x,z,o){ if(blasts.length>=40) return; const ring=new THREE.Mesh(G.ring,addMat(o.color||0xff6a1a,.9)); ring.rotation.x=-Math.PI/2; ring.position.set(x,.07,z); ring.scale.setScalar(o.rad); scene.add(ring); blasts.push({x,z,t:o.t||.15,max:o.t||.15,rad:o.rad,dmg:o.dmg,color:o.color||0xff6a1a,hurtP:o.hurtP||0,hurtE:o.hurtE!==false,size:o.size||.8,ring,skip:o.skip||null,flat:!!o.flat}); }
+function queueBlast(x,z,o){ if(blasts.length>=40) return; const ring=new THREE.Mesh(G.ring,addMat(o.color||0xff6a1a,.9)); ring.rotation.x=-Math.PI/2; ring.position.set(x,.07,z); ring.scale.setScalar(o.rad); scene.add(ring); blasts.push({x,z,t:o.t||.15,max:o.t||.15,rad:o.rad,dmg:o.dmg,color:o.color||0xff6a1a,hurtP:o.hurtP||0,hurtE:o.hurtE!==false,size:o.size||.8,ring,skip:o.skip||null,flat:!!o.flat,boss:!!o.boss}); }
 function updateBlasts(dt){
   for(let i=blasts.length-1;i>=0;i--){ const b=blasts[i]; b.t-=dt; const k=1-b.t/b.max; b.ring.material.opacity=.4+Math.sin(k*30)*.3; b.ring.scale.setScalar(b.rad*(1.15-k*.15));
     if(b.t>0) continue;
@@ -106,7 +106,7 @@ function updateTrails(dt){ for(let i=trails.length-1;i>=0;i--){ const t=trails[i
 let spin=null, ignoreClickUntil=0, choiceOpenT=0, chCfg=null;
 const REEL_H=44, SKIP_GRACE=250;
 function openChoice(cfg){
-  if(state!=='choice') choiceBack=state; state='choice'; choiceOpenT=performance.now(); chCfg=cfg; resetTouch(); for(const k in keys)keys[k]=false; mouseDown=rightDown=false;
+  if(state==='dying'||state==='result'||player&&player.dead) return; if(state!=='choice') choiceBack=state; setState('choice'); choiceOpenT=performance.now(); chCfg=cfg; resetTouch(); for(const k in keys)keys[k]=false; mouseDown=rightDown=false;
   hideRsPop();
   $('chEye').textContent=cfg.eyebrow; $('chTitle').textContent=cfg.title; $('chNote').textContent=cfg.note||'';
   const rr=$('chReroll'); rr.hidden=!cfg.reroll;
@@ -136,7 +136,7 @@ function openChoice(cfg){
 function pickChoice(i){
   const o=chCfg&&chCfg.options[i]; if(!o||state!=='choice') return;
   if(spin&&spin.left>0) return; if(performance.now()<ignoreClickUntil) return;
-  spin=null; chCfg=null; $('choice').hidden=true; state=choiceBack; o.act(); refreshControls();
+  spin=null; chCfg=null; $('choice').hidden=true; setState(choiceBack); o.act(); refreshControls();
 }
 function rerollChoice(){ if(!chCfg||!chCfg.reroll||spin&&spin.left>0||sortie.rerolls<1) return; sortie.rerolls--; sfx('click'); chCfg.reroll(); }
 function stopReel(c){ if(!spin||c.done) return; c.done=true; clearTimeout(c.timer); c.reel.style.transition='none'; c.reel.style.transform=`translateY(${-c.n*REEL_H}px)`; c.b.classList.add('stop'); sfx('r_'+(c.rarity||'common')); spin.left--; if(c.rarity==='legendary') buzz(60); }

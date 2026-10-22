@@ -5,7 +5,7 @@ function makePlayer(){
   document.documentElement.style.setProperty('--unit',unitCss());
   const c=paint(); const m=buildMech(c.c1,c.c2,c.c3,c.eye,1,P.unit); scene.add(m.g,m.shadow);
   // stats come from balance.js (Core + tree × run buckets); recalcStats() rebuilds them whenever a skill, item or curse changes
-  player={model:m,pos:new V3(0,0,6),vel:new V3(),st:null,hp:0,maxHp:0,en:100,overheat:0,regenDelay:0,fireCd:0,dashT:0,dashCd:0,dashDir:new V3(),inv:0,shield:false,aim:new V3(-1,0,-1).normalize(),aimOk:false,yaw:Math.PI,walk:0,dead:false,flash:0,
+  player={model:m,pos:new V3(0,0,6),vel:new V3(),st:null,hp:0,maxHp:0,en:100,overheat:0,regenDelay:0,fireCd:0,dashT:0,dashCd:0,dashDir:new V3(),inv:0,shield:false,aim:new V3(-1,0,-1).normalize(),aimOk:false,lastMove:new V3(0,0,-1),yaw:Math.PI,walk:0,dead:false,flash:0,
     sp:0,od:0,leap:null,lance:0,lanceDir:new V3(),charge:0,prevFire:false,lunge:0,slashSide:1,hook:null,jump:null,gcd:[0,0],secondUsed:false,rs:{},orbA:0,jz:juiceState(),kick:new V3(),wasDash:false,dashCh:2,dashMax:2,dashRc:0,still:0,perfect:false,lives:0,luck:0,echoQ:null,enMax:100,critMul:2,extra:{},procs:{},bonus:null};
   recalcStats(); player.hp=player.maxHp;
   odRing.material.color.setHex(0xffe14a); pBeamO.material.color.setHex(unit.shot);
@@ -13,19 +13,22 @@ function makePlayer(){
 }
 function busy(){ const p=player; return p.leap||p.jump||(p.hook&&p.hook.phase==='pull')||p.lance>0; }
 // desktop: dash costs power and has a cooldown. Phone: 2 charges that recharge, no power cost.
+// direction: desktop = held keys, else the mouse aim. Phone = flick, else the stick, else the last way you moved; never the auto-aim,
+// which locks onto the nearest enemy and would dash you into it.
 function tryDash(dir){
   if(state!=='fight'||!player||player.dead||paused||busy()) return;
   const p=player;
   if(mobileMode){ if(p.dashCh<1) return; p.dashCh--; }
   else { if(p.overheat>0||p.en<35||p.dashCd>0) return; p.en-=35; p.regenDelay=.9; }
   p.dashT=.17; p.dashCd=1.4*p.st.dashCd; p.perfect=false;
-  const mv=dir&&dir.isVector3?dir:moveVec(); p.dashDir.copy(mv.lengthSq()>.01?mv:p.aim).normalize();
+  p.dashDir.copy(dashAim(dir)).normalize();
   groundRing(p.pos,unit.shot,2,.35); sfx('dash'); if(p.mineLayer) placeMine(p.pos);
   // perfect dodge: an enemy shot was about to land (within ~0.15 s)
   for(const b of bullets){ if(b.from!=='e') continue; const rx=p.pos.x-b.m.position.x,rz=p.pos.z-b.m.position.z,vv=b.vel.x*b.vel.x+b.vel.z*b.vel.z; if(vv<1) continue;
     const t=(rx*b.vel.x+rz*b.vel.z)/vv; if(t<0||t>.18) continue; if(Math.hypot(rx-b.vel.x*t,rz-b.vel.z*t)<.75+b.r*.5+.35){ perfectDodge(); break; } }
   if(!p.perfect) for(const s of shocks){ const dd=Math.hypot(p.pos.x-s.x,p.pos.z-s.z); if(!s.hit&&dd>s.r&&dd-s.r<s.speed*.15+.7){ perfectDodge(); break; } }
 }
+function dashAim(dir){ const p=player, mv=dir&&dir.isVector3&&dir.lengthSq()>.01?dir:moveVec(); return mv.lengthSq()>.01?mv:mobileMode?p.lastMove:p.aim; }
 function perfectDodge(){
   const p=player; if(!p||p.perfect) return; p.perfect=true;
   slowmo(.4); if(!(p.od>0||p.lance>0)) p.sp=Math.min(100,p.sp+15); sfx('perfect'); buzz(25);
@@ -53,7 +56,7 @@ function useGadget(slot){
   switch(id){
     case 'hook': p.hook={phase:'out',dist:0,dir:p.aim.clone(),pos:p.pos.clone().setY(2),target:null,end:null}; sfx('dash'); break;
     case 'mines': for(let i=0;i<3;i++){ const a=i/3*Math.PI*2+p.yaw; const pos=p.pos.clone().add(new V3(Math.cos(a)*1.6,0,Math.sin(a)*1.6)); const g=new THREE.Group(); part(new THREE.CylinderGeometry(.45,.5,.18,8),toon(0x2a2632),g,0,.09,0,.06); const l=new THREE.Mesh(new THREE.SphereGeometry(.13,8,6),basic(0xff2a2a,false)); l.position.y=.22; g.add(l); g.position.copy(pos); scene.add(g); mines.push({g,l,pos,arm:.6,life:25}); } break;
-    case 'jets': { let dir=moveVec(); if(dir.lengthSq()<.01) dir=p.aim.clone(); const to=p.pos.clone().addScaledVector(dir.clone().normalize(),8); to.x=clamp(to.x,-AX+1,AX-1); to.z=clamp(to.z,-AZ+1,AZ-1); p.jump={from:p.pos.clone(),to,t:0,dur:.75}; groundRing(p.pos,0xffa04a,2.5,.4); sfx('dash'); break; }
+    case 'jets': { let dir=mobileMode&&!p.autoUse?dashAim().clone():moveVec(); if(dir.lengthSq()<.01) dir=p.aim.clone(); const to=p.pos.clone().addScaledVector(dir.clone().normalize(),8); to.x=clamp(to.x,-AX+1,AX-1); to.z=clamp(to.z,-AZ+1,AZ-1); p.jump={from:p.pos.clone(),to,t:0,dur:.75}; groundRing(p.pos,0xffa04a,2.5,.4); sfx('dash'); break; }
     case 'decoy': { if(decoy) scene.remove(decoy.m.g); const c=paint(); castShadows=false; const m=buildMech(c.c1,c.c2,c.c3,c.eye,1,P.unit); castShadows=true; const holo=addMat(0x5fe0ff,.35); m.g.traverse(o=>{ if(o.isMesh) o.material=o.material===outlineMat?addMat(0x5fe0ff,.12):holo; }); m.g.position.copy(p.pos); m.g.rotation.y=p.yaw; animMech(m,0,0); scene.add(m.g); decoy={m,pos:p.pos.clone(),t:5}; groundRing(p.pos,0x5fe0ff,3,.5); break; }
     case 'emp': { clearEnemyShots(p.pos,9); for(let i=emines.length-1;i>=0;i--){ const m=emines[i]; if(Math.hypot(m.x-p.pos.x,m.z-p.pos.z)<9){ sparks(m.g.position.clone().setY(.4),0x5fe0ff,3,3); roomGroup.remove(m.g); emines.splice(i,1); } } for(const e of enemies){ if(e.dead)continue; if(Math.hypot(e.pos.x-p.pos.x,e.pos.z-p.pos.z)<9+e.r){ if(e===boss){ boss.stun=.9; if(boss.beam){ boss.beam=null; hideBeams(); boss.atk='idle'; boss.atkT=1.2; } } else e.stun=2.5; flashModel(e); } }
       groundRing(p.pos,0x5fe0ff,9,.6); groundRing(p.pos,0xffffff,7,.4); sfx('zap'); shake=.3; break; }
@@ -87,7 +90,7 @@ function zeroHp(){
   const p=player; if(godMode){ p.hp=1; return; }
   if(p.lives>0){ p.lives--; p.hp=p.maxHp*.5; p.inv=2; crossBlast(p.pos.clone(),0xffd36a,1.3); clearEnemyShots(p.pos,10); popText('EXTRA LIFE'); return; }
   if(p.st.second&&!p.secondUsed){ p.secondUsed=true; p.hp=p.maxHp*.3; p.inv=1.6; crossBlast(p.pos.clone(),0x7dff9a,1); clearEnemyShots(p.pos,8); return; }
-  p.hp=0; p.dead=true; crossBlast(p.pos.clone(),unit.shot,1.6); hitstop(120,true); shatter(p.model,p.pos,0,0,{max:14,spd:1.2}); scene.remove(p.model.g,p.model.shadow); state='dying'; stateT=1.8; shieldG.visible=false; pBeamO.visible=pBeamC.visible=false; chargeOrb.visible=false; buzz(300);
+  p.hp=0; p.dead=true; dashArrow.visible=barRing.visible=false; crossBlast(p.pos.clone(),unit.shot,1.6); hitstop(120,true); shatter(p.model,p.pos,0,0,{max:14,spd:1.2}); scene.remove(p.model.g,p.model.shadow); setState('dying'); stateT=1.8; shieldG.visible=false; pBeamO.visible=pBeamC.visible=false; chargeOrb.visible=false; buzz(300);
 }
 const _tmp=new V3(),_tmp2=new V3(),_mz=new V3();
 function shotDir(mz){ const p=player; if(p.aimOk&&!mobileMode){ _tmp2.set(aimPt.x-mz.x,0,aimPt.z-mz.z); if(_tmp2.lengthSq()>2.2) return _tmp2.normalize().clone(); } return p.aim.clone(); }
@@ -103,13 +106,19 @@ function updatePlayer(dt,canAct){
     if(hexFlashT>0){ hexFlashT-=dt; if(hexFlashT<=0) shieldG.visible=false; }
     // moving = not firing. Standing still auto-fires at the nearest enemy in sight and slowly steadies the aim (+fire rate).
     const mv=moveVec();
-    if(canAct&&mv.lengthSq()>.04){ p.aim.copy(mv).normalize(); p.still=0; }
+    if(canAct&&mv.lengthSq()>.04){ p.aim.copy(mv).normalize(); p.lastMove.copy(p.aim); p.still=0; }
     else { p.still+=dt; const f=canAct?autoTarget():null; if(f){ _tmp.subVectors(f.pos,p.pos).setY(0); if(_tmp.lengthSq()>.01) p.aim.copy(_tmp.normalize()); touchFire=autoRangeOk(f); } }
     if(canAct) autoGadgets();
+    // dash direction arrow under the mech (bright while a charge is ready)
+    dashArrow.visible=canAct; if(canAct){ const d=dashAim(); dashArrow.position.set(p.pos.x+d.x*1.55,.09,p.pos.z+d.z*1.55); dashArrow.rotation.y=Math.atan2(-d.x,-d.z); dashArrow.children[0].material.opacity=p.dashCh>=1?.6:.18; }
+    // auto barrier: a faint hex ring turns around you while a block is charged
+    const autoB=P.mshield!=='manual'&&!p.st.noHex&&p.en>60; barRing.visible=canAct&&autoB; if(barRing.visible){ barRing.position.set(p.pos.x,.12,p.pos.z); barRing.rotation.z+=dt*1.4; barRing.material.opacity=.22+Math.sin(performance.now()/260)*.06+(p.en>90?.1:0); }
   }
-  else if(usedMouse){ ray.setFromCamera(ndc,cam); if(ray.ray.intersectPlane(aimPlane,aimPt)){ p.aimOk=true; _tmp.set(aimPt.x-p.pos.x,0,aimPt.z-p.pos.z); if(_tmp.lengthSq()>.3) p.aim.copy(_tmp.normalize()); } }
+  else { dashArrow.visible=barRing.visible=false; }
+  // desktop aim: the mouse ray meets the plane at muzzle height, so shots fly exactly through the crosshair
+  if(!mobileMode&&usedMouse){ p.model.muzzle.getWorldPosition(_mz); aimPlane.constant=-_mz.y; ray.setFromCamera(ndc,cam); if(ray.ray.intersectPlane(aimPlane,aimPt)){ p.aimOk=true; _tmp.set(aimPt.x-p.pos.x,0,aimPt.z-p.pos.z); if(_tmp.lengthSq()>.3) p.aim.copy(_tmp.normalize()); } }
   const fireIn=canAct&&(mouseDown||keys.KeyJ||touchFire);
-  const wantShield=canAct&&!mobileMode&&!p.st.noHex&&(keys.ShiftLeft||keys.ShiftRight||rightDown)&&!busy();
+  const wantShield=canAct&&!p.st.noHex&&(mobileMode?P.mshield==='manual'&&mShieldHeld:keys.ShiftLeft||keys.ShiftRight||rightDown)&&!busy();
   p.shield=wantShield&&p.overheat<=0&&p.en>0;
   if(p.shield){ p.en-=42*p.st.hexDrain*dt; p.regenDelay=.9; if(p.en<=0){ p.en=0; p.overheat=2.2; p.regenDelay=1.4; p.shield=false; sparks(p.pos.clone().setY(2),0xff4a3a,10,6); if(p.rs.hexnova) hexNova(); } }
   else if(p.regenDelay<=0) p.en=Math.min(p.enMax,p.en+12*p.st.regen*dt);
@@ -174,13 +183,15 @@ function updatePlayer(dt,canAct){
   updateOrbits(dt,canAct);
   if(p.hook){ const h=p.hook;
     if(h.phase==='out'){ h.dist+=44*dt; h.pos.copy(p.pos).setY(2).addScaledVector(h.dir,h.dist);
+      // the line from you to the hook is swept against blocks: the hook stops at the first one (no reaching through walls)
+      const hb=sweepBlock(p.pos.x,p.pos.z,h.pos.x,h.pos.z,.2); if(hb){ h.dist*=hb.t; h.pos.copy(p.pos).setY(2).addScaledVector(h.dir,h.dist); }
       for(const e of enemies){ if(e.dead||e.born<.4)continue; if(Math.hypot(e.pos.x-h.pos.x,e.pos.z-h.pos.z)<e.r+.4){ h.target=e; h.phase='pull'; break; } }
-      if(h.phase==='out'&&(h.dist>=14||Math.abs(h.pos.x)>AX-1||Math.abs(h.pos.z)>AZ-1||inBlock(h.pos.x,h.pos.z,0,'block'))){ h.phase='pull'; h.end=new V3(clamp(h.pos.x-h.dir.x,-AX+1,AX-1),0,clamp(h.pos.z-h.dir.z,-AZ+1,AZ-1)); } }
+      if(h.phase==='out'&&(hb||h.dist>=14||Math.abs(h.pos.x)>AX-1||Math.abs(h.pos.z)>AZ-1)){ h.phase='pull'; h.end=new V3(clamp(h.pos.x-h.dir.x,-AX+1,AX-1),0,clamp(h.pos.z-h.dir.z,-AZ+1,AZ-1)); } }
     const hp=h.target&&!h.target.dead?h.target.pos.clone().setY(2):h.phase==='pull'?h.end.clone().setY(2):h.pos;
     const arr=hookLineGeo.attributes.position.array; arr[0]=p.pos.x;arr[1]=2+air;arr[2]=p.pos.z;arr[3]=hp.x;arr[4]=hp.y;arr[5]=hp.z; hookLineGeo.attributes.position.needsUpdate=true;
     hookLine.visible=hookHead.visible=true; hookHead.position.copy(hp); hookHead.lookAt(hp.clone().add(h.dir)); hookHead.rotateX(Math.PI/2);
   } else hookLine.visible=hookHead.visible=false;
-  if(!mobileMode) shieldG.visible=p.shield;
+  if(!mobileMode) shieldG.visible=p.shield; else if(p.shield) shieldG.visible=true; else if(hexFlashT<=0) shieldG.visible=false;
   if(p.shield){ shieldG.position.copy(p.pos).addScaledVector(p.aim,1.7).setY(1.9); shieldG.lookAt(_tmp.copy(shieldG.position).add(p.aim)); const t=performance.now()/1000; shRings.forEach((r,i)=>{ const k=((t*1.6+i/3)%1); r.scale.setScalar(.3+k*1.4); r.material.opacity=(1-k)*.9; }); }
   // once the room is clear every pickup (heal orbs and items too) flies to you
   const collectAll=(room&&room.cleared)||(!enemies.length&&!spawnQ.length);
@@ -219,8 +230,10 @@ function weaponUpdate(dt,fireIn){
       if(mobileMode&&fireIn&&p.charge>=1) fireIn=false;
       if(fireIn&&p.fireCd<=0){ p.charge=Math.min(1,p.charge+dt/.9); chargeOrb.visible=true; chargeOrb.position.copy(mz); chargeOrb.scale.setScalar(.4+p.charge*1.4); chargeOrb.material.color.setHex(p.charge>=1?0xffffff:col); }
       else if(!fireIn&&p.prevFire&&p.charge>.08){ const c=p.charge; p.charge=0; chargeOrb.visible=false; p.fireCd=.3*rateM;
-        const end=mz.clone().addScaledVector(dir,40); const d=(4+20*Math.pow(c,1.5))*dmg;
-        for(const e of enemies.slice()){ if(e.dead)continue; const t=clamp((e.pos.x-mz.x)*dir.x+(e.pos.z-mz.z)*dir.z,0,40); if(Math.hypot(e.pos.x-mz.x-dir.x*t,e.pos.z-mz.z-dir.z*t)<e.r+.35) hitEnemy(e,d,e.pos.clone().setY(2)); }
+        // the rail stops at the first block in its path
+        const rb=sweepBlock(mz.x,mz.z,mz.x+dir.x*40,mz.z+dir.z*40,.1), len=rb?Math.max(.5,40*rb.t):40;
+        const end=mz.clone().addScaledVector(dir,len); const d=(4+20*Math.pow(c,1.5))*dmg;
+        for(const e of enemies.slice()){ if(e.dead)continue; const t=clamp((e.pos.x-mz.x)*dir.x+(e.pos.z-mz.z)*dir.z,0,len); if(Math.hypot(e.pos.x-mz.x-dir.x*t,e.pos.z-mz.z-dir.z*t)<e.r+.35) hitEnemy(e,d,e.pos.clone().setY(2)); }
         beamFlash(mz,end,col,.35+c*.6); shake=Math.max(shake,.15+c*.3); fired(2+c*4,.8+c); p.kick.addScaledVector(dir,-c*6); if(c>.9) hitstop(50); sfx(c>.9?'beam':'heavy'); }
       else if(!fireIn){ p.charge=0; chargeOrb.visible=false; }
       break;
