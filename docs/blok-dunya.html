@@ -1,0 +1,393 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<!-- Seraph Breaker · docs/blok-dunya.html: Blok Dünya arena draft (voxel world): pixel-texture blocks, breakable trees, explosive crates, lava traps,
+     5 mobs and a boss concept, plus a live sample room in the game camera. Builders use the game's own part()/box()/toon() helpers and can be ported to js/models.js. -->
+<title>Blok Dünya Taslağı</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@700;800&family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+*{box-sizing:border-box}[hidden]{display:none!important}body{margin:0}
+/* Blok Dünya taslak sayfası: üstte arena kimliği, ortada oyun kamerasıyla canlı örnek oda, altta bloklar ve moblar ızgarada, en altta oyuna ekleme planı. Oyunla aynı koyu dünya, tek tema. */
+:root{
+  --ink:#0c0910; --ink-2:#17121d; --ink-3:#221a2a; --paper:#f3eee6; --dim:#a79fae; --line:rgba(255,255,255,.13);
+  --signal:#7ad650; --alert:#e8243c; --lava:#ff8a2a; --gem:#5fe0ff;
+  --f-display:"Shippori Mincho B1","Hiragino Mincho ProN","Yu Mincho",Georgia,serif;
+  --f-label:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-data:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+html{color-scheme:dark}
+body{background:var(--ink);color:var(--paper);font-family:var(--f-label);font-size:16px;line-height:1.4}
+main{max-width:1180px;margin:0 auto;padding:28px 16px 64px;display:grid;grid-template-columns:minmax(0,1fr);gap:34px}
+.eye{font-family:var(--f-data);font-size:12px;letter-spacing:.14em;color:var(--signal);text-transform:uppercase}
+h1{font-family:var(--f-display);font-weight:800;font-size:clamp(30px,6vw,52px);line-height:1.05;margin:6px 0 10px}
+h1 em{font-style:normal;color:var(--signal)}
+.lead{color:var(--dim);max-width:70ch;margin:0}
+h2{font-family:var(--f-display);font-size:26px;margin:0;font-weight:800}
+.sh{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:8px;margin-bottom:14px}
+.cnt{font-family:var(--f-data);font-size:12px;color:var(--dim)}
+.ids{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.id{background:var(--ink-2);border:1px solid var(--line);padding:14px}
+.id b{display:block;font:600 12px/1 var(--f-data);letter-spacing:.12em;text-transform:uppercase;color:var(--signal);margin-bottom:8px}
+.id p{margin:0;color:var(--paper)}
+.id small{display:block;margin-top:6px;color:var(--dim)}
+.stage{position:relative;background:#120d18;border:1px solid var(--line);aspect-ratio:16/10;min-height:340px;overflow:hidden}
+.stage canvas{display:block;width:100%;height:100%}
+.ctl{position:absolute;left:10px;top:10px;display:flex;flex-wrap:wrap;gap:6px;max-width:calc(100% - 20px)}
+.chip{font:600 14px/1 var(--f-label);letter-spacing:.1em;text-transform:uppercase;background:rgba(23,18,29,.85);color:var(--dim);border:1px solid var(--line);padding:8px 11px;cursor:pointer}
+.chip.on{color:var(--ink);background:var(--signal);border-color:var(--signal)}
+.leg{position:absolute;left:10px;bottom:10px;font:12px/1.5 var(--f-data);color:var(--dim);background:rgba(12,9,16,.75);padding:6px 9px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.card{background:var(--ink-2);border:1px solid var(--line);display:grid;grid-template-rows:auto 1fr;min-width:0}
+.pic{position:relative;aspect-ratio:1;background:radial-gradient(circle at 50% 60%,#2a2236,#120d18 70%)}
+.pic canvas{width:100%;height:100%;display:block}
+.tag{position:absolute;top:10px;left:10px;font:600 12px/1 var(--f-data);letter-spacing:.08em;padding:5px 7px;text-transform:uppercase;background:var(--ink);color:var(--signal);border:1px solid var(--line)}
+.body{padding:12px 14px 14px;display:grid;gap:6px;align-content:start}
+.nm{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.nm h3{margin:0;font:700 22px/1.1 var(--f-label);letter-spacing:.04em}
+.thr{font-family:var(--f-data);font-size:12px;color:var(--alert);white-space:nowrap}
+.body p{margin:0;color:var(--dim)}
+.body p b{color:var(--paper);font-weight:600}
+table{width:100%;border-collapse:collapse;font-size:15px}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font:600 12px/1.2 var(--f-data);letter-spacing:.08em;text-transform:uppercase;color:var(--dim);background:var(--ink-2)}
+td code,pre{font-family:var(--f-data);font-size:12.5px}
+td code{color:var(--signal)}
+pre{background:var(--ink-2);border:1px solid var(--line);padding:12px;overflow:auto;margin:0;color:var(--dim)}
+.note{color:var(--dim);margin:0 0 10px}
+@media (max-width:600px){ .stage{aspect-ratio:3/4} }
+</style>
+</head>
+<body>
+<main>
+<header>
+  <div class="eye">Seraph Breaker · Arena taslağı · Blok Dünya</div>
+  <h1>Blok <em>Dünya</em></h1>
+  <p class="lead">Şehir dijital bir dünyaya çöktü: her şey bloklardan oluşuyor. Ağaçlar kesilebiliyor, sandıklar patlıyor, kanallarda lav akıyor. Bu arenada çevre de bir silah: düşmanları patlayıcı sandıkların yanına çek, siperini kendin kır. Oyunun köşeli stiliyle doğal olarak uyuşan, voxel oyunlarından esinlenen bir tema; isimler, dokular ve karakterler tamamen bizim.</p>
+</header>
+
+<section>
+  <div class="sh"><h2>Arena kimliği</h2><span class="cnt">taslak · Arena 05 adayı</span></div>
+  <div class="ids">
+    <div class="id"><b>Tema</b><p>Gündüz voxel vadisi: piksel dokulu çim ve toprak bloklar, köşeli ağaçlar, kare bulutlar, lav kanalları.</p><small>Renkler aşağıdaki tema bloğunda.</small></div>
+    <div class="id"><b>Arena kuralı</b><p>Yıkılabilir dünya: ağaçlar ve patlayıcı sandıklar vurularak kırılır. Patlamalar zincirleme gider ve herkesi vurur.</p><small>Kırılan ağaç küçük bir can paketi düşürebilir.</small></div>
+    <div class="id"><b>Tuzak</b><p><code style="color:var(--lava)">~</code> hücreleri lav: diken tuzağı gibi bekler, kabarır (uyarı), sonra fışkırır.</p><small>Oyunun yeni TRAPS sistemine "lava" türü olarak girer.</small></div>
+    <div class="id"><b>Oda tipleri</b><p>Orman (ağaç ağırlıklı) · Maden (taş bloklar, Kazmacı) · Cephanelik (sandık ağırlıklı, zincir patlama).</p></div>
+    <div class="id"><b>Boss</b><p>Monolit: kendini bloklardan yeniden kuran obsidyen dev. Fazlarda blok kaybeder, blokları fırlatır.</p><small>Konsept; saldırıları ayrıca tasarlanır.</small></div>
+  </div>
+</section>
+
+<section>
+  <div class="sh"><h2>Örnek oda</h2><span class="cnt">oyun kamerası · oda düzeni ve tuzaklar canlı</span></div>
+  <div class="stage" id="stage">
+    <canvas id="room"></canvas>
+    <div class="ctl" id="ctl"></div>
+    <div class="leg"># blok · T patlayıcı sandık · A ağaç · ~ lav</div>
+  </div>
+</section>
+
+<section>
+  <div class="sh"><h2>Bloklar</h2><span class="cnt">4 çevre parçası</span></div>
+  <div class="grid" id="blocks"></div>
+</section>
+
+<section>
+  <div class="sh"><h2>Moblar ve boss</h2><span class="cnt">4 mob · 1 elit · 1 boss konsepti</span></div>
+  <div class="grid" id="mobs"></div>
+</section>
+
+<section>
+  <div class="sh"><h2>Oyuna ekleme planı</h2><span class="cnt">mevcut sistemlere eşleme</span></div>
+  <table>
+    <tr><th>Parça</th><th>Nereye</th><th>Not</th></tr>
+    <tr><td>Arena</td><td><code>ARENAS</code> (data.js)</td><td>Yeni giriş: oda sayısı, mob havuzu, boss, kural ve aşağıdaki renk teması.</td></tr>
+    <tr><td>Oda düzenleri</td><td><code>ROOMS</code> (data.js)</td><td>İki yeni harf: <code>T</code> sandık ve <code>A</code> ağaç. İkisi de engel gibi çarpışır ama canı var; diğer arenalarda <code>#</code> olarak okunur.</td></tr>
+    <tr><td>Lav</td><td><code>TRAPS</code> (data.js, traps.js)</td><td><code>lava:{dmg:12,edmg:3,cd:.6,idle:2.4,warn:.9,act:1}</code>; diken tuzağının zamanlayıcısını kullanır.</td></tr>
+    <tr><td>Sandık patlaması</td><td>rooms.js + <code>queueBlast</code></td><td>Vurulunca 1,2 sn yanıp söner, sonra yarıçap 3,2 patlama (oyuncu 18, düşman 40). Yakındaki sandıkları da tetikler.</td></tr>
+    <tr><td>Moblar</td><td><code>ENEMY</code>, <code>AI</code>, models.js</td><td>Fitil intihar koşucusu (Spark rolü), Jöle Küp bölünen (Shardling rolü), Yay Taretı topçu, Kazmacı yeraltından çıkan, Golem elit.</td></tr>
+    <tr><td>Boss</td><td><code>BOSSES.monolit</code></td><td>Ayrı tasarım turu.</td></tr>
+  </table>
+  <p class="note" style="margin-top:14px">Renk teması (oyunun ARENAS.theme formatında):</p>
+  <pre>theme:{bg:0x8ec9f0,hemiS:0xfff4d8,hemiG:0x3a5a2a,ground:0x5fae3a,city:0xd8e8c8,edge:0x7ad650,rim:0xffc070,
+       win:0xfff0b0,floor:0x7fc04f,wall:0x5a4030,block:0x8a6040,water:0xff8a2a}</pre>
+</section>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+/* ---- oyunun renderer.js yardımcıları (birebir) ---- */
+const V3=THREE.Vector3, clamp=(v,a,b)=>Math.max(a,Math.min(b,v)), rand=(a,b)=>a+Math.random()*(b-a);
+const grad=(()=>{ const d=new Uint8Array([80,80,80,255,165,165,165,255,255,255,255,255]); const t=new THREE.DataTexture(d,3,1,THREE.RGBAFormat); t.minFilter=t.magFilter=THREE.NearestFilter; t.needsUpdate=true; return t; })();
+const toon=(c,e=0)=>new THREE.MeshToonMaterial({color:c,gradientMap:grad,emissive:e});
+const outlineMat=new THREE.MeshBasicMaterial({color:0x0a0610,side:THREE.BackSide});
+const basicCache={};
+function basic(c,add=true,op=1){ const k=c+'_'+add+'_'+op; return basicCache[k]||(basicCache[k]=new THREE.MeshBasicMaterial({color:c,transparent:op<1||add,opacity:op,blending:add?THREE.AdditiveBlending:THREE.NormalBlending,depthWrite:!add})); }
+const addMat=(c,op=1)=>new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:op,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide});
+const box=(x,y,z)=>new THREE.BoxGeometry(x,y,z);
+let castShadows=true;
+function part(geo,mat,parent,x=0,y=0,z=0,t=.09){
+  const m=new THREE.Mesh(geo,mat); m.position.set(x,y,z); m.castShadow=castShadows; parent.add(m);
+  if(t){ geo.computeBoundingBox(); const s=new V3(); geo.boundingBox.getSize(s); const o=new THREE.Mesh(geo,outlineMat); o.scale.set((s.x+t)/(s.x||1),(s.y+t)/(s.y||1),(s.z+t)/(s.z||1)); m.add(o); }
+  return m;
+}
+const blob=r=>{ const m=new THREE.Mesh(new THREE.CircleGeometry(r,18),new THREE.MeshBasicMaterial({color:0,transparent:true,opacity:.34,depthWrite:false})); m.rotation.x=-Math.PI/2; m.position.y=.03; return m; };
+
+/* ---- Blok Dünya: piksel dokular ----
+   16×16 canvas, en yakın komşu filtre: voxel görünümü. Desenler rastgele üretilir (sabit tohumla), hiçbir oyundan kopya değil. */
+function rng(seed){ let s=seed>>>0||1; return ()=>((s=Math.imul(s^s>>>15,1|s),s^=s+Math.imul(s^s>>>7,61|s),((s^s>>>14)>>>0)/4294967296)); }
+const hex=c=>'#'+c.toString(16).padStart(6,'0');
+function pixTex(seed,draw,size=16){ const cv=document.createElement('canvas'); cv.width=cv.height=size; const g=cv.getContext('2d'), r=rng(seed);
+  for(let y=0;y<size;y++) for(let x=0;x<size;x++){ g.fillStyle=hex(draw(x,y,r)); g.fillRect(x,y,1,1); }
+  const t=new THREE.CanvasTexture(cv); t.magFilter=THREE.NearestFilter; t.minFilter=THREE.NearestFilter; t.generateMipmaps=false; return t; }
+const pick=(r,a)=>a[(r()*a.length)|0];
+const PAL={grass:[0x5fae3a,0x6cbc44,0x54a032,0x4a9430],dirt:[0x7a5232,0x6a4628,0x86603c,0x5e3e22],stone:[0x8a8a90,0x7a7a82,0x9a9aa2,0x6c6c74],
+  bark:[0x6a4a2a,0x5a3e22,0x7a5634,0x4e3418],leaf:[0x3e8a2c,0x4a9a34,0x347a24,0x58aa3c],lava:[0xff8a2a,0xffb040,0xff6a1a,0xffd060],
+  obsid:[0x2a1e3a,0x221830,0x34264a,0x1a1226],crate:[0xc23a2a,0xb03224,0xd2482e]};
+const TX={
+  grassTop:pixTex(11,(x,y,r)=>pick(r,PAL.grass)),
+  grassSide:pixTex(12,(x,y,r)=>y<4||(y===4&&r()<.5)?pick(r,PAL.grass):pick(r,PAL.dirt)),
+  dirt:pixTex(13,(x,y,r)=>pick(r,PAL.dirt)),
+  stone:pixTex(14,(x,y,r)=>(x%8===0||y%5===0)&&r()<.5?0x5c5c64:pick(r,PAL.stone)),
+  bark:pixTex(15,(x,y,r)=>x%4===0?0x46301a:pick(r,PAL.bark)),
+  leaf:pixTex(16,(x,y,r)=>r()<.12?0x2a6a1c:pick(r,PAL.leaf)),
+  lava:pixTex(17,(x,y,r)=>pick(r,PAL.lava)),
+  obsid:pixTex(18,(x,y,r)=>r()<.06?0x6a3aa0:pick(r,PAL.obsid)),
+  // patlayıcı sandık: kırmızı tahta, ortada sarı-siyah tehlike şeridi
+  crate:pixTex(19,(x,y,r)=>y>=6&&y<=9?(((x+y)>>1)%2?0x1a1418:0xf0c030):(x===0||x===15||y===0||y===15)?0x6a2018:pick(r,PAL.crate)),
+};
+const tm=(t,c=0xffffff)=>new THREE.MeshToonMaterial({color:c,map:t,gradientMap:grad});
+const MAT={grassTop:tm(TX.grassTop),grassSide:tm(TX.grassSide),dirt:tm(TX.dirt),stone:tm(TX.stone),bark:tm(TX.bark),leaf:tm(TX.leaf),obsid:tm(TX.obsid),crate:tm(TX.crate)};
+const lavaMat=new THREE.MeshBasicMaterial({map:TX.lava});
+
+/* ---- çevre parçaları (oyunda bir hücre 2×2 birim; # bloğu 1,5 yüksek) ---- */
+// çim bloğu: üst çim, yanlar çimli toprak, alt toprak. Taş bloğu madende.
+function buildGrassBlock(w=2,h=1.5,d=2){ const g=new THREE.Group(); part(box(w,h,d),[MAT.grassSide,MAT.grassSide,MAT.grassTop,MAT.dirt,MAT.grassSide,MAT.grassSide],g,0,h/2,0,.1); return {g}; }
+function buildStoneBlock(w=2,h=1.5,d=2){ const g=new THREE.Group(); part(box(w,h,d),MAT.stone,g,0,h/2,0,.1); return {g}; }
+// ağaç: kırılabilir siper. Gövde + yaprak küpleri; vurulunca sallanır, yıkılınca blok parçalarına ayrılır.
+function buildTree(){ const g=new THREE.Group(), top=new THREE.Group(); g.add(top);
+  part(box(.8,2.6,.8),MAT.bark,top,0,1.3,0,.08);
+  part(box(2.2,1.6,2.2),MAT.leaf,top,0,3.1,0,.1);
+  part(box(1.4,.9,1.4),MAT.leaf,top,0,4.3,0,.08);
+  [[1,0],[-1,0],[0,1],[0,-1]].forEach(([x,z],i)=>{ if(i%2) part(box(.8,.8,.8),MAT.leaf,top,x*1.2,2.7,z*1.2,.06); });
+  return {g,top}; }
+// patlayıcı sandık: tehlike şeritli kasa, üstünde fitil. Vurulunca fitil yanar, 1,2 sn sonra patlar.
+function buildCrate(s=1.6){ const g=new THREE.Group(), body=new THREE.Group(); g.add(body);
+  const mat=MAT.crate.clone(); part(box(s,s,s),mat,body,0,s/2,0,.08);
+  part(new THREE.CylinderGeometry(.06,.06,.5,6),toon(0xe8dcc0),body,0,s+.25,0,.03);
+  const spark=new THREE.Mesh(new THREE.SphereGeometry(.14,8,6),basic(0xffd060,true,.95)); spark.position.y=s+.55; body.add(spark);
+  return {g,body,mat,spark}; }
+// lav hücresi: düz akan lav, kabarma ve fışkırma efektleri
+function buildLavaTile(cx=2,cz=2){ const g=new THREE.Group();
+  const pl=new THREE.Mesh(new THREE.PlaneGeometry(cx,cz),lavaMat); pl.rotation.x=-Math.PI/2; pl.position.y=.04; g.add(pl);
+  part(box(cx,.12,cz),toon(0x2a1e1a),g,0,.0,0,0);
+  const warn=new THREE.Mesh(new THREE.PlaneGeometry(cx,cz),addMat(0xff3a1a,.5)); warn.rotation.x=-Math.PI/2; warn.position.y=.06; warn.visible=false; g.add(warn);
+  const jets=new THREE.Group(); jets.visible=false; g.add(jets);
+  for(let i=0;i<4;i++){ const f=new THREE.Mesh(box(.35,1.6,.35),addMat(i%2?0xffd060:0xff6a1a,.85)); f.position.set((i%2-.5)*.8,.8,((i>>1)-.5)*.8); jets.add(f); }
+  return {g,warn,jets}; }
+
+/* ---- moblar ---- */
+// Fitil: bacaklı patlayıcı kasa. Koşar, yanına gelince şişip yanıp söner ve patlar (Spark rolü).
+function buildFitil(){ const g=new THREE.Group(), body=new THREE.Group(); body.position.y=.55; g.add(body);
+  const mat=MAT.crate.clone(); part(box(1,1,1),mat,body,0,.5,0,.07);
+  [-1,1].forEach(s=>{ const e=new THREE.Mesh(box(.2,.08,.04),basic(0xffe060,false)); e.position.set(s*.2,.62,.52); body.add(e); });
+  part(new THREE.CylinderGeometry(.05,.05,.4,6),toon(0xe8dcc0),body,0,1.2,0,.03);
+  const spark=new THREE.Mesh(new THREE.SphereGeometry(.12,8,6),basic(0xffd060,true,.95)); spark.position.y=1.45; body.add(spark);
+  const legs=[]; [[1,1],[-1,1],[1,-1],[-1,-1]].forEach(([x,z])=>{ const l=new THREE.Group(); l.position.set(x*.3,.55,z*.3); g.add(l); part(box(.24,.55,.24),toon(0x2a2026),l,0,-.27,0,.04); legs.push(l); });
+  return {g,body,mat,spark,legs,shadow:blob(.7)}; }
+// Jöle Küp: yarı saydam yeşil küp, içinde çekirdek. Zıplayarak gelir, ölünce iki küçük küpe bölünür (Shardling rolü).
+function buildJelly(scale=1){ const g=new THREE.Group(), body=new THREE.Group(); g.add(body);
+  const shell=new THREE.Mesh(box(1.4,1.4,1.4),new THREE.MeshToonMaterial({color:0x7ad650,gradientMap:grad,transparent:true,opacity:.55})); shell.position.y=.7; body.add(shell);
+  const ol=new THREE.Mesh(box(1.4,1.4,1.4),outlineMat); ol.scale.setScalar(1.06); shell.add(ol);
+  part(box(.6,.6,.6),toon(0x3a8a2a),body,0,.62,0,.05);
+  [-1,1].forEach(s=>{ const e=new THREE.Mesh(box(.16,.16,.04),basic(0x0a0610,false)); e.position.set(s*.2,.82,.72); body.add(e); });
+  g.scale.setScalar(scale); return {g,body,shell,shadow:blob(.8*scale)}; }
+// Kazmacı: madenci robot. Yerin altına dalar, oyuncunun altında toprak kabarır (uyarı), sonra kazmayla fırlar.
+function buildKazmaci(){ const g=new THREE.Group(), hips=new THREE.Group(); hips.position.y=1.1; g.add(hips);
+  const M1=toon(0xd8a030), M2=toon(0x3a3440), ME=basic(0x5fe0ff,false);
+  part(box(.9,.8,.6),M1,hips,0,.45,0,.07); part(box(.7,.15,.62),M2,hips,0,.2,0,.04);
+  const head=new THREE.Group(); head.position.y=1.05; hips.add(head);
+  part(box(.6,.5,.55),M2,head,0,0,0,.06); const v=new THREE.Mesh(box(.44,.1,.04),ME); v.position.set(0,.04,.29); head.add(v);
+  part(box(.66,.16,.6),M1,head,0,.3,0,.04); const lamp=new THREE.Mesh(box(.14,.12,.06),basic(0xfff0a0,false)); lamp.position.set(0,.32,.32); head.add(lamp);
+  const arms=[]; [-1,1].forEach(s=>{ const a=new THREE.Group(); a.position.set(s*.58,.75,0); hips.add(a); part(box(.22,.7,.22),M2,a,0,-.35,0,.04); arms.push(a); });
+  const pick=new THREE.Group(); pick.position.y=-.7; arms[1].add(pick);
+  part(box(.1,1.1,.1),toon(0x6a4a2a),pick,0,-.2,.25,.03).rotation.x=Math.PI/2;
+  part(box(.9,.14,.14),MAT.stone,pick,0,-.2,.75,.03);
+  [-1,1].forEach(s=>{ const l=new THREE.Group(); l.position.set(s*.22,0,0); hips.add(l); part(box(.28,1.1,.32),M2,l,0,-.55,0,.05); });
+  const mound=new THREE.Group(); mound.position.z=2.6; g.add(mound); mound.visible=false;
+  for(let i=0;i<5;i++) part(box(.5,.3,.5),MAT.dirt,mound,rand(-.5,.5),.15,rand(-.5,.5),.03);
+  return {g,hips,head,arms,pick,mound,shadow:blob(.8)}; }
+// Yay Taretı: taş blok üstünde dönen arbalet. Yüksek yaylı oklar atar, ok düşeceği yeri işaretler (topçu rolü).
+function buildTurret(){ const g=new THREE.Group();
+  part(box(1.4,1.2,1.4),MAT.stone,g,0,.6,0,.08);
+  const top=new THREE.Group(); top.position.y=1.35; g.add(top);
+  part(box(1,.4,1),MAT.bark,top,0,0,0,.06);
+  const bow=new THREE.Group(); bow.position.set(0,.3,.3); top.add(bow);
+  part(box(.16,.16,1.2),toon(0x5a3e22),bow,0,0,.2,.04);
+  [-1,1].forEach(s=>{ const a=part(box(.7,.1,.1),toon(0x8a6040),bow,s*.38,0,.6,.03); a.rotation.y=-s*.35; });
+  const str=new THREE.Mesh(box(1.1,.02,.02),basic(0xe8e0d0,false)); str.position.set(0,0,.38); bow.add(str);
+  const arrow=part(box(.05,.05,.9),toon(0xe8dcc0),bow,0,.1,.45,.02);
+  const mark=new THREE.Mesh(new THREE.RingGeometry(.8,.95,24),addMat(0xff3a2a,.7)); mark.rotation.x=-Math.PI/2; mark.position.set(0,.05,4); mark.visible=false; g.add(mark);
+  return {g,top,bow,arrow,mark,shadow:blob(.9)}; }
+// Golem (elit): taş ve yosundan dev. Yerden blok söker, başının üstüne kaldırıp fırlatır; kırılan blok yerde siper kalır.
+function buildGolem(){ const g=new THREE.Group(), hips=new THREE.Group(); hips.position.y=1.5; g.add(hips);
+  const MM=toon(0x4a8a34);
+  part(box(1.8,1.5,1.1),MAT.stone,hips,0,.9,0,.1); part(box(1.82,.3,1.12),MM,hips,0,1.55,0,.04);
+  const head=new THREE.Group(); head.position.y=1.95; hips.add(head);
+  part(box(.8,.7,.8),MAT.stone,head,0,0,0,.07); const e=new THREE.Mesh(box(.5,.1,.04),basic(0xff8a2a,false)); e.position.set(0,.05,.41); head.add(e);
+  const arms=[]; [-1,1].forEach(s=>{ const a=new THREE.Group(); a.position.set(s*1.15,1.45,0); hips.add(a);
+    part(box(.6,1,.6),MAT.stone,a,0,-.45,0,.07); part(box(.7,.8,.7),MAT.stone,a,0,-1.3,0,.07); part(box(.72,.2,.72),MM,a,0,-.95,0,.03); arms.push(a); });
+  const rock=part(box(1.2,1.2,1.2),MAT.grassSide,hips,0,3.4,0,.08); rock.visible=false;
+  [-1,1].forEach(s=>{ const l=new THREE.Group(); l.position.set(s*.5,0,0); hips.add(l); part(box(.7,1.5,.7),MAT.stone,l,0,-.75,0,.07); });
+  return {g,hips,head,arms,rock,shadow:blob(1.4)}; }
+// Monolit (boss konsepti): üst üste obsidyen küpler, mor çekirdek, etrafında dönen bloklar. Fazlarda blok kaybeder.
+function buildMonolit(){ const g=new THREE.Group(), body=new THREE.Group(); body.position.y=1; g.add(body);
+  const sizes=[[2.6,1.6],[2.2,1.8],[1.6,1.4]]; let y=0; const segs=[];
+  sizes.forEach(([w,h],i)=>{ const s=part(box(w,h,w),MAT.obsid,body,0,y+h/2,0,.1); segs.push(s); y+=h+.15; });
+  const core=new THREE.Mesh(box(.7,.7,.7),basic(0xb070ff,false)); core.position.set(0,2.5,1.15); body.add(core);
+  core.add(new THREE.Mesh(box(1.1,1.1,1.1),basic(0xb070ff,true,.3)));
+  const eye=new THREE.Mesh(box(1,.14,.05),basic(0xd8b0ff,false)); eye.position.set(0,4.4,.82); body.add(eye);
+  const orbit=new THREE.Group(); orbit.position.y=2.6; body.add(orbit); const rocks=[];
+  for(let i=0;i<8;i++){ const a=i/8*Math.PI*2, r=part(box(.7,.7,.7),i%2?MAT.obsid:MAT.stone,orbit,Math.cos(a)*3.2,Math.sin(i*1.7)*.6,Math.sin(a)*3.2,.05); rocks.push(r); }
+  return {g,body,core,orbit,rocks,segs,shadow:blob(2.2)}; }
+
+/* ---- kartlar: tek WebGL bağlamı, her karta 2D kopya (main-stage sayfasındaki yöntem) ---- */
+const R=new THREE.WebGLRenderer({antialias:true,alpha:true}); R.setPixelRatio(1); const RS=360; R.setSize(RS,RS,false);
+const cardScene=new THREE.Scene(); cardScene.add(new THREE.HemisphereLight(0xfff4d8,0x3a2a4a,.95));
+const cd=new THREE.DirectionalLight(0xfff0e0,.95); cd.position.set(3,6,5); cardScene.add(cd); const cr=new THREE.DirectionalLight(0xffa060,.5); cr.position.set(-5,2,-4); cardScene.add(cr);
+const cardCam=new THREE.PerspectiveCamera(30,1,.1,200);
+const BLOCKS=[
+  {tag:'#',name:'Çim / Taş Blok',m:()=>{ const g=new THREE.Group(); const a=buildGrassBlock(); a.g.position.x=-1.15; g.add(a.g); const b=buildStoneBlock(); b.g.position.x=1.15; g.add(b.g); return {g}; },
+   d:'<b>Engel.</b> Çarpışır ve mermileri durdurur, oyundaki <code>#</code> bloğunun Blok Dünya görünümü. Madende taş, ormanda çim.'},
+  {tag:'A',name:'Ağaç',m:buildTree,anim:(m,t)=>{ m.top.rotation.z=Math.sin(t*1.3)*.02; },
+   d:'<b>Kırılabilir siper.</b> Canı var (≈ 3 saniyelik ateş). Vurulunca sallanır, yıkılınca blok parçalarına ayrılır; %20 ihtimalle küçük can paketi düşer.'},
+  {tag:'T',name:'Patlayıcı Sandık',m:buildCrate,anim:(m,t)=>{ const c=t%3, lit=c>1.6; m.spark.visible=lit&&Math.floor(t*14)%2===0; m.mat.emissive.setHex(lit&&Math.floor(t*10)%2?0x664400:0); m.body.scale.setScalar(lit?1+(c-1.6)*.08:1); },
+   d:'<b>Herkese patlar.</b> Vurulunca fitil yanar, 1,2 sn yanıp söner, sonra yarıçap 3,2 patlama: oyuncuya 18, düşmanlara 40 hasar. Yakındaki sandıkları zincirleme tetikler.'},
+  {tag:'~',name:'Lav',m:()=>{ const g=new THREE.Group(); const L=[]; for(let i=0;i<3;i++){ const l=buildLavaTile(); l.g.position.x=(i-1)*2; g.add(l.g); L.push(l); } return {g,L}; },
+   anim:(m,t)=>{ TX.lava.offset.set(t*.05,t*.03); const c=t%4.3, w=c>2.4&&c<3.3, a=c>=3.3; m.L.forEach(l=>{ l.warn.visible=w; l.warn.material.opacity=.3+.3*Math.abs(Math.sin(t*14)); l.jets.visible=a; l.jets.children.forEach(f=>f.scale.y=.7+Math.random()*.6); }); },
+   d:'<b>Tuzak.</b> Üstünden geçilir. Bekler (2,4 sn), kabarır ve kırmızı yanıp söner (0,9 sn uyarı), sonra fışkırır (1 sn): oyuncuya 12, düşmanlara 3 hasar.'},
+];
+const MOBS=[
+  {tag:'Mob',name:'Fitil',thr:2,m:buildFitil,anim:(m,t)=>{ const c=t%2.6, sw=c>1.8; m.legs.forEach((l,i)=>l.rotation.x=Math.sin(t*10+(i%3?0:Math.PI))*.5); m.body.position.y=.55+Math.abs(Math.sin(t*10))*.06;
+      m.spark.visible=Math.floor(t*(sw?20:6))%2===0; m.mat.emissive.setHex(sw&&Math.floor(t*14)%2?0x886600:0); m.body.scale.setScalar(sw?1+(c-1.8)*.25:1); },
+   d:'<b>İntihar koşucusu</b> (Spark rolü). Hızlı koşar, yanına gelince şişip yanıp söner ve 1 sn sonra patlar. Patlaması sandıkları ve diğer düşmanları da vurur: doğru yerde vurursan düşmana karşı silah olur.'},
+  {tag:'Mob',name:'Jöle Küp',thr:1,fit:1.9,lift:.4,m:()=>buildJelly(1),anim:(m,t)=>{ const j=Math.abs(Math.sin(t*3)); m.body.position.y=j*.8; m.body.scale.set(1+(1-j)*.15,1-(1-j)*.2,1+(1-j)*.15); },
+   d:'<b>Bölünen</b> (Shardling rolü). Zıplayarak yaklaşır, indiği yerde küçük bir şok halkası bırakır. Ölünce iki küçük küpe bölünür, küçükler bir daha bölünmez.'},
+  {tag:'Mob',name:'Kazmacı',thr:3,m:buildKazmaci,anim:(m,t)=>{ const c=t%3; m.arms[1].rotation.x=-1.2+Math.sin(t*6)*.8; m.arms[0].rotation.x=Math.sin(t*6+Math.PI)*.3; m.mound.visible=c>1.8; m.mound.children.forEach((p,i)=>p.position.y=.15+Math.abs(Math.sin(t*16+i))*.1); },
+   d:'<b>Yeraltından saldıran.</b> Toprağa dalar ve görünmez olur; oyuncunun altında toprak kabarır (1 sn uyarı), sonra kazmayla fırlar. Kabaran toprağı görünce yer değiştir.'},
+  {tag:'Mob',name:'Yay Taretı',thr:2,m:buildTurret,anim:(m,t)=>{ m.top.rotation.y=Math.sin(t*.8)*.8; const c=t%2.2; m.mark.visible=c>1; m.mark.material.opacity=.4+.4*Math.abs(Math.sin(t*12)); m.arrow.visible=c<1.6; m.bow.rotation.x=-.25-(c<1.6?c*.05:0); },
+   d:'<b>Topçu.</b> Sabit durur, yüksek yaylı oklar atar; okun düşeceği yer önceden kırmızı halkayla işaretlenir. Siperin arkasına da düşer, yer değiştirerek kaçılır.'},
+  {tag:'Elit',name:'Golem',thr:4,m:buildGolem,anim:(m,t)=>{ const c=t%3.2, up=c>1&&c<2.4; m.rock.visible=up; m.arms.forEach(a=>a.rotation.x=up?-2.9:Math.sin(t*2+a.position.x)*.2); m.hips.position.y=1.5+Math.abs(Math.sin(t*2))*.05; },
+   d:'<b>Elit.</b> Yavaş ve çok dayanıklı. Yerden blok söküp başının üstüne kaldırır ve oyuncuya fırlatır; düştüğü yerde blok siper olarak kalır. Odayı zamanla kendi siperleriyle doldurur.'},
+  {tag:'Boss',name:'Monolit',thr:5,m:buildMonolit,anim:(m,t)=>{ m.orbit.rotation.y=t*.8; m.rocks.forEach((r,i)=>{ r.rotation.x+=.02; r.rotation.y+=.015; }); m.core.scale.setScalar(1+Math.sin(t*4)*.08); m.body.position.y=1+Math.sin(t*1.2)*.15; },
+   d:'<b>Boss konsepti.</b> Obsidyen bloklardan bir dev. Etrafında dönen blokları tek tek fırlatır, yerden blok duvarları çıkarır. Her fazda bir gövde küpü düşer ve küçülüp hızlanır. Saldırıları ayrıca tasarlanacak.'},
+];
+const entries=[];
+function makeCard(list,el,e){
+  const c=document.createElement('article'); c.className='card';
+  c.innerHTML=`<div class="pic"><canvas width="${RS}" height="${RS}"></canvas><span class="tag">${e.tag}</span></div><div class="body"><div class="nm"><h3></h3>${e.thr?`<span class="thr">${'■'.repeat(e.thr)}${'□'.repeat(5-e.thr)}</span>`:''}</div><p>${e.d}</p></div>`;
+  c.querySelector('h3').textContent=e.name; el.appendChild(c);
+  const m=e.m(), wrap=new THREE.Group(); wrap.add(m.g); if(m.shadow) wrap.add(m.shadow);
+  const hid=[]; m.g.traverse(o=>{ if(o.material&&o.material.blending===THREE.AdditiveBlending) hid.push(o); }); hid.forEach(o=>o.visible=false);
+  const bb=new THREE.Box3().setFromObject(m.g); hid.forEach(o=>o.visible=true);
+  const ctr=bb.getCenter(new V3()), sz=bb.getSize(new V3()), dist=Math.max(sz.x,sz.y,sz.z)/(2*Math.tan(15*Math.PI/180))*(e.fit||1.15); if(e.lift) ctr.y+=e.lift;
+  const ent={e,m,wrap,ctx:c.querySelector('canvas').getContext('2d'),camPos:new V3(ctr.x+dist*.25,ctr.y+dist*.22,ctr.z+dist),ctr,vis:true};
+  new IntersectionObserver(([x])=>ent.vis=x.isIntersecting).observe(c); entries.push(ent);
+}
+BLOCKS.forEach(e=>makeCard(BLOCKS,document.getElementById('blocks'),e));
+MOBS.forEach(e=>makeCard(MOBS,document.getElementById('mobs'),e));
+function drawCard(ent,t){ cardScene.add(ent.wrap); ent.m.g.rotation.y=-.5+Math.sin(t*.35)*.6; if(ent.e.anim) ent.e.anim(ent.m,t);
+  cardCam.position.copy(ent.camPos); cardCam.lookAt(ent.ctr); R.render(cardScene,cardCam); ent.ctx.clearRect(0,0,RS,RS); ent.ctx.drawImage(R.domElement,0,0); cardScene.remove(ent.wrap); }
+
+/* ---- örnek oda: oyunun kamerası, ışığı ve oda ölçüsüyle (11 × 15 hücre, 22 × 30 birim) ---- */
+const ROOM=['...........','.A.......A.','...##.##...','...#T.T#...','...........','.~~~...~~~.','...........','..A..#..A..','.....T.....','...........','.~~~...~~~.','...........','.#T.....T#.','...........','...........'];
+const rc=document.getElementById('room'), rr=new THREE.WebGLRenderer({canvas:rc,antialias:true}); rr.setPixelRatio(Math.min(devicePixelRatio,2));
+rr.shadowMap.enabled=true; rr.shadowMap.type=THREE.PCFSoftShadowMap;
+const scene=new THREE.Scene(); scene.background=new THREE.Color(0x8ec9f0); scene.fog=new THREE.Fog(0x8ec9f0,60,110);
+scene.add(new THREE.HemisphereLight(0xfff4d8,0x3a5a2a,.8));
+const sun=new THREE.DirectionalLight(0xfff0d8,1); sun.position.set(14,30,10); sun.castShadow=true; sun.shadow.mapSize.set(2048,2048);
+Object.assign(sun.shadow.camera,{left:-26,right:26,top:26,bottom:-26,near:1,far:90}); sun.shadow.bias=-.0008; scene.add(sun);
+const rim=new THREE.DirectionalLight(0xffc070,.3); rim.position.set(-20,8,-30); scene.add(rim);
+const cam=new THREE.OrthographicCamera(-10,10,10,-10,.1,300);
+const AX=11, AZ=15, cell=2;
+// dış zemin: çim, uzakta bloklu tepeler ve kare bulutlar
+(()=>{ const t=TX.grassTop.clone(); t.needsUpdate=true; t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(60,60);
+  const gr=new THREE.Mesh(new THREE.PlaneGeometry(120,120),new THREE.MeshToonMaterial({map:t,gradientMap:grad,color:0xb8d8a0})); gr.rotation.x=-Math.PI/2; gr.receiveShadow=true; scene.add(gr);
+  castShadows=false;
+  for(let i=0;i<70;i++){ const a=rand(0,Math.PI*2), d=rand(24,44), x=Math.cos(a)*d, z=Math.sin(a)*d; if(Math.abs(x)<AX+3&&Math.abs(z)<AZ+3) continue;
+    const h=1+((Math.random()*4)|0); for(let k=0;k<h;k++){ const b=buildGrassBlock(2,2,2); b.g.position.set(Math.round(x/2)*2,k*2,Math.round(z/2)*2); if(k<h-1) b.g.children[0].material=MAT.dirt; scene.add(b.g); }
+    if(Math.random()<.35){ const tr=buildTree(); tr.g.position.set(Math.round(x/2)*2+1,h*2,Math.round(z/2)*2+1); scene.add(tr.g); } }
+  for(let i=0;i<9;i++){ const c=new THREE.Group(); c.position.set(rand(-50,50),rand(22,30),rand(-60,-20)); scene.add(c);
+    for(let k=0;k<4;k++) part(box(rand(3,6),1.2,rand(2,4)),toon(0xffffff),c,rand(-3,3),0,rand(-1.5,1.5),0); }
+  castShadows=true; })();
+// oda zemini: hafif soluk çim (mermiler okunsun), sınır çizgisi
+(()=>{ const t=TX.grassTop.clone(); t.needsUpdate=true; t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(AX,AZ);
+  const fl=new THREE.Mesh(new THREE.PlaneGeometry(2*AX,2*AZ),new THREE.MeshToonMaterial({map:t,gradientMap:grad,color:0xd0e4c0})); fl.rotation.x=-Math.PI/2; fl.position.y=.01; fl.receiveShadow=true; scene.add(fl);
+  const lm=basic(0x7ad650,false); [[0,-AZ,2*AX+.3,.3],[0,AZ,2*AX+.3,.3],[-AX,0,.3,2*AZ+.3],[AX,0,.3,2*AZ+.3]].forEach(([x,z,w,d])=>{ const l=new THREE.Mesh(box(w,.08,d),lm); l.position.set(x,.05,z); scene.add(l); });
+  // kapı: ağaç gövdesi direkler, yaprak lento
+  [-1.85,1.85].forEach(x=>part(box(.6,2.8,.8),MAT.bark,scene,x,1.4,-AZ-.3,.1)); part(box(4.4,.7,1),MAT.leaf,scene,0,3,-AZ-.3,.1);
+  const bar=new THREE.Mesh(new THREE.PlaneGeometry(3.1,2.6),addMat(0x7ad650,.35)); bar.position.set(0,1.3,-AZ-.3); scene.add(bar); })();
+const lavaTiles=[], crates=[], trees=[];
+ROOM.forEach((row,r)=>{ for(let c=0;c<row.length;c++){ const ch=row[c]; if(ch==='.') continue; const x=-AX+cell*(c+.5), z=-AZ+cell*(r+.5);
+  if(ch==='#'){ const b=(r>6?buildStoneBlock:buildGrassBlock)(cell,1.5,cell); b.g.position.set(x,0,z); scene.add(b.g); }
+  if(ch==='A'){ const t=buildTree(); t.g.position.set(x,0,z); scene.add(t.g); trees.push(t); }
+  if(ch==='T'){ const k=buildCrate(); k.g.position.set(x,0,z); scene.add(k.g); crates.push({k,x,z,t:rand(0,6),state:0}); }
+  if(ch==='~'){ const l=buildLavaTile(cell,cell); l.g.position.set(x,0,z); scene.add(l.g); lavaTiles.push(l); } } });
+// oyuncu ve dolaşan moblar (sadece görsel)
+function buildMech(c1,c2,c3,eye){ const g=new THREE.Group(); const M1=toon(c1),M2=toon(c2),M3=toon(c3),ME=basic(eye,false);
+  const hips=new THREE.Group(); hips.position.y=1.6; g.add(hips); const torso=new THREE.Group(); hips.add(torso);
+  part(box(.85,.45,.55),M3,torso,0,.15,0); part(box(1.25,.8,.78),M1,torso,0,.75,0); part(box(.75,.42,.2),M2,torso,0,.82,.43,.06); part(box(.5,.25,.5),M3,torso,0,1.2,0);
+  const head=new THREE.Group(); head.position.set(0,1.42,.05); torso.add(head); part(box(.36,.4,.5),M1,head,0,.12,0); const e=new THREE.Mesh(box(.3,.07,.06),ME); e.position.set(0,.14,.26); head.add(e);
+  [-1,1].forEach(s=>{ part(box(.5,.72,.85),M1,torso,s*.88,1.02,0); const a=new THREE.Group(); a.position.set(s*.86,.92,0); torso.add(a); part(box(.28,.6,.28),M3,a,0,-.38,0,.06); part(box(.36,.62,.4),M1,a,0,-.92,0); if(s>0){ a.rotation.x=-1.45; part(box(.2,1.5,.26),M3,a,0,-1.45,.12,.07); } });
+  [-1,1].forEach(s=>{ const l=new THREE.Group(); l.position.set(s*.3,0,0); hips.add(l); part(box(.38,.8,.42),M3,l,0,-.4,0,.07); part(box(.44,.82,.52),M1,l,0,-1.18,0); });
+  return {g}; }
+const player=buildMech(0x2f62d8,0xeeeef4,0x1d2233,0x6ad8ff); player.g.position.set(0,0,AZ-3); player.g.rotation.y=Math.PI; scene.add(player.g); { const pb=blob(.9); pb.position.set(0,.03,AZ-3); scene.add(pb); }
+const walkers=[{m:buildFitil(),path:(t)=>new V3(Math.sin(t*.7)*6,0,4+Math.cos(t*.7)*3)},{m:buildJelly(1),path:(t)=>new V3(-5+Math.sin(t*.4)*2,0,-2+Math.cos(t*.5)*2),jelly:true},
+  {m:buildKazmaci(),path:(t)=>new V3(6,0,-8+Math.sin(t*.5)*2)},{m:buildTurret(),path:()=>new V3(-7,0,-11),fixed:true},{m:buildGolem(),path:(t)=>new V3(Math.sin(t*.25)*3,0,-6),golem:true}];
+walkers.forEach(w=>{ scene.add(w.m.g); if(w.m.shadow) scene.add(w.m.shadow); });
+// patlama efektleri
+const fx=[]; function boom(x,z){ const ring=new THREE.Mesh(new THREE.RingGeometry(1,1.3,40),addMat(0xffb040,.9)); ring.rotation.x=-Math.PI/2; ring.position.set(x,.08,z); scene.add(ring);
+  const ball=new THREE.Mesh(new THREE.SphereGeometry(1,14,10),addMat(0xffd060,.8)); ball.position.set(x,1.2,z); scene.add(ball);
+  const bits=[]; for(let i=0;i<10;i++){ const b=part(box(.4,.4,.4),i%2?MAT.crate:MAT.dirt,scene,x,1,z,0); b.userData.v=new V3(rand(-6,6),rand(5,10),rand(-6,6)); bits.push(b); }
+  fx.push({ring,ball,bits,t:0}); shake=.5; }
+let shake=0, camMode='iso', paused=false;
+const ctl=document.getElementById('ctl');
+[['iso','Oyun kamerası'],['phone','Telefon kamerası'],['close','Yakın']].forEach(([k,l])=>{ const b=document.createElement('button'); b.className='chip'+(k===camMode?' on':''); b.textContent=l; b.onclick=()=>{ camMode=k; ctl.querySelectorAll('.chip[data-c]').forEach(x=>x.classList.toggle('on',x.dataset.c===k)); }; b.dataset.c=k; ctl.appendChild(b); });
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+function updateRoom(t,dt){
+  TX.lava.offset.set(t*.05,t*.03);
+  // lav: bekle, kabar, fışkır (hepsi aynı ritimde, oyunda her tuzak koşusu kendi zamanlayıcısıyla)
+  const c=t%4.3, warn=c>2.4&&c<3.3, act=c>=3.3; lavaTiles.forEach(l=>{ l.warn.visible=warn; l.warn.material.opacity=.3+.3*Math.abs(Math.sin(t*14)); l.jets.visible=act; l.jets.children.forEach(f=>f.scale.y=.7+Math.random()*.6); });
+  // sandıklar: sırayla vurulmuş gibi yanıp söner, patlar, birkaç saniye sonra geri gelir (sadece gösterim)
+  crates.forEach(o=>{ o.t+=dt; const k=o.k;
+    if(o.state===0&&o.t>6){ o.state=1; o.t=0; }
+    if(o.state===1){ k.spark.visible=Math.floor(o.t*14)%2===0; k.mat.emissive.setHex(Math.floor(o.t*10)%2?0x664400:0); k.body.scale.setScalar(1+o.t*.1); if(o.t>1.2){ o.state=2; o.t=0; k.g.visible=false; boom(o.x,o.z); } }
+    if(o.state===2&&o.t>3){ o.state=0; o.t=rand(0,3); k.g.visible=true; k.body.scale.setScalar(1); k.mat.emissive.setHex(0); k.spark.visible=true; } });
+  trees.forEach((tr,i)=>tr.top.rotation.z=Math.sin(t*1.3+i)*.02);
+  walkers.forEach((w,i)=>{ const p=w.path(t), q=w.path(t+.05); w.m.g.position.copy(p); if(w.m.shadow) w.m.shadow.position.set(p.x,.03,p.z);
+    if(!w.fixed) w.m.g.rotation.y=Math.atan2(q.x-p.x,q.z-p.z); MOBS[i].anim(w.m,t); });
+  for(let i=fx.length-1;i>=0;i--){ const f=fx[i]; f.t+=dt; const k=f.t/.7; f.ring.scale.setScalar(1+k*3.2); f.ring.material.opacity=.9*(1-k); f.ball.scale.setScalar(1+k*2.4); f.ball.material.opacity=.8*(1-k);
+    f.bits.forEach(b=>{ b.userData.v.y-=24*dt; b.position.addScaledVector(b.userData.v,dt); if(b.position.y<.2){ b.position.y=.2; b.userData.v.set(0,0,0); } });
+    if(f.t>1.6){ scene.remove(f.ring,f.ball); f.bits.forEach(b=>scene.remove(b)); fx.splice(i,1); } }
+}
+function renderRoom(){
+  const w=rc.clientWidth,h=rc.clientHeight; if(!w||!h) return; rr.setSize(w,h,false); const a=w/h;
+  let vs;
+  if(camMode==='phone'){ const P=57*Math.PI/180; vs=a<1?(2*AX+2.6)/a:(2*AZ+3)*Math.sin(P)+3.2; cam.position.set(0,Math.sin(P)*40,Math.cos(P)*40+1); cam.lookAt(0,0,1); }
+  else if(camMode==='close'){ vs=14; cam.position.set(24,22,24); cam.lookAt(0,1.5,2); }
+  else { vs=a<1?34:30; cam.position.set(30,30,28); cam.lookAt(0,0,-2); }
+  cam.left=-vs*a/2; cam.right=vs*a/2; cam.top=vs/2; cam.bottom=-vs/2; cam.updateProjectionMatrix();
+  if(shake>0){ cam.position.x+=(Math.random()-.5)*shake; cam.position.y+=(Math.random()-.5)*shake; shake=Math.max(0,shake-.03); }
+  rr.render(scene,cam);
+}
+let last=0, prev=0, stageVis=true;
+new IntersectionObserver(([x])=>stageVis=x.isIntersecting).observe(document.getElementById('stage'));
+function loop(now){ requestAnimationFrame(loop); if(now-last<33) return; const dt=Math.min(.1,(now-(prev||now))/1000); prev=now; last=now; const t=reduce?0:now/1000;
+  if(stageVis){ updateRoom(t,reduce?0:dt); renderRoom(); }
+  for(const e of entries) if(e.vis) drawCard(e,t); }
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
