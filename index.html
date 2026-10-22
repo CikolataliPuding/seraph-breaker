@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@700;800&family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
-<link rel="stylesheet" href="css/style.css?v=10">
+<link rel="stylesheet" href="css/style.css?v=11">
 </head>
 <body>
 <canvas id="gl"></canvas>
@@ -108,7 +108,7 @@
           <p class="note">The soundtrack is synthesized live in your browser, so it is original and free of copyright claims.</p>
           <p class="note">Progress is saved in this browser only. <span id="buildTxt"></span></p>
           <div class="keys desk"><kbd>WASD</kbd> move · <kbd>Mouse</kbd> aim · <kbd>Click</kbd> fire · <kbd>Space</kbd> dash · <kbd>Shift</kbd>/<kbd>RMB</kbd> barrier · <kbd>Q</kbd> special · <kbd>E</kbd><kbd>R</kbd> gadgets · <kbd>P</kbd> pause</div>
-          <div class="keys tonly">Drag anywhere in the lower screen to move. Let go to stop and auto-fire at the nearest enemy in sight. Flick the stick or double-tap to dash (2 charges). The barrier (Auto) blocks a shot on its own while power is above 60: the hex ring around you and the two pips show its charges. Manual swaps it for a hold-to-shield button. Big button: special. Small buttons: gadgets.</div>
+          <div class="keys tonly">Drag anywhere in the lower screen to move. Let go to stop and auto-fire at the nearest enemy in sight. Dash (2 charges) goes where you choose, never at the auto-aim target: tap the DASH button while moving to dash along the stick, or drag from it to aim; with the stick held, a tap of your other thumb also dashes; or double-tap and slide; or flick the stick. The barrier (Auto) blocks a shot on its own while power is above 60: the hex ring around you and the two pips show its charges. Manual swaps it for a hold-to-shield button. Big button: special. Small buttons: gadgets.</div>
           <div class="fld"><span>Controls</span><div class="seg" id="ctrlSeg"><button data-c="auto">Auto</button><button data-c="mobile">Phone</button><button data-c="desktop">Desktop</button></div></div>
           <div class="fld"><span>Mobile shield</span><div class="seg" id="shSeg"><button data-s="auto">Auto</button><button data-s="manual">Manual</button></div></div>
           <label class="chk"><input type="checkbox" id="autoG"> Auto-use gadgets (phone mode)</label>
@@ -169,45 +169,46 @@
 <div id="touch" hidden>
   <div class="stk" id="stkM" hidden><i></i></div>
   <div class="dpips" id="dashPips"><b></b><b></b></div>
-  <div class="mhint" id="mHint">Drag to move · let go to fire · flick or double-tap to dash (arrow shows where)</div>
+  <div class="mhint" id="mHint">Drag to move · let go to fire · dash: DASH button (drag to aim) or double-tap and slide</div>
   <div class="mbtns">
     <div class="tb sm" id="tG2"></div>
     <div class="tb sm" id="tG1"></div>
     <div class="tb sh" id="tSH" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/></svg></div>
     <div class="tb big" id="tSP">SP</div>
   </div>
+  <div class="tb dash" id="tDash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 12h11M11 6l6 6-6 6M19 5v14"/></svg></div>
   <div class="tb" id="tPause">II</div>
 </div>
 <div class="hud" id="pop"></div>
 <div id="xhair" hidden><i class="rg"></i><i class="t u"></i><i class="t d"></i><i class="t l"></i><i class="t r"></i><i class="hm"></i></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="js/core.js?v=10"></script>
-<script src="js/data.js?v=10"></script>
-<script src="js/save.js?v=10"></script>
-<script src="js/balance.js?v=10"></script>
-<script src="js/audio.js?v=10"></script>
-<script src="js/renderer.js?v=10"></script>
-<script src="js/models.js?v=10"></script>
-<script src="js/preview.js?v=10"></script>
-<script src="js/input.js?v=10"></script>
-<script src="js/mobile.js?v=10"></script>
-<script src="js/state.js?v=10"></script>
-<script src="js/fx.js?v=10"></script>
-<script src="js/juice.js?v=10"></script>
-<script src="js/rooms.js?v=10"></script>
-<script src="js/bullets.js?v=10"></script>
-<script src="js/enemies.js?v=10"></script>
-<script src="js/skills.js?v=10"></script>
-<script src="js/items.js?v=10"></script>
-<script src="js/player.js?v=10"></script>
-<script src="js/enemy-ai.js?v=10"></script>
-<script src="js/bosses.js?v=10"></script>
-<script src="js/run.js?v=10"></script>
-<script src="js/flow.js?v=10"></script>
-<script src="js/ui-hangar.js?v=10"></script>
-<script src="js/ui-warmap.js?v=10"></script>
-<script src="js/debug.js?v=10"></script>
-<script src="js/main.js?v=10"></script>
+<script src="js/core.js?v=11"></script>
+<script src="js/data.js?v=11"></script>
+<script src="js/save.js?v=11"></script>
+<script src="js/balance.js?v=11"></script>
+<script src="js/audio.js?v=11"></script>
+<script src="js/renderer.js?v=11"></script>
+<script src="js/models.js?v=11"></script>
+<script src="js/preview.js?v=11"></script>
+<script src="js/input.js?v=11"></script>
+<script src="js/mobile.js?v=11"></script>
+<script src="js/state.js?v=11"></script>
+<script src="js/fx.js?v=11"></script>
+<script src="js/juice.js?v=11"></script>
+<script src="js/rooms.js?v=11"></script>
+<script src="js/bullets.js?v=11"></script>
+<script src="js/enemies.js?v=11"></script>
+<script src="js/skills.js?v=11"></script>
+<script src="js/items.js?v=11"></script>
+<script src="js/player.js?v=11"></script>
+<script src="js/enemy-ai.js?v=11"></script>
+<script src="js/bosses.js?v=11"></script>
+<script src="js/run.js?v=11"></script>
+<script src="js/flow.js?v=11"></script>
+<script src="js/ui-hangar.js?v=11"></script>
+<script src="js/ui-warmap.js?v=11"></script>
+<script src="js/debug.js?v=11"></script>
+<script src="js/main.js?v=11"></script>
 </body>
 </html>

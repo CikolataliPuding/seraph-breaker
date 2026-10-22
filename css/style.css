@@ -272,7 +272,10 @@ button.card:hover,button.card:focus-visible{border-color:var(--c,var(--signal));
 /* hold-to-shield button (Mobile shield: Manual) */
 .tb.sh{width:62px;height:62px;border-color:#ffa04a;color:#ffa04a} .tb.sh.on{background:rgba(255,160,74,.35);box-shadow:0 0 16px rgba(255,160,74,.8)}
 .tb.sh[hidden]{display:none}
-.mhint{position:absolute;left:0;right:0;bottom:calc(64px + env(safe-area-inset-bottom,0px));text-align:center;font-family:var(--f-data);font-size:11px;letter-spacing:.08em;color:rgba(243,238,230,.45);pointer-events:none;padding-inline:max(24px,calc(env(safe-area-inset-right,0px) + 110px))}
+/* aimed dash button (phone): left of the special button */
+.tb.dash{position:absolute;right:calc(max(14px,env(safe-area-inset-right,0px)) + 96px);bottom:calc(22px + env(safe-area-inset-bottom,0px));width:66px;height:66px;border-color:var(--unit);color:var(--unit)}
+.tb.dash.on{background:rgba(255,255,255,.25)} .tb.dash.empty{opacity:.45}
+.mhint{position:absolute;left:0;right:0;bottom:calc(104px + env(safe-area-inset-bottom,0px));text-align:center;font-family:var(--f-data);font-size:11px;letter-spacing:.08em;color:rgba(243,238,230,.45);pointer-events:none;padding-inline:max(24px,calc(env(safe-area-inset-right,0px) + 110px))}
 .mbtns{position:absolute;right:max(14px,env(safe-area-inset-right,0px));bottom:calc(22px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;align-items:center;gap:12px}
 .tb.sm{width:54px;height:54px}
 .tb.big{width:84px;height:84px;font-size:18px}

@@ -134,6 +134,7 @@ function frame(now){
     const df=p.dashCd/(1.4*p.st.dashCd); $('abS').style.setProperty('--cd',df);
     // phone barrier charges (Auto): 2 pips like the dash pips
     if(mobileMode){ const bp=$('barPips').children, bc=barrierCharges(), au=barrierAuto(); $('barPips').hidden=!au; if(au) for(let i=0;i<bp.length;i++){ bp[i].className=i<bc.n?'f':i===bc.n?'c':''; bp[i].style.setProperty('--k',i===bc.n?bc.k:0); } }
+    if(mobileMode){ const dbt=$('tDash'); dbt.classList.toggle('empty',p.dashCh<1); dbt.style.setProperty('--cd',p.dashCh<1?1-p.dashRc/(1.5*p.st.dashCd):0); }
     if(mobileMode){ const pp=$('dashPips').children; for(let i=0;i<pp.length;i++){ pp[i].className=i<p.dashCh?'f':i===p.dashCh?'c':''; pp[i].style.setProperty('--k',i===p.dashCh?p.dashRc/(1.5*p.st.dashCd):0); } }
   }
   updateCrosshair(rawDt);

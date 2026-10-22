@@ -11,7 +11,14 @@ function setMode(){
 
 /* ================= FLOATING JOYSTICK ================= */
 const JOY_R=58;
-const joy={id:null,ox:0,oy:0,x:0,y:0,t0:0,hist:[],lastTap:0,tx:0,ty:0,moved:0};
+const joy={id:null,ox:0,oy:0,x:0,y:0,t0:0,hist:[],lastTap:0,tx:0,ty:0,moved:0,arm:0};
+/* aimed dash (phone). You choose the direction, the auto-aim never does:
+   - Dash button: while the stick is held it dashes at once along the stick; otherwise drag from the button and it dashes the way you drag
+     (a plain tap dashes the way you last moved).
+   - Second finger: with the stick held, tap anywhere else to dash along the stick.
+   - Double tap: tap, then touch again and slide: it dashes the way you slide (no slide within DASH_ARM s: the way you last moved).
+   - Flick: a fast flick of the stick on release. */
+const DASH_DRAG=14, DASH_ARM=.14;
 let mShieldHeld=false; // Mobile shield: Manual, the hold-to-shield button
 function initMobile(){
   const layer=$('touch'), el=$('stkM'), knob=el.firstElementChild, pips=$('dashPips');
@@ -20,17 +27,21 @@ function initMobile(){
     const now=performance.now(), h=joy.hist; let fx=0,fy=0,fv=0;
     for(let i=h.length-1;i>=0;i--){ if(now-h[i][0]>90) { const dt=Math.max(16,now-h[i][0]); fx=e.clientX-h[i][1]; fy=e.clientY-h[i][2]; fv=Math.hypot(fx,fy)/dt; break; } }
     if(!fv&&h.length){ const a=h[0],dt=Math.max(16,now-a[0]); fx=e.clientX-a[1]; fy=e.clientY-a[2]; fv=Math.hypot(fx,fy)/dt; }
-    if(fv>1.15&&Math.hypot(joy.x,joy.y)>.45) tryDash(new V3(fx,0,fy).normalize());
+    if(joy.arm){ joy.arm=0; tryDash(); }
+    else if(fv>1.15&&Math.hypot(joy.x,joy.y)>.45) tryDash(new V3(fx,0,fy).normalize());
     // a short tap counts toward a double tap
     if(now-joy.t0<220&&joy.moved<14){ joy.lastTap=now; joy.tx=e.clientX; joy.ty=e.clientY; }
     joy.id=null; joy.x=joy.y=0; el.hidden=true; joy.hist.length=0;
   };
   layer.addEventListener('pointerdown',e=>{
-    if(e.target!==layer||joy.id!==null) return;
+    if(e.target!==layer) return;
+    // a second finger while the stick is held: dash along the stick
+    if(joy.id!==null){ if(e.pointerId!==joy.id){ e.preventDefault(); tryDash(); } return; }
     $('mHint').hidden=true;
     if(e.clientY<innerHeight*.4) return;
     const now=performance.now();
-    if(now-joy.lastTap<300&&Math.hypot(e.clientX-joy.tx,e.clientY-joy.ty)<60){ joy.lastTap=0; tryDash(); }
+    // double tap: arm the dash; sliding this touch picks its direction
+    if(now-joy.lastTap<300&&Math.hypot(e.clientX-joy.tx,e.clientY-joy.ty)<60){ joy.lastTap=0; joy.arm=now; setTimeout(()=>{ if(joy.arm===now){ joy.arm=0; tryDash(); } },DASH_ARM*1000); }
     joy.id=e.pointerId; joy.ox=e.clientX; joy.oy=e.clientY; joy.x=joy.y=0; joy.t0=now; joy.moved=0; joy.hist.length=0; joy.hist.push([now,e.clientX,e.clientY]);
     el.style.left=joy.ox+'px'; el.style.top=joy.oy+'px'; el.hidden=false; knob.style.transform='';
     pips.style.left=joy.ox+'px'; pips.style.top=(joy.oy-JOY_R-22)+'px'; pips.style.bottom='auto';
@@ -41,6 +52,7 @@ function initMobile(){
     // drag past the rim and the stick follows the thumb
     if(l>JOY_R){ joy.ox+=dx*(1-JOY_R/l); joy.oy+=dy*(1-JOY_R/l); dx*=JOY_R/l; dy*=JOY_R/l; el.style.left=joy.ox+'px'; el.style.top=joy.oy+'px'; }
     joy.x=dx/JOY_R; joy.y=dy/JOY_R; knob.style.transform=`translate(${dx}px,${dy}px)`;
+    if(joy.arm&&joy.moved>=DASH_DRAG){ joy.arm=0; tryDash(new V3(dx,0,dy).normalize()); }
     const h=joy.hist; h.push([performance.now(),e.clientX,e.clientY]); if(h.length>8) h.shift();
   });
   layer.addEventListener('pointerup',end); layer.addEventListener('pointercancel',end); layer.addEventListener('lostpointercapture',end);
@@ -48,12 +60,20 @@ function initMobile(){
   const sh=$('tSH'), shOff=e=>{ mShieldHeld=false; sh.classList.remove('on'); };
   sh.addEventListener('pointerdown',e=>{ e.stopPropagation(); e.preventDefault(); mShieldHeld=true; sh.classList.add('on'); try{ sh.setPointerCapture(e.pointerId); }catch(_){} });
   ['pointerup','pointercancel','lostpointercapture'].forEach(t=>sh.addEventListener(t,shOff));
+  // dash button: along the held stick at once, else drag to aim (release without a drag: the way you last moved)
+  const db=$('tDash'); let dbId=null,dbX=0,dbY=0;
+  db.addEventListener('pointerdown',e=>{ e.stopPropagation(); e.preventDefault(); db.classList.add('on');
+    if(joyVec(_jv).lengthSq()>0){ tryDash(); return; }
+    dbId=e.pointerId; dbX=e.clientX; dbY=e.clientY; try{ db.setPointerCapture(e.pointerId); }catch(_){} });
+  db.addEventListener('pointermove',e=>{ if(e.pointerId!==dbId) return; const dx=e.clientX-dbX,dy=e.clientY-dbY; if(Math.hypot(dx,dy)>=DASH_DRAG){ dbId=null; tryDash(new V3(dx,0,dy).normalize()); } });
+  const dbEnd=e=>{ db.classList.remove('on'); if(e.pointerId!==dbId) return; dbId=null; if(e.type==='pointerup') tryDash(); };
+  ['pointerup','pointercancel','lostpointercapture'].forEach(t=>db.addEventListener(t,dbEnd));
   tap('tSP',trySpecial); tap('tG1',()=>useGadget(0)); tap('tG2',()=>useGadget(1)); tap('tPause',togglePause);
   addEventListener('touchstart',()=>{ if(!isTouch){ isTouch=true; document.body.classList.add('touch'); if(P.ctrl==='auto') setMode(); } },{passive:true});
   addEventListener('resize',()=>{ resetTouch(); });
   setMode();
 }
-function resetTouch(){ mShieldHeld=false; const sh=$('tSH'); if(sh) sh.classList.remove('on'); joy.id=null; joy.x=joy.y=0; const el=$('stkM'); if(el) el.hidden=true; joy.hist.length=0; }
+function resetTouch(){ mShieldHeld=false; joy.arm=0; const sh=$('tSH'); if(sh) sh.classList.remove('on'); joy.id=null; joy.x=joy.y=0; const el=$('stkM'); if(el) el.hidden=true; joy.hist.length=0; }
 function joyVec(out){ if(joy.id===null||Math.hypot(joy.x,joy.y)<.18) return out.set(0,0,0); return out.set(joy.x,0,joy.y); }
 
 /* ================= AUTO-AIM ================= */
