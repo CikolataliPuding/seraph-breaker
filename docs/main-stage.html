@@ -1,0 +1,613 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<!-- Seraph Breaker · docs/main-stage.html: Main Stage arena (High-Co stage): 9 human-form mobs (buildHuman rig) with model builders and behaviors. Builders use the game's own part()/box()/toon() helpers and can be ported to js/models.js. -->
+<title>Main Stage Bestiyeri</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@700;800&family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+*{box-sizing:border-box}[hidden]{display:none!important}body{margin:0}
+/* Layout: Main Stage arena sayfası; üstte arena kimliği ve kuralları, altta stage mobları ızgarada. oyunun hangar diliyle tek sütun akış; sabit filtre çubuğu, mob ve boss kartları ızgarada, en altta arena havuzu tablosu. Oyunla aynı koyu dünya, bilinçli olarak tek tema. */
+:root{
+  --ink:#0c0910; --ink-2:#17121d; --ink-3:#221a2a; --paper:#f3eee6; --dim:#a79fae; --line:rgba(255,255,255,.13);
+  --signal:#ff3aa8; --hex:#ffb84a; --alert:#e8243c; --gem:#5fe0ff; --sp:#ffe14a; --angel:#ffd36a; --void:#b070ff;
+  --f-display:"Shippori Mincho B1","Hiragino Mincho ProN","Yu Mincho",Georgia,serif;
+  --f-label:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-data:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+  color-scheme:dark;
+}
+html{background:var(--ink)}
+body{background:var(--ink);color:var(--paper);font-family:var(--f-label);font-size:16px;line-height:1.4}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 64px;display:grid;gap:36px}
+header{display:grid;gap:10px}
+.eye{font-family:var(--f-data);font-size:12px;letter-spacing:.14em;color:var(--signal);text-transform:uppercase}
+h1{font-family:var(--f-display);font-weight:800;font-size:clamp(30px,6vw,52px);line-height:1.05;margin:0;text-wrap:balance}
+h1 em{font-style:normal;color:var(--signal)}
+.lede{color:var(--dim);font-size:18px;max-width:62ch;margin:0}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-family:var(--f-data);font-size:12px;color:var(--dim)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:color-mix(in srgb,var(--ink) 92%,transparent);backdrop-filter:blur(6px);padding-block:10px;border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;gap:8px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--ink)}
+.chip{font:600 14px/1 var(--f-label);letter-spacing:.12em;text-transform:uppercase;background:var(--ink-2);color:var(--dim);border:1px solid var(--line);padding:9px 12px;cursor:pointer;clip-path:polygon(0 0,100% 0,calc(100% - 8px) 100%,0 100%);padding-right:18px}
+.chip[aria-pressed="true"]{background:var(--paper);color:var(--ink);border-color:var(--paper)}
+.chip:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
+.sep{width:1px;background:var(--line);margin-inline:4px}
+section{display:grid;gap:16px}
+.sh{display:flex;align-items:baseline;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line);padding-bottom:8px;flex-wrap:wrap}
+h2{font-family:var(--f-display);font-size:26px;margin:0;font-weight:800}
+.cnt{font-family:var(--f-data);font-size:12px;color:var(--dim)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+.card{background:var(--ink-2);border:1px solid var(--line);display:grid;grid-template-rows:auto 1fr;min-width:0}
+.card.boss{grid-column:span 1}
+.stage{position:relative;aspect-ratio:1;max-width:100%;background:radial-gradient(circle at 50% 58%,color-mix(in srgb,var(--fc) 26%,var(--ink-3)) 0%,var(--ink) 72%)}
+.stage canvas{width:100%;height:100%;display:block}
+.tag{position:absolute;top:10px;left:10px;font:600 12px/1 var(--f-data);letter-spacing:.08em;padding:5px 7px;text-transform:uppercase}
+.tag.yeni{background:var(--signal);color:var(--ink)}
+.tag.mevcut{background:rgba(255,255,255,.12);color:var(--paper)}
+.tag.varyant{background:var(--void);color:var(--ink)} .tag.mutasyon{background:var(--void);color:var(--ink)}
+.fac{position:absolute;top:10px;right:10px;font:600 12px/1 var(--f-label);letter-spacing:.16em;text-transform:uppercase;color:var(--fc)}
+.body{padding:12px 14px 14px;display:grid;gap:8px;align-content:start;min-width:0}
+.nm{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.nm b{font-size:22px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;line-height:1}
+.thr{font-family:var(--f-data);font-size:12px;color:var(--alert);letter-spacing:.05em;white-space:nowrap}
+.role{font-size:14px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--fc)}
+.card p{margin:0;font-size:16px;color:var(--paper)}
+.card .ctr{color:var(--dim);font-size:15px}
+.card .ctr i{font-style:normal;color:var(--gem);font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:13px;margin-right:4px}
+.ar{display:flex;gap:6px;flex-wrap:wrap;margin-top:2px}
+.ar span{font:600 12px/1 var(--f-data);padding:4px 6px;border:1px solid var(--line);color:var(--dim)}
+.tbl{overflow-x:auto;border:1px solid var(--line)}
+table{border-collapse:collapse;width:100%;min-width:640px;font-size:15px}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font:600 12px/1.2 var(--f-data);letter-spacing:.08em;text-transform:uppercase;color:var(--dim);background:var(--ink-2)}
+td b{font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+td small{display:block;color:var(--dim);font-family:var(--f-data);font-size:12px;margin-top:2px}
+.n{color:var(--signal)} .v{color:var(--void)}
+.note{color:var(--dim);font-size:15px;max-width:75ch;margin:0}
+@media (max-width:420px){ .grid{grid-template-columns:1fr} }
+.arena{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.arena div{border:1px solid var(--line);background:var(--ink-2);padding:12px 14px;display:grid;gap:4px;min-width:0}
+.arena b{font-size:14px;letter-spacing:.14em;text-transform:uppercase;color:var(--hex)}
+.arena span{color:var(--paper);font-size:16px}
+.arena small{color:var(--dim);font-size:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eye">Seraph Breaker · High-Co arenası taslağı · Final boss: High-Co</div>
+    <h1>Main <em>Stage</em></h1>
+    <p class="lede">High-Co'nun konser sahnesi. Arena bir metal festivali: grup üyeleri, sahne ekibi ve kalabalık birer mob. Bu arenada robotlar yok, herkes insan. Her şey müziğin vuruşuna göre saldırıyor. 4 grup üyesi ve 5 sahne birimi.</p>
+    <div class="legend"><span>■ = tehdit seviyesi</span><span>GRUP = sahnedeki müzisyenler · SAHNE = ekip, ekipman ve kalabalık</span></div>
+  </header>
+
+  <section>
+    <div class="sh"><h2>Arena kimliği</h2><span class="cnt">beta: tekil boss bölümü · sonra tam arena</span></div>
+    <div class="arena">
+      <div><b>Tema</b><span>Gece festivali</span><small>Koyu sahne zemini, arkada dev ekranlar ve hoparlör kuleleri, pembe ve kehribar sahne ışıkları, kenarlarda kalabalık silüetleri.</small></div>
+      <div><b>Arena kuralı</b><span>Ritim senkronu</span><small>Bütün mobların saldırıları müziğin vuruşuna kilitli. Vuruşta atılan dash'in mükemmel kaçış penceresi iki kat geniş: ritmi takip eden oyuncu ödüllendirilir.</small></div>
+      <div><b>Oda tipleri</b><span>Sound check · Moshpit · Encore</span><small>Sound check: tek grup üyesi + sahne ekibi. Moshpit: Mosher sürüleri. Encore (elit): tam grup aynı anda sahnede.</small></div>
+      <div><b>Boss</b><span>High-Co</span><small>Sizin tasarımınız. 2-3 kez öldürülen yapı, her formda müzik bir sonraki bölüme geçiyor. Grup üyeleri formlar arasında sahneye dönebilir.</small></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sh"><h2>Stage mobları</h2><span class="cnt">4 grup · 5 sahne</span></div>
+    <div class="grid" id="gMob"></div>
+  </section>
+
+  <section>
+    <div class="sh"><h2>Tasarım notları</h2></div>
+    <p class="note">Ritim senkronu sayesinde oyuncu müziği duyarak saldırıları önceden tahmin edebiliyor; zor ama okunabilir. Baterist grubun temposunu yükseltiyor, o yüzden doğal bir öncelikli hedef. Encore odası High-Co'dan önceki son büyük test: dört müzisyen aynı anda, her biri farklı bir alanı kapatıyor. Oyunun müziği zaten canlı üretiliyor, BPM bilgisi doğrudan mob zamanlayıcılarına verilebilir. High-Co'nun kendi müziği gelince arena o parçanın temposuna kilitlenir.</p>
+  </section>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const V3=THREE.Vector3, clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+/* ---- oyunun renderer.js yardımcıları (birebir) ---- */
+const grad=(()=>{ const d=new Uint8Array([80,80,80,255,165,165,165,255,255,255,255,255]); const t=new THREE.DataTexture(d,3,1,THREE.RGBAFormat); t.minFilter=t.magFilter=THREE.NearestFilter; t.needsUpdate=true; return t; })();
+const toon=(c,e=0)=>new THREE.MeshToonMaterial({color:c,gradientMap:grad,emissive:e});
+const outlineMat=new THREE.MeshBasicMaterial({color:0x0a0610,side:THREE.BackSide});
+const basicCache={};
+function basic(c,add=true,op=1){ const k=c+'_'+add+'_'+op; return basicCache[k]||(basicCache[k]=new THREE.MeshBasicMaterial({color:c,transparent:op<1||add,opacity:op,blending:add?THREE.AdditiveBlending:THREE.NormalBlending,depthWrite:!add})); }
+const addMat=(c,op=1)=>new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:op,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide});
+const box=(x,y,z)=>new THREE.BoxGeometry(x,y,z);
+function part(geo,mat,parent,x=0,y=0,z=0,t=.09){
+  const m=new THREE.Mesh(geo,mat); m.position.set(x,y,z); parent.add(m);
+  if(t){ geo.computeBoundingBox(); const s=new V3(); geo.boundingBox.getSize(s); const o=new THREE.Mesh(geo,outlineMat); o.scale.set((s.x+t)/(s.x||1),(s.y+t)/(s.y||1),(s.z+t)/(s.z||1)); m.add(o); }
+  return m;
+}
+const blob=r=>{ const m=new THREE.Mesh(new THREE.CircleGeometry(r,18),new THREE.MeshBasicMaterial({color:0,transparent:true,opacity:.34,depthWrite:false})); m.rotation.x=-Math.PI/2; m.position.y=.03; return m; };
+
+/* ---- oyunun models.js modelleri (birebir) ---- */
+function buildMech(c1,c2,c3,eye,scale=1,frame=''){
+  const g=new THREE.Group(); const M1=toon(c1),M2=toon(c2),M3=toon(c3),ME=basic(eye,false);
+  const hips=new THREE.Group(); hips.position.y=1.6; g.add(hips);
+  const torso=new THREE.Group(); hips.add(torso);
+  part(box(.85,.45,.55),M3,torso,0,.15,0); part(box(1.25,.8,.78),M1,torso,0,.75,0); part(box(.75,.42,.2),M2,torso,0,.82,.43,.06); part(box(.5,.25,.5),M3,torso,0,1.2,0);
+  const head=new THREE.Group(); head.position.set(0,1.42,.05); torso.add(head);
+  part(box(.36,.4,.5),M1,head,0,.12,0); part(box(.3,.18,.3),M3,head,0,-.06,.18,.05);
+  const hl=.6; const horn=part(new THREE.ConeGeometry(.07,hl,5),M2,head,0,.3+hl*.25,.22,.05); horn.rotation.x=.5;
+  const eyes=new THREE.Mesh(box(.3,.07,.06),ME); eyes.position.set(0,.14,.26); head.add(eyes);
+  const sf=1, arms=[];
+  [-1,1].forEach(s=>{ const sh=part(box(.5*sf,.72*sf,.85*sf),M1,torso,s*.88,1.02,0); part(box(.06,.5*sf,.6*sf),M2,sh,s*.26*sf,0,0,.04);
+    const arm=new THREE.Group(); arm.position.set(s*.86,.92,0); torso.add(arm); part(box(.28,.6,.28),M3,arm,0,-.38,0,.06); part(box(.36,.62,.4),M1,arm,0,-.92,0); arms.push(arm); });
+  const rifle=part(box(.2,1.5,.26),M3,arms[1],0,-1.45,.12,.07); part(box(.22,.4,.32),M2,rifle,0,.25,0,.05);
+  const legs=[],shins=[];
+  [-1,1].forEach(s=>{ const leg=new THREE.Group(); leg.position.set(s*.3,0,0); hips.add(leg); part(box(.38,.8,.42),M3,leg,0,-.4,0,.07);
+    const shin=new THREE.Group(); shin.position.y=-.8; leg.add(shin); part(box(.44,.82,.52),M1,shin,0,-.38,0); part(box(.46,.18,.75),M2,shin,0,-.73,.1,.06); legs.push(leg); shins.push(shin); });
+  g.scale.setScalar(scale);
+  return {g,hips,torso,head,arms,legs,shins,rifle,mats:[M1,M2,M3],shadow:blob(.9*scale)};
+}
+function animMech(m,walk,amt){
+  const s=Math.sin(walk), c=Math.cos(walk), A=.5*amt;
+  const a0=s*A, a1=-s*A, b0=Math.max(0,-c)*1.1*amt, b1=Math.max(0,c)*1.1*amt;
+  m.legs[0].rotation.x=a0; m.legs[1].rotation.x=a1; m.shins[0].rotation.x=b0; m.shins[1].rotation.x=b1;
+  const reach=(a,b)=>.8*Math.cos(a)+.82*Math.cos(a+b); m.hips.position.y=Math.max(reach(a0,b0),reach(a1,b1))-.02;
+  m.arms[0].rotation.x=-s*.45*amt-.2; m.arms[1].rotation.x=-1.45; m.torso.rotation.y=-s*.1*amt; m.torso.rotation.x=.09*amt;
+}
+function buildSeraph(scale=1){
+  const g=new THREE.Group(); const body=new THREE.Group(); body.position.y=2.1; g.add(body); const MW=toon(0xeee8f4),MD=toon(0x2a2232);
+  const crystal=part(new THREE.OctahedronGeometry(.8,0),MW,body,0,0,0,.1); crystal.scale.y=1.6; part(new THREE.OctahedronGeometry(.32,0),MD,body,0,-1.25,0,.06);
+  const core=new THREE.Mesh(new THREE.SphereGeometry(.28,14,10),basic(0xff2a3a,false)); core.position.z=.55; body.add(core);
+  const halo=new THREE.Mesh(new THREE.TorusGeometry(.6,.05,6,32),basic(0xffd36a,false)); halo.rotation.x=Math.PI/2; halo.position.y=1.75; body.add(halo);
+  const wings=[]; [-1,1].forEach(s=>{ const w=part(box(1.5,.08,.5),MW,body,s*1.1,.3,-.2,.06); w.rotation.z=s*.5; wings.push(w); const w2=part(box(1.1,.06,.36),MW,body,s*.95,-.15,-.2,.05); w2.rotation.z=s*.15; wings.push(w2); });
+  g.scale.setScalar(scale); return {g,body,core,halo,wings,mats:[MW,MD],shadow:blob(.8*scale)};
+}
+function buildWarden(){
+  const g=new THREE.Group(); const body=new THREE.Group(); body.position.y=2.6; g.add(body); const MW=toon(0xe8e2f0),MG=toon(0xd4a640);
+  part(new THREE.SphereGeometry(.7,16,12),MW,body,0,0,0,.1);
+  const eye=new THREE.Mesh(new THREE.TorusGeometry(.3,.09,8,24),basic(0xff2a3a,false)); eye.position.z=.66; body.add(eye);
+  const pupil=new THREE.Mesh(new THREE.SphereGeometry(.12,10,8),basic(0x0a0610,false)); pupil.position.z=.7; body.add(pupil);
+  const r1=part(new THREE.TorusGeometry(1.1,.07,6,40),MG,body,0,0,0,.05), r2=part(new THREE.TorusGeometry(1.35,.05,6,40),MG,body,0,0,0,.04);
+  return {g,body,rings:[r1,r2],eye,mats:[MW,MG],shadow:blob(.9)};
+}
+function buildColossus(){
+  const m=buildMech(0x3a3d48,0xd2382a,0x1c1d24,0xff2a2a,3); const MP=toon(0x2a2c34);
+  [-1,1].forEach(s=>{ const pod=part(box(.62,.5,.9),MP,m.torso,s*1.0,1.68,-.1,.06); for(let i=0;i<3;i++){ const t=new THREE.Mesh(box(.12,.12,.06),basic(0xff3a2a,false)); t.position.set(-.18+i*.18,.08,.46); pod.add(t);} });
+  m.shadow=blob(2.6); return m;
+}
+function buildPrism(){
+  const g=new THREE.Group(); const body=new THREE.Group(); body.position.y=5; g.add(body); const MB=toon(0x3a78ff),MC=toon(0x9ad0ff);
+  const crystal=part(new THREE.OctahedronGeometry(2.6,0),MB,body,0,0,0,.18);
+  const core=new THREE.Mesh(new THREE.SphereGeometry(.7,18,12),basic(0xff2236,false)); core.position.z=1.6; body.add(core); core.add(new THREE.Mesh(new THREE.SphereGeometry(1.05,18,12),basic(0xff3048,true,.3)));
+  const shards=[]; for(let i=0;i<6;i++){ const s=part(new THREE.OctahedronGeometry(.45,0),MC,body,0,0,0,.06); s.scale.y=1.8; shards.push(s); }
+  const ring=new THREE.Mesh(new THREE.TorusGeometry(3.6,.05,6,64),basic(0x8ad8ff,true,.7)); ring.rotation.x=Math.PI/2; body.add(ring);
+  return {g,body,crystal,core,shards,ring,mats:[MB,MC],shadow:blob(2.8)};
+}
+function buildSeraphBoss(){
+  const g=new THREE.Group(); const body=new THREE.Group(); body.position.y=5.2; g.add(body); const MW=toon(0xf2eef8),MB=toon(0x1c1626),MG=toon(0xd9c9ff);
+  const crystal=part(new THREE.OctahedronGeometry(2,0),MW,body,0,0,0,.18); crystal.scale.set(1,1.7,1);
+  const inner=part(new THREE.OctahedronGeometry(1.2,0),MB,body,0,-2.6,0,.12); inner.scale.y=1.3;
+  const core=new THREE.Mesh(new THREE.SphereGeometry(.8,20,14),basic(0xff2236,false)); core.position.z=1.35; body.add(core); core.add(new THREE.Mesh(new THREE.SphereGeometry(1.2,20,14),basic(0xff3048,true,.35)));
+  const mask=part(box(.9,1.1,.15),MW,body,0,1.6,1.05,.08); [-1,1].forEach(s=>{ const h=new THREE.Mesh(box(.18,.26,.05),basic(0x0a0610,false)); h.position.set(s*.2,.12,.09); mask.add(h); });
+  const halo=new THREE.Mesh(new THREE.TorusGeometry(1.6,.1,8,48),basic(0xffd36a,false)); halo.rotation.x=Math.PI/2; halo.position.y=4; body.add(halo);
+  const rings=[0,1].map(i=>{ const r=new THREE.Mesh(new THREE.TorusGeometry(3.4+i*.7,.06,6,64),basic(i?0xff6a1a:0xffffff,true,.7)); body.add(r); return r; });
+  const wings=new THREE.Group(); wings.position.z=-.6; body.add(wings);
+  for(let i=0;i<6;i++){ const s=i<3?-1:1,k=i%3; const piv=new THREE.Group(); piv.rotation.z=s*(.45+k*.42); wings.add(piv); part(box(.5,4.6-k*.8,.14),MG,piv,0,2.6-k*.3,0,.08); piv.userData.base=piv.rotation.z; piv.userData.s=s; }
+  return {g,body,core,halo,rings,wings,mats:[MW,MB,MG],shadow:blob(3)};
+}
+
+/* ================= YENİ MODELLER ================= */
+// Crawler: dört bacaklı küçük örümcek tank. Arachne bossu bunun büyütülmüş hali.
+function buildCrawler(scale=1,pal){
+  const P=pal||{c1:0x4c4658,c2:0x9a2c42,c3:0x24202c,eye:0xff2a2a};
+  const g=new THREE.Group(), body=new THREE.Group(); body.position.y=1.15; g.add(body);
+  const M1=toon(P.c1),M2=toon(P.c2),M3=toon(P.c3),ME=basic(P.eye,false);
+  part(box(1.6,.5,1.9),M1,body,0,0,0); part(box(1.1,.3,1.2),M3,body,0,.38,-.1,.06); part(box(1.62,.12,.4),M2,body,0,.05,.78,.04);
+  const tur=new THREE.Group(); tur.position.set(0,.68,.1); body.add(tur);
+  part(box(.75,.34,.75),M1,tur,0,0,0); [-1,1].forEach(s=>part(box(.1,.1,.95),M3,tur,s*.17,0,.62,.04));
+  const eye=new THREE.Mesh(box(.5,.07,.05),ME); eye.position.set(0,.06,.39); tur.add(eye);
+  const legs=[];
+  [[1,1],[-1,1],[1,-1],[-1,-1]].forEach(([sx,sz],i)=>{
+    const leg=new THREE.Group(); leg.position.set(sx*.75,0,sz*.75); leg.rotation.y=Math.atan2(-sz,sx); body.add(leg);
+    const th=part(box(.95,.2,.22),M3,leg,.4,.28,0,.06); th.rotation.z=.55;
+    const sh=part(box(.2,1.55,.22),M1,leg,.92,-.28,0,.06); sh.rotation.z=.12;
+    part(new THREE.ConeGeometry(.14,.3,4),M2,leg,1.0,-1.05,0,.04).rotation.z=Math.PI;
+    legs.push(leg); leg.userData.i=i; leg.userData.ry=leg.rotation.y;
+  });
+  g.scale.setScalar(scale);
+  return {g,body,tur,legs,mats:[M1,M2,M3],shadow:blob(1.4*scale)};
+}
+// Lancer: ince, uzun namlulu keskin nişancı mech. Ateşten önce kırmızı lazer çizgisi.
+function buildLancer(){
+  const m=buildMech(0x3e4a5a,0xe8e8ee,0x1c2028,0x3ad0ff,1.05); const M3=m.mats[2], M2=m.mats[1];
+  part(box(.1,1.6,.1),M3,m.rifle,0,-1.5,0,.04); part(box(.16,.3,.16),M2,m.rifle,0,-.5,-.2,.04);
+  part(box(.16,.34,.2),M3,m.rifle,0,.1,-.22,.04);
+  const laser=new THREE.Mesh(box(.035,7,.035),basic(0xff2a3a,true,.75)); laser.position.y=-5.8; m.rifle.add(laser);
+  const ant=part(box(.05,.9,.05),M3,m.torso,-.4,1.6,-.3,.03); ant.rotation.z=.15;
+  part(box(.9,.5,.35),M3,m.torso,0,.9,-.5,.06);
+  laser.userData.nofit=1; m.laser=laser; m.shadow=blob(.95); return m;
+}
+// Howitzer: paletli havan. Yere hedef çemberi çizip yay şeklinde mermi atar.
+function buildHowitzer(){
+  const g=new THREE.Group(), body=new THREE.Group(); body.position.y=.4; g.add(body);
+  const M1=toon(0x5a5244),M2=toon(0xc08a2a),M3=toon(0x2a2620),ME=basic(0xff3030,false);
+  [-1,1].forEach(s=>{ part(box(.55,.6,2.3),M3,body,s*.85,0,0); part(box(.57,.1,2.32),M2,body,s*.85,.32,0,.04); });
+  part(box(1.3,.7,1.7),M1,body,0,.45,0); part(box(.8,.42,.6),M1,body,0,.98,.45,.06);
+  const e=new THREE.Mesh(box(.5,.07,.05),ME); e.position.set(0,1.02,.76); body.add(e);
+  const mort=new THREE.Group(); mort.position.set(0,.95,-.35); mort.rotation.x=.55; body.add(mort);
+  part(new THREE.CylinderGeometry(.3,.36,1.7,10),M3,mort,0,.8,0);
+  const mouth=new THREE.Mesh(new THREE.TorusGeometry(.32,.07,6,16),M2); mouth.rotation.x=Math.PI/2; mouth.position.y=1.65; mort.add(mouth);
+  part(box(.6,.4,.5),M2,body,0,.6,-1.05,.05);
+  const target=new THREE.Mesh(new THREE.RingGeometry(1.1,1.25,32),addMat(0xff3a2a,.7)); target.rotation.x=-Math.PI/2; target.position.set(0,.05,3.2); target.userData.nofit=1; g.add(target);
+  return {g,body,mort,target,mats:[M1,M2,M3],shadow:blob(1.5)};
+}
+// Bulwark: önden mermi bloklayan dev kalkanlı mech. Delici mermi ya da yandan saldırı ister.
+function buildBulwark(){
+  const m=buildMech(0x5a5244,0xc08a2a,0x2a2620,0xff3030,1.15);
+  const sh=new THREE.Group(); sh.position.set(0,.7,1.05); m.torso.add(sh);
+  part(box(1.9,2.5,.2),toon(0x3a3d48),sh,0,-.3,0,.08); part(box(1.5,.18,.24),toon(0xc08a2a),sh,0,.55,0,.04);
+  const slit=new THREE.Mesh(box(.8,.08,.06),basic(0xff3030,false)); slit.position.set(0,.2,.13); sh.add(slit);
+  const hex=new THREE.Mesh(new THREE.RingGeometry(.55,.68,6),addMat(0xff7a2a,.9)); hex.position.set(0,-.55,.13); hex.rotation.z=Math.PI/6; sh.add(hex);
+  m.hex=hex; m.shadow=blob(1.1); return m;
+}
+// Spark: dikenli küçük kamikaze küre. Yuvarlanır, yanıp söner, patlar.
+function buildSpark(){
+  const g=new THREE.Group(), body=new THREE.Group(); body.position.y=.75; g.add(body);
+  const M1=toon(0x2a2632),M2=toon(0xd5352a);
+  part(new THREE.IcosahedronGeometry(.62,0),M1,body,0,0,0,.08);
+  [[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]].forEach(d=>{ const c=part(new THREE.ConeGeometry(.15,.5,4),M2,body,d[0]*.68,d[1]*.68,d[2]*.68,.04); c.lookAt(new V3(d[0]*3,d[1]*3,d[2]*3)); c.rotateX(Math.PI/2); });
+  const core=new THREE.Mesh(new THREE.SphereGeometry(.34,12,8),basic(0xffa040,true,.9)); body.add(core);
+  const warn=new THREE.Mesh(new THREE.RingGeometry(1.6,1.75,32),addMat(0xffa040,.6)); warn.rotation.x=-Math.PI/2; warn.position.y=.05; warn.userData.nofit=1; g.add(warn);
+  return {g,body,core,warn,mats:[M1,M2],shadow:blob(.6)};
+}
+// Shardling: kristal küme. Ölünce iki küçük kopyaya bölünür.
+function buildShardling(){
+  const g=new THREE.Group(), body=new THREE.Group(); body.position.y=1.7; g.add(body);
+  const MB=toon(0x3a78ff),MC=toon(0x9ad0ff);
+  const main=part(new THREE.OctahedronGeometry(.6,0),MB,body,0,0,0,.08); main.scale.y=1.7;
+  const subs=[]; for(let i=0;i<4;i++){ const a=i/4*Math.PI*2; const s=part(new THREE.OctahedronGeometry(.28,0),MC,body,Math.cos(a)*.75,(i%2?.3:-.3),Math.sin(a)*.75,.05); s.scale.y=1.8; s.rotation.z=(i%2?.4:-.4); subs.push(s); }
+  const core=new THREE.Mesh(new THREE.SphereGeometry(.18,10,8),basic(0xff2236,false)); core.position.z=.42; body.add(core);
+  return {g,body,subs,mats:[MB,MC],shadow:blob(.8)};
+}
+// Cherub: küçük koro meleği. Saldırmaz, çevresindeki düşmanları iyileştirir ve kalkan verir. Öncelikli hedef.
+function buildCherub(){
+  const g=new THREE.Group(), body=new THREE.Group(); body.position.y=2.2; g.add(body);
+  const MW=toon(0xf6f0e6),MG=toon(0xd9a520);
+  part(new THREE.SphereGeometry(.45,14,10),MW,body,0,0,0,.08);
+  const sk=part(new THREE.ConeGeometry(.42,.8,6),MW,body,0,-.62,0,.06); sk.rotation.x=Math.PI;
+  const band=new THREE.Mesh(box(.5,.08,.05),basic(0xffd36a,false)); band.position.set(0,.05,.44); body.add(band);
+  const halo=new THREE.Mesh(new THREE.TorusGeometry(.42,.05,6,28),basic(0xffd36a,false)); halo.rotation.x=Math.PI/2; halo.position.y=.75; body.add(halo);
+  const wings=[]; [-1,1].forEach(s=>{ [0,1].forEach(k=>{ const piv=new THREE.Group(); piv.position.set(s*.3,.05-k*.25,-.2); body.add(piv); const w=part(box(.9-k*.25,.06,.32),k?MG:MW,piv,s*(.45-k*.1),0,0,.05); piv.userData.s=s; piv.userData.k=k; wings.push(piv); }); });
+  const aura=new THREE.Mesh(new THREE.RingGeometry(2.2,2.35,40),addMat(0x7dff9a,.55)); aura.rotation.x=-Math.PI/2; aura.position.y=.05; aura.userData.nofit=1; g.add(aura);
+  return {g,body,halo,wings,aura,mats:[MW,MG],shadow:blob(.6)};
+}
+// Ophan: iç içe dönen göz dolu iki çember. Düz çizgide yuvarlanır, arkasında mermi bırakır.
+function buildOphan(scale=1,R=1.3,nr=2,ne=4){
+  const g=new THREE.Group(), body=new THREE.Group(); body.position.y=(R+1.1); g.add(body);
+  const MG=toon(0xd9a520),MW=toon(0xf2eef8);
+  const rings=[];
+  for(let r=0;r<nr;r++){ const rr=R+r*.45; const ring=part(new THREE.TorusGeometry(rr,.13,8,40),MG,body,0,0,0,.06);
+    if(r===1) ring.rotation.y=Math.PI/2; if(r===2) ring.rotation.x=Math.PI/2;
+    for(let i=0;i<ne;i++){ const a=i/ne*Math.PI*2+r; const eg=new THREE.Group(); eg.position.set(Math.cos(a)*rr,Math.sin(a)*rr,0); ring.add(eg);
+      part(new THREE.SphereGeometry(.2,10,8),MW,eg,0,0,0,.05); const p=new THREE.Mesh(new THREE.SphereGeometry(.09,8,6),basic(0xff2a3a,false)); p.position.z=.16; eg.add(p); }
+    rings.push(ring); }
+  const core=new THREE.Mesh(new THREE.OctahedronGeometry(.42,0),basic(0xff2236,false)); body.add(core);
+  core.add(new THREE.Mesh(new THREE.SphereGeometry(.7,14,10),basic(0xff6a3a,true,.25)));
+  g.scale.setScalar(scale);
+  return {g,body,rings,core,mats:[MG,MW],shadow:blob(1.2*scale)};
+}
+// Censer: zincirli buhurdan. Yavaş, güdümlü ışık küreleri saçar; yerde iz bırakır.
+function buildCenser(){
+  const g=new THREE.Group(), body=new THREE.Group(); body.position.y=3.6; g.add(body);
+  const MG=toon(0xd9a520),MD=toon(0x2a2232);
+  const halo=part(new THREE.TorusGeometry(.55,.07,6,28),MG,body,0,0,0,.04); halo.rotation.x=Math.PI/2;
+  const swing=new THREE.Group(); body.add(swing);
+  [0,1,2].forEach(i=>{ const a=i/3*Math.PI*2; const c=part(box(.04,1.1,.04),MG,swing,Math.cos(a)*.35,-.55,Math.sin(a)*.35,0); c.rotation.z=Math.cos(a)*.25; c.rotation.x=-Math.sin(a)*.25; });
+  const cage=part(new THREE.OctahedronGeometry(.62,0),MD,swing,0,-1.5,0,.08); cage.scale.y=1.35;
+  const glow=new THREE.Mesh(new THREE.SphereGeometry(.42,12,8),basic(0xffd36a,true,.85)); glow.position.y=-1.5; swing.add(glow);
+  const cap=part(new THREE.ConeGeometry(.35,.4,6),MG,swing,0,-.75,0,.04);
+  const orbs=[]; for(let i=0;i<3;i++){ const o=new THREE.Mesh(new THREE.SphereGeometry(.22,10,8),basic(0xffe9a0,true,.8)); body.add(o); orbs.push(o); }
+  return {g,body,swing,glow,orbs,mats:[MG,MD],shadow:blob(.7)};
+}
+
+/* ---- yeni bosslar ---- */
+// Hive Carrier: dört rotorlu uçan taşıyıcı. Drone indirir, hat boyu bombalama yapar.
+function buildHive(){
+  const g=new THREE.Group(), body=new THREE.Group(); body.position.y=5; g.add(body);
+  const M1=toon(0x3a3d48),M2=toon(0xd2382a),M3=toon(0x1c1d24);
+  part(box(3.6,1.2,5.6),M1,body,0,0,0,.14); part(new THREE.ConeGeometry(1.2,1.6,4),M1,body,0,0,3.4,.1).rotation.set(Math.PI/2,Math.PI/4,0);
+  part(box(1.6,.8,1.6),M3,body,0,.95,1.4,.08); const e=new THREE.Mesh(box(1.1,.12,.06),basic(0xff2a2a,false)); e.position.set(0,1.05,2.22); body.add(e);
+  part(box(3.7,.22,.5),M2,body,0,.3,-1.8,.05);
+  const bay=new THREE.Mesh(box(2.2,.08,3.2),basic(0xff6a1a,true,.8)); bay.position.y=-.64; body.add(bay);
+  [-1,1].forEach(s=>{ const pod=part(box(.6,.6,1.8),M3,body,s*2.1,-.2,.6,.06); for(let i=0;i<3;i++){ const t=new THREE.Mesh(box(.14,.14,.06),basic(0xff3a2a,false)); t.position.set(0,.05-i*.0,.92); t.position.x=(-.18+i*.18); pod.add(t);} });
+  const rotors=[];
+  [[1,1],[-1,1],[1,-1],[-1,-1]].forEach(([sx,sz])=>{ const arm=part(box(1.5,.25,.35),M3,body,sx*2.4,.2,sz*2.1,.05); arm.rotation.y=sx*sz*.6;
+    const hub=new THREE.Group(); hub.position.set(sx*3.2,.35,sz*2.7); body.add(hub);
+    const ring=part(new THREE.TorusGeometry(1.15,.1,6,32),M1,hub,0,0,0,.05); ring.rotation.x=Math.PI/2;
+    const bl=new THREE.Group(); hub.add(bl); part(box(2,.06,.26),M2,bl,0,0,0,.03); part(box(.26,.06,2),M2,bl,0,0,0,.03); rotors.push(bl); });
+  return {g,body,rotors,bay,mats:[M1,M2,M3],shadow:blob(3.4)};
+}
+// Siege Arachne: dev örümcek kuşatma makinesi. Kafa lazeriyle süpürür, mayın tarlası döşer.
+function buildArachne(){
+  const m=buildCrawler(2.6,{c1:0x3a3d48,c2:0xd2382a,c3:0x1c1d24,eye:0xff2a2a});
+  const M3=m.mats[2];
+  const can=part(new THREE.CylinderGeometry(.22,.3,1.3,10),M3,m.tur,0,.05,.95,.05); can.rotation.x=Math.PI/2;
+  const lens=new THREE.Mesh(new THREE.SphereGeometry(.2,12,8),basic(0xff2236,false)); lens.position.set(0,.05,1.62); m.tur.add(lens);
+  lens.add(new THREE.Mesh(new THREE.SphereGeometry(.34,12,8),basic(0xff3048,true,.35)));
+  [-1,0,1].forEach(i=>{ const sp=part(new THREE.ConeGeometry(.12,.55,4),m.mats[1],m.body,i*.4,.7,-.75,.03); sp.rotation.x=-.4; });
+  m.lens=lens; m.shadow=blob(3.6); return m;
+}
+// Ophanim Throne: üç çemberli, gözlerle kaplı taht. Dönen mermi duvarları, yuvarlanarak hücum.
+function buildThrone(){
+  const m=buildOphan(1,2.4,3,8);
+  const MW=toon(0xf2eef8);
+  const wings=new THREE.Group(); wings.position.z=-.8; m.body.add(wings);
+  for(let i=0;i<4;i++){ const s=i<2?-1:1,k=i%2; const piv=new THREE.Group(); piv.rotation.z=s*(.7+k*.6); wings.add(piv); part(box(.5,4.2-k*.9,.14),MW,piv,0,2.6,0,.07); piv.userData.base=piv.rotation.z; piv.userData.s=s; }
+  const halo=new THREE.Mesh(new THREE.TorusGeometry(1.1,.1,8,40),basic(0xffd36a,false)); halo.rotation.x=Math.PI/2; halo.position.y=4; m.body.add(halo);
+  m.wings=wings; m.shadow=blob(3.2); return m;
+}
+// Archon: zırhlı melek yargıç. Kılıçla hat boyu kesik, atılma, kalkan fazında mermi yansıtır.
+function buildArchon(){
+  const g=new THREE.Group(), body=new THREE.Group(); body.position.y=4.6; g.add(body);
+  const MW=toon(0xf2eef8),MG=toon(0xd9a520),MD=toon(0x1c1626),ML=toon(0xd9c9ff);
+  const tor=part(new THREE.OctahedronGeometry(1.3,0),MW,body,0,0,0,.14); tor.scale.set(1,1.4,.8);
+  part(box(1.1,1,.5),MG,body,0,.35,.6,.08);
+  const core=new THREE.Mesh(new THREE.SphereGeometry(.28,12,8),basic(0xff2236,false)); core.position.set(0,.35,.9); body.add(core);
+  const sk=part(new THREE.ConeGeometry(1,2.4,6),MD,body,0,-2.2,0,.1); sk.rotation.x=Math.PI;
+  const head=new THREE.Group(); head.position.y=2.15; body.add(head);
+  part(box(.85,1.05,.85),MW,head,0,0,0,.08); const vis=new THREE.Mesh(box(.6,.1,.06),basic(0xff2236,false)); vis.position.set(0,.05,.45); head.add(vis);
+  part(new THREE.ConeGeometry(.14,1,4),MG,head,0,.95,-.1,.04);
+  [-1,1].forEach(s=>part(box(.9,.5,1),MG,body,s*1.25,1.1,0,.07));
+  const sword=new THREE.Group(); sword.position.set(1.75,.4,.6); sword.rotation.z=-.35; sword.rotation.x=-.25; body.add(sword);
+  part(box(.32,4.8,.12),ML,sword,0,2.6,0,.07); part(new THREE.ConeGeometry(.23,.6,4),ML,sword,0,5.3,0,.04);
+  part(box(1.1,.2,.3),MG,sword,0,.15,0,.05); part(box(.16,.8,.16),MD,sword,0,-.35,0,.04);
+  const edge=new THREE.Mesh(box(.08,4.8,.14),basic(0xffd36a,true,.7)); edge.position.set(.18,2.6,0); sword.add(edge);
+  const shield=new THREE.Group(); shield.position.set(-1.75,.1,.7); shield.rotation.y=-.4; body.add(shield);
+  part(box(1.7,2.6,.2),MG,shield,0,0,0,.08);
+  const hx=new THREE.Mesh(new THREE.RingGeometry(.5,.62,6),addMat(0xffd36a,.9)); hx.position.z=.12; hx.rotation.z=Math.PI/6; shield.add(hx);
+  const wings=new THREE.Group(); wings.position.set(0,.8,-.7); body.add(wings);
+  for(let i=0;i<4;i++){ const s=i<2?-1:1,k=i%2; const piv=new THREE.Group(); piv.rotation.z=s*(.55+k*.55); wings.add(piv); part(box(.42,3.6-k*.8,.12),MW,piv,0,2.1,0,.06); piv.userData.base=piv.rotation.z; piv.userData.s=s; }
+  const halo=new THREE.Mesh(new THREE.TorusGeometry(.8,.07,6,32),basic(0xffd36a,false)); halo.rotation.x=Math.PI/2; halo.position.y=3.1; body.add(halo);
+  return {g,body,sword,shield,wings,halo,mats:[MW,MG,MD,ML],shadow:blob(2.2)};
+}
+// Corrupted Colossus: mevcut modelin renk kayması + mor kristal sırt dikenleri. Varyant sistemine örnek.
+function buildCorrupted(){
+  const m=buildColossus(); const tint=new THREE.Color(0x6a1a5a);
+  m.g.traverse(o=>{ if(o.isMesh&&o.material&&o.material.isMeshToonMaterial) o.material.color.lerp(tint,.45); });
+  const MV=basic(0xb070ff,false);
+  [[-.35,1.45,-.45,.6],[.35,1.5,-.45,.7],[0,1.75,-.5,.9],[-.6,1.2,-.4,.45],[.6,1.2,-.4,.5]].forEach(([x,y,z,s])=>{ const c=part(new THREE.OctahedronGeometry(.22*s/.5,0),MV,m.torso,x,y,z,.03); c.scale.y=2.2; c.rotation.x=-.5; });
+  const aura=new THREE.Mesh(new THREE.RingGeometry(4,4.25,48),addMat(0xb070ff,.55)); aura.rotation.x=-Math.PI/2; aura.position.y=.05; aura.userData.nofit=1; m.g.add(aura);
+  return m;
+}
+
+
+/* ================= MAIN STAGE: İNSAN FORMU KADRO =================
+   buildHuman: oyunun mech iskeletiyle aynı düzen (hips/torso/arms/legs/shins), böylece animMech yürüyüşü ve juice sistemi aynen çalışır. */
+const ST={black:0x1a1418,red:0xc8243a,gold:0xe8b23a,chrome:0xc8c8d4,mag:0xff3aa8,amber:0xffb84a};
+const cyl=(a,b,h,s=16)=>new THREE.CylinderGeometry(a,b,h,s);
+const SKIN=[0xf0c8a8,0xd8a07a,0xb07850,0x8a5a3a];
+function buildHuman(o={}){
+  const skin=toon(o.skin||SKIN[1]), top=toon(o.top||0x1a1418), pants=toon(o.pants||0x22222a), shoe=toon(o.shoe||0x111014), hairM=toon(o.hair||0x1a1210);
+  const g=new THREE.Group(); const hips=new THREE.Group(); hips.position.y=1.6; g.add(hips);
+  const torso=new THREE.Group(); hips.add(torso);
+  part(box(.56,.3,.32),pants,torso,0,.05,0,.05);
+  const chest=part(box(.64,.78,.36),top,torso,0,.55,0,.06);
+  if(o.belt) part(box(.6,.1,.34),toon(o.belt),torso,0,.2,0,.03);
+  part(box(.16,.14,.16),skin,torso,0,1.0,0,0);
+  const head=new THREE.Group(); head.position.set(0,1.28,.02); torso.add(head);
+  part(box(.4,.46,.42),skin,head,0,0,0,.06);
+  [-1,1].forEach(s=>{ const e=new THREE.Mesh(box(.07,.05,.03),basic(0x1a1012,false)); e.position.set(s*.1,.04,.215); head.add(e); });
+  const hs=o.hairStyle||'short';
+  if(hs==='long'){ part(box(.44,.14,.46),hairM,head,0,.27,0,.04); part(box(.46,.75,.14),hairM,head,0,-.18,-.22,.04); [-1,1].forEach(s=>part(box(.08,.6,.3),hairM,head,s*.23,-.1,-.06,.03)); }
+  else if(hs==='mohawk'){ part(box(.42,.06,.44),hairM,head,0,.24,0,.02); for(let i=0;i<5;i++) part(new THREE.ConeGeometry(.06,.32,4),hairM,head,0,.4,-.16+i*.08,.02); }
+  else if(hs==='bun'){ part(box(.44,.12,.46),hairM,head,0,.27,0,.04); part(new THREE.SphereGeometry(.14,10,8),hairM,head,0,.36,-.18,.03); part(box(.46,.45,.12),hairM,head,0,-.05,-.22,.03); }
+  else if(hs==='cap'){ part(box(.44,.14,.46),toon(o.capCol||ST.amber),head,0,.27,0,.04); part(box(.38,.04,.24),toon(o.capCol||ST.amber),head,0,.22,.3,.02); }
+  else if(hs==='short'){ part(box(.44,.12,.46),hairM,head,0,.26,0,.04); }
+  if(o.beard) part(box(.36,.22,.12),hairM,head,0,-.2,.18,.03);
+  if(o.band){ const b=new THREE.Mesh(box(.45,.07,.47),basic(o.band,false)); b.position.y=.16; head.add(b); }
+  const arms=[];
+  [-1,1].forEach(s=>{ const arm=new THREE.Group(); arm.position.set(s*.42,.88,0); torso.add(arm);
+    part(box(.2,.44,.22),o.sleeves?top:skin,arm,0,-.2,0,.04);
+    const fore=new THREE.Group(); fore.position.y=-.44; arm.add(fore);
+    part(box(.17,.4,.19),skin,fore,0,-.2,0,.04); part(box(.15,.14,.16),skin,fore,0,-.46,0,.03);
+    arm.userData.fore=fore; arms.push(arm); });
+  const legs=[],shins=[];
+  [-1,1].forEach(s=>{ const leg=new THREE.Group(); leg.position.set(s*.15,0,0); hips.add(leg);
+    part(box(.24,.8,.27),pants,leg,0,-.4,0,.05);
+    const shin=new THREE.Group(); shin.position.y=-.8; leg.add(shin);
+    part(box(.22,.66,.25),pants,shin,0,-.33,0,.04); part(box(.25,.15,.42),shoe,shin,0,-.72,.07,.03);
+    legs.push(leg); shins.push(shin); });
+  g.scale.setScalar(o.scale||1);
+  return {g,hips,torso,chest,head,arms,legs,shins,mats:[skin,top,pants],shadow:blob(.55*(o.scale||1))};
+}
+// kolları rahat ya da belli bir pozda tutmak için (animMech'ten sonra çağrılır)
+function pose(m,a0,a1,f0=0,f1=0){ m.arms[0].rotation.x=a0; m.arms[1].rotation.x=a1; m.arms[0].userData.fore.rotation.x=f0; m.arms[1].userData.fore.rotation.x=f1; }
+
+// Pulse Dancer: dansöz. Uzun etek, pullu kemer, tül eşarplar. Vuruşta ışınlanır.
+function buildDancer(){
+  const m=buildHuman({skin:0xf6dcc8,top:0xf6dcc8,pants:ST.mag,hair:0xf0d070,hairStyle:'long',sleeves:false,scale:1});
+  const MT=toon(ST.mag), MGd=toon(ST.gold);
+  part(box(.66,.3,.38),MT,m.chest,0,.16,0,.03);
+  const neck=new THREE.Mesh(new THREE.ConeGeometry(.12,.22,3),toon(0xf6dcc8)); neck.rotation.z=Math.PI; neck.position.set(0,.22,.2); m.chest.add(neck);
+  part(box(.68,.05,.4),MGd,m.chest,0,.0,0,.0);
+  [-1,1].forEach(s=>{ const st=new THREE.Mesh(box(.05,.3,.02),basic(ST.gold,false)); st.position.set(s*.16,.42,.19); m.chest.add(st); });
+  const skirt=new THREE.Group(); m.hips.add(skirt);
+  for(let i=0;i<8;i++){ const a=i/8*Math.PI*2; const f=new THREE.Mesh(box(.16,.5,.01),addMat(i%2?ST.gold:ST.mag,.55)); f.position.set(Math.sin(a)*.3,-.2,Math.cos(a)*.2); f.rotation.y=a; skirt.add(f); }
+  const belt=new THREE.Group(); belt.position.y=.02; m.torso.add(belt);
+  for(let i=0;i<12;i++){ const a=i/12*Math.PI*2; const c=new THREE.Mesh(new THREE.CircleGeometry(.05,8),basic(ST.gold,false)); c.position.set(Math.sin(a)*.34,0,Math.cos(a)*.22); c.rotation.y=a; belt.add(c); }
+  const ribbons=[]; m.arms.forEach((a,i)=>{ const r=new THREE.Group(); r.position.y=-.62; a.userData.fore.add(r); r.add(new THREE.Mesh(new THREE.SphereGeometry(.17,14,10),basic(0xffe0f4,false))); r.add(new THREE.Mesh(new THREE.SphereGeometry(.3,14,10),basic(ST.mag,true,.45))); ribbons.push(r); });
+  const pad=new THREE.Mesh(new THREE.RingGeometry(1.4,1.55,32),addMat(ST.mag,.7)); pad.rotation.x=-Math.PI/2; pad.position.y=.05; pad.userData.nofit=1; m.g.add(pad);
+  const ghost=new THREE.Group(); ghost.userData.nofit=1; const gm=addMat(ST.mag,.22); [[0,1.0,0,.9,1.3,.9],[0,2.15,0,.6,.8,.36],[0,2.85,0,.4,.46,.42]].forEach(([x,y,z,w,h,d])=>{ const b=new THREE.Mesh(box(w,h,d),gm); b.position.set(x,y,z); ghost.add(b); }); ghost.position.set(-2.4,0,-1.4); m.g.add(ghost);
+  m.ribbons=ribbons; m.belt=belt; m.skirt=skirt; m.pad=pad; m.ghost=ghost; m.shadow=blob(.75); return m;
+}
+// Baterist: tabureye kurulmuş, kafa sallayan metal baterist. Hiç kalkmaz.
+function buildDrummer(){
+  const g=new THREE.Group(); const M2=toon(ST.red),M3=toon(ST.chrome),MG=toon(ST.gold);
+  const kit=new THREE.Group(); g.add(kit);
+  const kick=part(cyl(.9,.9,.7,20),M2,kit,0,.9,.95,.07); kick.rotation.x=Math.PI/2;
+  const kh=new THREE.Mesh(new THREE.CircleGeometry(.78,20),toon(0xeee8f4)); kh.position.set(0,.9,1.31); kit.add(kh);
+  const logo=new THREE.Mesh(new THREE.RingGeometry(.28,.38,6),basic(ST.amber,false)); logo.position.set(0,.9,1.32); kit.add(logo);
+  [[-.65,1.75,.75],[.65,1.75,.75]].forEach(([x,y,z])=>{ const t=part(cyl(.32,.32,.3,14),M2,kit,x,y,z,.05); t.rotation.x=.4; });
+  part(cyl(.42,.42,.4,14),M2,kit,1.15,1.0,.2,.05); part(cyl(.32,.32,.22,14),toon(0xd8d8e0),kit,-.95,1.25,.35,.04);
+  const cym=[]; [[-1.3,2.45,.5],[1.35,2.6,.3]].forEach(([x,y,z])=>{ part(box(.05,y,.05),M3,kit,x,y/2,z,0); const c=part(cyl(.55,.55,.04,20),MG,kit,x,y,z,.03); c.rotation.z=x<0?.25:-.25; cym.push(c); });
+  const h=buildHuman({skin:SKIN[2],top:0x141014,pants:0x22202a,hair:0x2a1a12,hairStyle:'long',band:ST.red});
+  h.g.position.set(0,.35,-.95); h.g.scale.setScalar(1.15); g.add(h.g);
+  part(cyl(.35,.4,1.25,8),toon(0x2a2632),g,0,.62,-.95,.05);
+  h.legs.forEach(l=>{ l.rotation.x=-1.4; }); h.shins.forEach(s=>s.rotation.x=1.4);
+  h.arms.forEach((a,i)=>{ const st=part(box(.05,.7,.05),toon(0xd8c8a0),a.userData.fore,0,-.55,.3,.02); st.rotation.x=-1.1; });
+  const wave=new THREE.Mesh(new THREE.RingGeometry(2.4,2.6,40),addMat(ST.red,.6)); wave.rotation.x=-Math.PI/2; wave.position.y=.05; wave.userData.nofit=1; g.add(wave);
+  return {g,kit,kick,cym,h,wave,mats:[M2,M3],shadow:blob(1.8)};
+}
+// Shredder: uzun saçlı, deri ceketli gitarist. V gövdeli gitar, sırtında küçük amfi yok: sahnenin arkasındaki kule onun.
+function buildShredder(){
+  const m=buildHuman({skin:SKIN[0],top:0x141014,pants:0x1e1e26,hair:0x3a2414,hairStyle:'long',sleeves:true,belt:ST.chrome,scale:1.05});
+  [-1,1].forEach(s=>{ for(let i=0;i<3;i++){ const sp=part(new THREE.ConeGeometry(.04,.14,4),toon(ST.chrome),m.chest,s*.24,.3,-.19+i*.0,.0); sp.position.x=s*(.18+i*.06); sp.rotation.z=-s*.6; } });
+  const MG=toon(ST.red),MN=toon(0x3a2a1a);
+  const gtr=new THREE.Group(); gtr.position.set(-.05,.25,.32); gtr.rotation.z=-.65; m.torso.add(gtr);
+  [-1,1].forEach(s=>{ const w=part(box(.26,.85,.1),MG,gtr,s*.18,-.3,0,.04); w.rotation.z=s*.45; });
+  part(box(.3,.25,.11),MG,gtr,0,-.05,0,.04); part(box(.09,1.25,.06),MN,gtr,0,.7,0,.03); part(box(.18,.24,.07),MG,gtr,0,1.4,0,.03);
+  const strings=new THREE.Mesh(box(.05,1.7,.01),addMat(ST.amber,.7)); strings.position.set(0,.5,.06); gtr.add(strings);
+  const cone=new THREE.Group(); cone.position.set(0,1.8,1.2); cone.userData.nofit=1; m.g.add(cone);
+  for(let i=0;i<3;i++){ const r=new THREE.Mesh(new THREE.RingGeometry(.6+i*.55,.72+i*.55,24,1,-.7,1.4),addMat(ST.amber,.7-i*.18)); r.rotation.z=Math.PI/2; r.position.z=i*.9; cone.add(r); }
+  m.gtr=gtr; m.strings=strings; m.cone=cone; return m;
+}
+// Bass Brute: iri, sakallı, kel basçı. Yeleği ve kalın bası var; alt frekans dalgaları yavaşlatır.
+function buildBassist(){
+  const m=buildHuman({skin:SKIN[1],top:0x2a2a34,pants:0x1a1a22,hair:0x2a1810,hairStyle:'bald',beard:true,scale:1.3});
+  part(box(.66,.6,.38),toon(0x3a2a20),m.chest,0,.05,0,.03);
+  const MB=toon(0x2b3a7a),MN=toon(0x2a1e14);
+  const bass=new THREE.Group(); bass.position.set(-.02,.2,.32); bass.rotation.z=-.55; m.torso.add(bass);
+  part(box(.55,.72,.13),MB,bass,0,-.3,0,.05); part(box(.4,.28,.13),MB,bass,.1,.12,0,.04);
+  part(box(.1,1.55,.07),MN,bass,0,.9,0,.03); part(box(.22,.28,.08),MB,bass,0,1.75,0,.03);
+  for(let i=0;i<4;i++){ const s=new THREE.Mesh(box(.01,2.1,.01),addMat(0x9ad0ff,.8)); s.position.set(-.035+i*.023,.7,.075); bass.add(s); }
+  const rip=new THREE.Group(); rip.userData.nofit=1; m.g.add(rip); for(let i=0;i<3;i++){ const r=new THREE.Mesh(new THREE.RingGeometry(1,1.12,40),addMat(0x6ad8ff,.5)); r.rotation.x=-Math.PI/2; r.position.y=.05; rip.add(r); }
+  m.bass=bass; m.rip=rip; return m;
+}
+// Roadie: kasketli sahne ekibi. Sırtında hoparlör, sahneye amfi kurar.
+function buildHauler(){
+  const m=buildHuman({skin:SKIN[2],top:0x2a2a30,pants:0x3a3640,hairStyle:'cap',capCol:ST.amber,beard:true,hair:0x1a1210});
+  const shirtTxt=new THREE.Mesh(box(.4,.12,.02),basic(ST.amber,false)); shirtTxt.position.set(0,.65,.19); m.torso.add(shirtTxt);
+  const cab=part(box(1.0,1.15,.6),toon(0x141016),m.torso,0,1.05,-.5,.07);
+  [-.27,.27].forEach(y=>{ const sp=new THREE.Mesh(new THREE.CircleGeometry(.27,18),basic(0x2a2226,false)); sp.position.set(0,y,.31); cab.add(sp); const ring=new THREE.Mesh(new THREE.RingGeometry(.27,.32,18),basic(ST.amber,false)); ring.position.set(0,y,.315); cab.add(ring); });
+  const placed=new THREE.Group(); placed.position.set(2.4,0,-1.2); placed.userData.nofit=1; m.g.add(placed);
+  part(box(.9,1,.6),toon(0x141016),placed,0,.5,0,.06); const sp=new THREE.Mesh(new THREE.CircleGeometry(.3,18),basic(0x2a2226,false)); sp.position.set(0,.55,.31); placed.add(sp);
+  const pulse=new THREE.Mesh(new THREE.RingGeometry(1.3,1.45,32),addMat(ST.amber,.6)); pulse.rotation.x=-Math.PI/2; pulse.position.y=.05; placed.add(pulse);
+  m.cab=cab; m.pulse=pulse; return m;
+}
+// Mosher: mohawk'lı, zincirli kalabalık metalcisi. Sürü halinde itişir.
+function buildMosher(){
+  const cols=[0x3aff7a,0xff3aa8,0x3ab0ff,0xffd23a]; const c=cols[(Math.random()*cols.length)|0];
+  const m=buildHuman({skin:SKIN[(Math.random()*4)|0],top:0x101012,pants:0x2a2230,hair:c,hairStyle:'mohawk',sleeves:false,belt:ST.chrome,scale:.95});
+  const vest=part(box(.68,.7,.4),toon(0x2a1e1a),m.chest,0,.02,0,.03);
+  [-1,1].forEach(s=>{ for(let i=0;i<3;i++){ const sp=part(new THREE.ConeGeometry(.045,.16,4),toon(ST.chrome),m.torso,s*(.22+i*.06),.95,-.05,.0); sp.rotation.z=-s*.4; } });
+  const chain=new THREE.Mesh(box(.04,.04,.36),basic(ST.chrome,false)); chain.position.set(.3,.05,.12); chain.rotation.y=.4; m.torso.add(chain);
+  return m;
+}
+// Pyro Tech: yanmaz kıyafetli piroteknisyen. Sahneye alev jetleri kurar, elindeki fişekle tetikler.
+function buildPyro(){
+  const m=buildHuman({skin:SKIN[1],top:0xc8b890,pants:0xb8a880,shoe:0x2a2420,hairStyle:'bald',sleeves:true});
+  const hood=part(box(.48,.52,.48),toon(0xc8b890),m.head,0,.02,-.02,.05); const visor=new THREE.Mesh(box(.36,.2,.03),addMat(0xffb84a,.75)); visor.position.set(0,.05,.25); m.head.add(visor);
+  const tank=part(cyl(.16,.16,.7,10),toon(ST.red),m.torso,0,.6,-.3,.04);
+  const flare=new THREE.Mesh(new THREE.SphereGeometry(.1,8,6),basic(0xff6a2a,false)); flare.position.set(0,-.55,.05); m.arms[1].userData.fore.add(flare);
+  const jet=new THREE.Group(); jet.position.set(2.3,0,-1); jet.userData.nofit=1; m.g.add(jet);
+  part(box(.8,.4,.8),toon(0x1c1a20),jet,0,.2,0,.05); part(cyl(.22,.3,.6,8),toon(0x1c1a20),jet,0,.7,0,.04);
+  const warn=new THREE.Mesh(new THREE.RingGeometry(1.1,1.3,6),addMat(0xff4a2a,.7)); warn.rotation.x=-Math.PI/2; warn.position.y=.05; jet.add(warn);
+  const flame=new THREE.Group(); flame.position.y=1; jet.add(flame); const fl=[]; for(let i=0;i<4;i++){ const f=new THREE.Mesh(new THREE.ConeGeometry(.42-i*.06,1.2,8),addMat(i%2?0xffb84a:0xff4a2a,.75)); f.position.y=.6+i*.8; flame.add(f); fl.push(f); }
+  m.flare=flare; m.jet=jet; m.flame=flame; m.fl=fl; m.warn=warn; return m;
+}
+// Işıkçı: tripod üstünde takip spotu çeviren teknisyen. Işığa aldığı oyuncuyu herkese işaretler.
+function buildSpot(){
+  const m=buildHuman({skin:SKIN[0],top:0x1e1e26,pants:0x2a2a34,hair:0x8a5a2a,hairStyle:'bun',sleeves:true});
+  const hp=new THREE.Mesh(new THREE.TorusGeometry(.24,.035,6,16,Math.PI),basic(0x2a2a2a,false)); hp.position.y=.12; hp.rotation.z=0; m.head.add(hp);
+  const rig=new THREE.Group(); rig.position.set(.75,0,.55); m.g.add(rig);
+  [0,1,2].forEach(i=>{ const a=i/3*Math.PI*2; const l=part(box(.05,1.7,.05),toon(0x2a2632),rig,Math.cos(a)*.3,.8,Math.sin(a)*.3,0); l.rotation.z=Math.cos(a)*.18; l.rotation.x=-Math.sin(a)*.18; });
+  const lamp=new THREE.Group(); lamp.position.y=1.8; rig.add(lamp);
+  const can=part(cyl(.22,.3,.8,14),toon(ST.chrome),lamp,0,0,.2,.05); can.rotation.x=Math.PI/2+.35;
+  const beam=new THREE.Mesh(new THREE.ConeGeometry(1.4,6,24,1,true),addMat(0xfff0c0,.2)); beam.position.set(0,-1.0,3.0); beam.rotation.x=-(Math.PI/2-.35); beam.userData.nofit=1; lamp.add(beam);
+  const spot=new THREE.Mesh(new THREE.CircleGeometry(1.4,24),addMat(0xfff0c0,.35)); spot.rotation.x=-Math.PI/2; spot.position.set(.75,.05,5.2); spot.userData.nofit=1; m.g.add(spot);
+  m.lamp=lamp; m.spot=spot; return m;
+}
+// Stage Diver: kollarını açıp kalabalığın üstüne atlayan metalci. İnişte ezme dalgası.
+function buildDiver(){
+  const m=buildHuman({skin:SKIN[3],top:ST.red,pants:0x1a1a22,hair:0x101010,hairStyle:'short',sleeves:true,band:0x101010});
+  const jacket=part(box(.7,.6,.4),toon(0x141014),m.chest,0,.08,0,.03);
+  const land=new THREE.Mesh(new THREE.RingGeometry(2.3,2.5,40),addMat(0xff4a2a,.75)); land.rotation.x=-Math.PI/2; land.position.y=.05; land.userData.nofit=1; m.g.add(land);
+  m.land=land; return m;
+}
+
+const BAND='Grup', CROWD='Sahne';
+const ROSTER=[
+  {k:'mob',st:'yeni',fac:BAND,name:'Pulse Dancer',role:'Işınlanan dansöz',thr:3,build:buildDancer,an:'dancer',
+   d:'Müziğin her ikinci vuruşunda ışınlanır, indiği yerde 8 notalık bir halka açar. Işınlanmadan önce gideceği yerde pembe bir dans pisti belirir. Kaçmaz, etrafında döner, eşarpları dönerken yakın mermileri savurur.',c:'Pisti gör, oraya ateşle. İndiği an 0.4 s savunmasız.'},
+  {k:'mob',st:'yeni',fac:BAND,name:'Baterist',role:'Sabit baterist',thr:4,build:buildDrummer,an:'drum',
+   d:'Tabureden hiç kalkmaz. Her kick vuruşunda yere kırmızı bir şok halkası yayılır, zil vuruşlarında 5\'li yelpaze mermi atar. Yaşadığı sürece diğer grup üyeleri %15 hızlı vurur.',c:'Halkaların arasındaki ritim boşluğunda dash at. Önce onu indir, grubun temposu düşer.'},
+  {k:'mob',st:'yeni',fac:BAND,name:'Shredder',role:'Elektro gitarcı',thr:4,build:buildShredder,an:'shred',
+   d:'Riff atarken önüne turuncu ses dalgası konisi yollar. Arada solo moduna girer: 3 saniye boyunca yakındaki hedefler arasında zıplayan şimşekler. Solo bitince kafa sallar ve 1 s durur.',c:'Koninin yanına geç. Solodan sonraki kafa sallama anı en iyi vuruş fırsatı.'},
+  {k:'mob',st:'yeni',fac:BAND,name:'Bass Brute',role:'Basçı · yavaşlatma',thr:3,build:buildBassist,an:'bass',
+   d:'İri ve yavaş. Alt frekans dalgaları zemine halka halka yayılır, içinde kalan oyuncu %35 yavaşlar ve dash bekleme süresi uzar. Ekran hafifçe titrer.',c:'Halkaların dışından vur, yakın dövüşe girme. Diğer moblarla birlikteyken öncelikli hedef.'},
+  {k:'mob',st:'yeni',fac:CROWD,name:'Roadie',role:'Sahne ekibi · amfi kurar',thr:2,build:buildHauler,an:'hauler',
+   d:'Sırtında hoparlörle koşar, odaya 2-3 amfi bırakır. Amfiler vuruşta sarı ses darbesi atar ve 10 saniye yaşar. Kendisi saldırmaz.',c:'Amfi kurmadan yakala, ya da amfileri tek atışta kır.'},
+  {k:'mob',st:'yeni',fac:CROWD,name:'Mosher',role:'Kalabalık sürüsü',thr:1,build:buildMosher,an:'mosh',
+   d:'6-10\'luk gruplar halinde gelir, ateş etmez. Seni itip sıkıştırır, hasar az ama itme güçlü. Köşeye sıkışınca zincirli kolları acıtır.',c:'Açık alanda kal, alan hasarı ve orbitler çok iyi işler.'},
+  {k:'mob',st:'yeni',fac:CROWD,name:'Pyro Tech',role:'Piroteknisyen',thr:2,build:buildPyro,an:'pyro',
+   d:'Yanmaz kıyafetiyle sahneye alev jetleri kurar, elindeki fişekle vuruşta tetikler. Jet tetiklenmeden önce zemin kızarır. Kendisi kaçar.',c:'Önce teknisyeni indir, kurduğu jetler söner. Kızaran zeminden uzak dur.'},
+  {k:'mob',st:'yeni',fac:CROWD,name:'Işıkçı',role:'Takip spotu · işaretleyici',thr:2,build:buildSpot,an:'spot',
+   d:'Tripoddaki takip spotunu sana çevirir. Işığın içindeyken tüm düşmanlar sana %25 daha isabetli ve hızlı mermi atar. Işık yavaşça takip eder.',c:'Işıktan çık ya da ışıkçıyı indir. Kırılgan, iki üç atış yeter.'},
+  {k:'mob',st:'yeni',fac:CROWD,name:'Stage Diver',role:'Atlayan ezici',thr:3,build:buildDiver,an:'diver',
+   d:'Arenanın dışından kollarını açıp sahneye atlar, iner ve çevresine ezme dalgası yapar. İndiği yer 1 saniye önce kırmızı halka olarak görünür. Sonra yumruklarıyla yakın dövüşe girer.',c:'Halkadan çık, iniş sonrası 1 saniye sersem. O an vur.'},
+];
+/* ================= RENDER ================= */
+const R=new THREE.WebGLRenderer({antialias:true,alpha:true}); R.setPixelRatio(1); const RS=360; R.setSize(RS,RS,false);
+const scene=new THREE.Scene();
+scene.add(new THREE.HemisphereLight(0xffe0d0,0x201018,.95)); const dl=new THREE.DirectionalLight(0xfff0e0,.9); dl.position.set(3,6,5); scene.add(dl); const rl=new THREE.DirectionalLight(0xff3aa8,.65); rl.position.set(-5,2,-4); scene.add(rl);
+const cam=new THREE.PerspectiveCamera(30,1,.1,500);
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const FC={[BAND]:'#ff3aa8',[CROWD]:'#ffb84a'};
+const BPM=140, beat=t=>(t*BPM/60)%1;
+const bang=(h,t,k=.35)=>{ h.rotation.x=Math.max(0,Math.sin(t*BPM/60*Math.PI*2))*k; };
+function animate(e,t){ const m=e.m, b=beat(t), hit=Math.max(0,1-b*4);
+  switch(e.an){
+    case 'dancer': animMech(m,t*3,.25); m.torso.rotation.y=Math.sin(t*2.5)*.5; m.hips.rotation.z=Math.sin(t*5)*.12; pose(m,-2.6+Math.sin(t*3)*.4,-2.6-Math.sin(t*3)*.4,-.6,-.6); m.arms[0].rotation.z=-.4; m.arms[1].rotation.z=.4;
+      m.belt.rotation.y=Math.sin(t*10)*.1; m.skirt.rotation.y=Math.sin(t*5)*.25; m.pad.material.opacity=.2+hit*.7; m.pad.scale.setScalar(.8+hit*.3); m.ghost.children.forEach(c=>c.material.opacity=hit*.35); m.ribbons.forEach((r,i)=>{ r.children[1].scale.setScalar(1+hit*.6+Math.sin(t*8+i)*.08); r.children[1].material.opacity=.35+hit*.5; }); break;
+    case 'drum': { const h=m.h; h.arms.forEach((a,i)=>{ a.rotation.x=-.9-Math.max(0,Math.sin((t*BPM/60+i*.5)*Math.PI*2))*.7; a.userData.fore.rotation.x=-.5; }); bang(h.head,t,.45); h.torso.rotation.x=.15+hit*.08;
+      m.kick.scale.set(1+hit*.06,1,1+hit*.06); m.cym.forEach((c,i)=>c.rotation.x=Math.sin(t*9+i)*.12*hit); m.wave.scale.setScalar(.4+b*1.4); m.wave.material.opacity=(1-b)*.7; break; }
+    case 'shred': animMech(m,0,0); pose(m,-.9,-.4+Math.sin(t*22)*.15,-.9,-1.2); m.arms[0].rotation.z=-.2; m.arms[1].rotation.z=.25; bang(m.head,t,.5); m.torso.rotation.x=.1+hit*.15; m.strings.material.opacity=.4+hit*.6; m.cone.children.forEach((r,i)=>{ r.material.opacity=Math.max(0,Math.sin(t*5-i*.9))*.75; }); break;
+    case 'bass': animMech(m,t*1.2,.2); pose(m,-.6,-.5+Math.sin(t*10)*.06,-1.2,-1.0); m.arms[0].rotation.z=-.15; bang(m.head,t*.5,.25); m.rip.children.forEach((r,i)=>{ const k=(t*.7+i/3)%1; r.scale.setScalar(.8+k*3.2); r.material.opacity=(1-k)*.55; }); break;
+    case 'hauler': animMech(m,t*6,.8); pose(m,-2.9,-2.9,-.4,-.4); m.pulse.scale.setScalar(.6+b*1.1); m.pulse.material.opacity=(1-b)*.7; break;
+    case 'mosh': animMech(m,t*7,.9); m.torso.rotation.z=Math.sin(t*7)*.15; pose(m,-1.2+hit*.6,-1.2-hit*.6,-1.3,-1.3); bang(m.head,t,.4); break;
+    case 'pyro': { animMech(m,t*3,.3); pose(m,-.2,-1.8,0,-.6); const ph=(t*.6)%1, on=ph>.55; m.flame.visible=on; m.flare.scale.setScalar(on?1.6:1); m.warn.material.opacity=on?.15:.3+Math.sin(t*20)*.3*(ph>.3?1:0); if(on) m.fl.forEach((f,i)=>f.scale.set(1+Math.sin(t*30+i)*.1,1+Math.sin(t*25+i)*.15,1+Math.sin(t*30+i)*.1)); break; }
+    case 'spot': animMech(m,0,0); pose(m,-1.0,-1.1,-.7,-.6); m.arms[1].rotation.z=.4; m.lamp.rotation.y=Math.sin(t*.8)*.35; m.head.rotation.y=Math.sin(t*.8)*.35; m.spot.position.x=.75+Math.sin(t*.8)*1.8; break;
+    case 'diver': { const ph=(t*.45)%1; animMech(m,0,0); const y=ph<.6?Math.sin(ph/.6*Math.PI)*1.8:0; m.g.position.y=y; if(ph<.6){ pose(m,-1.6,-1.6,0,0); m.arms[0].rotation.z=-1.2; m.arms[1].rotation.z=1.2; m.torso.rotation.x=.5; m.legs[0].rotation.x=.4; m.legs[1].rotation.x=.4; } else { pose(m,-1.3,-1.3,-1.4,-1.4); m.arms[0].rotation.z=0; m.arms[1].rotation.z=0; m.torso.rotation.x=.15; }
+      m.land.material.opacity=ph<.6?.3+ph:.8*(1-(ph-.6)/.4); m.land.scale.setScalar(ph<.6?1:1+(ph-.6)*2); break; }
+  }
+}
+const entries=[];
+function makeCard(e){
+  const el=document.createElement('article'); el.className='card'; el.style.setProperty('--fc',FC[e.fac]);
+  const thr='■'.repeat(e.thr)+'□'.repeat(5-e.thr);
+  el.innerHTML=`<div class="stage"><canvas width="${RS}" height="${RS}" aria-label="${e.name} 3D modeli"></canvas><span class="tag ${e.st}">${e.st}</span><span class="fac">${e.fac}</span></div>
+  <div class="body"><div class="nm"><b></b><span class="thr" title="Tehdit ${e.thr}/5">${thr}</span></div><div class="role"></div><p class="d"></p><p class="ctr"><i>Karşı</i><span></span></p></div>`;
+  el.querySelector('.nm b').textContent=e.name; el.querySelector('.role').textContent=e.role; el.querySelector('.d').textContent=e.d; el.querySelector('.ctr span').textContent=e.c;
+  e.el=el; e.ctx=el.querySelector('canvas').getContext('2d'); e.vis=false;
+  const m=e.build(); e.m=m; const wrap=new THREE.Group(); wrap.add(m.g); if(m.shadow) wrap.add(m.shadow);
+  animate(e,.75); m.g.position.y=0;
+  const hid=[]; m.g.traverse(o=>{ if(o.userData.nofit) hid.push([o,o.parent]); }); hid.forEach(([o,p])=>p.remove(o));
+  const bb=new THREE.Box3().setFromObject(m.g), s=bb.getSize(new V3()), c=bb.getCenter(new V3());
+  hid.forEach(([o,p])=>p.add(o));
+  const pr=Math.max(1.4,Math.max(s.x,s.z)*.55);
+  const ped=new THREE.Mesh(new THREE.CylinderGeometry(pr,pr*1.08,.22,6),toon(0x1c1418)); ped.position.y=-.12; wrap.add(ped);
+  const ring=new THREE.Mesh(new THREE.RingGeometry(pr*1.06,pr*1.11,6),addMat(e.fac===BAND?0xff3aa8:0xffb84a,.9)); ring.rotation.x=-Math.PI/2; ring.position.y=.01; wrap.add(ring);
+  e.wrap=wrap;
+  const extra=e.an==='diver'?1.6:0;
+  const span=Math.max((s.y+extra)*1.12,pr*2.1,s.x,s.z), dist=span/(2*Math.tan(15*Math.PI/180))*1.2;
+  e.look=new V3(0,Math.max(c.y,(s.y+extra)*.46),0); e.camPos=e.look.clone().add(new V3(.42,.38,1).normalize().multiplyScalar(dist));
+  return el;
+}
+function draw(e,t){ scene.add(e.wrap); e.m.g.rotation.y=-.5+(reduce?0:Math.sin(t*.35)*.7); animate(e,t); cam.position.copy(e.camPos); cam.lookAt(e.look); R.render(scene,cam); scene.remove(e.wrap); e.ctx.clearRect(0,0,RS,RS); e.ctx.drawImage(R.domElement,0,0); }
+const gMob=document.getElementById('gMob');
+ROSTER.forEach(e=>{ gMob.appendChild(makeCard(e)); entries.push(e); });
+const io=new IntersectionObserver(es=>es.forEach(x=>{ const e=entries.find(q=>q.el===x.target); if(e) e.vis=x.isIntersecting; }),{rootMargin:'100px'});
+entries.forEach(e=>io.observe(e.el)); entries.forEach(e=>draw(e,.75));
+let last=0; function loop(now){ requestAnimationFrame(loop); if(reduce) return; if(now-last<33) return; last=now; const t=now/1000; for(const e of entries) if(e.vis) draw(e,t); }
+requestAnimationFrame(loop);
+
+</script>
+
+</body>
+</html>
