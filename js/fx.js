@@ -34,5 +34,11 @@ function beamFlash(from,to,color,w){
   const g=new THREE.Group(); g.add(o,c);
   addFx(g,.28,(f,dt,k)=>{ o.scale.set(w*k,w*k,len); c.scale.set(w*.4*k,w*.4*k,len); o.material.opacity=k*.8; c.material.opacity=k; });
 }
+// dust puffs (heavy footsteps): a small pool of reused meshes, nothing is allocated per step
+const dustPool=[];
+function dustPuff(x,z,size=1){ let d=dustPool.find(p=>!p.on); if(!d){ if(dustPool.length>=(mobileMode?10:24)) return; const m=new THREE.Mesh(G.puff,new THREE.MeshBasicMaterial({color:0xd8d0de,transparent:true,opacity:.45,depthWrite:false})); scene.add(m); d={m,on:false,t:0,s:1}; dustPool.push(d); }
+  d.on=true; d.t=0; d.s=size; d.m.visible=true; d.m.position.set(x+rand(-.2,.2),.22,z+rand(-.2,.2)); d.m.scale.setScalar(.4*size); }
+function updateDust(dt){ for(const d of dustPool){ if(!d.on) continue; d.t+=dt; const k=d.t/.55; if(k>=1){ d.on=false; d.m.visible=false; continue; } d.m.position.y+=dt*.7; d.m.scale.setScalar((.4+k*1.1)*d.s); d.m.material.opacity=.4*(1-k); } }
+function clearDust(){ for(const d of dustPool){ d.on=false; d.m.visible=false; } }
 function popText(txt){ const el=$('pop'); el.textContent=txt; el.classList.remove('on'); void el.offsetWidth; el.classList.add('on'); }
 function toast(big,small=''){ const t=$('toast'); t.innerHTML=''; if(small){ const s=document.createElement('small'); s.textContent=small; t.appendChild(s); } t.appendChild(document.createTextNode(big)); t.classList.add('on'); toastT=1.6; }

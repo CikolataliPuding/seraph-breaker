@@ -103,4 +103,4 @@ function playerPower(){ const p=player; if(!p) return {dps:1,ehp:1,power:1}; ret
 // every gold and diamond gain goes through here, so the debug run log can split earnings by source (kill, boss, clear, pickup)
 function logEarn(cur,src,v){ if(!sortie||!v) return; const L=sortie.earn||(sortie.earn={}), k=cur+':'+src; L[k]=(L[k]||0)+v; }
 // flat gold for every cleared combat or elite room (Gold Rush, Greed and the tree's magnet bonus apply)
-function clearBonus(){ if(!sortie||!room||room.type==='angel'||room.type==='boss') return; const v=Math.round(ECON.clearGold[sortie.a]*player.st.goldMul); P.gold+=v; sortie.gold+=v; logEarn('gold','clear',v); }
+function clearBonus(){ if(!sortie||!room||room.type==='angel'||room.type==='boss') return; const v=Math.round(ECON.clearGold[sortie.a]*player.st.goldMul*(sortie.farm||1)); P.gold+=v; sortie.gold+=v; logEarn('gold','clear',v); }
