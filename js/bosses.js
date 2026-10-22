@@ -164,7 +164,7 @@ function updateBoss(dt){
   const faceDir=b.atk==='lunge'&&b.lunge?b.lunge.dir:b.atk==='roll'&&b.rollC?b.rollC.dir:to;
   b.yaw=lerpAngle(b.yaw,Math.atan2(faceDir.x,faceDir.z),Math.min(1,dt*(def.fly?2:3))); m.g.rotation.y=b.yaw;
   applyJuice(m.g,b.jz,dt,b.sc);
-  if(f==='colossus'){ stepMech(m,b,b.vel.length(),dt,3); mechLean(m,b.jz,dt,b.vel.x*.5,b.vel.z*.5,b.yaw,b.yaw);
+  if(f==='colossus'){ if(stepMech(m,b,b.vel.length(),dt,3)){ b.byaw=b.yaw; footfall(b,m,3,.2); } mechLean(m,b.jz,dt,b.vel.x*.5,b.vel.z*.5,b.yaw,b.yaw);
     // slam wind-up: crouch, raise both arms, tremble at the top, then smash down
     if(b.atk==='slam'){ const k=b.atkT<SLAM_T?b.atkT/SLAM_T:Math.max(0,1-(b.atkT-SLAM_T)*3), tr=b.atkT>SLAM_T-.3&&b.atkT<SLAM_T?Math.sin(b.t*60)*.05:0; m.hips.position.y=1.6-.45*k; m.arms[0].rotation.x=-2.6*k+tr; m.arms[1].rotation.x=-1.45-1.2*k-tr; m.torso.rotation.x=-.25*k; if(!b.slamHit&&b.atkT>=SLAM_T){ b.slamHit=1; b.jz.pop.v=-9; } }
     else b.slamHit=0;
@@ -172,7 +172,7 @@ function updateBoss(dt){
   else if(f==='prism'){ m.crystal.rotation.y+=dt*.7; m.ring.rotation.z+=dt*.6; m.ring.rotation.x=Math.PI/2+Math.sin(b.t*.8)*.3; m.shards.forEach((s,i)=>{ const a=b.t*1.2+i/6*Math.PI*2; s.position.set(Math.cos(a)*4,Math.sin(b.t*2+i)*.6,Math.sin(a)*4); s.rotation.y+=dt*3; }); m.core.scale.setScalar(1+Math.sin(b.t*(4+b.phase*2))*.1); }
   else if(f==='seraph'){ m.rings[0].rotation.set(b.t*.9,b.t*.5,0); m.rings[1].rotation.set(-b.t*.6,0,b.t*.7); m.halo.rotation.z+=dt; m.wings.children.forEach((w,i)=>{ w.rotation.z=w.userData.base+Math.sin(b.t*2+i)*.12*w.userData.s; }); m.core.scale.setScalar(1+Math.sin(b.t*(4+b.phase*2))*.08); }
   else if(f==='hive'){ b.rotors.forEach(r=>{ if(r.alive) r.m.rotation.y+=dt*26*b.spdK; }); m.body.position.y=5+Math.sin(b.t*1.4)*.25; m.bay.material.opacity=b.atk==='drones'||b.atk==='sparks'||b.atk==='bombline'?.95:.55+Math.sin(b.t*5)*.3; }
-  else if(f==='arachne'){ const mv=Math.max(Math.min(1,b.vel.length()/2),b.atk==='stomp'?1:0); m.legs.forEach(l=>{ l.rotation.z=Math.sin(b.t*7+l.userData.i*1.6)*.14*mv; }); m.body.position.y=1.15+Math.abs(Math.sin(b.t*7))*.05*mv;
+  else if(f==='arachne'){ crawlGait(m,b,b.atk==='stomp'?6:b.vel.length(),dt,2.6);
     const tel=b.beam&&!b.beam.fire; m.lens.scale.setScalar(tel?1.6+Math.sin(b.t*40)*.3:1+Math.sin(b.t*6)*.15);
     m.tur.rotation.y=b.beam?Math.atan2(b.beam.dir.x,b.beam.dir.z)-b.yaw:lerpAngle(m.tur.rotation.y,0,Math.min(1,dt*4)); }
   else if(f==='throne'){ const spin=b.atk==='walls'||b.atk==='walls2'?3:1; m.rings.forEach((r,i)=>{ if(i===0) r.rotation.z+=dt*1.2*spin; if(i===1) r.rotation.x+=dt*spin; if(i===2) r.rotation.y+=dt*.8*spin; }); m.core.rotation.y+=dt*2;

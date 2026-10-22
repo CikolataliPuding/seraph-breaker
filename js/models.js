@@ -53,12 +53,14 @@ function animMech(m,walk,amt){
   m.arms[0].rotation.x=-s*.45*amt-.2; m.arms[1].rotation.x=-1.45;
   m.torso.rotation.y=-s*.1*amt; m.torso.rotation.x=.09*amt;
 }
-// advance the walk phase so a planted foot moves backward exactly as fast as the body moves forward
-function stepMech(m,o,spd,dt,scale){
-  const amt=clamp(spd/(2*scale),0,1);
-  if(amt>.03){ o.walk=(o.walk||0)+dt*spd/(1.62*scale*STRIDE*amt); o.walkAmt=amt; }
+// advance the walk phase so a planted foot moves backward exactly as fast as the body moves forward (dir -1: walking backward).
+// Returns true on a footfall (a foot plants), for dust and footsteps.
+function stepMech(m,o,spd,dt,scale,dir=1){
+  const amt=clamp(spd/(2*scale),0,1); let fall=false;
+  if(amt>.03){ const w0=o.walk||0; o.walk=w0+dir*dt*spd/(1.62*scale*STRIDE*amt); o.walkAmt=amt; fall=amt>.25&&Math.floor(o.walk/Math.PI)!==Math.floor(w0/Math.PI); }
   else o.walkAmt=Math.max(0,(o.walkAmt||0)-dt*4);
   animMech(m,o.walk||0,o.walkAmt||0);
+  return fall;
 }
 function buildSeraph(scale=1){
   const g=new THREE.Group(); const body=new THREE.Group(); body.position.y=2.1; g.add(body);

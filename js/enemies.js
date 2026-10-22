@@ -14,6 +14,7 @@ function spawnEnemy(type,pos,elite=false,o={}){
   if(type==='mini'){ e.mini=true; e.stT=rand(.8,1.6); }
   if(type==='heavy'){ e.cd=rand(1.5,2.5); e.side=1; }
   if(type==='warden') e.cd=rand(1.8,2.8);
+  e.turnFirst=!!(model.legs&&model.hips&&def.speed>0); e.byaw=0; // mechs turn their body before they walk (enemy-ai.js steer)
   if(def.init) def.init(e,o);
   const R=sortie?sortie.rule:{}, hm=roomHpScale();
   e.hp*=hm*(o.hpK||1); if(o.minion) e.minion=true; e.pos=pos.clone(); e.vel=new V3(); e.flash=0; e.t=0; e.born=0; e.yaw=0; e.stun=0; e.wake=.9; e.burn=0; e.slow=0;

@@ -32,11 +32,19 @@ const canFire=e=>e.see&&e.seeT>=AIL().react*(e.elite?.7:1)&&!player.dead&&!e.hol
 const cdRate=e=>(e.elite?1.25:1)*(AIL().read&&!AIR.ready?1+AIL().read:1);
 // aim direction from (fx,fz) for a shot of speed spd, led by the arena's lead
 function leadDir(fx,fz,spd,out,k=AIL().lead){ leadPoint(fx,fz,spd,k,_lp); out.set(_lp.x-fx,0,_lp.z-fz); const l=out.length(); if(l<.01){ const T=tgt(); out.set(T.x-fx,0,T.z-fz); } return out.normalize(); }
-// soft separation: close neighbours push the wanted velocity apart so a pack spreads out; k = how fast the velocity follows it
-function steer(e,want,dt,k){
+const turnTo=(a,b,max)=>{ const d=((b-a+Math.PI*3)%(Math.PI*2))-Math.PI; return a+clamp(d,-max,max); };
+/* movement with inertia (MOVE in data.js). Close neighbours push the wanted velocity apart so a pack spreads out. Walkers turn their body toward
+   where they go before they get going (and walk backward when they back off while aiming at you); acceleration is limited by mass and braking
+   is faster. Flyers drift on an underdamped spring: they overshoot a little and settle. k scales the response (3 = normal). */
+function steer(e,want,dt,k=3){
   let sx=0,sz=0; for(const o of enemies){ if(o===e||o.dead) continue; const dx=e.pos.x-o.pos.x,dz=e.pos.z-o.pos.z,R=(e.r+o.r)*1.1,dd=dx*dx+dz*dz; if(dd<R*R&&dd>1e-4){ const d=Math.sqrt(dd),f=(R-d)/R; sx+=dx/d*f; sz+=dz/d*f; } }
   _sv2.set(want.x+sx*e.speed*1.3,0,want.z+sz*e.speed*1.3);
-  e.vel.lerp(_sv2,Math.min(1,dt*k));
+  const ms=e.def.mass||1, kk=clamp(k/3,.5,2.5);
+  if(e.fly){ const f=MOVE.fly.f*Math.sqrt(kk/ms), z=MOVE.fly.z, a=e.av||(e.av=new V3()); a.x+=(f*f*(_sv2.x-e.vel.x)-2*z*f*a.x)*dt; a.z+=(f*f*(_sv2.z-e.vel.z)-2*z*f*a.z)*dt; e.vel.x+=a.x*dt; e.vel.z+=a.z*dt; return; }
+  if(e.turnFirst){ const sp=Math.hypot(_sv2.x,_sv2.z); if(sp>.4){ let wa=Math.atan2(_sv2.x,_sv2.z); if(angDiff(wa,e.yaw)>2.1) wa+=Math.PI;
+    e.byaw=turnTo(e.byaw,wa,MOVE.turn/ms*dt); _sv2.multiplyScalar(clamp((Math.cos(angDiff(e.byaw,wa))-.25)/.75,.08,1)); } }
+  let dx=_sv2.x-e.vel.x, dz=_sv2.z-e.vel.z; const dl=Math.hypot(dx,dz), step=MOVE.accel/ms*kk*(dx*e.vel.x+dz*e.vel.z<0?MOVE.brake:1)*dt;
+  if(dl>step){ dx*=step/dl; dz*=step/dl; } e.vel.x+=dx; e.vel.z+=dz;
 }
 // toward the target along the flow field (straight when the way is clear). Flyers ignore blocks.
 function chase(e,spd,out){ const T=tgt(), dx=T.x-e.pos.x,dz=T.z-e.pos.z,l=Math.hypot(dx,dz)||1;
@@ -151,9 +159,11 @@ const AI={
     if(e.orbT<=0){ e.orbT=rand(2,3); const toward=Math.sign(((back-a+Math.PI*3)%(Math.PI*2))-Math.PI)||1; e.orb=Math.random()<L.aggr?toward:(Math.random()<.5?-1:1); }
     // stuck against a block or another enemy: turn the other way round
     if(e.ph==='pos'&&e.vel.lengthSq()<.5&&d>n){ e.stuckT=(e.stuckT||0)+dt; if(e.stuckT>.5){ e.stuckT=0; e.orb=-e.orb; e.orbT=rand(1.5,2.5); } } else e.stuckT=0;
+    // skitter: quick bursts with sudden stops in between
+    e.skT=(e.skT||0)-dt; if(e.skT<=0){ e.skGo=!e.skGo; e.skT=e.skGo?rand(.45,.8):rand(.12,.26); } const sk=e.skGo?1.3:.05;
     let want;
-    if(e.ph==='cover'){ want=seek(e,e.goal.x,e.goal.z,e.speed,_sv); steer(e,want,dt,5); e.phT-=dt; e.cd-=dt; if(e.phT<=0) e.ph='pos'; }
-    else { if(d>f+3) want=chase(e,e.speed,_sv); else { const na=a+e.orb*.75; want=seek(e,clamp(T.x+Math.sin(na)*R,-AX+1.2,AX-1.2),clamp(T.z+Math.cos(na)*R,-AZ+1.2,AZ-1.2),e.speed,_sv); }
+    if(e.ph==='cover'){ want=seek(e,e.goal.x,e.goal.z,e.speed,_sv).multiplyScalar(sk); steer(e,want,dt,5); e.phT-=dt; e.cd-=dt; if(e.phT<=0) e.ph='pos'; }
+    else { if(d>f+3) want=chase(e,e.speed,_sv); else { const na=a+e.orb*.75; want=seek(e,clamp(T.x+Math.sin(na)*R,-AX+1.2,AX-1.2),clamp(T.z+Math.cos(na)*R,-AZ+1.2,AZ-1.2),e.speed,_sv); } want.multiplyScalar(sk);
       const flanked=L.aggr<.5||angDiff(a,back)<1.9||(e.waitT||0)>2.5; if(canFire(e)&&!flanked) e.waitT=(e.waitT||0)+dt;
       attackCycle(e,dt,want,()=>canFire(e)&&d<f+3&&flanked?(e.waitT=0,ATK.burst):null,5); }
     e.mineT=(e.mineT==null?rand(2.5,4):e.mineT)-dt;
@@ -193,26 +203,49 @@ const AI={
     e.yaw=lerpAngle(e.yaw,Math.atan2(-to.x,-to.z),Math.min(1,dt*3)); },
   /* rusher: rolls in along the flow field and speeds up as it goes; the fuse (0.55 s) only starts when it is close and can see you */
   spark(e,dt,to,d,pd,m){
-    if(e.st!=='blink'){ e.rush=Math.min(1,(e.rush||0)+dt/1.5); steer(e,chase(e,e.speed*(.5+.8*e.rush),_sv),dt,1.6+e.rush*2.4);
+    if(e.bounceT>0) e.bounceT-=dt; // just bounced off a wall: let it fly for a moment
+    else if(e.st!=='blink'){ e.rush=Math.min(1,(e.rush||0)+dt/1.5); steer(e,chase(e,e.speed*(.5+.8*e.rush),_sv),dt,1.6+e.rush*2.4);
       if(pd<2.5&&!player.dead&&losClear(e.pos.x,e.pos.z,player.pos.x,player.pos.z)){ e.st='blink'; e.stT=e.def.fuse; m.warn.visible=true; sfx('click'); } }
-    else { steer(e,_sv.copy(to).multiplyScalar(e.speed*.3),dt,3); e.stT-=dt; if(e.stT<=0){ sparkBoom(e); return; } }
-    if(e.vel.lengthSq()>.1) e.yaw=Math.atan2(e.vel.x,e.vel.z); },
+    if(e.st==='blink'){ if(!(e.bounceT>0)) steer(e,_sv.copy(to).multiplyScalar(e.speed*.3),dt,3); e.stT-=dt; if(e.stT<=0){ sparkBoom(e); return; } }
+    e.yaw=0; },
 };
 // ANIM[type](e,dt,m): idle and movement animation, from the bestiary's animate()
 const teleK=e=>e.ph==='tele'&&e.phMax?1-e.phT/e.phMax:0;
+const _rq=new THREE.Quaternion(),_rax=new V3();
+/* spider gait (Crawler, Siege Arachne): diagonal leg pairs (front-right + back-left, front-left + back-right) step in turn. The phase advances
+   with the distance covered, so planted feet do not slide; a stance sweeps each foot backward. Standing still, a leg twitches now and then. */
+function crawlGait(m,o,spd,dt,sc){
+  o.gait=(o.gait||0)+spd*dt*Math.PI/(.54*sc); o.gAmt=spd>.25*sc?Math.min(1,(o.gAmt||0)+dt*10):Math.max(0,(o.gAmt||0)-dt*7); const A=o.gAmt;
+  if(A<.2){ o.twT=(o.twT==null?rand(.3,1.4):o.twT)-dt; if(o.twT<=0){ o.twT=rand(.35,1.6); o.twL=(Math.random()*4)|0; o.twK=.16; } }
+  if(o.twK>0) o.twK-=dt;
+  m.legs.forEach((l,i)=>{ const sx=l.position.x>0?1:-1, p=o.gait+(i===0||i===3?0:Math.PI); let lift=Math.max(0,Math.cos(p))*.34*A;
+    if(o.twK>0&&o.twL===i) lift+=Math.sin(Math.max(0,o.twK)/.16*Math.PI)*.4;
+    l.rotation.y=l.userData.ry-sx*Math.sin(p)*.38*A; l.rotation.z=lift; });
+  m.body.position.y=1.15+Math.abs(Math.sin(o.gait))*.07*A;
+  return A;
+}
 const ANIM={
-  spark(e,dt,m){ m.body.rotation.x+=e.vel.length()*dt*1.4; const bl=e.st==='blink', fk=bl?1-e.stT/e.def.fuse:0, k=Math.sin(e.t*(bl?16+fk*40:9))>0; m.core.material.color.setHex(k?0xffffff:0xffa040); if(bl) m.warn.scale.setScalar(1.55+fk*.2); },
-  crawler(e,dt,m){ const mv=Math.min(1,e.vel.length()/3); m.legs.forEach(l=>{ l.rotation.z=Math.sin(e.t*12+l.userData.i*1.6)*.15*mv; }); m.body.position.y=1.15+Math.abs(Math.sin(e.t*12))*.05*mv; m.tur.rotation.y=lerpAngle(m.tur.rotation.y,(e.aimYaw||e.yaw)-e.yaw,Math.min(1,dt*10)); m.tur.scale.setScalar(e.ph==='tele'?1.12+Math.sin(e.t*40)*.04:1); },
+  // Spark truly rolls: the body turns about the axis across its velocity, as fast as it moves (radius .75)
+  spark(e,dt,m){ const sp=Math.hypot(e.vel.x,e.vel.z); if(sp>.05){ _rq.setFromAxisAngle(_rax.set(e.vel.z/sp,0,-e.vel.x/sp),sp*dt/.75); m.body.quaternion.premultiply(_rq); } const bl=e.st==='blink', fk=bl?1-e.stT/e.def.fuse:0, k=Math.sin(e.t*(bl?16+fk*40:9))>0; m.core.material.color.setHex(k?0xffffff:0xffa040); if(bl) m.warn.scale.setScalar(1.55+fk*.2); },
+  crawler(e,dt,m){ crawlGait(m,e,e.vel.length(),dt,e.sc); m.tur.rotation.y=lerpAngle(m.tur.rotation.y,(e.aimYaw||e.yaw)-e.yaw,Math.min(1,dt*10)); m.tur.scale.setScalar(e.ph==='tele'?1.12+Math.sin(e.t*40)*.04:1); },
   howitzer(e,dt,m){ spring(e.jz.rec,0,dt,14,.4); m.mort.rotation.x=.55-e.jz.rec.x*.06+(e.cd<.5&&!e.shell?Math.sin(e.t*30)*.03:0); },
   bulwark(e,dt,m){ m.hex.rotation.z+=dt*1.2; m.hex.scale.setScalar(Math.max(1,m.hex.scale.x-dt*3)); },
   shardling(e,dt,m){ m.body.rotation.y+=dt*(1+(e.ph==='tele'?6:0)); m.body.position.y=1.7+Math.sin(e.t*2)*.2; m.subs.forEach((s,i)=>s.rotation.y+=dt*2.4*(i%2?1:-1)); },
-  cherub(e,dt,m){ m.body.position.y=2.2+Math.sin(e.t*3)*.25; m.halo.rotation.z+=dt*2; m.wings.forEach(p=>{ p.rotation.z=p.userData.s*(Math.sin(e.t*14+p.userData.k)*.4); }); m.aura.scale.setScalar(2*(.95+Math.sin(e.t*2)*.05)); },
+  cherub(e,dt,m){ m.body.position.y=2.2+Math.sin(e.t*3)*.25; m.halo.rotation.z+=dt*2; const wa=wingBeat(e,dt,14); m.wings.forEach(p=>{ p.rotation.z=p.userData.s*(Math.sin(e.wph+p.userData.k)*(.4+wa*.25)); }); m.aura.scale.setScalar(2*(.95+Math.sin(e.t*2)*.05)); },
   censer(e,dt,m){ m.swing.rotation.z=Math.sin(e.t*1.6)*.28; m.swing.rotation.x=Math.cos(e.t*1.3)*.12; m.orbs.forEach((o,i)=>{ const a=e.t*.8+i*2.1; o.position.set(Math.cos(a)*1.9,-1.4+Math.sin(e.t*1.5+i)*.4,Math.sin(a)*1.9); }); m.glow.scale.setScalar((1+Math.sin(e.t*4)*.12)*(e.ph==='tele'?1.5:1)); },
   ophan(e,dt,m){ if(e.st==='roll') m.body.rotation.x+=e.speed*dt/1.6; else { m.body.rotation.x*=Math.pow(.05,dt); m.rings[0].rotation.z+=dt*(e.st==='tele'?5:1.2); m.rings[1].rotation.x+=dt*(e.st==='tele'?4:1); } m.core.rotation.y+=dt*2; },
   // anticipation: readable wind-ups before attacks
   warden(e,dt,m){ const wu=teleK(e); m.body.position.y=2.6+Math.sin(e.t*2)*.3-wu*.35; m.rings[0].rotation.x+=dt*(1.5+wu*9); m.rings[1].rotation.y+=dt*(1.1+wu*7); m.body.scale.set(1+wu*.12,1-wu*.1,1+wu*.12); m.eye.scale.setScalar(wu>.3?1.3+Math.sin(e.t*40)*.3:1); },
-  seraph(e,dt,m){ const wn=teleK(e), ch=e.ph==='charge'; m.body.position.y=2.1+Math.sin(e.t*2.5)*.3*(1-wn)+wn*.3; m.body.position.z=-wn*.9; m.body.position.x=wn?Math.sin(e.t*70)*.09*wn:0; m.body.rotation.x=ch?.5:-wn*.35; m.halo.rotation.z+=dt*(2+wn*14); m.wings.forEach((w,i)=>w.rotation.x=ch?-.6:Math.sin(e.t*6+i)*.25-wn*.5); if(e.ph!=='tele') m.core.scale.setScalar(1); },
+  seraph(e,dt,m){ const wn=teleK(e), ch=e.ph==='charge', wa=wingBeat(e,dt,6); m.body.position.y=2.1+Math.sin(e.t*2.5)*.3*(1-wn)+wn*.3; m.body.position.z=-wn*.9; m.body.position.x=wn?Math.sin(e.t*70)*.09*wn:0; m.body.rotation.x=ch?.5:-wn*.35; m.halo.rotation.z+=dt*(2+wn*14); m.wings.forEach((w,i)=>w.rotation.x=ch?-.6:Math.sin(e.wph+i)*(.25+wa*.2)-wn*.5); if(e.ph!=='tele') m.core.scale.setScalar(1); },
 };
+
+// wing beats speed up with acceleration (returns 0..1, how hard it is pulling)
+function wingBeat(e,dt,base){ const a=Math.min(1,Math.hypot(e.acx||0,e.acz||0)/18); e.wph=(e.wph||0)+dt*base*(1+a*1.4); return a; }
+// lean into acceleration and bank into turns, settling with a little overshoot (juice springs). Mechs do this in mechLean.
+function bodyLean(e,dt,k){ const j=e.jz, s=Math.sin(e.yaw), c=Math.cos(e.yaw), fx=e.vel.x+(e.acx||0)*.3, fz=e.vel.z+(e.acz||0)*.3, fwd=fx*s+fz*c, lat=fx*c-fz*s;
+  spring(j.lean,clamp(fwd*.02*k,-.2,.2),dt,9,.35); spring(j.roll,clamp(-lat*.028*k,-.3,.3),dt,8,.4); }
+// heavy footfall: a dust puff under the planted foot and a thump; Heavies (and the Colossus) shake the screen a little
+function footfall(e,m,sc,shk){ const side=Math.floor(e.walk/Math.PI)&1?1:-1, y=e.byaw!=null?e.byaw:e.yaw; dustPuff(e.pos.x+Math.cos(y)*side*.32*sc,e.pos.z-Math.sin(y)*side*.32*sc,sc*.8); sfx('step'); if(shk) shake=Math.max(shake,shk); }
 
 /* ================= ENEMY UPDATE ================= */
 function updateEnemies(dt){
@@ -239,12 +272,25 @@ function updateEnemies(dt){
     else { e.stunned=false; if(AI[e.type]){ AI[e.type](e,dt,to,d,pd,m); if(e.dead) continue; } }
     if(ANIM[e.type]) ANIM[e.type](e,dt,m);
     if(e.shieldT>0){ e.shieldT-=dt; if(!e.shM){ e.shM=new THREE.Mesh(new THREE.TorusGeometry(e.r*.9,.06,6,28),basic(0xffd36a,true,.8)); e.shM.rotation.x=Math.PI/2; e.shM.position.y=1.4; e.shM.userData.nofit=1; m.g.add(e.shM); } e.shM.visible=true; e.shM.rotation.z+=dt*3; } else if(e.shM) e.shM.visible=false;
+    // acceleration (smoothed): bodies lean into it, wings beat faster
+    if(dt>0){ const ax=clamp((e.vel.x-(e.pvx||0))/dt,-60,60), az=clamp((e.vel.z-(e.pvz||0))/dt,-60,60), f=Math.min(1,dt*8); e.acx=(e.acx||0)+(ax-(e.acx||0))*f; e.acz=(e.acz||0)+(az-(e.acz||0))*f; e.pvx=e.vel.x; e.pvz=e.vel.z; }
     for(const o of enemies){ if(o===e||o.dead)continue; const dx=e.pos.x-o.pos.x,dz=e.pos.z-o.pos.z,dd=Math.hypot(dx,dz),mn=(e.r+o.r)*.8; if(dd<mn&&dd>.001){ const k=o===boss?1:.5; e.pos.x+=dx/dd*(mn-dd)*k; e.pos.z+=dz/dd*(mn-dd)*k; } }
     e.pos.addScaledVector(e.vel,dt*(e.slow>0?.55:1)*(sortie.rule.moveSpd||1));
+    const ox=e.pos.x, oz=e.pos.z;
     if(!e.fly) pushOut(e.pos,e.r*.55);
     e.pos.x=clamp(e.pos.x,-AX+1,AX-1); e.pos.z=clamp(e.pos.z,-AZ+1,AZ-1);
-    m.g.position.set(e.pos.x,e.dropY,e.pos.z); m.g.rotation.y=e.yaw; m.shadow.position.set(e.pos.x,.03,e.pos.z); m.shadow.scale.setScalar(e.sc/e.def.sc/(1+e.dropY*.15));
-    if(m.legs&&m.hips){ stepMech(m,e,e.vel.length(),dt,e.sc); mechLean(m,e.jz,dt,e.vel.x,e.vel.z,e.yaw,e.yaw);
+    // Spark bounces off blocks and the mat edge
+    if(e.type==='spark'){ const nx=e.pos.x-ox, nz=e.pos.z-oz, nl=Math.hypot(nx,nz); if(nl>1e-3){ const vn=(e.vel.x*nx+e.vel.z*nz)/nl; if(vn<-1){ e.vel.x-=1.75*vn*nx/nl; e.vel.z-=1.75*vn*nz/nl; e.bounceT=.22; e.jz.pop.v+=2.5; sparks(e.pos.clone().setY(.6),0xffa040,2,3); } } }
+    if(e.turnFirst&&e.vel.lengthSq()<.3) e.byaw=turnTo(e.byaw,e.yaw,MOVE.turn/(e.def.mass||1)*.6*dt); // standing: the body turns to its aim
+    m.g.position.set(e.pos.x,e.dropY,e.pos.z); m.g.rotation.y=e.turnFirst?e.byaw:e.yaw; m.shadow.position.set(e.pos.x,.03,e.pos.z); m.shadow.scale.setScalar(e.sc/e.def.sc/(1+e.dropY*.15));
+    if(!(m.legs&&m.hips)&&e.type!=='spark'&&e.type!=='howitzer') bodyLean(e,dt,e.fly?.7:1);
+    if(m.legs&&m.hips){ const sp=e.vel.length(), back=sp>.3&&angDiff(Math.atan2(e.vel.x,e.vel.z),e.byaw)>1.6;
+      if(stepMech(m,e,sp,dt,e.sc,back?-1:1)&&(e.def.mass||1)>=2.4) footfall(e,m,e.sc,e.type==='heavy'?.06:0);
+      // idle: breathing, and the head looks around now and then (straight at you while winding up)
+      e.lookT=(e.lookT||0)-dt; if(e.lookT<=0){ e.lookT=rand(1.2,2.8); e.look=e.see?rand(-.3,.3):rand(-.8,.8); }
+      mechLean(m,e.jz,dt,e.vel.x+(e.acx||0)*.35,e.vel.z+(e.acz||0)*.35,e.byaw,e.byaw+(e.look||0)*(1-teleK(e)));
+      m.torso.rotation.y+=clamp(((e.yaw-e.byaw+Math.PI*3)%(Math.PI*2))-Math.PI,-1.5,1.5);
+      const idle=1-(e.walkAmt||0); m.hips.position.y+=Math.sin(e.t*2.3+e.side)*.03*idle; m.torso.rotation.x+=Math.sin(e.t*2.3+e.side+.7)*.035*idle;
       // wind-ups: heavies crouch (deep before a slam, arms up), drones raise the rifle; both stand up after landing
       const wu=teleK(e); if(e.type==='heavy'){ const sl=e.atk===ATK.slam&&(e.ph==='tele'||e.ph==='rec'); m.hips.position.y-=wu*(sl?.5:.35); m.torso.rotation.x-=wu*.3; if(sl&&e.ph==='tele'){ m.arms[0].rotation.x=-2.4*wu; m.arms[1].rotation.x=-1.45-1.1*wu; } } else m.arms[1].rotation.x-=wu*.25;
       if(e.standT>0) m.hips.position.y-=e.standT/.35*.55;

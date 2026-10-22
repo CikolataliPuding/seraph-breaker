@@ -83,7 +83,7 @@ const sfxLast={};
 function sfx(kind){
   if(!AU.ctx||AU.ctx.state!=='running'||P.sfx<=0) return;
   const ctx=AU.ctx,t=ctx.currentTime;
-  const gap={shot:.05,hit:.04,coin:.03,torch:.09,zap:.08,tick:.05}[kind]||0;
+  const gap={shot:.05,hit:.04,coin:.03,torch:.09,zap:.08,tick:.05,step:.07}[kind]||0;
   if(gap&&sfxLast[kind]&&t-sfxLast[kind]<gap) return; sfxLast[kind]=t;
   const osc=(type,f0,f1,dur,peak)=>{ const o=ctx.createOscillator(); o.type=type; o.frequency.setValueAtTime(f0,t); o.frequency.exponentialRampToValueAtTime(f1,t+dur); const g=env(t,peak,.002,dur); o.connect(g); g.connect(AU.sfx); o.start(t); o.stop(t+dur+.05); };
   const nz=(type,f,dur,peak,q=1)=>{ const n=noiseSrc(t,dur),fl=ctx.createBiquadFilter(); fl.type=type; fl.frequency.value=f; fl.Q.value=q; const g=env(t,peak,.002,dur); n.connect(fl); fl.connect(g); g.connect(AU.sfx); };
@@ -104,6 +104,7 @@ function sfx(kind){
     case 'zap': osc('square',1800,400,.08,.06); nz('highpass',3000,.06,.1); break;
     case 'slash': nz('bandpass',3000,.12,.22,1.2); osc('triangle',700,200,.1,.08); break;
     case 'click': osc('square',600,600,.03,.04); break;
+    case 'step': osc('sine',95,38,.14,.2); nz('lowpass',320,.1,.12); break;
     case 'door': osc('triangle',440,880,.25,.12); osc('sine',660,1320,.3,.08); break;
     case 'perfect': [1568,2093,2637].forEach((f,i)=>{ const o=ctx.createOscillator(); o.type='sine'; o.frequency.value=f; const g=env(t+i*.04,.11,.002,.35); o.connect(g); g.connect(AU.sfx); o.start(t+i*.04); o.stop(t+i*.04+.4); }); nz('highpass',5000,.25,.08); break;
     case 'tick': osc('square',1400+Math.random()*400,900,.025,.03); break;
