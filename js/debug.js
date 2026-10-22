@@ -92,11 +92,14 @@ function simulate(o={}){
         ctx.rs[id]=(ctx.rs[id]||0)+1; };
       const item=()=>{ if(ctx.items.length>=ITEM_SLOTS) return; const ids=Object.keys(ITEMS).filter(i=>!ctx.items.includes(i)); ctx.items.push(pickOne(ids)); ctx.luck=ctx.items.includes('lucky')?1:0; };
       const gain=v=>{ xp+=v; while(xp>=xpNeedAt(lv)){ xp-=xpNeedAt(lv); lv++; pick(skillOptions(3,null,ctx)); } };
+      const plan=arenaPlan(a,(Math.random()*2e9)|0);
       for(let ri=0;ri<N;ri++){
-        const type=arenaRoomType(ri+1), sc=enemyScale(a,ri,rule); let count=0,g=0,gm=0;
+        const spec=plan[ri], type=spec.type, sc=enemyScale(a,ri,rule); let count=0,g=0,gm=0;
         if(type==='combat'||type==='elite'){
-          const list=composeRoom(type==='elite',a,ri,rule,11).flat();
-          for(const t0 of list){ const el=t0.endsWith('*'), k=el?t0.slice(0,-1):t0, d=ENEMY[k], fam=k==='shardling'?1+6*SPLIT_REWARD:1, mul=el?3:1;
+          const list=composeRoom(spec,a,ri,rule,11).flat(), K=ROOM_KINDS.survive;
+          // Survive: about one extra spawn every 1.3 s, paying K.reward of a normal kill
+          if(spec.kind==='survive') for(let i=0;i<Math.round(K.time/1.3);i++) list.push(pickOne(arenaPool(a,ri))+'~');
+          for(const t0 of list){ const tg=t0.slice(-1), el=tg==='*'||tg==='!', k=el||tg==='~'?t0.slice(0,-1):t0, d=ENEMY[k], fam=(k==='shardling'?1+6*SPLIT_REWARD:1)*(tg==='~'?K.reward:1), mul=el?3:1;
             count++; g+=d.gold*ECON.killGold[a]*mul*fam; gm+=(el?ECON.gemChance.elite:d.cost>=2.5?ECON.gemChance.big:ECON.gemChance.small)*fam;
             gain(d.xp*mul*(1+a*.12)*fam); if(el&&Math.random()<.25) item(); }
           src.kill+=g; src.gemKill+=gm; g+=ECON.clearGold[a]; src.clear+=ECON.clearGold[a];
@@ -122,8 +125,9 @@ function simulate(o={}){
 /* ================= AUTOPILOT + MEASUREMENT ================= */
 /* a scripted "average player" for headless measurement runs: keeps 6-10 units from the nearest enemy and circles it, sidesteps shots on a
    collision course (dashes when one is about to land), steps out of telegraphed rings (slams, shells, blasts, Spark fuses, mines, traps),
-   fires at the nearest visible enemy without leading, uses the special when ready and picks skill cards at random. */
-const BOT={on:false,mv:new V3(),fire:false,side:1,sideT:0,skill:.7};
+   fires at the nearest visible enemy without leading, uses the special when ready and picks skill cards at random.
+   Like a person it only reacts react seconds after a shot or a telegraph appears, and reacts in time skill of the time. */
+const BOT={on:false,mv:new V3(),fire:false,side:1,sideT:0,skill:.7,react:.3};
 function botTick(dt){
   if(!BOT.on||!player||player.dead) return; const p=player, mv=BOT.mv.set(0,0,0); BOT.fire=false;
   if(state==='choice'){ if((!spin||spin.left<=0)&&chCfg&&performance.now()>ignoreClickUntil){ const n=chCfg.options.length; pickChoice((Math.random()*n)|0); } return; }
@@ -131,15 +135,15 @@ function botTick(dt){
   const add=(x,z,w)=>{ const l=Math.hypot(x,z)||1; mv.x+=x/l*w; mv.z+=z/l*w; };
   const tgtE=autoTarget()||nearestFoe(p.pos,40); let dashDir=null;
   // shots on a collision course: sidestep, dash when one is about to land (skill = how often the bot reacts in time)
-  for(const b of bullets){ if(b.from!=='e'||b.air&&b.m.position.y>2.4) continue; const rx=p.pos.x-b.m.position.x, rz=p.pos.z-b.m.position.z, vx=b.vel.x, vz=b.vel.z, vv=vx*vx+vz*vz; if(vv<1) continue;
+  for(const b of bullets){ if(b.from!=='e'||b.air&&b.m.position.y>2.4||playTime-b.t0<BOT.react) continue; const rx=p.pos.x-b.m.position.x, rz=p.pos.z-b.m.position.z, vx=b.vel.x, vz=b.vel.z, vv=vx*vx+vz*vz; if(vv<1) continue;
     const t=(rx*vx+rz*vz)/vv; if(t<0||t>.8) continue; const mx=rx-vx*t, mz=rz-vz*t, miss=Math.hypot(mx,mz); if(miss>1.6) continue;
     const sx=miss>.05?mx:-vz, sz=miss>.05?mz:vx; add(sx,sz,(1.7-miss)*2.2*(1-t/.8)*BOT.skill); if(t<.2&&miss<1&&Math.random()<BOT.skill) dashDir=new V3(sx,0,sz).normalize(); }
   const flee=(x,z,r,w)=>{ const dx=p.pos.x-x, dz=p.pos.z-z, d=Math.hypot(dx,dz); if(d<r) add(dx||rand(-1,1),dz||rand(-1,1),w*(1-d/r)+.4); };
   for(const b of blasts) if(b.hurtP) flee(b.x,b.z,b.rad+1.4,3);
-  for(const e of enemies){ if(e.dead) continue; if(e.shell) flee(e.shell.x,e.shell.z,3,3); if(e.atk===ATK.slam&&e.ph==='tele') flee(e.pos.x,e.pos.z,e.def.slam+1.3,4); if(e.st==='blink') flee(e.pos.x,e.pos.z,3.4,4); if(e.ph==='charge'||e.st==='roll') flee(e.pos.x,e.pos.z,4,2); }
+  for(const e of enemies){ if(e.dead) continue; if(e.shell&&e.shell.t<1.2-BOT.react) flee(e.shell.x,e.shell.z,3,3); if(e.atk===ATK.slam&&e.ph==='tele'&&e.phMax-e.phT>BOT.react) flee(e.pos.x,e.pos.z,e.def.slam+1.3,4); if(e.st==='blink') flee(e.pos.x,e.pos.z,3.4,4); if(e.ph==='charge'||e.st==='roll') flee(e.pos.x,e.pos.z,4,2); }
   for(const s of shocks){ if(s.hit||s.friendly) continue; const df=Math.hypot(p.pos.x-s.x,p.pos.z-s.z)-s.r; if(df>0&&df<1.6&&Math.random()<BOT.skill) dashDir=new V3(s.x-p.pos.x,0,s.z-p.pos.z).normalize(); else if(df>0&&df<s.max-s.r+1) flee(s.x,s.z,s.max+1.5,2.5); }
   for(const m of emines) flee(m.x,m.z,2.4,2);
-  if(typeof traps!=='undefined') for(const t of traps) if(t.danger&&t.danger()) flee(t.x,t.z,t.r+1.2,3);
+  for(const h of hazards) if(h.ph>=1||h.t<.3&&h.ph===0) flee(h.x,h.z,2.4,2.5);
   // spacing: circle the nearest enemy at 6-10 units, switch direction now and then
   BOT.sideT-=dt; if(BOT.sideT<=0){ BOT.sideT=rand(1.4,3); BOT.side=Math.random()<.5?-1:1; }
   const seen=autoTarget();

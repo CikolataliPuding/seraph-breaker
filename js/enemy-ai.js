@@ -29,7 +29,7 @@ function sense(e,dt){ e.losT-=dt; if(e.losT<=0){ e.losT=rand(.1,.18); const T=tg
   if(e.see){ e.seeT+=dt; e.blindT=0; } else { e.seeT=0; e.blindT+=dt; if(e.blindT>.5&&e.replanT>.25) e.replanT=.25; } }
 const canFire=e=>e.see&&e.seeT>=AIL().react*(e.elite?.7:1)&&!player.dead&&!e.hold;
 // cooldowns run faster for elites, and (arena 3+) while your dash is recharging
-const cdRate=e=>(e.elite?1.25:1)*(AIL().read&&!AIR.ready?1+AIL().read:1);
+const cdRate=e=>(e.elite?1.25:1)*(e.cdK||1)*(AIL().read&&!AIR.ready?1+AIL().read:1);
 // aim direction from (fx,fz) for a shot of speed spd, led by the arena's lead
 function leadDir(fx,fz,spd,out,k=AIL().lead){ leadPoint(fx,fz,spd,k,_lp); out.set(_lp.x-fx,0,_lp.z-fz); const l=out.length(); if(l<.01){ const T=tgt(); out.set(T.x-fx,0,T.z-fz); } return out.normalize(); }
 const turnTo=(a,b,max)=>{ const d=((b-a+Math.PI*3)%(Math.PI*2))-Math.PI; return a+clamp(d,-max,max); };
@@ -90,26 +90,29 @@ function fanShot(from,base,n,step,spd,dmg,color,o){ for(let i=-n;i<=n;i++){ cons
 /* ================= ATTACKS ================= */
 // tele: wind-up seconds · rec: recovery · cd: cooldown range after it · need: checked at the end of the wind-up (else the attack is called off)
 const ATK={
-  // Drone rifle: one led shot after a short glint
-  rifle:{tele:.38,rec:.3,cd:[1.2,2],need:e=>e.see,fire(e){ const mz=_muz(e), s=9*eSpd(); shoot('e',mz,leadDir(mz.x,mz.z,s,new V3()),s,10,0xff5a2a,{life:3,r:.45}); sparks(mz,0xff8a40,3,3); e.jz.rec.v+=3; }},
+  // Drone rifle: a led two-round burst after a short glint
+  rifle:{tele:.38,rec:.35,cd:[1.1,1.8],need:e=>e.see,fire(e){ e.burst=2; e.bT=0; },
+    tick(e,dt){ if(e.ph!=='rec'||!e.burst) return; e.bT-=dt; if(e.bT>0) return; e.bT=.14; e.burst--; const mz=_muz(e), s=10.5*eSpd(); shoot('e',mz,leadDir(mz.x,mz.z,s,new V3()),s,9,0xff5a2a,{life:3,r:.45}); sparks(mz,0xff8a40,3,3); e.jz.rec.v+=3; }},
   // Heavy spread shot: 5 shots (7 for elites) fanned around the led aim
-  fan:{tele:.5,rec:.45,cd:[1.9,2.5],need:e=>e.see,fire(e){ const mz=_muz(e), s=8*eSpd(), d=leadDir(mz.x,mz.z,s,_ld); fanShot(mz,Math.atan2(d.x,d.z),e.elite?3:2,.2,s,12,0xff5a2a,{life:3.2,r:.5}); sparks(mz,0xff8a40,3,3); e.jz.rec.v+=6; }},
+  fan:{tele:.5,rec:.45,cd:[1.6,2.2],need:e=>e.see,fire(e){ const mz=_muz(e), s=9*eSpd(), d=leadDir(mz.x,mz.z,s,_ld); fanShot(mz,Math.atan2(d.x,d.z),e.elite?3:2,.2,s,12,0xff5a2a,{life:3.2,r:.5}); sparks(mz,0xff8a40,3,3); e.jz.rec.v+=6; }},
   /* Heavy slam: the red ring shows the reach and fills during the wind-up, then a small shockwave rolls out to it.
      Step outside the ring or dash through the wave. A little version of the Iron Colossus slam. */
   slam:{tele:.85,rec:.9,cd:[1.6,2.2],start(e){ slamTele(e.pos,e.def.slam,.85,.45); sfx('click'); },fire(e){ const s0=shake; shockwave(e.pos,12,e.def.slam,0xff5a2a); shake=Math.max(s0,.28); e.jz.pop.v=-6; sparks(e.pos.clone().setY(.4),0xc8c0d0,6,5); sfx('heavy'); }},
   // Bulwark: a short fan from behind the shield
   bfan:{tele:.45,rec:.5,cd:[2.4,3.2],need:e=>e.see,fire(e){ const mz=_muz(e); fanShot(mz,e.yaw,2,.16,8.5*eSpd(),11,0xff5a2a,{life:1.6,r:.45}); e.jz.rec.v+=6; }},
   // Warden: a ring of slow shots around itself (area denial)
-  ring:{tele:.5,rec:.4,cd:[2.2,3],fire(e){ const n=e.elite?14:10,off=rand(0,1); for(let i=0;i<n;i++){ const a=(i+off)/n*Math.PI*2; shoot('e',e.pos.clone().setY(1.8),new V3(Math.sin(a),0,Math.cos(a)),6*eSpd(),10,0xffc040,{life:4,r:.45}); } }},
+  ring:{tele:.5,rec:.4,cd:[1.9,2.6],fire(e){ const n=e.elite?14:10,off=rand(0,1); for(let i=0;i<n;i++){ const a=(i+off)/n*Math.PI*2; shoot('e',e.pos.clone().setY(1.8),new V3(Math.sin(a),0,Math.cos(a)),6.5*eSpd(),10,0xffc040,{life:4,r:.45}); } }},
   // Shardling: three shards around the led aim
-  tri:{tele:.4,rec:.3,cd:[1.8,2.6],need:e=>e.see,fire(e){ const o=e.pos.clone().setY(1.6*e.sc+.3), s=9*eSpd(), d=leadDir(o.x,o.z,s,_ld); fanShot(o,Math.atan2(d.x,d.z),1,.22,s,8,0x8fd0ff,{life:.95,r:.4}); }},
+  tri:{tele:.4,rec:.3,cd:[1.5,2.2],need:e=>e.see,fire(e){ const o=e.pos.clone().setY(1.6*e.sc+.3), s=10*eSpd(), d=leadDir(o.x,o.z,s,_ld); fanShot(o,Math.atan2(d.x,d.z),1,.22,s,8,0x8fd0ff,{life:.95,r:.4}); }},
   // Crawler: two quick bursts of twin shots, then it looks for cover
-  burst:{tele:.3,rec:.5,cd:[1.6,2.3],need:e=>e.see,fire(e){ e.burst=2; e.bT=0; },
+  burst:{tele:.3,rec:.5,cd:[1.3,2],need:e=>e.see,fire(e){ e.burst=2; e.bT=0; },
     tick(e,dt){ if(e.ph!=='rec'||!e.burst) return; e.bT-=dt; if(e.bT>0) return; e.bT=.13; e.burst--; const s=10*eSpd(), d=leadDir(e.pos.x,e.pos.z,s,_ld), y=Math.atan2(d.x,d.z);
       for(const k of [-1,1]){ const o=new V3(e.pos.x+d.x*1.1+Math.cos(y)*k*.2,1.4,e.pos.z+d.z*1.1-Math.sin(y)*k*.2); shoot('e',o,d.clone(),s,8,0xff5a2a,{life:2.5,r:.4}); } sparks(e.pos.clone().setY(1.6).addScaledVector(d,1.1),0xff8a40,2,3); },
     after(e){ const c=coverSpot(e,5.5); if(c){ e.ph='cover'; e.goal=c; e.phT=rand(.9,1.5); } }},
+  // a quick shot from the body (the hunted elite, whatever it is)
+  snap:{tele:.3,rec:.25,cd:[1.3,2],need:e=>e.see,fire(e){ const o=e.pos.clone().setY(1.6), s=10*eSpd(); shoot('e',o,leadDir(o.x,o.z,s,new V3()),s,10,0xff5a2a,{life:2.5,r:.45}); }},
   // Censer: three slow homing light orbs that float over blocks (no line of sight needed)
-  orbs:{tele:.55,rec:.5,cd:[3.2,4.2],fire(e){ let live=0; for(const b of bullets) if(b.tag==='censer') live++; if(live>=12) return; const T=tgt(), b0=Math.atan2(T.x-e.pos.x,T.z-e.pos.z);
+  orbs:{tele:.55,rec:.5,cd:[2.8,3.6],fire(e){ let live=0; for(const b of bullets) if(b.tag==='censer') live++; if(live>=12) return; const T=tgt(), b0=Math.atan2(T.x-e.pos.x,T.z-e.pos.z);
     for(let i=-1;i<=1;i++){ const a=b0+i*.7; shoot('e',e.pos.clone().setY(2.2),new V3(Math.sin(a),0,Math.cos(a)),3.6*eSpd(),10,0xffe9a0,{life:6,r:.6,scale:1.35,home:6,turn:1.1,after:3.6,air:'float',tag:'censer'}); } sfx('zap'); }},
 };
 
@@ -191,7 +194,7 @@ const AI={
     e.blocked=len<d-1.2?(e.blocked||0)+dt:0;
     const Ll=len/1.05; m.laser.visible=true; m.laser.scale.set(e.st==='lock'?2.2:1,Ll/7,e.st==='lock'?2.2:1); m.laser.position.y=-.8-Ll/2; m.laser.material.opacity=e.st==='lock'?(Math.sin(e.t*50)>0?1:.4):.55;
     if(e.blocked>.45){ e.st='move'; e.stT=rand(1,1.6); m.laser.visible=false; dropToken(e); }
-    else if(e.stT<=0){ m.muzzle.getWorldPosition(_tmp2); shoot('e',_tmp2.clone().setY(1.6),new V3(fx,0,fz),34*eSpd(),22,0xff3a3a,{life:1.2,r:.42,scale:.9}); e.jz.rec.v+=7; sparks(_tmp2,0xff3a3a,5,6); sfx('heavy'); e.st='move'; e.stT=rand(2,3); m.laser.visible=false; dropToken(e); } },
+    else if(e.stT<=0){ m.muzzle.getWorldPosition(_tmp2); shoot('e',_tmp2.clone().setY(1.6),new V3(fx,0,fz),34*eSpd(),22,0xff3a3a,{life:1.2,r:.42,scale:.9}); e.jz.rec.v+=7; sparks(_tmp2,0xff3a3a,5,6); sfx('heavy'); e.st='move'; e.stT=rand(1.6,2.6); m.laser.visible=false; dropToken(e); } },
   /* support: stays behind the enemy closest to you (its tank), heals and shields everyone inside the green aura */
   cherub(e,dt,to,d,pd,m){ const T=tgt(); let front=null,fd=1e9;
     for(const o of enemies){ if(o===e||o.dead||o===boss||o.def&&o.def.role==='support') continue; const od=Math.hypot(o.pos.x-T.x,o.pos.z-T.z); if(od<fd){ fd=od; front=o; } }
@@ -209,6 +212,22 @@ const AI={
     if(e.st==='blink'){ if(!(e.bounceT>0)) steer(e,_sv.copy(to).multiplyScalar(e.speed*.3),dt,3); e.stT-=dt; if(e.stT<=0){ sparkBoom(e); return; } }
     e.yaw=0; },
 };
+// the hunted elite (Hunt rooms): runs uphill on the flow field, away from you along real paths, and snaps a shot now and then
+function huntAI(e,dt,to,d,pd,m){ let want;
+  if(d<15){ if(e.fly||!NAV.ok) want=_sv.set(-to.x*e.speed,0,-to.z*e.speed); else want=fleeDir(e.pos.x,e.pos.z,_sv)?_sv.multiplyScalar(e.speed):backOff(e,to,e.speed,_sv); }
+  else want=_sv.set(0,0,0);
+  attackCycle(e,dt,want,()=>canFire(e)&&d<12?ATK.snap:null,3);
+  if(e.vel.lengthSq()>.5&&e.ph==='pos') e.yaw=lerpAngle(e.yaw,Math.atan2(e.vel.x,e.vel.z),Math.min(1,dt*6)); else faceAim(e,dt,to,6);
+  if(m.legs&&m.tur) e.aimYaw=Math.atan2(to.x,to.z); }
+/* elite affixes over time: Blinker teleports (a ring marks where it lands), Summoner calls in small helpers (4 at most), Shielded regrows its barrier */
+function affixTick(e,dt){
+  if(e.blinkT!=null&&e.ph==='pos'){ if(!e.blinkTo){ e.blinkT-=dt; if(e.blinkT<=0){ const s=planSpot(e,6,11,{want:rand(-Math.PI,Math.PI),noLos:true}); e.blinkTo={x:s.x,z:s.z,t:.55}; groundRing(new V3(s.x,0,s.z),0xb070ff,1.8,.55); sfx('zap'); } }
+    else { e.blinkTo.t-=dt; e.model.g.visible=Math.floor(e.t*24)%2===0; if(e.blinkTo.t<=0){ sparks(e.pos.clone().setY(1.5),0xb070ff,8,5); e.pos.set(e.blinkTo.x,0,e.blinkTo.z); e.vel.set(0,0,0); e.goal=null; e.path=null; e.blinkTo=null; e.blinkT=rand(3.5,5); e.model.g.visible=true; sparks(e.pos.clone().setY(1.5),0xb070ff,8,5); } } }
+  if(e.sumT!=null){ e.sumT-=dt; if(e.sumT<=0){ e.sumT=rand(7,9); let n=0; for(const o of enemies) if(o.summoner===e&&!o.dead) n++;
+    for(let i=0;i<2&&n<4;i++,n++){ const a=rand(0,Math.PI*2), c=spawnEnemy(e.angel?'mini':'spark',new V3(clamp(e.pos.x+Math.cos(a)*2,-AX+1.5,AX-1.5),0,clamp(e.pos.z+Math.sin(a)*2,-AZ+1.5,AZ-1.5)),false,{minion:true}); if(c) c.summoner=e; }
+    groundRing(e.pos,0xb070ff,3,.5); } }
+  if(e.esh){ if(e.esh.hp<=0){ e.esh.cd-=dt; if(e.esh.cd<=0){ e.esh.hp=e.esh.max; e.esh.m.visible=true; groundRing(e.pos,0x5fe0ff,2.2,.4); } } else e.esh.m.scale.setScalar(Math.max(1,e.esh.m.scale.x-dt*.8)); }
+}
 // ANIM[type](e,dt,m): idle and movement animation, from the bestiary's animate()
 const teleK=e=>e.ph==='tele'&&e.phMax?1-e.phT/e.phMax:0;
 const _rq=new THREE.Quaternion(),_rax=new V3();
@@ -269,7 +288,7 @@ function updateEnemies(dt){
     sense(e,dt); e.pathT-=dt;
     if(e.wake>0){ e.wake-=dt; e.vel.multiplyScalar(.8); }
     else if(e.stun>0){ if(!e.stunned){ e.stunned=true; interrupt(e); } e.stun-=dt; e.vel.multiplyScalar(e.frozen>0?0:.85); if(e.frozen>0){ e.frozen-=dt; if(e.frozen<=0) unflash(e); } if(Math.random()<dt*6) sparks(e.pos.clone().setY(2.6),0x5fe0ff,1,2); }
-    else { e.stunned=false; if(AI[e.type]){ AI[e.type](e,dt,to,d,pd,m); if(e.dead) continue; } }
+    else { e.stunned=false; if(e.affix) affixTick(e,dt); if(e.hunt) huntAI(e,dt,to,d,pd,m); else if(AI[e.type]){ AI[e.type](e,dt,to,d,pd,m); if(e.dead) continue; } }
     if(ANIM[e.type]) ANIM[e.type](e,dt,m);
     if(e.shieldT>0){ e.shieldT-=dt; if(!e.shM){ e.shM=new THREE.Mesh(new THREE.TorusGeometry(e.r*.9,.06,6,28),basic(0xffd36a,true,.8)); e.shM.rotation.x=Math.PI/2; e.shM.position.y=1.4; e.shM.userData.nofit=1; m.g.add(e.shM); } e.shM.visible=true; e.shM.rotation.z+=dt*3; } else if(e.shM) e.shM.visible=false;
     // acceleration (smoothed): bodies lean into it, wings beat faster
@@ -296,5 +315,9 @@ function updateEnemies(dt){
       if(e.standT>0) m.hips.position.y-=e.standT/.35*.55;
       spring(e.jz.rec,0,dt,20,.4); m.torso.rotation.x-=e.jz.rec.x*.25; m.arms[1].rotation.x-=e.jz.rec.x*.4; }
     applyJuice(m.g,e.jz,dt,e.sc);
+    if(e.plate) e.plate.position.set(e.pos.x,e.dropY+e.plate.userData.h,e.pos.z);
+    // dark room: you only see enemies near you (and any that are winding up or attacking)
+    if(room&&room.dark){ const lit=pd<darkR()+e.r||e.ph==='tele'||e.ph==='charge'||e.st==='aim'||e.st==='lock'||e.st==='blink'||e.st==='tele'||e.st==='roll'||e.dropY>0;
+      if(!e.blinkTo) m.g.visible=lit; m.shadow.visible=lit; if(e.plate) e.plate.visible=lit; }
   }
 }

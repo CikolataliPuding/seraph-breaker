@@ -16,7 +16,9 @@ function renderMap(){
   $('shEye').textContent=`ARENA 0${sel+1} · ${A.rooms} ROOMS`; $('shEye').style.color=A.colorCss; $('shName').textContent=A.name;
   $('shReward').innerHTML=`<i></i>+${first?ECON.firstClear(sel):ECON.repeatClear(sel)}${first?' first clear':''}`;
   const rooms=$('shRooms'); rooms.innerHTML=''; const t=document.createElement('span'); t.textContent='ROOMS 1-10'; rooms.appendChild(t);
-  for(let n=1;n<=10;n++){ const r=arenaRoomType(n), i=document.createElement('i'); i.textContent={combat:'C',angel:'A',elite:'E',boss:'B'}[r]; i.className={combat:'',angel:'a',elite:'e',boss:'b'}[r]; rooms.appendChild(i); }
+  // one 10-room block of PACING: C combat, ! a special room (ambush, waves, survive, hunt, traps, dark), T the next boss's teaching room
+  for(let n=1;n<=10;n++){ const c=PACING[n], i=document.createElement('i'), sp=c.kinds&&c.kinds.some(k=>k!=='normal'&&k!=='teach');
+    i.textContent=c.boss?'B':c.angel?'A':c.elite?'E':c.kinds.includes('teach')?'T':sp?'!':'C'; i.className=c.boss?'b':c.angel?'a':c.elite?'e':sp?'s':''; i.title=c.kinds?c.kinds.map(k=>ROOM_KINDS[k].name).join(' / '):''; rooms.appendChild(i); }
   const tags=$('shTags'); tags.innerHTML='';
   A.mobs.filter(e=>ENEMY[e]).forEach(e=>{ const s=document.createElement('span'); s.textContent=ENEMY[e].name; tags.appendChild(s); });
   const r=document.createElement('span'); r.style.borderColor=A.colorCss; r.style.color=A.colorCss; r.textContent=A.ruleTxt; tags.appendChild(r);

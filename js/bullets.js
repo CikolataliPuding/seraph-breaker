@@ -10,7 +10,7 @@ function shoot(from,pos,dir,speed,dmg,color,o={}){
   else { const c=new THREE.Mesh(G.orb,basic(0xffffff,false)); c.scale.setScalar(.5); m.add(c); if(o.scale) m.scale.setScalar(o.scale); }
   scene.add(m);
   const bounce=o.bounce||0;
-  const b={m,from,vel:dir.clone().multiplyScalar(speed),dmg,life:o.life||2.2,r:o.r||.45,wall:o.wall||0,tag:o.tag||'',pierce:!!o.pierce,proc:!!o.proc,flat:!!o.flat,hit:(o.pierce||bounce)?new Set():null,home:o.home||0,turn:o.turn||2,after:o.after||speed,delay:o.delay||0,seek:o.seek||null,grav:!!o.grav,bounce,air:null};
+  const b={m,from,vel:dir.clone().multiplyScalar(speed),dmg,life:o.life||2.2,r:o.r||.45,wall:o.wall||0,tag:o.tag||'',pierce:!!o.pierce,proc:!!o.proc,flat:!!o.flat,hit:(o.pierce||bounce)?new Set():null,home:o.home||0,turn:o.turn||2,after:o.after||speed,delay:o.delay||0,seek:o.seek||null,grav:!!o.grav,bounce,air:null,t0:playTime};
   if(o.air) b.air=airInit(o.air,pos);
   bullets.push(b);
 }

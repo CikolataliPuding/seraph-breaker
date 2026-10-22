@@ -1,11 +1,29 @@
 // Seraph Breaker · run.js: Arena runs: room schedule, boss picks, Arena 4 modifiers, run save / continue and unlocks.
 /* ================= ARENA RUNS ================= */
 const RUN_KEY='seraph-breaker-run-v1';
-// room n (1-based): boss every 10th, angel on the other 5ths, elite around every 7th, combat otherwise
-const arenaRoomType=n=>n%10===0?'boss':n%5===0?'angel':n%7===0?'elite':'combat';
+// room n (1-based): from the run plan when there is one, else the PACING slot (boss, angel, elite or combat)
+const arenaRoomType=n=>{ const p=sortie&&sortie.plan&&sortie.plan[n-1]; if(p) return p.type; const c=PACING[((n-1)%10)+1]; return c.boss?'boss':c.angel?'angel':c.elite?'elite':'combat'; };
 function arenaBossPool(a){ const A=ARENAS[a]; return (A.bosses==='all'?Object.keys(BOSSES):A.bosses).filter(k=>BOSSES[k]); }
-// never the same boss twice in a row; a one-boss pool simply repeats
-function pickBoss(){ const pool=arenaBossPool(sortie.a), c=pool.filter(k=>k!==sortie.lastBoss), k=pickOne(c.length?c:pool); sortie.lastBoss=k; return k; }
+// seeded random: the same run seed always gives the same plan, so a continued run keeps its rooms and bosses
+function seeded(seed){ let t=seed>>>0; return ()=>{ t=(t+0x6D2B79F5)>>>0; let r=Math.imul(t^t>>>15,1|t); r^=r+Math.imul(r^r>>>7,61|r); return ((r^r>>>14)>>>0)/4294967296; }; }
+/* the arena plan, one entry per room: {type:'combat'|'elite'|'angel'|'boss', kind (ROOM_KINDS), k (budget multiplier from PACING), boss (the boss
+   that ends this 10-room block, planned ahead), teach (that boss, on its teaching room)}. Bosses never repeat back to back. Pure: the debug
+   simulation and the arena preview use it too. */
+function arenaPlan(a,seed,lastBoss=''){
+  const A=ARENAS[a], N=A.rooms, rnd=seeded((seed|0)*7919+a*104729+1), pool=arenaBossPool(a), plan=[]; let last=lastBoss, bb='';
+  for(let n=1;n<=N;n++){ const pos=n===N?10:((n-1)%10)+1, pc=PACING[pos];
+    if((n-1)%10===0||!bb){ const c=pool.filter(k=>k!==last); bb=c.length?c[(rnd()*c.length)|0]:pool[0]; last=bb; }
+    const r={n,boss:bb,k:pc.k||1};
+    if(pc.boss){ r.type='boss'; r.kind='boss'; }
+    else if(pc.angel){ r.type='angel'; r.kind='angel'; }
+    else { const ok=pc.kinds.filter(k=>{ const K=ROOM_KINDS[k]; return n>=(K.minRoom||0)&&a>=(K.minArena||0); }); r.kind=ok.length?ok[(rnd()*ok.length)|0]:'normal';
+      r.type=pc.elite&&r.kind!=='hunt'?'elite':'combat'; if(r.kind==='teach') r.teach=bb; }
+    plan.push(r); }
+  return plan;
+}
+// the boss of a boss room comes from the plan (so the rooms before it could teach it); never the same boss twice in a row
+function pickBoss(){ const p=sortie.plan&&sortie.plan[sortie.ri]; let k=p&&p.boss&&BOSSES[p.boss]?p.boss:null;
+  if(!k){ const pool=arenaBossPool(sortie.a), c=pool.filter(x=>x!==sortie.lastBoss); k=pickOne(c.length?c:pool); } sortie.lastBoss=k; return k; }
 function rollMods(){ const ks=Object.keys(MODS), out=[]; while(out.length<Math.min(2,ks.length)){ const k=pickOne(ks); if(!out.includes(k)) out.push(k); } return out; }
 // arena rule + Arena 4 modifiers + devil curses, merged into one object the game reads (sortie.rule)
 function buildRule(){
@@ -19,11 +37,12 @@ function launchArena(a,saved){
   if(saved) restoreLoadout(saved);
   stage=a; applyTheme(a);
   const A=ARENAS[a], N=A.rooms;
-  sortie={a,N,ri:saved?clamp(saved.ri|0,0,N-1):0,xp:0,lv:1,pendingLv:0,gold:0,gems:0,start:performance.now(),rerolls:1,curses:[],items:[],lastBoss:'',mods:saved?(saved.mods||[]).filter(m=>MODS[m]):(A.mixed?rollMods():[]),rule:{},dmgTaken:0,log:[]};
+  sortie={a,N,seed:saved&&Number.isFinite(+saved.seed)?saved.seed|0:(Math.random()*2e9)|0,ri:saved?clamp(saved.ri|0,0,N-1):0,xp:0,lv:1,pendingLv:0,gold:0,gems:0,start:performance.now(),rerolls:1,curses:[],items:[],lastBoss:'',mods:saved?(saved.mods||[]).filter(m=>MODS[m]):(A.mixed?rollMods():[]),rule:{},dmgTaken:0,log:[]};
   choiceQ.length=0; makePlayer();
   $('uName').innerHTML=''; const nm=document.createElement('span'); nm.textContent=P.pilot||'Pilot'; const sm=document.createElement('small'); sm.textContent=' · '+unit.name; const lv=document.createElement('em'); lv.id='lvTxt'; lv.textContent='LV 1'; $('uName').append(nm,sm,lv);
   buildRule(); score=0; kills=0; playTime=0;
   if(saved) restoreRun(saved);
+  sortie.plan=arenaPlan(a,sortie.seed,saved&&!saved.seed?sortie.lastBoss:'');
   buildRoom(roomHalfX(),ROOM_Z,SANCTUM,true); player.pos.set(0,0,AZ-1.5); camTarget.copy(player.pos);
   $('cardNum').textContent=`ARENA 0${a+1} · `+(saved?`CONTINUE · ROOM ${sortie.ri+1}/${N}`:`${N} ROOMS`); $('cardT').textContent=A.name;
   $('cardS').textContent=[A.ruleTxt,...sortie.mods.map(m=>MODS[m].name)].join(' · ');
@@ -33,7 +52,7 @@ function launchArena(a,saved){
 /* run save: written after every cleared room so a closed tab or app can continue from the next room */
 function saveRun(nextRi){
   if(!sortie||!player||player.dead||nextRi>=sortie.N) return;
-  const r={v:1,a:sortie.a,ri:nextRi,hp:Math.max(1,Math.round(player.hp)),sp:Math.floor(player.sp),rs:player.rs,lv:sortie.lv,xp:sortie.xp,pendingLv:sortie.pendingLv,rerolls:sortie.rerolls,
+  const r={v:1,a:sortie.a,seed:sortie.seed,ri:nextRi,hp:Math.max(1,Math.round(player.hp)),sp:Math.floor(player.sp),rs:player.rs,lv:sortie.lv,xp:sortie.xp,pendingLv:sortie.pendingLv,rerolls:sortie.rerolls,
     curses:sortie.curses,items:sortie.items.map(i=>i.id||i),lastBoss:sortie.lastBoss,mods:sortie.mods,score,kills,playTime,gold:sortie.gold,gems:sortie.gems,dmgTaken:Math.round(sortie.dmgTaken||0),extra:player.extra,unit:P.unit,weapon:P.weapon,gadgets:P.gadgets,t:Date.now()};
   try{ localStorage.setItem(RUN_KEY,JSON.stringify(r)); }catch(e){}
   if(sortie.ri+1>(P.bestRoom[sortie.a]||0)) P.bestRoom[sortie.a]=sortie.ri+1;

@@ -13,7 +13,7 @@ function refreshControls(){
   const on=playing()&&state!=='cine'&&state!=='choice';
   ['hudL','hudR','xpTrack','rsBar'].forEach(id=>$(id).hidden=!on);
   $('abBar').hidden=!on||mobileMode; $('touch').hidden=!on||!mobileMode; $('tSH').hidden=P.mshield!=='manual';
-  $('bossHud').hidden=!(on&&boss&&state!=='bossdeath');
+  $('bossHud').hidden=!(on&&(boss||room&&room.timer)&&state!=='bossdeath'); $('bossHud').classList.toggle('timer',!boss&&!!(room&&room.timer));
   if(on) renderAbilityIcons();
 }
 function hideOverlays(){ ['menu','result','pause','card','warn','cine','choice'].forEach(id=>$(id).hidden=true); $('cine').classList.remove('on'); }

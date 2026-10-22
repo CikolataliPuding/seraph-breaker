@@ -9,7 +9,7 @@ function spawnEnemy(type,pos,elite=false,o={}){
   const def=ENEMY[type]; if(!def) return null;
   if(!o.force&&enemies.filter(x=>!x.dead&&x!==boss).length>=enemyCap()) return null;
   castShadows=false; const model=def.build(o); castShadows=true;
-  const e={type:def.ai||type,kind:type,def,model,hp:def.hp,r:def.r,speed:def.speed,sc:def.sc,fly:!!def.fly,angel:!!def.angel,side:Math.random()<.5?-1:1,cd:rand(1.2,2.4),walk:0,st:'hover',stT:rand(1.5,3),
+  const e={type:def.ai||type,kind:type,def,model,hp:def.hp,r:def.r,speed:def.speed,sc:def.sc,fly:!!def.fly,angel:!!def.angel,side:Math.random()<.5?-1:1,cd:rand(.5,1.3),walk:0,st:'hover',stT:rand(1.5,3),
     ph:'pos',phT:0,see:false,seeT:0,blindT:0,losT:0,slot:-1,goal:null,path:null,pathT:0,replanT:rand(0,.3),tok:false}; // AI state (enemy-ai.js, nav.js)
   if(type==='mini'){ e.mini=true; e.stT=rand(.8,1.6); }
   if(type==='heavy'){ e.cd=rand(1.5,2.5); e.side=1; }
@@ -17,14 +17,17 @@ function spawnEnemy(type,pos,elite=false,o={}){
   e.turnFirst=!!(model.legs&&model.hips&&def.speed>0); e.byaw=0; // mechs turn their body before they walk (enemy-ai.js steer)
   if(def.init) def.init(e,o);
   const R=sortie?sortie.rule:{}, hm=roomHpScale();
-  e.hp*=hm*(o.hpK||1); if(o.minion) e.minion=true; e.pos=pos.clone(); e.vel=new V3(); e.flash=0; e.t=0; e.born=0; e.yaw=0; e.stun=0; e.wake=.9; e.burn=0; e.slow=0;
+  e.hp*=hm*(o.hpK||1)*SCALE.mob; if(o.minion) e.minion=true; e.pos=pos.clone(); e.vel=new V3(); e.flash=0; e.t=0; e.born=0; e.yaw=0; e.stun=0; e.wake=.7; e.burn=0; e.slow=0;
   // juice: springs, knockback, and the drop-in from the light pillar
   e.jz=juiceState(); e.kx=e.kz=0; e.hdx=0; e.hdz=0; e.dropY=o.noDrop?0:9; e.dropV=0; e.standT=0; e.heavyK=def.cost>=2?.45:1;
   if(o.noDrop){ e.born=.5; e.wake=.3; }
   if(elite){ e.elite=true; e.hp*=3.2; e.sc*=1.3; e.r*=1.25; e.model.mats[0].color.lerp(new THREE.Color(0xffc83a),.45);
     const ring=new THREE.Mesh(new THREE.RingGeometry(.9,1.05,32),addMat(0xffc83a,.8)); ring.rotation.x=-Math.PI/2; ring.position.y=.05; ring.userData.nofit=1; e.model.g.add(ring);
     if(R.corruptElites){ corruptModel(e.model,.4); e.hp*=1.2; e.corrupt=true; } }
+  // the hunted elite (Hunt rooms) runs faster and escapes when the timer ends
+  if(o.hunt){ e.hunt=true; e.speed*=1.25; }
   e.maxHp=e.hp;
+  if(elite) applyAffixes(e,o.affix);
   scene.add(e.model.g,e.model.shadow); e.model.g.position.copy(pos);
   enemies.push(e);
   if(!o.noDrop){ const p=new THREE.Mesh(box(1.2,30,1.2),addMat(e.angel?0xffe7a0:0xff5a3a,.7)); p.position.set(pos.x,15,pos.z);
@@ -32,6 +35,29 @@ function spawnEnemy(type,pos,elite=false,o={}){
     groundRing(pos,ARENAS[stage].theme.edge,2.5,.5); }
   return e;
 }
+/* elite affixes (AFFIX in data.js): 1-2 random ones (corrupted elites and the hunted one: 1, no Blinker on a fleeing or static elite) */
+function applyAffixes(e,list){
+  let ks=Object.keys(AFFIX).filter(k=>!(k==='blinker'&&(e.hunt||!e.speed))&&!(k==='swift'&&!e.speed));
+  const n=e.corrupt||e.hunt?1:Math.random()<.45?2:1; e.affix=Array.isArray(list)?list.filter(k=>AFFIX[k]):[];
+  while(!list&&e.affix.length<n&&ks.length){ const k=ks.splice((Math.random()*ks.length)|0,1)[0]; e.affix.push(k); }
+  for(const k of e.affix){
+    if(k==='swift'){ e.speed*=1.4; e.cdK=(e.cdK||1)*1.3; }
+    if(k==='shielded'){ const mx=e.maxHp*.45; e.esh={hp:mx,max:mx,cd:0}; const s=new THREE.Mesh(new THREE.SphereGeometry(e.r*1.15,16,12),addMat(0x5fe0ff,.18)); s.position.y=1.5; s.userData.nofit=1; e.model.g.add(s); e.esh.m=s; }
+    if(k==='blinker') e.blinkT=rand(2.5,4);
+    if(k==='summoner') e.sumT=rand(3,5);
+    if(k==='volatile') e.volatile=true; }
+  e.plate=elitePlate(e); scene.add(e.plate);
+}
+// nameplate above an elite: its name and affixes (a canvas sprite that always faces the camera)
+function elitePlate(e){
+  const cv=document.createElement('canvas'); cv.width=320; cv.height=80; const g=cv.getContext('2d'); g.textAlign='center'; g.lineJoin='round';
+  const line=(txt,y,font,col)=>{ g.font=font; g.lineWidth=6; g.strokeStyle='#0a0610'; g.strokeText(txt,160,y); g.fillStyle=col; g.fillText(txt,160,y); };
+  line(((e.corrupt?'CORRUPTED ':'')+(e.hunt?'HUNTED ':'ELITE ')+e.def.name).toUpperCase(),30,'700 26px "Barlow Condensed",Arial,sans-serif',e.corrupt?'#d8a0ff':'#ffc83a');
+  if(e.affix.length) line(e.affix.map(k=>AFFIX[k].name).join(' · '),66,'600 24px "Barlow Condensed",Arial,sans-serif','#ffffff');
+  const tex=new THREE.CanvasTexture(cv), sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthTest:false,depthWrite:false}));
+  sp.scale.set(mobileMode?6.4:5.6,mobileMode?1.6:1.4,1); sp.renderOrder=20; sp.userData.h=(e.fly?4.3:3)*e.sc/(e.def.sc||1)+.4; return sp;
+}
+function dropPlate(e){ if(!e.plate) return; scene.remove(e.plate); e.plate.material.map.dispose(); e.plate.material.dispose(); e.plate=null; }
 function flashModel(e){ e.model.mats.forEach(m=>m.emissive.setHex(0xffffff)); e.flash=.07; }
 function unflash(e){ e.model.mats.forEach(m=>m.emissive.setHex(0)); }
 // noProc: damage from a proc (no on-hit procs, and a kill from it triggers no on-kill procs). flat: no crit, Rage or boss bonus.
@@ -44,6 +70,8 @@ function hitEnemy(e,d,pos,dot,noProc,flat){
   // Rage (doubled by Blood Engine): more damage as your armor drops
   if(rs.rage&&!flat) d*=1+.25*rs.rage*(rs.blood?2:1)*(1-player.hp/player.maxHp);
   if(e.shieldT>0) d*=.5;
+  // Shielded affix: the barrier soaks 75% of every hit until it breaks; it comes back after 6 s
+  if(e.esh&&e.esh.hp>0){ const ab=d*.75; e.esh.hp-=ab; d-=ab; e.esh.m.scale.setScalar(1.12); if(e.esh.hp<=0){ e.esh.cd=6; e.esh.m.visible=false; sparks(e.pos.clone().setY(1.6),0x5fe0ff,10,6); sfx('shield'); } }
   // Headshot: small chance to instantly destroy a normal enemy
   if(rs.headshot&&!dot&&e!==boss&&!e.elite&&Math.random()<Math.min(BAL.cap.headshot,.015*rs.headshot)){ d=e.hp+1; crit=true; sparks(pos,0xffffff,10,8); }
   if(sortie) sortie.dmgDealt=(sortie.dmgDealt||0)+Math.max(0,Math.min(d,e.hp));
@@ -70,8 +98,11 @@ function killEnemy(e,byProc){
   if(e===boss){ bossDeath(); return; }
   if(e.type==='spark'&&!e.boomed){ e.boomed=true; queueBlast(e.pos.x,e.pos.z,{t:.12,rad:2.6,dmg:10*ARENAS[stage].hpMul,color:0xffa040,size:.8,skip:e,flat:true}); }
   if(e.ring) e.ring.visible=false;
+  if(e.plate) dropPlate(e);
+  // Volatile affix: a telegraphed blast where it died (hurts you and the other enemies)
+  if(e.volatile&&!e.noLoot) queueBlast(e.pos.x,e.pos.z,{t:.75,rad:3.4,dmg:10*ARENAS[stage].hpMul,hurtP:18,color:0xff3a2a,size:1,skip:e,flat:true});
   // Shardlings split into two smaller copies, twice (capped per room)
-  if(e.type==='shardling'&&(e.gen||0)<2){ let n=0; for(const o of enemies) if(o.type==='shardling'&&!o.dead) n++; for(const s of [-1,1]){ if(n++>=10) break; const c=spawnEnemy('shardling',new V3(clamp(e.pos.x+s*.9,-AX+1,AX-1),0,clamp(e.pos.z,-AZ+1,AZ-1)),false,{gen:(e.gen||0)+1,noDrop:true}); if(c){ c.kx=s*7; c.kz=rand(-3,3); c.elite=false; } } }
+  if(e.type==='shardling'&&(e.gen||0)<2&&!e.noLoot){ let n=0; for(const o of enemies) if(o.type==='shardling'&&!o.dead) n++; for(const s of [-1,1]){ if(n++>=10) break; const c=spawnEnemy('shardling',new V3(clamp(e.pos.x+s*.9,-AX+1,AX-1),0,clamp(e.pos.z,-AZ+1,AZ-1)),false,{gen:(e.gen||0)+1,noDrop:true}); if(c){ c.kx=s*7; c.kz=rand(-3,3); c.elite=false; } } }
   if(sortie.rule.volatile){ const o=rand(0,1); for(let i=0;i<6;i++){ const a=(i+o)/6*Math.PI*2; shoot('e',e.pos.clone().setY(1.6),new V3(Math.sin(a),0,Math.cos(a)),4*eSpd(),8,0xb070ff,{life:3,r:.42}); } }
   const mul=e.elite?3:1, def=e.def||ENEMY.drone;
   score+=(def.score*(1+stage*.5)*mul)|0; kills++;
@@ -88,8 +119,9 @@ function killEnemy(e,byProc){
   if(e.elite) hitstop(75,true);
   shatter(e.model,e.pos,e.hdx,e.hdz,{crystal:angel?0xffd36a:0,cy:angel?2.2:1.4});
   scene.remove(e.model.g,e.model.shadow); enemies.splice(enemies.indexOf(e),1);
-  // Shardling splits and boss summons pay a reduced share, so one Shardling is not worth seven kills
-  const rw=e.gen||e.minion?SPLIT_REWARD:1;
+  // Shardling splits and boss summons pay a reduced share, so one Shardling is not worth seven kills; Survive spawns pay e.rw; leftovers pay nothing
+  if(e.noLoot) return;
+  const rw=(e.gen||e.minion?SPLIT_REWARD:1)*(e.rw==null?1:e.rw);
   const g=def.gold*ECON.killGold[stage]*mul*(sortie.rule.goldMul||1)*rw, gc=ECON.gemChance;
   dropGold(e.pos,g,'kill');
   if(Math.random()<(e.elite?gc.elite:def.cost>=2.5?gc.big:gc.small)*rw) dropPick(e.pos,'gem',1);

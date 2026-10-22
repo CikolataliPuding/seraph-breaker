@@ -44,6 +44,10 @@ function flowDir(x,z,out){
   if(bj>=0&&isFinite(best)&&best<(isFinite(d0)?d0:Infinity)) return out.set(navX(bj)-x,0,navZ(bj)-z).normalize();
   return null;
 }
+// flee direction: uphill on the flow field, i.e. away from the target along real paths (the hunted elite). null in a dead end.
+function fleeDir(x,z,out){ const i=navCell(x,z); if(i<0) return null; let best=isFinite(NAV.dist[i])?NAV.dist[i]:-1, bj=-1;
+  for(let k=0;k<8;k++){ const j=navNb(i,k); if(j<0||!navFree(j)||!isFinite(NAV.dist[j])) continue; if(NAV.dist[j]>best){ best=NAV.dist[j]; bj=j; } }
+  return bj<0?null:out.set(navX(bj)-x,0,navZ(bj)-z).normalize(); }
 // can a walker of radius r go straight from a to b? (every sampled cell free along the line and its two edges: no blocks, no armed traps)
 function walkClear(ax,az,bx,bz,r=0){ const l=Math.hypot(bx-ax,bz-az); if(l<1e-3) return true; const n=Math.ceil(l/.45), px=-(bz-az)/l*r, pz=(bx-ax)/l*r;
   for(let s=1;s<=n;s++){ const k=s/n, x=ax+(bx-ax)*k, z=az+(bz-az)*k; let i=navCell(x,z); if(i>=0&&!navFree(i)) return false;
