@@ -187,6 +187,8 @@ const ECON={
   clearGold:[6,9,12,15],              // per cleared combat/elite room
   gemChance:{small:.008,big:.03,elite:.2},
   firstClear:a=>40+30*a, repeatClear:a=>5+5*a,
+  // farm check (tester.js farmMul): gold and diamonds when replaying an arena 0 / 1 / 2+ below your highest unlocked one
+  farm:[1,.6,.3],
 };
 /* run-only items: elites drop one 25% of the time, bosses always. 4 slots. Stat effects are a bonus:{} like run skills (same buckets and caps);
    add/rem only set flags and must be exact inverses so items can be swapped out. shape + color build the small pickup model (items.js).

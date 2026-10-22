@@ -24,7 +24,8 @@ function showResult(win,bonusG=0,first=false){
   if(!win){ logRoomEnd('death'); clearRun(); if(reached>(P.bestRoom[sortie.a]||0)) P.bestRoom[sortie.a]=reached; }
   $('resEye').textContent=`Arena 0${sortie.a+1} · ${A.name}`+(win?' · clear':'');
   $('resTitle').innerHTML=win?'Arena <em>Clear</em>':'Signal <em>Lost</em>';
-  $('resEarn').innerHTML=`<span class="cur gold"><i></i>+${sortie.gold}</span><span class="cur gem"><i></i>+${sortie.gems}</span>`+(win&&bonusG?`<small>${first?'First clear bonus':'Clear bonus'}: ${bonusG} diamonds</small>`:'')+(!win?'<small>Gold and diamonds you picked up are kept.</small>':'');
+  $('resEarn').innerHTML=`<span class="cur gold"><i></i>+${sortie.gold}</span><span class="cur gem"><i></i>+${sortie.gems}</span>`+(win&&bonusG?`<small>${first?'First clear bonus':'Clear bonus'}: ${bonusG} diamonds</small>`:'')+(!win?'<small>Gold and diamonds you picked up are kept.</small>':'')
+    +(sortie.farm<1?`<small>Replay below your highest arena: rewards ${Math.round(sortie.farm*100)}%</small>`:'')+(sortie.tester?'<small>Tester run: flagged, never ranked</small>':'');
   const mm=Math.floor(playTime/60),ss=Math.floor(playTime%60).toString().padStart(2,'0');
   const rs=runScore(win);
   const st=$('resStats'); st.innerHTML=''; [['Pilot',P.pilot||'Pilot'],['Frame',unit.name],['Rooms cleared',`${rs.rooms} / ${sortie.N}`],['Best room',`${P.bestRoom[sortie.a]||0} / ${sortie.N}`],['Pilot level',sortie.lv],['Kills',kills],['Time',`${mm}:${ss}`],['Damage taken',rs.taken],

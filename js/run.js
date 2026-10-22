@@ -37,7 +37,7 @@ function launchArena(a,saved){
   if(saved) restoreLoadout(saved);
   stage=a; applyTheme(a);
   const A=ARENAS[a], N=A.rooms;
-  sortie={a,N,seed:saved&&Number.isFinite(+saved.seed)?saved.seed|0:(Math.random()*2e9)|0,ri:saved?clamp(saved.ri|0,0,N-1):0,xp:0,lv:1,pendingLv:0,gold:0,gems:0,start:performance.now(),rerolls:1,curses:[],items:[],lastBoss:'',mods:saved?(saved.mods||[]).filter(m=>MODS[m]):(A.mixed?rollMods():[]),rule:{},dmgTaken:0,log:[]};
+  sortie={a,N,tester:!!(DEBUG||saved&&saved.tester),farm:farmMul(a),seed:saved&&Number.isFinite(+saved.seed)?saved.seed|0:(Math.random()*2e9)|0,ri:saved?clamp(saved.ri|0,0,N-1):0,xp:0,lv:1,pendingLv:0,gold:0,gems:0,start:performance.now(),rerolls:1,curses:[],items:[],lastBoss:'',mods:saved?(saved.mods||[]).filter(m=>MODS[m]):(A.mixed?rollMods():[]),rule:{},dmgTaken:0,log:[]};
   choiceQ.length=0; makePlayer();
   $('uName').innerHTML=''; const nm=document.createElement('span'); nm.textContent=P.pilot||'Pilot'; const sm=document.createElement('small'); sm.textContent=' · '+unit.name; const lv=document.createElement('em'); lv.id='lvTxt'; lv.textContent='LV 1'; $('uName').append(nm,sm,lv);
   buildRule(); score=0; kills=0; playTime=0;
@@ -52,7 +52,7 @@ function launchArena(a,saved){
 /* run save: written after every cleared room so a closed tab or app can continue from the next room */
 function saveRun(nextRi){
   if(!sortie||!player||player.dead||nextRi>=sortie.N) return;
-  const r={v:1,a:sortie.a,seed:sortie.seed,ri:nextRi,hp:Math.max(1,Math.round(player.hp)),sp:Math.floor(player.sp),rs:player.rs,lv:sortie.lv,xp:sortie.xp,pendingLv:sortie.pendingLv,rerolls:sortie.rerolls,
+  const r={v:1,a:sortie.a,seed:sortie.seed,tester:!!sortie.tester,ri:nextRi,hp:Math.max(1,Math.round(player.hp)),sp:Math.floor(player.sp),rs:player.rs,lv:sortie.lv,xp:sortie.xp,pendingLv:sortie.pendingLv,rerolls:sortie.rerolls,
     curses:sortie.curses,items:sortie.items.map(i=>i.id||i),lastBoss:sortie.lastBoss,mods:sortie.mods,score,kills,playTime,gold:sortie.gold,gems:sortie.gems,dmgTaken:Math.round(sortie.dmgTaken||0),extra:player.extra,unit:P.unit,weapon:P.weapon,gadgets:P.gadgets,t:Date.now()};
   try{ localStorage.setItem(RUN_KEY,JSON.stringify(r)); }catch(e){}
   if(sortie.ri+1>(P.bestRoom[sortie.a]||0)) P.bestRoom[sortie.a]=sortie.ri+1;
@@ -81,7 +81,7 @@ function restoreRun(r){
 function arenaComplete(){
   if(!player||player.dead||state==='dying'||state==='result') return;
   const a=sortie.a, N=sortie.N, first=(P.bestRoom[a]||0)<N;
-  const bonus=first?ECON.firstClear(a):ECON.repeatClear(a); P.gems+=bonus; sortie.gems+=bonus; logEarn('gems','clear',bonus); logRoomEnd('complete');
+  const bonus=first?ECON.firstClear(a):Math.round(ECON.repeatClear(a)*sortie.farm); P.gems+=bonus; sortie.gems+=bonus; logEarn('gems','clear',bonus); logRoomEnd('complete');
   P.bestRoom[a]=N; P.arenas=Math.max(P.arenas,Math.min(ARENAS.length,a+2)); P.clears++;
   clearRun(); persist(); showResult(true,bonus,first);
 }

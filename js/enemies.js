@@ -127,9 +127,9 @@ function killEnemy(e,byProc){
   // Shardling splits and boss summons pay a reduced share, so one Shardling is not worth seven kills; Survive spawns pay e.rw; leftovers pay nothing
   if(e.noLoot) return;
   const rw=(e.gen||e.minion?SPLIT_REWARD:1)*(e.rw==null?1:e.rw);
-  const g=def.gold*ECON.killGold[stage]*mul*(sortie.rule.goldMul||1)*rw, gc=ECON.gemChance;
+  const g=def.gold*ECON.killGold[stage]*mul*(sortie.rule.goldMul||1)*rw*sortie.farm, gc=ECON.gemChance;
   dropGold(e.pos,g,'kill');
-  if(Math.random()<(e.elite?gc.elite:def.cost>=2.5?gc.big:gc.small)*rw) dropPick(e.pos,'gem',1);
+  if(Math.random()<(e.elite?gc.elite:def.cost>=2.5?gc.big:gc.small)*rw*sortie.farm) dropPick(e.pos,'gem',1);
   if(e.elite&&Math.random()<.25) dropItem(e.pos);
   if(Math.random()<.12*rw) dropPick(e.pos,'heal',.14);
   if(def.xp) gainXp(def.xp*mul*(1+sortie.a*.12)*rw);

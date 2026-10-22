@@ -445,3 +445,8 @@ body.aiming,body.aiming #gl{cursor:none}
 /* dark rooms (main.js updateDark): the light hole follows the pilot; HUD stays above */
 #dark{position:fixed;inset:0;pointer-events:none;z-index:1}
 #bossHud.timer .bossThumb{display:none} #bossHud.timer{grid-template-columns:1fr} #bossHud.timer .lbl{color:var(--gem)} #bossHud.timer #bossBar{grid-column:1} #bossHud.timer #bossBar i{background:var(--gem)}
+/* beta tester badge (saves from before the AI and level update) and the tester code field */
+.badge{display:inline-block;margin-left:6px;padding:1px 6px;border:1px solid var(--gold);color:var(--gold);font-style:normal;font-size:10px;letter-spacing:.16em}
+.row.tester{flex-wrap:nowrap} #testerIn{appearance:none;flex:1;min-width:0;border:1px solid var(--line);background:rgba(12,9,16,.7);color:var(--paper);font-family:var(--f-data);font-size:15px;padding:9px 10px;text-transform:uppercase;letter-spacing:.08em;border-radius:0}
+#testerIn:focus{outline:none;border-color:var(--signal)} #testerNote.ok{color:var(--sp)} #testerNote.bad{color:var(--alert)}
+#dbg select.w,#dbg input.w{width:72px}

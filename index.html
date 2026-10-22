@@ -52,7 +52,7 @@
   <div class="shell">
     <div class="tbar">
       <div class="avatar" id="avatar">01</div>
-      <div class="who"><span>PILOT</span><b id="whoName">[CALLSIGN]</b></div>
+      <div class="who"><span>PILOT <em class="badge" id="betaBadge" hidden>BETA TESTER</em></span><b id="whoName">[CALLSIGN]</b></div>
       <div class="chip cur gold" title="Gold: from every kill, spent on skills"><i></i><span id="wGold">0</span></div>
       <div class="chip cur gem" title="Diamonds: from bosses and first clears, spent in the armory"><i></i><span id="wGems">0</span></div>
     </div>
@@ -114,7 +114,10 @@
           <div class="fld"><span>Controls</span><div class="seg" id="ctrlSeg"><button data-c="auto">Auto</button><button data-c="mobile">Phone</button><button data-c="desktop">Desktop</button></div></div>
           <div class="fld"><span>Mobile shield</span><div class="seg" id="shSeg"><button data-s="auto">Auto</button><button data-s="manual">Manual</button></div></div>
           <label class="chk"><input type="checkbox" id="autoG"> Auto-use gadgets (phone mode)</label>
-          <div class="row"><button class="btn ghost" id="fsBtn">Fullscreen</button><button class="btn ghost" id="resetBtn">Reset all progress</button></div>
+          <div class="fld"><span>Tester code</span><div class="row tester"><input id="testerIn" maxlength="48" autocomplete="off" spellcheck="false" placeholder="XXXXX-XXXXX-XXXXX-..."><button class="btn ghost" id="testerBtn">Unlock</button></div>
+            <p class="note" id="testerNote">For testers only. Tester runs are flagged and never count for rankings.</p>
+            <label class="chk" id="testerToolsL" hidden><input type="checkbox" id="testerTools"> Tester tools in game (reloads the page)</label></div>
+          <div class="row"><button class="btn ghost" id="fsBtn">Fullscreen</button><button class="btn ghost" id="resetBtn">Reset my progress</button></div>
         </div>
       </section>
     </div>
@@ -188,6 +191,7 @@
 <script src="js/core.js?v=12"></script>
 <script src="js/data.js?v=12"></script>
 <script src="js/save.js?v=12"></script>
+<script src="js/tester.js?v=12"></script>
 <script src="js/balance.js?v=12"></script>
 <script src="js/audio.js?v=12"></script>
 <script src="js/renderer.js?v=12"></script>

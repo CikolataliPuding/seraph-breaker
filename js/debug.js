@@ -1,6 +1,9 @@
 // Seraph Breaker · debug.js: Debug tools, only active with ?debug=1 (add &mobile=1 to force mobile mode on desktop): panel, run log overlay (L) with JSON export, and DBG.sim() balance simulation.
 /* ================= DEBUG ================= */
-const QS=new URLSearchParams(location.search), DEBUG=QS.get('debug')==='1';
+// tester tools: only with a valid tester code (tester.js), then via ?debug=1 or the System toggle. Everything here flags the run and the save.
+const QS=new URLSearchParams(location.search), DEBUG=testerOK()&&(QS.get('debug')==='1'||P.testerTools);
+if(DEBUG){ P.testerSave=true; persist(); }
+const flagRun=()=>{ if(sortie) sortie.tester=true; P.testerSave=true; };
 let godMode=false;
 const DBG={
   turbo:1,noRender:false, // fast-forward for headless measurement runs (main.js frame)
@@ -13,6 +16,8 @@ const DBG={
   next(){ if(state!=='fight'||!room) return;
     if(boss&&!boss.dead){ boss.atk='idle'; killEnemy(boss); return; }
     DBG.killAll(); roomCleared(); room.doorPending=false; openDoor(); goNextRoom(); },
+  // tester: start arena a (0-based) at room n
+  go(a,n=1){ launchArena(clamp(a|0,0,ARENAS.length-1)); setTimeout(()=>{ DBG.skipCard(); if(n>1) setTimeout(()=>DBG.jump(n),400); },60); },
   // jump to room n (1-based) of the current arena
   jump(n,force){ if(!sortie||!player) return; n=clamp(n|0,1,sortie.N); clearEnemiesAndShots(); hideOverlays(); $('result').hidden=true; paused=false; sortie.ri=n-2; sortie.force=force||null; sortie.swapped=false; setState('trans',true); stateT=.3; $('fade').classList.add('on'); },
   boss(kind){ if(!sortie) return; DBG.jump(sortie.ri+2>sortie.N?sortie.N:sortie.ri+2,{type:'boss',boss:kind}); },
@@ -48,13 +53,14 @@ function logRoomEnd(result){
     gold,gems,lv:sortie.lv,power:{dps:r2(pw.dps),ehp:r2(pw.ehp),total:r2(pw.power)},enemy:{hp:r2(sc.hp),dmg:r2(sc.dmg),boss:r2(sc.boss)}});
   renderRunLog();
 }
-function runLogJson(){ return JSON.stringify({build:BUILD,unit:P.unit,weapon:P.weapon,core:P.core,tree:P.skills,arena:sortie&&sortie.a+1,earnTotal:sortie&&sortie.earn,rooms:RUNLOG.rooms},null,1); }
+function runLogJson(){ return JSON.stringify({build:BUILD,tester:true,unit:P.unit,weapon:P.weapon,core:P.core,tree:P.skills,arena:sortie&&sortie.a+1,earnTotal:sortie&&sortie.earn,rooms:RUNLOG.rooms},null,1); }
 const sumObj=o=>Object.values(o||{}).reduce((a,b)=>a+b,0);
 function renderRunLog(){
   const el=$('dbgLog'); if(!el||el.hidden) return;
   const live=$('dbgLive'); if(live){ const c=RUNLOG.cur, pw=playerPower(), sc=sortie?enemyScale(sortie.a,sortie.ri,sortie.rule):{hp:1,dmg:1};
     live.textContent=c&&sortie?`R${c.room} ${c.type} · ${(playTime-c.t0).toFixed(1)}s · taken ${Math.round(sortie.dmgTaken-c.taken0)} · dealt ${Math.round(sortie.dmgDealt-c.dealt0)} · kills ${kills-c.kills0}\n`+
       `power dps ×${pw.dps.toFixed(2)} ehp ×${pw.ehp.toFixed(2)} · enemy hp ×${sc.hp.toFixed(2)} dmg ×${sc.dmg.toFixed(2)} · lv ${sortie.lv}`:'no room running'; }
+  const sm=$('dbgSum'); if(sm) sm.textContent=summarizeLog(RUNLOG.rooms).map(A=>`arena ${A.arena}: no-damage ${Math.round(A.noDamageShare*100)}% of ${A.combatRooms} combat rooms · avg ${A.avgDmgPerCombat} dmg · ${A.avgRoomTime}s/room · ${A.goldPerMin} gold/min`).join('\n')||'';
   const t=$('dbgRows'); if(!t) return;
   t.textContent=RUNLOG.rooms.slice(-8).map(r=>`${String(r.room).padStart(2)} ${r.type.padEnd(6)} ${String(r.time).padStart(5)}s -${String(r.dmgTaken).padStart(4)} +${String(r.dmgDealt).padStart(5)} k${String(r.kills).padStart(2)} g${String(sumObj(r.gold)).padStart(4)} d${sumObj(r.gems)} P${r.power.total} E${r.enemy.hp}/${r.enemy.dmg}`).join('\n')||'(no rooms yet)';
 }
@@ -175,8 +181,8 @@ async function measureRun(o={}){
   const a=o.arena||0, saveP=JSON.stringify(P), meta=typeof o.meta==='object'?o.meta:SIM_META[o.meta||'mid'];
   P.skills=JSON.parse(JSON.stringify(meta.skills)); P.core=Object.assign({armor:0,dmg:0,regen:0},meta.core); P.unit=o.unit||'azure'; P.weapon='sig'; P.gadgets=['',''];
   if(o.best!=null) P.arenas=Math.max(P.arenas,o.best+1);
-  RUNLOG.rooms.length=0; DBG.immortal=true; BOT.on=true; DBG.turbo=o.turbo||8; DBG.noRender=!o.render;
-  launchArena(a); const rooms=o.rooms||ARENAS[a].rooms, t0=performance.now();
+  RUNLOG.rooms.length=0; DBG.immortal=true; BOT.on=true; P.testerSave=true; DBG.turbo=o.turbo||8; DBG.noRender=!o.render;
+  launchArena(a); flagRun(); const rooms=o.rooms||ARENAS[a].rooms, t0=performance.now();
   await new Promise(res=>{ const iv=setInterval(()=>{ if(state==='card'||state==='warn') stateT=0; if(state==='cine') endCine();
     if(state==='result'||RUNLOG.rooms.length>=rooms||performance.now()-t0>(o.maxMs||600000)){ clearInterval(iv); res(); } },50); });
   BOT.on=false; DBG.immortal=false; DBG.turbo=1; DBG.noRender=false;
@@ -198,11 +204,14 @@ function initDebug(){
   <label>Item <select id="dbgItem"></select><button data-a="item">Grant</button></label>
   <label>Enemy <select id="dbgEnemy"></select><button data-a="spawn">Spawn</button><button data-a="spawnE">Elite</button></label>
   <label>Boss <select id="dbgBoss"></select><button data-a="boss">Spawn</button></label>
-  <button data-a="mode">Toggle mobile</button><button data-a="log">Run log (L)</button><button data-a="sim">Sim</button><button data-a="hide">Hide</button>`;
+  <label>Arena <select id="dbgArena" class="w"></select> room <input id="dbgARoom" class="w" type="number" min="1" max="50" value="1"><button data-a="go">Start</button></label>
+  <label>Core A/D/R <input id="dbgCA" class="w" type="number" min="0" max="30"><input id="dbgCD" class="w" type="number" min="0" max="30"><input id="dbgCR" class="w" type="number" min="0" max="30"><button data-a="core">Set</button></label>
+  <button data-a="treeMax">Tree max</button><button data-a="treeClr">Tree clear</button><button data-a="gems">+500 gems</button>
+  <button data-a="mode">Toggle mobile</button><button data-a="log">Run log (L)</button><button data-a="sim">Sim</button><button data-a="measure">Measure arena</button><button data-a="hide">Hide</button>`;
   document.body.appendChild(d);
   // live overlay (toggle: L) and the export box
   const lg=document.createElement('div'); lg.id='dbgLog'; lg.hidden=true;
-  lg.innerHTML=`<div class="h"><b>RUN LOG</b><button data-l="export">Export JSON</button><button data-l="sim">Sim arena</button><button data-l="close">✕</button></div><pre id="dbgLive"></pre><pre id="dbgRows"></pre>`;
+  lg.innerHTML=`<div class="h"><b>RUN LOG</b><button data-l="export">Export JSON</button><button data-l="sim">Sim arena</button><button data-l="close">✕</button></div><pre id="dbgLive"></pre><pre id="dbgSum"></pre><pre id="dbgRows"></pre>`;
   document.body.appendChild(lg);
   const ex=document.createElement('div'); ex.id='dbgExport'; ex.hidden=true;
   ex.innerHTML=`<div class="h"><b>EXPORT</b><span id="dbgCopyMsg"></span><button data-l="copy">Copy</button><button data-l="xclose">✕</button></div><textarea id="dbgExportTxt" readonly spellcheck="false"></textarea>`;
@@ -213,12 +222,18 @@ function initDebug(){
     if(a==='close') toggleLog(); if(a==='export') exportRunLog(); if(a==='sim') exportRunLog(simText()); if(a==='xclose') ex.hidden=true; if(a==='copy') exportRunLog($('dbgExportTxt').value); }); });
   setInterval(()=>{ if(!lg.hidden) renderRunLog(); },250);
   const fill=(id,obj)=>{ const s=$(id); if(!s||!obj) return; s.innerHTML=Object.keys(obj).map(k=>`<option>${k}</option>`).join(''); };
+  $('dbgArena').innerHTML=ARENAS.map((A,i)=>`<option value="${i}">${i+1} ${A.name}</option>`).join(''); ['A','D','R'].forEach((k,i)=>$('dbgC'+k).value=P.core[['armor','dmg','regen'][i]]);
   fill('dbgSkill',typeof RSK!=='undefined'?RSK:null); fill('dbgItem',typeof ITEMS!=='undefined'?ITEMS:null); fill('dbgEnemy',typeof ENEMY!=='undefined'?ENEMY:{drone:1,seraph:1,heavy:1,warden:1}); fill('dbgBoss',BOSSES);
   d.addEventListener('pointerdown',e=>e.stopPropagation());
-  d.addEventListener('click',e=>{ const a=e.target.dataset&&e.target.dataset.a; if(!a) return; const v=id=>$(id).value;
+  d.addEventListener('click',e=>{ const a=e.target.dataset&&e.target.dataset.a; if(!a) return; const v=id=>$(id).value; if(a!=='hide'&&a!=='log') flagRun();
+    if(a==='go') DBG.go(+v('dbgArena'),+v('dbgARoom'));
+    if(a==='core'){ ['armor','dmg','regen'].forEach((k,i)=>P.core[k]=clamp(+v('dbgC'+'ADR'[i])|0,0,CORE_MAX)); persist(); if(player) recalcStats(); toast('Core set'); }
+    if(a==='treeMax'||a==='treeClr'){ TREE.forEach(b=>b.nodes.forEach(n=>P.skills[n.id]=a==='treeMax'?n.max:0)); persist(); if(player) recalcStats(); toast(a==='treeMax'?'Tree maxed':'Tree cleared'); }
+    if(a==='gems'){ P.gems+=500; persist(); }
+    if(a==='measure'){ const ar=+v('dbgArena'); toast('Measuring',`Arena ${ar+1}: the bot plays it fast-forwarded`); measureRun({arena:ar,best:ar}).then(r=>exportRunLog(JSON.stringify(r,null,1)+'\n\n'+runLogJson())); }
     if(a==='next'&&DBG.next) DBG.next(); if(a==='kill') DBG.killAll(); if(a==='god') DBG.god(); if(a==='gold') DBG.gold();
     if(a==='jump'&&DBG.jump) DBG.jump(+v('dbgRoom')); if(a==='skill'&&DBG.skill) DBG.skill(v('dbgSkill')); if(a==='item'&&DBG.item) DBG.item(v('dbgItem'));
     if(a==='spawn') DBG.spawn(v('dbgEnemy')); if(a==='spawnE') DBG.spawn(v('dbgEnemy'),true); if(a==='boss'&&DBG.boss) DBG.boss(v('dbgBoss'));
     if(a==='mode'&&DBG.mode) DBG.mode(); if(a==='hide') d.classList.toggle('min'); if(a==='log') toggleLog(); if(a==='sim') exportRunLog(simText()); });
-  addEventListener('keydown',e=>{ if(e.target&&(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')) return; if(e.code==='KeyN'&&DBG.next) DBG.next(); if(e.code==='KeyK') DBG.killAll(); if(e.code==='KeyG') DBG.god(); if(e.code==='KeyL'&&!e.repeat) toggleLog(); });
+  addEventListener('keydown',e=>{ if(e.target&&(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')) return; if(['KeyN','KeyK','KeyG'].includes(e.code)) flagRun(); if(e.code==='KeyN'&&DBG.next) DBG.next(); if(e.code==='KeyK') DBG.killAll(); if(e.code==='KeyG') DBG.god(); if(e.code==='KeyL'&&!e.repeat) toggleLog(); });
 }

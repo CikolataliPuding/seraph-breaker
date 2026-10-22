@@ -39,19 +39,22 @@ Bir dosyada en üst seviyede tanımlanan her şey (fonksiyonlar, `const`/`let`) 
 | `js/state.js` | Ortak oyun durumu |
 | `js/fx.js` | Görsel efektler |
 | `js/juice.js` | Oyun hissi: hitstop, yavaş çekim, yaylar (`spring`), vuruş tepkisi, ölüm parçaları |
-| `js/rooms.js` | Oda kurulumu, engeller, kapı, zemin tehlikeleri, düşman dalgaları (`buildRoom`, `composeRoom`, `startRoom`) |
+| `js/tester.js` | Tester kodu (sadece SHA-256 özeti), beta rozeti, farm kontrolü (`farmMul`) |
+| `js/rooms.js` | Oda kurulumu, engeller, kapı, zemin tehlikeleri, rol tabanlı kompozisyon ve oda tipleri (`buildRoom`, `composeRoom`, `startCombat`, `startRoom`) |
+| `js/nav.js` | Düşman navigasyonu: oda ızgarası, flow field, görüş haritası, A* yollar, açı slotları, saldırı jetonları |
+| `js/traps.js` | Tuzaklar (`~`): testere rayı, diken karoları, ışık sütunları |
 | `js/bullets.js` | Mermiler |
 | `js/enemies.js` | Düşman oluşturma, hasar ve ölüm (`spawnEnemy`, `hitEnemy`, `killEnemy`) |
 | `js/skills.js` | Tecrübe, yetenek ruleti, melek/şeytan teklifleri, orbitler ve yetenek etkileri |
 | `js/items.js` | Eşya düşürme, 4 slot ve takas |
 | `js/player.js` | Oyuncu, özel hareketler, aletler ve silahlar (`weaponUpdate`) |
-| `js/enemy-ai.js` | Düşman davranışları (`AI` ve `ANIM` tabloları) |
+| `js/enemy-ai.js` | Düşman davranışları rollerle (`AI`, `ATK` ve `ANIM` tabloları), hareket (`steer`), elit nitelikleri |
 | `js/bosses.js` | Boss saldırıları (`bossTick`), boss parçaları ve sinematik giriş |
-| `js/run.js` | Arena koşusu: oda sırası, boss seçimi, koşu kaydı ve devam |
+| `js/run.js` | Arena koşusu: tohumlu koşu planı (`arenaPlan`, `PACING`), boss seçimi, koşu kaydı ve devam |
 | `js/flow.js` | Oda geçişleri, sonuç ekranı, duraklatma |
 | `js/ui-hangar.js` | Hangar menüsü ve alt menü |
 | `js/ui-warmap.js` | Arena seçimi, cephanelik, Core + yetenek ağacı, birim ve ayar panelleri |
-| `js/debug.js` | `?debug=1` ile açılan test paneli |
+| `js/debug.js` | Tester kodu ile açılan test paneli, koşu kaydı, simülasyon, otomatik pilot ve ölçüm (`DBG.measure`) |
 | `js/main.js` | Oyun döngüsü (`frame`) ve başlatma. Her zaman en son yüklenir. |
 
 Yeni bir dosya eklersen `index.html`'de doğru sıraya bir `<script src="js/...?v=N">` satırı ekle (aynı `?v=` numarasıyla).
@@ -75,7 +78,8 @@ Kolay başlangıç fikirleri:
 - **Denge ayarı:** Silah hasarları `js/player.js` içindeki `weaponUpdate`, düşman canları `js/data.js` içindeki `ENEMY`, boss canları `BOSSES`, arena zorluğu `ARENAS` (`hpMul`, `dmgMul`, `bossMul`), odadan odaya büyüme `SCALE`, cap'ler `BAL`, ekonomi `ECON`. Bir değişikliğin etkisini görmek için `?debug=1` ile açıp konsolda `DBG.sim()` çalıştır.
 - **Yeni koşu yeteneği:** `js/data.js` içindeki `RSK` listesine `{name, d, rarity, max, icon, bonus}` ile ekle (`apply` sadece yan etkiler için; `bonus` cap'lere ve kart önizlemesine kendiliğinden girer), ikonunu `IC`'ye koy. Stat yetenekleri sadece `bonus` ister; özel etkiler `player.rs.<id>` okunarak `js/enemies.js` (`hitEnemy`, `killEnemy`) ya da `js/bullets.js` içine yazılır.
 - **Yeni eşya:** `ITEMS` listesine `{name, d, rarity, icon, shape, color, bonus}` ekle. Stat dışı bayraklar için `add` ve `rem` kullan; birbirinin tersi olmalı ki eşya takas edilebilsin.
-- **Yeni düşman:** `ENEMY` listesine ekle, `js/enemy-ai.js` içindeki `AI` ve `ANIM` tablolarına birer fonksiyon yaz, bir arenanın `mobs` listesine koy.
+- **Yeni düşman:** `ENEMY` listesine ekle (`role`, `tag`, `mass`, gerekiyorsa `band`), `js/enemy-ai.js` içindeki `AI` ve `ANIM` tablolarına birer fonksiyon yaz (hazır yardımcılar: `holdBand`, `chase`, `seek`, `attackCycle`), bir arenanın `mobs` listesine ve istersen `COMPS` şablonlarına koy.
+- **Yeni oda tipi ya da tempo:** `ROOM_KINDS` ve `PACING` (`js/data.js`); başlangıcı `startCombat` (`js/rooms.js`), oda içindeki akışı `roomKinds` (`js/main.js`).
 
 ## İyi bir PR için
 
