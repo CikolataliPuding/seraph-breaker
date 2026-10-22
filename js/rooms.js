@@ -31,15 +31,17 @@ function buildRoom(hx,hz,grid,withDoor){
     const arrow=new THREE.Mesh(new THREE.ConeGeometry(.6,1.2,3),basic(0x7dff9a,true,.8)); arrow.rotation.x=-Math.PI/2; arrow.position.set(0,.2,-hz+1.6); arrow.visible=false; roomGroup.add(arrow);
     door={bar,arrow,open:false};
   }
+  const trapCells=[];
   if(grid){
     const cols=grid[0].length, rows=grid.length, flip=Math.random()<.5, cx=2*hx/cols, cz=2*hz/rows, bm=toon(t.block);
     grid.forEach((row,r)=>{ for(let c0=0;c0<cols;c0++){ const c=flip?cols-1-c0:c0, ch=row[c0]; if(ch==='.') continue;
       const x=-hx+cx*(c+.5), z=-hz+cz*(r+.5);
       if(ch==='#'){ const b=part(box(cx,1.5,cz),bm,roomGroup,x,.75,z,.1); b.receiveShadow=true; const s=new THREE.Mesh(box(cx+.04,.12,cz+.04),basic(t.edge,false)); s.position.y=.7; b.add(s); obstacles.push({x0:x-cx/2,x1:x+cx/2,z0:z-cz/2,z1:z+cz/2,kind:'block'}); }
-      else { const w=new THREE.Mesh(box(cx,.06,cz),basic(t.water,false)); w.position.set(x,.04,z); roomGroup.add(w); const gl=new THREE.Mesh(box(cx*.7,.07,cz*.7),addMat(0xffffff,.12)); gl.position.set(x,.05,z); roomGroup.add(gl); obstacles.push({x0:x-cx/2,x1:x+cx/2,z0:z-cz/2,z1:z+cz/2,kind:'water'}); }
+      else trapCells.push({x,z});
     } });
   }
   buildNav(grid?grid[0].length*2:0,grid?grid.length*2:0);
+  buildTraps(trapCells,grid?2*hx/grid[0].length:2,grid?2*hz/grid.length:2);
   fitCamera();
 }
 function buildBossRoom(){
@@ -131,7 +133,7 @@ function buildGates(){ room.gates=[{x:0,z:-AZ+1.2,side:0},{x:-AX+1.2,z:-3,side:-
 /* room kinds (ROOM_KINDS): how a combat room starts. roomUpdate (main.js) runs the waves, the Survive / Hunt timers and the dark overlay. */
 function startCombat(spec,tag){
   const K=ROOM_KINDS[spec.kind]||ROOM_KINDS.normal, waves=composeRoom(spec);
-  addHazards(spec.kind==='gauntlet'?7:0);
+  if(spec.kind==='gauntlet'){ addRandomTraps(4+Math.min(2,sortie.a),2*AX/11,2*AZ/15); addHazards(3); } else addHazards();
   room.timer=null; room.dark=false;
   if(spec.kind==='ambush'){ room.ambushT=.7; room.ambush=waves[0]; spawnQ=[]; }
   else if(spec.kind==='reinforce'){ buildGates(); spawnWave(waves[0]); spawnQ=waves.slice(1); room.waveMode='gate'; room.waveT=9; }
@@ -147,7 +149,7 @@ function startRoom(i,force){
   clearEnemiesAndShots();
   room={type,kind:spec.kind,spec,cleared:false,hurt:false,completeT:0,boss:type==='boss'?(force&&force.boss||pickBoss()):null};
   if(type==='boss'){ buildBossRoom(); player.pos.set(0,0,AZ-3); }
-  else { buildRoom(roomHalfX(),ROOM_Z,type==='angel'?SANCTUM:pickOne(ROOMS),true); player.pos.set(0,0,AZ-1.5); }
+  else { buildRoom(roomHalfX(),ROOM_Z,type==='angel'?SANCTUM:ROOMS[DBG.layout]||pickOne(ROOMS),true); player.pos.set(0,0,AZ-1.5); }
   player.vel.set(0,0,0); camTarget.set(mobileMode?0:player.pos.x,0,mobileMode?mobileCamZ(player.pos.z):player.pos.z);
   if(typeof onRoomStart==='function') onRoomStart();
   logRoomStart(type);

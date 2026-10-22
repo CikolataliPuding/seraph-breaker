@@ -4,6 +4,7 @@ const QS=new URLSearchParams(location.search), DEBUG=QS.get('debug')==='1';
 let godMode=false;
 const DBG={
   turbo:1,noRender:false, // fast-forward for headless measurement runs (main.js frame)
+  layout:null, // ROOMS index to force for the next rooms (testing a layout)
   god(on=!godMode){ godMode=on; toast(godMode?'God mode on':'God mode off'); return godMode; },
   killAll(){ for(let k=0;k<5;k++) enemies.slice().forEach(e=>{ if(!e.dead&&e!==boss) killEnemy(e); }); spawnQ=[]; },
   skipCard(){ if(state==='card'){ stateT=0; } if(state==='warn'){ stateT=0; } if(state==='cine') endCine(); },
@@ -143,6 +144,7 @@ function botTick(dt){
   for(const e of enemies){ if(e.dead) continue; if(e.shell&&e.shell.t<1.2-BOT.react) flee(e.shell.x,e.shell.z,3,3); if(e.atk===ATK.slam&&e.ph==='tele'&&e.phMax-e.phT>BOT.react) flee(e.pos.x,e.pos.z,e.def.slam+1.3,4); if(e.st==='blink') flee(e.pos.x,e.pos.z,3.4,4); if(e.ph==='charge'||e.st==='roll') flee(e.pos.x,e.pos.z,4,2); }
   for(const s of shocks){ if(s.hit||s.friendly) continue; const df=Math.hypot(p.pos.x-s.x,p.pos.z-s.z)-s.r; if(df>0&&df<1.6&&Math.random()<BOT.skill) dashDir=new V3(s.x-p.pos.x,0,s.z-p.pos.z).normalize(); else if(df>0&&df<s.max-s.r+1) flee(s.x,s.z,s.max+1.5,2.5); }
   for(const m of emines) flee(m.x,m.z,2.4,2);
+  for(const t of traps){ if(!trapDanger(t)) continue; if(t.kind==='saw') flee(t.x,t.z,t.r+1.7,3); else for(const c of t.cells) flee(c.x,c.z,t.cw*.75+.9,3); }
   for(const h of hazards) if(h.ph>=1||h.t<.3&&h.ph===0) flee(h.x,h.z,2.4,2.5);
   // spacing: circle the nearest enemy at 6-10 units, switch direction now and then
   BOT.sideT-=dt; if(BOT.sideT<=0){ BOT.sideT=rand(1.4,3); BOT.side=Math.random()<.5?-1:1; }

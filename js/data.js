@@ -220,16 +220,16 @@ const CURSES={
    (see roomSpec in run.js): every 10-room block ends with a boss. mobs unlock in list order as the run goes on (3 at first, one more every 4 rooms);
    bosses are drawn from the pool, never twice in a row, and planned ahead so the rooms before a boss can teach it. */
 const ARENAS=[
-  {name:'Outer City', rooms:30, hpMul:1, dmgMul:1, bossMul:1, mobs:['drone','spark','lancer','crawler','heavy','howitzer'], bosses:['colossus','hive','arachne'], rule:{}, ruleTxt:'Training ground: no special rule',
+  {name:'Outer City', rooms:30, hpMul:1, dmgMul:1, bossMul:1, mobs:['drone','spark','lancer','crawler','heavy','howitzer'], bosses:['colossus','hive','arachne'], rule:{}, trap:'saw', ruleTxt:'Training ground: no special rule',
    theme:{bg:0x1d1424,hemiS:0xffd6b8,hemiG:0x2a1d3a,ground:0x5a4c64,city:0xffffff,edge:0xff6a1a,rim:0xff7a40,win:0xffc47a,floor:0xa898b0,wall:0x3a3346,block:0x5e5468,water:0xff7a2a},
    colorCss:'#ff6a1a'},
-  {name:'Night Harbor', rooms:40, hpMul:1.3, dmgMul:1.15, bossMul:1.25, mobs:['seraph','drone','lancer','warden','shardling','bulwark'], bosses:['prism','arachne','hive'], rule:{shotSpd:1.15,hazards:.35}, ruleTxt:'Enemy shots fly 15% faster',
+  {name:'Night Harbor', rooms:40, hpMul:1.3, dmgMul:1.15, bossMul:1.25, mobs:['seraph','drone','lancer','warden','shardling','bulwark'], bosses:['prism','arachne','hive'], rule:{shotSpd:1.15,hazards:.35}, trap:'spike', ruleTxt:'Enemy shots fly 15% faster',
    theme:{bg:0x0b1726,hemiS:0xb8d4ff,hemiG:0x10203a,ground:0x3e5470,city:0x9ab4e0,edge:0x3ad0ff,rim:0x3a8aff,win:0x9ae4ff,floor:0x86a2c4,wall:0x22344a,block:0x2f5f9a,water:0x1a74e0},
    colorCss:'#3ad0ff'},
-  {name:"Heaven's Gate", rooms:50, hpMul:1.6, dmgMul:1.3, bossMul:1.5, mobs:['seraph','cherub','warden','censer','heavy','ophan'], bosses:['seraph','throne','archon'], rule:{elitePairs:true,hazards:.4}, ruleTxt:'Elites come in pairs',
+  {name:"Heaven's Gate", rooms:50, hpMul:1.6, dmgMul:1.3, bossMul:1.5, mobs:['seraph','cherub','warden','censer','heavy','ophan'], bosses:['seraph','throne','archon'], rule:{elitePairs:true,hazards:.4}, trap:'pillar', ruleTxt:'Elites come in pairs',
    theme:{bg:0x2b1a26,hemiS:0xfff0d0,hemiG:0x3a2638,ground:0x7a6670,city:0xe2c8d8,edge:0xffd36a,rim:0xffb060,win:0xfff0b0,floor:0xd8c6cc,wall:0x8a7480,block:0xf0e8f2,water:0xffd36a},
    colorCss:'#ffd36a'},
-  {name:'Fallen Sky', rooms:50, hpMul:1.9, dmgMul:1.45, bossMul:1.8, mixed:true, mobs:['drone','lancer','seraph','spark','crawler','cherub','shardling','warden','heavy','censer','howitzer','bulwark','ophan'], bosses:'all', rule:{hazards:.45,corruptElites:true}, ruleTxt:'Both factions, corrupted elites, 2 random modifiers',
+  {name:'Fallen Sky', rooms:50, hpMul:1.9, dmgMul:1.45, bossMul:1.8, mixed:true, mobs:['drone','lancer','seraph','spark','crawler','cherub','shardling','warden','heavy','censer','howitzer','bulwark','ophan'], bosses:'all', rule:{hazards:.45,corruptElites:true}, trap:'mix', ruleTxt:'Both factions, corrupted elites, 2 random modifiers',
    theme:{bg:0x170e22,hemiS:0xe0c8ff,hemiG:0x22123a,ground:0x4a3a64,city:0xb8a0e0,edge:0xb070ff,rim:0xff4ad0,win:0xd8a0ff,floor:0x9a8ab8,wall:0x2e2244,block:0x5a3a8a,water:0xb070ff},
    colorCss:'#b070ff'},
 ];
@@ -358,7 +358,11 @@ for(const k of Object.keys(CORRUPT_DONOR)){ const b=BOSSES[k], dn=CORRUPT_DONOR[
   BOSSES['x_'+k]=Object.assign({},b,{name:'Corrupted '+b.name.replace(/^The /,''),cls:b.cls+' · Corrupted',epi:'The void got inside it. Same frame, new tricks, more armor.',threat:Math.min(5,b.threat+1),warn:'CORRUPTED SIGNAL · '+b.warn,hp:Math.round(b.hp*1.35),form:k,corrupt:true,gold:Math.round(b.gold*1.3),gems:Math.round(b.gems*1.3),
     pool:b.pool.map((p,i)=>p.concat(dn.slice(0,i===0?1:2)))}); }
 /* hand-built room layouts: 11 columns × 15 rows of cells (22 × 30 units on desktop, 20 × 30 on phones). Row 0 is the door side, the last row the entry.
-   # block (stops movement and most shots) · ~ hazard canal (stops movement only) · . open floor. Keep row 0 and the last two rows open in the middle. */
+   # block (stops movement and most shots) · ~ trap (walkable; a run of ~ is one trap: a saw rail, spike tiles or light pillars by arena, see TRAPS)
+   · . open floor. Keep row 0 and the last two rows open in the middle. */
+/* trap tiles (traps.js). dmg: to you (the room damage curve applies) · edmg: to enemies (× the room's enemy armor scale) · cd: seconds between hits
+   on the same target. saw: speed along its rail, r: blade radius. spike / pillar: idle, warn (the telegraph) and act seconds. */
+const TRAPS={saw:{dmg:12,edmg:3,cd:.5,speed:4.2,r:.75},spike:{dmg:12,edmg:3,cd:.6,idle:2.2,warn:.8,act:.9},pillar:{dmg:14,edmg:3.5,cd:.6,idle:2.6,warn:.95,act:1.1}};
 const ROOMS=[
   ['...........','...........','..#.....#..','...........','...........','....#.#....','...........','...........','...........','....#.#....','...........','...........','..#.....#..','...........','...........'],
   ['...........','...........','...#...#...','...........','.~~~...~~~.','...........','...........','.....#.....','...........','...........','...##.##...','...........','...........','...........','...........'],
