@@ -66,6 +66,7 @@ function useGadget(slot){
 }
 const _mv=new V3(),_jv=new V3();
 function moveVec(){
+  if(BOT.on) return _mv.copy(BOT.mv);
   let x=0,z=0;
   // desktop camera is isometric (W = up-left on the ground); the phone camera looks straight at the door (W = -z)
   if(mobileMode){ if(keys.KeyW||keys.ArrowUp)z-=1; if(keys.KeyS||keys.ArrowDown)z+=1; if(keys.KeyA||keys.ArrowLeft)x-=1; if(keys.KeyD||keys.ArrowRight)x+=1; }
@@ -88,6 +89,8 @@ function hurt(d){
 }
 function zeroHp(){
   const p=player; if(godMode){ p.hp=1; return; }
+  // debug measurement runs: the pilot is refilled and the room counts a death
+  if(DBG.immortal){ p.hp=p.maxHp; p.inv=1; if(RUNLOG.cur) RUNLOG.cur.deaths++; return; }
   if(p.lives>0){ p.lives--; p.hp=p.maxHp*.5; p.inv=2; crossBlast(p.pos.clone(),0xffd36a,1.3); clearEnemyShots(p.pos,10); popText('EXTRA LIFE'); return; }
   if(p.st.second&&!p.secondUsed){ p.secondUsed=true; p.hp=p.maxHp*.3; p.inv=1.6; crossBlast(p.pos.clone(),0x7dff9a,1); clearEnemyShots(p.pos,8); return; }
   p.hp=0; p.dead=true; dashArrow.visible=barRing.visible=false; crossBlast(p.pos.clone(),unit.shot,1.6); hitstop(120,true); shatter(p.model,p.pos,0,0,{max:14,spd:1.2}); scene.remove(p.model.g,p.model.shadow); setState('dying'); stateT=1.8; shieldG.visible=false; pBeamO.visible=pBeamC.visible=false; chargeOrb.visible=false; buzz(300);
@@ -117,7 +120,7 @@ function updatePlayer(dt,canAct){
   else { dashArrow.visible=barRing.visible=false; }
   // desktop aim: the mouse ray meets the plane at muzzle height, so shots fly exactly through the crosshair
   if(!mobileMode&&usedMouse){ p.model.muzzle.getWorldPosition(_mz); aimPlane.constant=-_mz.y; ray.setFromCamera(ndc,cam); if(ray.ray.intersectPlane(aimPlane,aimPt)){ p.aimOk=true; _tmp.set(aimPt.x-p.pos.x,0,aimPt.z-p.pos.z); if(_tmp.lengthSq()>.3) p.aim.copy(_tmp.normalize()); } }
-  const fireIn=canAct&&(mouseDown||keys.KeyJ||touchFire);
+  const fireIn=canAct&&(mouseDown||keys.KeyJ||touchFire||BOT.on&&BOT.fire);
   const wantShield=canAct&&!p.st.noHex&&(mobileMode?P.mshield==='manual'&&mShieldHeld:keys.ShiftLeft||keys.ShiftRight||rightDown)&&!busy();
   p.shield=wantShield&&p.overheat<=0&&p.en>0;
   if(p.shield){ p.en-=42*p.st.hexDrain*dt; p.regenDelay=.9; if(p.en<=0){ p.en=0; p.overheat=2.2; p.regenDelay=1.4; p.shield=false; sparks(p.pos.clone().setY(2),0xff4a3a,10,6); if(p.rs.hexnova) hexNova(); } }

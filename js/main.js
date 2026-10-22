@@ -18,7 +18,14 @@ function roomUpdate(dt,edt){
 }
 function frame(now){
   requestAnimationFrame(frame);
-  let dt=clamp((now-last)/1000,0,.033); last=now;
+  const raw=clamp((now-last)/1000,0,.033); last=now;
+  // debug fast-forward (DBG.turbo): several fixed simulation steps per drawn frame, for measurement runs in a headless browser
+  const n=typeof DBG!=='undefined'&&DBG.turbo>1?DBG.turbo:1;
+  for(let i=0;i<n;i++) tick(n>1?1/30:raw,now+i*33);
+  if(!(typeof DBG!=='undefined'&&DBG.noRender)) renderer.render(scene,cam);
+}
+function tick(dt,now){
+  if(BOT.on) botTick(dt);
   const rawDt=dt; if(paused||state==='choice'||state==='result') dt=0;
   const rdt=dt; hsCool=Math.max(0,hsCool-rdt);
   // hitstop freezes the simulation while rendering continues; slow motion only slows enemies and their shots
@@ -138,7 +145,6 @@ function frame(now){
     if(mobileMode){ const pp=$('dashPips').children; for(let i=0;i<pp.length;i++){ pp[i].className=i<p.dashCh?'f':i===p.dashCh?'c':''; pp[i].style.setProperty('--k',i===p.dashCh?p.dashRc/(1.5*p.st.dashCd):0); } }
   }
   updateCrosshair(rawDt);
-  renderer.render(scene,cam);
 }
 
 /* boot */

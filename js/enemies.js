@@ -9,7 +9,8 @@ function spawnEnemy(type,pos,elite=false,o={}){
   const def=ENEMY[type]; if(!def) return null;
   if(!o.force&&enemies.filter(x=>!x.dead&&x!==boss).length>=enemyCap()) return null;
   castShadows=false; const model=def.build(o); castShadows=true;
-  const e={type:def.ai||type,kind:type,def,model,hp:def.hp,r:def.r,speed:def.speed,sc:def.sc,fly:!!def.fly,angel:!!def.angel,side:Math.random()<.5?-1:1,cd:rand(1.2,2.4),walk:0,st:'hover',stT:rand(1.5,3)};
+  const e={type:def.ai||type,kind:type,def,model,hp:def.hp,r:def.r,speed:def.speed,sc:def.sc,fly:!!def.fly,angel:!!def.angel,side:Math.random()<.5?-1:1,cd:rand(1.2,2.4),walk:0,st:'hover',stT:rand(1.5,3),
+    ph:'pos',phT:0,see:false,seeT:0,blindT:0,losT:0,slot:-1,goal:null,path:null,pathT:0,replanT:rand(0,.3),tok:false}; // AI state (enemy-ai.js, nav.js)
   if(type==='mini'){ e.mini=true; e.stT=rand(.8,1.6); }
   if(type==='heavy'){ e.cd=rand(1.5,2.5); e.side=1; }
   if(type==='warden') e.cd=rand(1.8,2.8);
@@ -64,7 +65,7 @@ function hitEnemy(e,d,pos,dot,noProc,flat){
 function aoe(pos,rad,dmg,stun=0,knock=0){ for(const e of enemies.slice()){ if(e.dead)continue; const d=Math.hypot(e.pos.x-pos.x,e.pos.z-pos.z); if(d<rad+e.r*.6){ if(stun&&e!==boss) e.stun=Math.max(e.stun,stun); if(knock&&e!==boss&&d>.01){ e.pos.x+=(e.pos.x-pos.x)/d*knock; e.pos.z+=(e.pos.z-pos.z)/d*knock; } hitEnemy(e,dmg,e.pos.clone().setY(2)); } } }
 // byProc: the kill came from a proc (or is a cleanup kill), so on-kill procs do not fire again
 function killEnemy(e,byProc){
-  if(e.dead) return; e.dead=true;
+  if(e.dead) return; e.dead=true; dropToken(e);
   if(e===boss){ bossDeath(); return; }
   if(e.type==='spark'&&!e.boomed){ e.boomed=true; queueBlast(e.pos.x,e.pos.z,{t:.12,rad:2.6,dmg:10*ARENAS[stage].hpMul,color:0xffa040,size:.8,skip:e,flat:true}); }
   if(e.ring) e.ring.visible=false;

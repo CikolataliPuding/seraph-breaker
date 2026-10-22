@@ -3,6 +3,7 @@
 const QS=new URLSearchParams(location.search), DEBUG=QS.get('debug')==='1';
 let godMode=false;
 const DBG={
+  turbo:1,noRender:false, // fast-forward for headless measurement runs (main.js frame)
   god(on=!godMode){ godMode=on; toast(godMode?'God mode on':'God mode off'); return godMode; },
   killAll(){ for(let k=0;k<5;k++) enemies.slice().forEach(e=>{ if(!e.dead&&e!==boss) killEnemy(e); }); spawnQ=[]; },
   skipCard(){ if(state==='card'){ stateT=0; } if(state==='warn'){ stateT=0; } if(state==='cine') endCine(); },
@@ -23,6 +24,9 @@ const DBG={
   // run log of this session (one entry per room) and the numeric room-schedule simulation
   log(){ return runLogJson(); },
   sim(o){ return simulate(o); },
+  bot(on=!BOT.on){ BOT.on=on; toast(on?'Autopilot on':'Autopilot off'); return on; },
+  measure(o){ return measureRun(o); },
+  immortal:false,
 };
 window.DBG=DBG;
 const r2=v=>Math.round(v*100)/100;
@@ -30,7 +34,7 @@ const r2=v=>Math.round(v*100)/100;
 /* ================= RUN LOG ================= */
 // debug mode only: per room time, damage taken/dealt, kills, gold and diamonds by source, power estimate and enemy scale
 const RUNLOG={rooms:[],cur:null};
-function logRoomStart(type){ if(!DEBUG||!sortie) return; RUNLOG.cur={a:sortie.a,room:sortie.ri+1,type,t0:playTime,taken0:sortie.dmgTaken||0,dealt0:sortie.dmgDealt||0,kills0:kills,earn0:Object.assign({},sortie.earn||{})}; }
+function logRoomStart(type){ if(!DEBUG||!sortie) return; RUNLOG.cur={a:sortie.a,room:sortie.ri+1,type,deaths:0,t0:playTime,taken0:sortie.dmgTaken||0,dealt0:sortie.dmgDealt||0,kills0:kills,earn0:Object.assign({},sortie.earn||{})}; }
 // 'clear' only stamps the clear time; the entry closes when you leave the room (exit), die or finish the arena, so pickups collected after the clear still count
 function logRoomEnd(result){
   if(!DEBUG||!RUNLOG.cur||!sortie) return; const c=RUNLOG.cur;
@@ -39,7 +43,7 @@ function logRoomEnd(result){
   const e=sortie.earn||{}, gold={}, gems={};
   for(const k in e){ const d=Math.round(e[k]-(c.earn0[k]||0)); if(!d) continue; const [cur,src]=k.split(':'); (cur==='gold'?gold:gems)[src]=d; }
   const pw=playerPower(), sc=enemyScale(sortie.a,sortie.ri,sortie.rule);
-  RUNLOG.rooms.push({arena:c.a+1,room:c.room,type:c.type,result,time:r2(c.clearT!=null?c.clearT:playTime-c.t0),dmgTaken:Math.round((sortie.dmgTaken||0)-c.taken0),dmgDealt:Math.round((sortie.dmgDealt||0)-c.dealt0),kills:kills-c.kills0,
+  RUNLOG.rooms.push({arena:c.a+1,room:c.room,type:c.type,result,deaths:c.deaths,time:r2(c.clearT!=null?c.clearT:playTime-c.t0),dmgTaken:Math.round((sortie.dmgTaken||0)-c.taken0),dmgDealt:Math.round((sortie.dmgDealt||0)-c.dealt0),kills:kills-c.kills0,
     gold,gems,lv:sortie.lv,power:{dps:r2(pw.dps),ehp:r2(pw.ehp),total:r2(pw.power)},enemy:{hp:r2(sc.hp),dmg:r2(sc.dmg),boss:r2(sc.boss)}});
   renderRunLog();
 }
@@ -114,6 +118,70 @@ function simulate(o={}){
     builds.forEach(bd=>{ const r=out.rooms.find(x=>x.build===bd&&x.room===n); row[bd+' lv']=r.lv; row[bd+' power']=r.power; row[bd+' mob pressure']=r.pressure; if(!(n%10)) row[bd+' boss pressure']=r.bossPressure; }); return row; });
   if(o.print!==false){ console.log(`Seraph Breaker sim · arena ${a+1} (${A.name}) · meta ${out.meta} · ${trials} trials`); console.table(out.table); console.table(out.econ); }
   return out;
+}
+/* ================= AUTOPILOT + MEASUREMENT ================= */
+/* a scripted "average player" for headless measurement runs: keeps 6-10 units from the nearest enemy and circles it, sidesteps shots on a
+   collision course (dashes when one is about to land), steps out of telegraphed rings (slams, shells, blasts, Spark fuses, mines, traps),
+   fires at the nearest visible enemy without leading, uses the special when ready and picks skill cards at random. */
+const BOT={on:false,mv:new V3(),fire:false,side:1,sideT:0,skill:.7};
+function botTick(dt){
+  if(!BOT.on||!player||player.dead) return; const p=player, mv=BOT.mv.set(0,0,0); BOT.fire=false;
+  if(state==='choice'){ if((!spin||spin.left<=0)&&chCfg&&performance.now()>ignoreClickUntil){ const n=chCfg.options.length; pickChoice((Math.random()*n)|0); } return; }
+  if(state!=='fight') return;
+  const add=(x,z,w)=>{ const l=Math.hypot(x,z)||1; mv.x+=x/l*w; mv.z+=z/l*w; };
+  const tgtE=autoTarget()||nearestFoe(p.pos,40); let dashDir=null;
+  // shots on a collision course: sidestep, dash when one is about to land (skill = how often the bot reacts in time)
+  for(const b of bullets){ if(b.from!=='e'||b.air&&b.m.position.y>2.4) continue; const rx=p.pos.x-b.m.position.x, rz=p.pos.z-b.m.position.z, vx=b.vel.x, vz=b.vel.z, vv=vx*vx+vz*vz; if(vv<1) continue;
+    const t=(rx*vx+rz*vz)/vv; if(t<0||t>.8) continue; const mx=rx-vx*t, mz=rz-vz*t, miss=Math.hypot(mx,mz); if(miss>1.6) continue;
+    const sx=miss>.05?mx:-vz, sz=miss>.05?mz:vx; add(sx,sz,(1.7-miss)*2.2*(1-t/.8)*BOT.skill); if(t<.2&&miss<1&&Math.random()<BOT.skill) dashDir=new V3(sx,0,sz).normalize(); }
+  const flee=(x,z,r,w)=>{ const dx=p.pos.x-x, dz=p.pos.z-z, d=Math.hypot(dx,dz); if(d<r) add(dx||rand(-1,1),dz||rand(-1,1),w*(1-d/r)+.4); };
+  for(const b of blasts) if(b.hurtP) flee(b.x,b.z,b.rad+1.4,3);
+  for(const e of enemies){ if(e.dead) continue; if(e.shell) flee(e.shell.x,e.shell.z,3,3); if(e.atk===ATK.slam&&e.ph==='tele') flee(e.pos.x,e.pos.z,e.def.slam+1.3,4); if(e.st==='blink') flee(e.pos.x,e.pos.z,3.4,4); if(e.ph==='charge'||e.st==='roll') flee(e.pos.x,e.pos.z,4,2); }
+  for(const s of shocks){ if(s.hit||s.friendly) continue; const df=Math.hypot(p.pos.x-s.x,p.pos.z-s.z)-s.r; if(df>0&&df<1.6&&Math.random()<BOT.skill) dashDir=new V3(s.x-p.pos.x,0,s.z-p.pos.z).normalize(); else if(df>0&&df<s.max-s.r+1) flee(s.x,s.z,s.max+1.5,2.5); }
+  for(const m of emines) flee(m.x,m.z,2.4,2);
+  if(typeof traps!=='undefined') for(const t of traps) if(t.danger&&t.danger()) flee(t.x,t.z,t.r+1.2,3);
+  // spacing: circle the nearest enemy at 6-10 units, switch direction now and then
+  BOT.sideT-=dt; if(BOT.sideT<=0){ BOT.sideT=rand(1.4,3); BOT.side=Math.random()<.5?-1:1; }
+  const seen=autoTarget();
+  if(tgtE&&!seen&&mv.lengthSq()<.3) botGo(tgtE.pos.x,tgtE.pos.z,add); // nothing in sight: walk around the blocks toward the nearest enemy
+  else if(tgtE){ const dx=tgtE.pos.x-p.pos.x, dz=tgtE.pos.z-p.pos.z, d=Math.hypot(dx,dz)||1; if(d<5.5) add(-dx,-dz,1); else if(d>10) add(dx,dz,.8); add(-dz*BOT.side,dx*BOT.side,.55); }
+  if(seen){ const dx=seen.pos.x-p.pos.x, dz=seen.pos.z-p.pos.z, d=Math.hypot(dx,dz)||1; p.aim.set(dx/d,0,dz/d); BOT.fire=true; }
+  else if(door&&door.open) botGo(0,-AZ-1,add);
+  else if(npc&&!npc.used&&npc.kind==='angel') botGo(npc.pos.x,npc.pos.z,add);
+  // stuck on a block while circling: turn the other way
+  if(tgtE&&p.vel.lengthSq()<2&&mv.lengthSq()>.2){ BOT.stuck=(BOT.stuck||0)+dt; if(BOT.stuck>.35){ BOT.stuck=0; BOT.side*=-1; BOT.sideT=rand(1,2); } } else BOT.stuck=0;
+  // keep off the mat edge
+  if(!(door&&door.open)){ if(p.pos.x>AX-2.2) add(-1,0,1.5); if(p.pos.x<-AX+2.2) add(1,0,1.5); if(p.pos.z>AZ-2.2) add(0,-1,1.5); if(p.pos.z<-AZ+2.2) add(0,1,1.5); }
+  const l=mv.length(); if(l>1) mv.divideScalar(l); else if(l<.15) mv.set(0,0,0);
+  if(dashDir) tryDash(dashDir);
+  if(p.sp>=100&&enemies.length>=3) trySpecial();
+}
+// walk to a point around blocks (A* on the nav grid, replanned twice a second)
+function botGo(x,z,add){ const p=player; BOT.pT=(BOT.pT||0)-1/30;
+  if(walkClear(p.pos.x,p.pos.z,clamp(x,-AX+.5,AX-.5),clamp(z,-AZ+.5,AZ-.5),.7)){ add(x-p.pos.x,z-p.pos.z,1); return; }
+  if(!BOT.path||BOT.pT<=0){ BOT.pT=.5; BOT.path=navPath(p.pos.x,p.pos.z,clamp(x,-AX+.5,AX-.5),clamp(z,-AZ+.5,AZ-.5),.7); BOT.pi=0; }
+  const P=BOT.path; if(!P||!P.length){ add(x-p.pos.x,z-p.pos.z,1); return; }
+  while(BOT.pi<P.length-2&&(Math.hypot(P[BOT.pi]-p.pos.x,P[BOT.pi+1]-p.pos.z)<.6||walkClear(p.pos.x,p.pos.z,P[BOT.pi+2],P[BOT.pi+3],.7))) BOT.pi+=2;
+  add(P[BOT.pi]-p.pos.x,P[BOT.pi+1]-p.pos.z,1); }
+// measurement run: the bot plays an arena with a given meta (Core + tree), fast-forwarded and without rendering. Damage is real, death is not:
+// at zero armor the pilot is refilled and the room counts a death. Returns a per-arena summary (no-damage share, time per room, gold per minute).
+async function measureRun(o={}){
+  const a=o.arena||0, saveP=JSON.stringify(P), meta=typeof o.meta==='object'?o.meta:SIM_META[o.meta||'mid'];
+  P.skills=JSON.parse(JSON.stringify(meta.skills)); P.core=Object.assign({armor:0,dmg:0,regen:0},meta.core); P.unit=o.unit||'azure'; P.weapon='sig'; P.gadgets=['',''];
+  if(o.best!=null) P.arenas=Math.max(P.arenas,o.best+1);
+  RUNLOG.rooms.length=0; DBG.immortal=true; BOT.on=true; DBG.turbo=o.turbo||8; DBG.noRender=!o.render;
+  launchArena(a); const rooms=o.rooms||ARENAS[a].rooms, t0=performance.now();
+  await new Promise(res=>{ const iv=setInterval(()=>{ if(state==='card'||state==='warn') stateT=0; if(state==='cine') endCine();
+    if(state==='result'||RUNLOG.rooms.length>=rooms||performance.now()-t0>(o.maxMs||600000)){ clearInterval(iv); res(); } },50); });
+  BOT.on=false; DBG.immortal=false; DBG.turbo=1; DBG.noRender=false;
+  const out=summarizeLog(RUNLOG.rooms); P=normP(JSON.parse(saveP)); persist(); toMenu('home'); return out;
+}
+// per-arena summary of the run log: share of combat rooms cleared without damage, damage and time per room, gold per minute
+function summarizeLog(rows){ const by={};
+  for(const r of rows){ const A=by[r.arena]||(by[r.arena]={arena:r.arena,rooms:0,combat:0,noDmg:0,time:0,gold:0,deaths:0,dmg:0,bossT:0,bosses:0});
+    A.rooms++; A.time+=r.time; A.gold+=sumObj(r.gold); A.deaths+=r.deaths||0;
+    if(r.type==='boss'){ A.bosses++; A.bossT+=r.time; } else if(r.type!=='angel'){ A.combat++; A.dmg+=r.dmgTaken; if(r.dmgTaken<=0) A.noDmg++; } }
+  return Object.values(by).map(A=>({arena:A.arena,rooms:A.rooms,combatRooms:A.combat,noDamageShare:r2(A.noDmg/Math.max(1,A.combat)),avgDmgPerCombat:Math.round(A.dmg/Math.max(1,A.combat)),avgRoomTime:r2(A.time/Math.max(1,A.rooms)),avgBossTime:r2(A.bossT/Math.max(1,A.bosses)),goldPerMin:Math.round(A.gold/Math.max(.01,A.time/60)),deaths:A.deaths}));
 }
 function initDebug(){
   if(!DEBUG) return;

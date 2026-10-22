@@ -39,6 +39,7 @@ function buildRoom(hx,hz,grid,withDoor){
       else { const w=new THREE.Mesh(box(cx,.06,cz),basic(t.water,false)); w.position.set(x,.04,z); roomGroup.add(w); const gl=new THREE.Mesh(box(cx*.7,.07,cz*.7),addMat(0xffffff,.12)); gl.position.set(x,.05,z); roomGroup.add(gl); obstacles.push({x0:x-cx/2,x1:x+cx/2,z0:z-cz/2,z1:z+cz/2,kind:'water'}); }
     } });
   }
+  buildNav(grid?grid[0].length*2:0,grid?grid.length*2:0);
   fitCamera();
 }
 function buildBossRoom(){
@@ -46,6 +47,7 @@ function buildBossRoom(){
   const t=ARENAS[stage].theme, bm=toon(t.block), px=AX*.65;
   [[-px,-6.5],[px,-6.5],[-px,6.5],[px,6.5]].forEach(([x,z])=>{ const b=part(box(1.8,2.2,1.8),bm,roomGroup,x,1.1,z,.1); const s=new THREE.Mesh(box(1.84,.14,1.84),basic(t.edge,false)); s.position.y=.8; b.add(s); obstacles.push({x0:x-.9,x1:x+.9,z0:z-.9,z1:z+.9,kind:'block'}); });
   [[7.6,8],[3.2,3.35]].forEach(([a,b])=>{ const hx=new THREE.Mesh(new THREE.RingGeometry(a,b,6),addMat(t.edge,.25)); hx.rotation.x=-Math.PI/2; hx.rotation.z=Math.PI/6; hx.position.y=.03; roomGroup.add(hx); });
+  buildNav();
 }
 /* ground hazards (arena 2+): fire vents and collapsing tiles, always telegraphed before they hurt */
 const HAZ_T={vent:[2.4,1,1.3],tile:[3,1.2,2.5]}; // idle, warn, active (seconds)
@@ -129,7 +131,7 @@ function clearEnemiesAndShots(){
   mines.forEach(m=>scene.remove(m.g)); mines.length=0;
   holes.forEach(h=>scene.remove(h.g)); holes.length=0;
   if(decoy){ scene.remove(decoy.m.g); decoy=null; }
-  hideBeams(); spawnQ=[]; $('bossHud').hidden=true; clearBlasts(); emines.forEach(m=>roomGroup.remove(m.g)); emines.length=0; hazards.length=0;
+  hideBeams(); spawnQ=[]; resetAI(); $('bossHud').hidden=true; clearBlasts(); emines.forEach(m=>roomGroup.remove(m.g)); emines.length=0; hazards.length=0;
 }
 function spawnNpc(kind,pos){
   const m=kind==='angel'?buildSeraph(1.25):buildDevil();
