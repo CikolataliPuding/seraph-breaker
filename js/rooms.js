@@ -115,15 +115,15 @@ function startRoom(i,force){
   logRoomStart(type);
   $('fade').classList.remove('on');
   const tag=`Room ${i+1}/${sortie.N}`;
-  if(type==='boss'){ $('warnTxt').textContent=BOSSES[room.boss].warn; state='warn'; stateT=2.2; $('warn').hidden=false; playTrack('boss'); sfx('beam'); refreshControls(); return; }
-  state='fight'; playTrack('battle');
+  if(type==='boss'){ $('warnTxt').textContent=BOSSES[room.boss].warn; setState('warn'); stateT=2.2; $('warn').hidden=false; playTrack('boss'); sfx('beam'); refreshControls(); return; }
+  setState('fight'); playTrack('battle');
   if(type==='angel'){ spawnNpc('angel',new V3(0,0,-2)); openDoor(); toast('Sanctuary',tag); }
   else { addHazards(); const waves=composeRoom(type==='elite'); spawnWave(waves[0]); spawnQ=waves[1]||[]; toast(type==='elite'?'Elite room':'Hostiles',tag); }
   refreshControls();
 }
 function clearEnemiesAndShots(){
   enemies.forEach(e=>scene.remove(e.model.g,e.model.shadow)); enemies.length=0; boss=null;
-  bullets.forEach(b=>scene.remove(b.m)); bullets.length=0;
+  bullets.forEach(freeBullet); bullets.length=0;
   pickups.forEach(p=>scene.remove(p.m)); pickups.length=0;
   shocks.forEach(s=>scene.remove(s.ring,s.wall)); shocks.length=0;
   mines.forEach(m=>scene.remove(m.g)); mines.length=0;

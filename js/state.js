@@ -5,6 +5,12 @@ const enemies=[],bullets=[],fx=[],pickups=[],shocks=[],mines=[],holes=[];
 let decoy=null,buddy=null,wingman=null,chrono=0,npc=null,obstacles=[],door=null,stage=0;
 const blasts=[],trails=[],emines=[],hazards=[];
 let stateT=0,spawnQ=[],score=0,kills=0,playTime=0,shake=0,toastT=0,choiceBack='fight';
+/* every state change goes through setState. Player death wins: once 'dying' or 'result' is set, only the result screen (from 'dying'),
+   the menu or a new run (newRun=true: launchArena, debug jumps) can follow. Returns false when the change is refused. */
+function setState(next,newRun){
+  if((state==='dying'||state==='result')&&next!==state&&!newRun&&next!=='menu'&&!(state==='dying'&&next==='result')) return false;
+  state=next; return true;
+}
 const playing=()=>['card','prep','warn','cine','fight','trans','bossdeath','dying','choice'].includes(state);
 const ray=new THREE.Raycaster(), aimPlane=new THREE.Plane(new V3(0,1,0),-2.3), aimPt=new V3();
 const eSpd=()=>(1+stage*.08)*(sortie&&sortie.rule.shotSpd||1);
@@ -26,4 +32,8 @@ const hookLineGeo=new THREE.BufferGeometry().setFromPoints([new V3(),new V3()]);
 const hookLine=new THREE.Line(hookLineGeo,new THREE.LineBasicMaterial({color:0xffe0a0})); hookLine.visible=false; hookLine.frustumCulled=false; scene.add(hookLine);
 const hookHead=new THREE.Mesh(new THREE.ConeGeometry(.2,.5,4),basic(0xffe0a0,false)); hookHead.visible=false; scene.add(hookHead);
 const orbitG=new THREE.Group(); scene.add(orbitG);
+// phone mode: dash direction arrow under the mech, and the hex ring of the auto barrier while it is charged
+const dashArrow=new THREE.Group(); (()=>{ const s=new THREE.Shape(); s.moveTo(0,.5); s.lineTo(.4,-.32); s.lineTo(0,-.12); s.lineTo(-.4,-.32); s.closePath();
+  const m=new THREE.Mesh(new THREE.ShapeGeometry(s),addMat(0xffffff,.6)); m.rotation.x=-Math.PI/2; dashArrow.add(m); })(); dashArrow.visible=false; scene.add(dashArrow);
+const barRing=new THREE.Mesh(new THREE.RingGeometry(1.3,1.42,6),addMat(0xffa04a,.25)); barRing.rotation.x=-Math.PI/2; barRing.visible=false; scene.add(barRing);
 const roomGroup=new THREE.Group(); scene.add(roomGroup);

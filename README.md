@@ -21,8 +21,8 @@ Bu proje bir topluluk projesi. Oyunun fikri arkadaş grubumuzdan çıktı; herke
 - **Evrimler:** Twin Shot + Rapid Cycle → Bullet Storm, Burn Rounds + Orbit Blades → Inferno Ring, Chain Spark + Bolt Orbit → Storm Halo, Vampiric Core + Rage → Blood Engine. İki yetenek de maksimumdayken teklif edilir.
 - **Melek ve şeytan:** Melek tamir ya da yetenek verir. Hasar almadan temizlenen odalardan sonra şeytan gelebilir: Glass Cannon, Berserk, Greed ya da Brittle lanetlerinden biri karşılığında güç verir. İstersen "Walk away" diyebilirsin.
 - **Eşyalar:** Elitler %25, bosslar her zaman eşya düşürür. 4 slot var, dolunca hangisini bırakacağını seçersin. Plated Core, Servo Boots, Capacitor, Mine Layer, Thorn Plating, Halo Fragment, Overclock Chip, Lucky Coin ve daha fazlası.
-- **Düşmanlar:** Drone, Heavy, Seraph, Warden ve yeni gelenler: Spark, Crawler, Howitzer, Lancer, Bulwark, Shardling, Cherub, Censer, Ophan. Her saldırının okunabilir bir uyarısı var.
-- **Bosslar:** Iron Colossus, Prism Angel, The Last Seraph, Hive Carrier, Siege Arachne, Ophanim Throne ve Archon. Her bossun sinematik girişi var. Her birinin bir de **Corrupted** sürümü var: mor renk, kristal dikenler, başka bir bosstan ödünç saldırılar.
+- **Düşmanlar:** Drone, Heavy, Seraph, Warden ve yeni gelenler: Spark, Crawler, Howitzer, Lancer, Bulwark, Shardling, Cherub, Censer, Ophan. Her saldırının okunabilir bir uyarısı var. Mermiler bloklardan geçmez; sadece Censer küreleri havada süzülür (gölgesi ve dalış noktası görünür).
+- **Bosslar:** Saldırıları üst üste binmez: her saldırı (füzeleri inip şok dalgaları bitene kadar) tamamlanınca kısa bir nefes payı gelir, ağır saldırı sırasında çağrılan minyonlar ateş etmez. Füzeler havadan gelir: gölgesi ve iniş noktasında kırmızı işaret olur. Şok dalgalarının erişimi yerde kırmızı halkayla, geri sayımı dolan diskle gösterilir; dalganın içinden dash atarsan hasar almazsın (perfect dodge). Iron Colossus, Prism Angel, The Last Seraph, Hive Carrier, Siege Arachne, Ophanim Throne ve Archon. Her bossun sinematik girişi var. Her birinin bir de **Corrupted** sürümü var: mor renk, kristal dikenler, başka bir bosstan ödünç saldırılar.
 - **3 birim:** Azure (hızlı tüfek), Crimson (saçma topu), Verdant (delici mızrak). Her birinin kendi özel hareketi var.
 - **Kalıcı ilerleme:** Altınla **Core** statları (Armor, Damage, Power regen; her biri 30 seviye) ve yetenek ağacı, elmasla 6 silah ve 7 alet. Kayıt tarayıcıda tutulur, eski kayıtlar da açılır.
 - **His:** Vuruşlarda kısa donma (hitstop), geri tepme, düşmanlar parçalarına ayrılarak ölür, mechalar harekete eğilir.
@@ -35,7 +35,7 @@ Bu proje bir topluluk projesi. Oyunun fikri arkadaş grubumuzdan çıktı; herke
 | Tuş | İşlev |
 |---|---|
 | WASD | Hareket |
-| Fare | Nişan + ateş |
+| Fare | Nişan + ateş (savaşta imleç yerine nişangah: düşman üstünde kırmızı, vuruşta X, Rail dolum halkası, Crimson saçılma genişliği) |
 | Space | Atılma (dash) |
 | Shift / sağ tık | Altıgen kalkan |
 | Q | Özel hareket |
@@ -47,8 +47,8 @@ Bu proje bir topluluk projesi. Oyunun fikri arkadaş grubumuzdan çıktı; herke
 
 - **Hareket:** Ekranın alt %60'ında herhangi bir yere dokun ve sürükle, joystick parmağının altında çıkar.
 - **Ateş:** Parmağını kaldır ya da joystick'i ortada tut. Mecha görüş hattındaki en yakın düşmana kendiliğinden ateş eder. Hareket ederken ateş etmezsin; durmak daha güçlü ama daha riskli.
-- **Dash:** Joystick'i hızlıca fırlat ya da iki kere dokun. 2 hakkın var, joystick'in üstündeki çubuklar dolunca yenilenir.
-- **Kalkan:** Kendiliğinden çalışır. Güç 60'ın üstündeyken sana gelen ilk mermiyi durdurur. Işınları sadece yarıya indirir.
+- **Dash:** Joystick'i hızlıca fırlat ya da iki kere dokun. 2 hakkın var, joystick'in üstündeki çubuklar dolunca yenilenir. Yön: fırlatma yönü, yoksa joystick'in yönü, yoksa en son yürüdüğün yön (asla otomatik nişanın kilitlendiği düşman değil). Mechanın altındaki küçük ok dash'in nereye gideceğini gösterir.
+- **Kalkan (Barrier):** Varsayılan *Auto*: güç 60'ın üstündeyken sana gelen ilk mermiyi durdurur (dolu bar 2 blok). Etrafında dönen soluk altıgen halka ve HUD'daki 2 çubuk hazır blokları gösterir, blokta halka parlar, son blok gidince kırılır. Işınları sadece yarıya indirir. Ayarlardan *Mobile shield: Manual* seçilirse sağ altta basılı tutulan bir kalkan butonu çıkar, bilgisayardaki yönlü altıgen kalkan gibi çalışır.
 - **Özel hareket:** Sağ alttaki büyük buton, dolunca parlar. Üstündeki iki küçük buton aletler. Ayarlardan "Auto-use gadgets" açılabilir.
 - **Perfect dodge (iki modda da):** Bir mermi sana çarpmak üzereyken dash atarsan zaman yavaşlar ve özel hareket barın %15 dolar.
 

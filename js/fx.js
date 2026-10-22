@@ -1,6 +1,6 @@
 // Seraph Breaker · fx.js: Visual effects: sparks, rings, cross blasts, bolts, shockwaves, toasts.
 /* ================= FX ================= */
-const G={pB:box(.14,.14,1),pBig:box(.32,.32,1.6),pel:box(.16,.16,.6),mis:box(.16,.16,.5),orb:new THREE.SphereGeometry(.3,10,8),gorb:new THREE.SphereGeometry(.45,14,10),spark:box(.16,.16,.16),plane:new THREE.PlaneGeometry(1,1),ring:new THREE.RingGeometry(.86,1,48),wall:new THREE.CylinderGeometry(1,1,1,48,1,true),coin:new THREE.CylinderGeometry(.26,.26,.07,12),gem:new THREE.OctahedronGeometry(.3,0),puff:new THREE.SphereGeometry(.35,8,6),slash:new THREE.RingGeometry(1.9,3.6,22,1,-Math.PI/2-1.2,2.4),blade:box(.9,.1,.25)};
+const G={pB:box(.14,.14,1),pBig:box(.32,.32,1.6),pel:box(.16,.16,.6),mis:box(.16,.16,.5),orb:new THREE.SphereGeometry(.3,10,8),gorb:new THREE.SphereGeometry(.45,14,10),spark:box(.16,.16,.16),plane:new THREE.PlaneGeometry(1,1),ring:new THREE.RingGeometry(.86,1,48),disc:new THREE.CircleGeometry(1,48),wall:new THREE.CylinderGeometry(1,1,1,48,1,true),coin:new THREE.CylinderGeometry(.26,.26,.07,12),gem:new THREE.OctahedronGeometry(.3,0),puff:new THREE.SphereGeometry(.35,8,6),slash:new THREE.RingGeometry(1.9,3.6,22,1,-Math.PI/2-1.2,2.4),blade:box(.9,.1,.25)};
 function addFx(obj,life,upd,dispose){ scene.add(obj); fx.push({obj,life,max:life,upd,dispose}); }
 function sparks(pos,color,n=8,spd=7){
   if(mobileMode) n=Math.ceil(n*.6);
@@ -26,7 +26,7 @@ function bolt(a,b,color){
 function shockwave(pos,speed,max,color=0xff3a2a,friendly=false){
   const ring=new THREE.Mesh(G.ring,addMat(color,1)); ring.rotation.x=-Math.PI/2; ring.position.set(pos.x,.08,pos.z);
   const wall=new THREE.Mesh(G.wall,addMat(color,.5)); wall.position.set(pos.x,.45,pos.z); wall.scale.y=.9;
-  scene.add(ring,wall); shocks.push({x:pos.x,z:pos.z,r:.5,speed,max,ring,wall,hit:friendly}); shake=Math.max(shake,.5);
+  scene.add(ring,wall); shocks.push({x:pos.x,z:pos.z,r:.5,speed,max,ring,wall,hit:friendly,friendly}); shake=Math.max(shake,.5);
 }
 function beamFlash(from,to,color,w){
   const o=new THREE.Mesh(beamGeo,addMat(color,.8)),c=new THREE.Mesh(beamGeo,addMat(0xffffff,1)); const len=from.distanceTo(to);

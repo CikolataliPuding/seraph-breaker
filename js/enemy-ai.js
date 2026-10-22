@@ -7,8 +7,12 @@ function kite(e,to,d,near,far,str=1){ _w.set(-to.z*e.side*str,0,to.x*e.side*str)
 function lineLen(x,z,dx,dz,max,pad=0){ let t=0; while(t<max){ t+=.4; const px=x+dx*t,pz=z+dz*t; if(Math.abs(px)>AX-1||Math.abs(pz)>AZ-1||inBlock(px,pz,pad,'block')) return Math.max(0,t-.4); } return max; }
 // ground telegraph strip (fades out on its own)
 function teleStrip(pos,dx,dz,len,w,color,life){ const g=new THREE.Group(), mat=addMat(color,.3), pl=new THREE.Mesh(new THREE.PlaneGeometry(w,len),mat); pl.rotation.x=-Math.PI/2; pl.position.z=len/2; g.add(pl); g.position.set(pos.x,.05,pos.z); g.rotation.y=Math.atan2(dx,dz); addFx(g,life,(f,dt,k)=>{ mat.opacity=.18+.22*Math.abs(Math.sin((1-k)*life*9)); }); return g; }
-// lobbed shell (howitzer, mine layers): visual arc, then onLand
-function lobShell(from,to,dur,color,onLand){ const m=new THREE.Mesh(G.orb,basic(color,false)); m.scale.setScalar(1.2); let done=false; addFx(m,dur,(f,dt,k)=>{ const u=1-k; m.position.set(from.x+(to.x-from.x)*u,from.y*(1-u)+7*4*u*(1-u)+.3,from.z+(to.z-from.z)*u); if(k<=.02&&!done){ done=true; onLand&&onLand(); } }); }
+// lobbed shell (howitzer, mine layers): visual arc with a ground shadow, then onLand. marker: a red landing ring (the Howitzer has its own).
+function lobShell(from,to,dur,color,onLand,marker){ const g=new THREE.Group(), m=new THREE.Mesh(G.orb,basic(color,false)); m.scale.setScalar(1.2); const sh=blob(.4); sh.position.y=.04; g.add(m,sh);
+  let mk=null; if(marker){ mk=new THREE.Mesh(G.ring,addMat(0xff3a2a,.8)); mk.rotation.x=-Math.PI/2; mk.position.set(to.x,.07,to.z); mk.scale.setScalar(1.3); g.add(mk); }
+  let done=false; addFx(g,dur,(f,dt,k)=>{ const u=1-k, y=from.y*(1-u)+7*4*u*(1-u)+.3; m.position.set(from.x+(to.x-from.x)*u,y,from.z+(to.z-from.z)*u);
+    sh.position.x=m.position.x; sh.position.z=m.position.z; sh.scale.setScalar(1.1-clamp(y/10,0,.6)); if(mk) mk.material.opacity=.35+.45*Math.abs(Math.sin(u*u*18));
+    if(k<=.02&&!done){ done=true; sh.visible=false; if(mk) mk.visible=false; onLand&&onLand(); } }); }
 // contact damage, with Thorn Plating paying it back
 function contactHurt(e,d){ const before=player.hp; hurt(d); if(player.thorn&&player.hp<before&&!e.dead) hitEnemy(e,d*3*player.st.dmg,e.pos.clone().setY(2),false,true); }
 // Spark explosion: hurts you only when it detonates on its own; it always hurts other enemies (chain reactions are queued and capped)
@@ -68,7 +72,7 @@ const AI={
   },
   shardling(e,dt,to,d,pd,m){
     e.vel.lerp(kite(e,to,d,6,10),Math.min(1,dt*2)); if(Math.random()<dt*.3) e.side*=-1;
-    e.cd-=dt; if(e.cd<=0&&!player.dead){ e.cd=rand(2,2.8); const b=Math.atan2(to.x,to.z); for(let i=-1;i<=1;i++){ const a=b+i*.22; shoot('e',e.pos.clone().setY(1.6*e.sc+.3),new V3(Math.sin(a),0,Math.cos(a)),9*eSpd(),8,0x8fd0ff,{life:.95,r:.4,over:true}); } }
+    e.cd-=dt; if(e.cd<=0&&!player.dead){ e.cd=rand(2,2.8); const b=Math.atan2(to.x,to.z); for(let i=-1;i<=1;i++){ const a=b+i*.22; shoot('e',e.pos.clone().setY(1.6*e.sc+.3),new V3(Math.sin(a),0,Math.cos(a)),9*eSpd(),8,0x8fd0ff,{life:.95,r:.4}); } }
     e.yaw=lerpAngle(e.yaw,Math.atan2(to.x,to.z),Math.min(1,dt*5));
   },
   cherub(e,dt,to,d,pd,m){
@@ -84,14 +88,14 @@ const AI={
   censer(e,dt,to,d,pd,m){
     e.vel.lerp(kite(e,to,d,8,12,.6),Math.min(1,dt*1.5));
     e.cd-=dt; if(e.cd<=0&&!player.dead){ e.cd=rand(3.6,4.6); let live=0; for(const b of bullets) if(b.tag==='censer') live++;
-      if(live<12){ const b0=Math.atan2(to.x,to.z); for(let i=-1;i<=1;i++){ const a=b0+i*.7; shoot('e',e.pos.clone().setY(2.2),new V3(Math.sin(a),0,Math.cos(a)),3.6*eSpd(),10,0xffe9a0,{life:6,r:.6,scale:1.35,home:6,turn:1.1,after:3.6,over:true,tag:'censer'}); } sfx('zap'); } }
+      if(live<12){ const b0=Math.atan2(to.x,to.z); for(let i=-1;i<=1;i++){ const a=b0+i*.7; shoot('e',e.pos.clone().setY(2.2),new V3(Math.sin(a),0,Math.cos(a)),3.6*eSpd(),10,0xffe9a0,{life:6,r:.6,scale:1.35,home:6,turn:1.1,after:3.6,air:'float',tag:'censer'}); } sfx('zap'); } }
     e.yaw=lerpAngle(e.yaw,Math.atan2(to.x,to.z),Math.min(1,dt*3));
   },
   ophan(e,dt,to,d,pd,m){
     e.stT-=dt;
     if(e.st==='tele'){ e.vel.set(0,0,0); if(e.stT<=0){ e.st='roll'; e.dropT=0; } }
     else if(e.st==='roll'){ const r=e.roll; e.vel.set(r.x,0,r.z).multiplyScalar(e.speed); r.done+=e.speed*dt*(e.slow>0?.55:1);
-      e.dropT-=dt; if(e.dropT<=0){ e.dropT=.24; for(const s of [-1,1]) shoot('e',e.pos.clone().setY(1.2),new V3(-r.z*s,0,r.x*s),2.4*eSpd(),9,0xffc040,{life:4,r:.45,over:true}); }
+      e.dropT-=dt; if(e.dropT<=0){ e.dropT=.24; for(const s of [-1,1]) shoot('e',e.pos.clone().setY(1.2),new V3(-r.z*s,0,r.x*s),2.4*eSpd(),9,0xffc040,{life:4,r:.45}); }
       if(pd<e.r+.6&&!player.dead&&!r.hit){ r.hit=true; contactHurt(e,16); }
       if(r.done>=r.len){ e.st='pause'; e.stT=1.2; e.vel.set(0,0,0); e.jz.pop.v=-4; } }
     else { e.vel.multiplyScalar(Math.pow(.02,dt)); // paused: turning, open to fire
@@ -120,6 +124,8 @@ function updateEnemies(dt){
     // drop in with the light pillar, land with a squash and stand up
     if(e.dropY>0){ e.dropV-=40*dt; e.dropY=Math.max(0,e.dropY+e.dropV*dt); if(e.dropY===0){ e.jz.pop.v=-7; e.standT=.35; groundRing(e.pos,0xffffff,1.6,.3); sparks(e.pos.clone().setY(.3),0xc8c0d0,4,4); if(e.sc>1) shake=Math.max(shake,.12); } }
     else e.born=Math.min(1,e.born+dt*3);
+    // attack token: summoned minions hold their fire while their boss runs a heavy attack, then resume at staggered times
+    if(e.minion&&bossHeavy()){ e.cd=Math.max(e.cd,rand(.35,.8)); if(e.st==='hover') e.stT=Math.max(e.stT,.4); if(e.burst) e.burst=0; }
     e.standT=Math.max(0,e.standT-dt);
     if(e.kx||e.kz){ e.pos.x+=e.kx*dt; e.pos.z+=e.kz*dt; const f=Math.exp(-9*dt); e.kx*=f; e.kz*=f; if(Math.abs(e.kx)+Math.abs(e.kz)<.02) e.kx=e.kz=0; }
     if(e.flash>0){e.flash-=dt;if(e.flash<=0)unflash(e);}
@@ -144,7 +150,7 @@ function updateEnemies(dt){
       if(d>far) want.addScaledVector(to,e.speed); else if(d<near) want.addScaledVector(to,-e.speed);
       e.vel.lerp(want,Math.min(1,dt*2)); e.cd-=dt;
       m.eye.scale.setScalar(e.cd<.5?1.3+Math.sin(e.t*40)*.3:1);
-      if(e.cd<=0){ e.cd=rand(2.4,3.2)*(e.elite?.7:1); const n=e.elite?14:10,off=rand(0,1); for(let i=0;i<n;i++){ const a=(i+off)/n*Math.PI*2; shoot('e',e.pos.clone().setY(1.8),new V3(Math.sin(a),0,Math.cos(a)),6*eSpd(),10,0xffc040,{life:4,r:.45,over:true}); } }
+      if(e.cd<=0){ e.cd=rand(2.4,3.2)*(e.elite?.7:1); const n=e.elite?14:10,off=rand(0,1); for(let i=0;i<n;i++){ const a=(i+off)/n*Math.PI*2; shoot('e',e.pos.clone().setY(1.8),new V3(Math.sin(a),0,Math.cos(a)),6*eSpd(),10,0xffc040,{life:4,r:.45}); } }
       e.yaw=lerpAngle(e.yaw,Math.atan2(to.x,to.z),Math.min(1,dt*6));
     } else if(AI[e.type]){ AI[e.type](e,dt,to,d,pd,m); if(e.dead) continue;
     } else {

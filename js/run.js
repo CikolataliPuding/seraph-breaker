@@ -28,7 +28,7 @@ function launchArena(a,saved){
   $('cardNum').textContent=`ARENA 0${a+1} · `+(saved?`CONTINUE · ROOM ${sortie.ri+1}/${N}`:`${N} ROOMS`); $('cardT').textContent=A.name;
   $('cardS').textContent=[A.ruleTxt,...sortie.mods.map(m=>MODS[m].name)].join(' · ');
   const c=$('card'); c.hidden=false; const inner=c.firstElementChild; inner.style.animation='none'; void inner.offsetWidth; inner.style.animation='';
-  state='card'; stateT=2; refreshControls(); playTrack('battle');
+  setState('card',true); stateT=2; refreshControls(); playTrack('battle');
 }
 /* run save: written after every cleared room so a closed tab or app can continue from the next room */
 function saveRun(nextRi){
@@ -60,6 +60,7 @@ function restoreRun(r){
   player.hp=clamp(num(r.hp,player.maxHp),1,player.maxHp); player.sp=clamp(num(r.sp),0,100);
 }
 function arenaComplete(){
+  if(!player||player.dead||state==='dying'||state==='result') return;
   const a=sortie.a, N=sortie.N, first=(P.bestRoom[a]||0)<N;
   const bonus=first?ECON.firstClear(a):ECON.repeatClear(a); P.gems+=bonus; sortie.gems+=bonus; logEarn('gems','clear',bonus); logRoomEnd('complete');
   P.bestRoom[a]=N; P.arenas=Math.max(P.arenas,Math.min(ARENAS.length,a+2)); P.clears++;
