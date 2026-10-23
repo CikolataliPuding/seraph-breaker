@@ -78,7 +78,7 @@ td small{display:block;color:var(--dim);font-family:var(--f-data);font-size:12px
     <div class="eye">Seraph Breaker · Bestiyer taslağı · Arena genişletmesi</div>
     <h1>Şehri saran <em>makineler</em> ve göğün <em>melekleri</em></h1>
     <p class="lede">Mevcut 4 mob ve 3 bossun yanına arenaları dolduracak 9 yeni mob, 4 yeni boss ve bedava çeşitlilik için bir varyant örneği. Hepsi oyunun kendi Three.js parça diliyle çizildi, yani doğrudan models.js'e taşınabilir.</p>
-    <div class="legend"><span>■ = tehdit seviyesi</span><span>A1 Outer City · A2 Night Harbor · A3 Heaven's Gate · A4+ karışık</span></div>
+    <div class="legend"><span>■ = tehdit seviyesi</span><span>A1 Outer City · A2 Night Harbor · A3 Heaven's Gate · A4+ karışık · MS Main Stage</span></div>
   </header>
 
   <nav class="bar" aria-label="Filtre">
@@ -86,9 +86,10 @@ td small{display:block;color:var(--dim);font-family:var(--f-data);font-size:12px
     <button class="chip" id="f-yeni" data-f="yeni" aria-pressed="false">Yeni</button>
     <button class="chip" id="f-mevcut" data-f="mevcut" aria-pressed="false">Mevcut</button>
     <span class="sep" aria-hidden="true"></span>
-    <button class="chip" id="g-all" data-g="all" aria-pressed="true">İki taraf</button>
+    <button class="chip" id="g-all" data-g="all" aria-pressed="true">Hepsi</button>
     <button class="chip" id="g-mak" data-g="Makine" aria-pressed="false">Makine</button>
     <button class="chip" id="g-mel" data-g="Melek" aria-pressed="false">Melek</button>
+    <button class="chip" id="g-sah" data-g="Sahne" aria-pressed="false">Sahne</button>
   </nav>
 
   <section>
@@ -386,8 +387,156 @@ function buildCorrupted(){
   return m;
 }
 
+/* ---- High-Co (oyunun models.js'inden birebir): Main Stage'in tek bossu. Faz I frontman, faz II siyah kanatlı melek ---- */
+const highcoTex={};
+// skin texture baked on a small canvas: optional sleeve tattoo swirls and a white fishnet grid on top
+function skinTex(net,tattoo){
+  const k=(net?'n':'')+(tattoo?'t':''); if(highcoTex[k]) return highcoTex[k];
+  const cv=document.createElement('canvas'); cv.width=cv.height=64; const g=cv.getContext('2d');
+  g.fillStyle='#e0b89c'; g.fillRect(0,0,64,64);
+  if(tattoo){ g.strokeStyle='#4a5660'; g.lineWidth=5; g.lineCap='round';
+    [[4,10,30,4,58,16],[2,30,24,20,60,36],[6,52,34,40,60,58],[14,0,10,30,22,64]].forEach(([a,b,c,d,e,f])=>{ g.beginPath(); g.moveTo(a,b); g.quadraticCurveTo(c,d,e,f); g.stroke(); });
+    g.fillStyle='#5a3a44'; g.beginPath(); g.arc(40,26,7,0,Math.PI*2); g.fill(); }
+  if(net){ g.strokeStyle='#ffffff'; g.lineWidth=2;
+    for(let i=-64;i<128;i+=16){ g.beginPath(); g.moveTo(i,0); g.lineTo(i+64,64); g.moveTo(i,64); g.lineTo(i+64,0); g.stroke(); } }
+  return highcoTex[k]=new THREE.CanvasTexture(cv);
+}
+function buildHighCo(stage=1,scale=2.6){
+  const g=new THREE.Group(), s2=stage===2; let rageStripe=null, MW, MC, MV;
+  const skin=(net,tat)=>new THREE.MeshToonMaterial({color:0xffffff,map:skinTex(net,tat),gradientMap:grad});
+  const MF=toon(0xe0b89c), MZ=toon(0x8a7468), MH=toon(0x120e16), MU=toon(0x3a6ad8), MS=toon(0xbcb8c8), MK=toon(0x1e1a24);
+  const MG=toon(0xc8c2cc), MD=toon(0x4a4450), MB=toon(0xc0904a), ML=toon(0x3a2e2a); // silver hair, dark streak, brass, leather
+  const MT=toon(s2?0x24212c:0xf2f0f4), MP=toon(s2?0x1e1a24:0xe8e6ee);
+  const MA=s2?skin(false,true):skin(true,false), MAT=s2?MA:skin(true,true); // arm skin: fishnet (stage 1) / tattoo sleeves (stage 2)
+  const feather=(w,len,mat,parent,x,y,z,rz,t=.04)=>{ const geo=new THREE.OctahedronGeometry(1,0); geo.scale(w/2,len/2,.03); geo.translate(0,-len/2,0);
+    const f=part(geo,mat,parent,x,y,z,t); f.rotation.z=rz; return f; };
+  const hips=new THREE.Group(); hips.position.y=1.6; g.add(hips);
+  const torso=new THREE.Group(); hips.add(torso);
+  part(box(.8,.42,.5),MP,torso,0,.15,0);
+  part(box(1.0,.82,.58),MT,torso,0,.76,0);
+  if(s2){
+    part(box(.88,.22,.6),MK,torso,0,.36,0,.04); // wide belt with studs
+    for(let i=0;i<5;i++) part(box(.05,.05,.03),MS,torso,-.3+i*.15,.36,.3,0);
+    [.62,.8,.98].forEach(y=>part(box(.12,.06,.04),MB,torso,-.14,y,.3,.02)); // vest buckles
+    part(box(.84,.2,.66),ML,torso,0,1.1,0,.05); // leather harness collar
+    [-1,1].forEach(s=>part(box(.12,.1,.04),MB,torso,s*.15,1.1,.34,.02));
+    // feather pauldrons
+    [-1,1].forEach(s=>{ const p=new THREE.Group(); p.position.set(s*.52,1.18,0); torso.add(p);
+      for(let i=0;i<7;i++){ const z=-.24+i*.08; feather(.18,.5+(i%2)*.15,i%2?MD:MH,p,s*(.05+(i%3)*.04),.06,z,s*(1.1+(i%3)*.35),.03); } });
+  } else {
+    part(box(.84,.1,.54),MK,torso,0,.34,0,.04); part(box(.16,.11,.04),MS,torso,0,.34,.28,.02);
+    part(box(.42,.16,.05),MF,torso,0,1.08,.28,.02); [-1,1].forEach(s=>part(box(.14,.08,.6),MT,torso,s*.36,1.2,0,.02)); // neckline + straps
+  }
+  part(box(.26,.28,.26),MF,torso,0,1.28,0,.05);
+
+  // head: oversized so the face reads from the iso camera
+  const head=new THREE.Group(); head.position.set(0,1.5,.04); head.scale.setScalar(1.35); torso.add(head);
+  part(box(.36,.44,.42),MF,head,0,.1,0,.06);
+  [-1,1].forEach(s=>{ part(box(.02,.2,.34),MZ,head,s*.185,.22,-.03,0); part(box(.05,.12,.08),MF,head,s*.2,.1,-.02,.02); }); // shaved sides + ears
+  part(box(.08,.1,.07),MF,head,0,.08,.225,.02); // nose
+  if(s2){ // blue war paint band across both eyes, white edge on top
+    part(box(.39,.1,.03),basic(0x2a7cff,false),head,0,.17,.215,0);
+    part(box(.39,.025,.03),basic(0xeef4ff,false),head,0,.23,.217,0);
+    rageStripe=part(box(.39,.03,.03),basic(0xe0202a,false),head,0,.11,.217,0); rageStripe.visible=false; // red edge under the band, rage only
+    [-1,1].forEach(s=>part(box(.07,.03,.03),basic(0x0a0610,false),head,s*.085,.165,.222,0));
+  } else [-1,1].forEach(s=>{
+    const b=part(box(.15,.05,.05),MH,head,s*.09,.255,.215,.02); b.rotation.z=s*.3;
+    const sh=part(box(.15,.075,.03),basic(0xff4a1a,false),head,s*.09,.18,.215,0); sh.rotation.z=s*.25; // eye paint
+    const ln=part(box(.15,.025,.035),basic(0x0a0610,false),head,s*.09,.14,.217,0); ln.rotation.z=s*.2; // liner
+  });
+  part(box(.22,.04,.05),MH,head,0,.0,.225,.02); // mustache
+  [-1,1].forEach(s=>part(box(.04,.1,.05),MH,head,s*.11,-.05,.225,.02));
+  const mouth=new THREE.Mesh(box(.15,.12,.03),basic(0x5a0a14,false)); mouth.position.set(0,-.07,.212); head.add(mouth);
+  const jaw=new THREE.Group(); jaw.position.set(0,-.04,0); head.add(jaw);
+  part(box(.3,.12,.3),MF,jaw,0,-.1,.06,.04);
+  if(s2){ // full beard with a grey streak
+    part(box(.38,.26,.22),MH,jaw,0,-.17,.1,.04);
+    part(box(.26,.22,.16),MH,jaw,0,-.38,.12,.04);
+    part(box(.08,.3,.04),MD,jaw,0,-.3,.21,0);
+  } else { // chinstrap along the jaw into a goatee
+    [-1,1].forEach(s=>part(box(.04,.2,.2),MH,head,s*.17,0,.08,.02));
+    part(box(.3,.04,.2),MH,jaw,0,-.17,.08,.02);
+    part(box(.07,.18,.05),MH,jaw,0,-.2,.215,.02);
+  }
+  // hair: strands on pivots so they can whip on a headbang
+  const hair=[];
+  const strand=(x,y,z,segs,rx,rz)=>{ const p=new THREE.Group(); p.position.set(x,y,z); p.rotation.set(rx,0,rz); head.add(p);
+    let yy=0; segs.forEach(([w,len,d,mat,kz])=>{ const m=part(box(w,len,d),mat,p,0,yy-len/2,0,.04); if(kz) m.rotation.z=kz; yy-=len*.92; });
+    p.userData.rx=rx; p.userData.rz=rz; hair.push(p); return p; };
+  if(!s2){
+    part(box(.26,.1,.46),MH,head,0,.35,-.01,.05);
+    [[-.08,.12,.34],[0,.13,.42],[.08,.12,.34],[-.09,0,.4],[0,0,.5],[.09,0,.4],[-.07,-.14,.38],[0,-.15,.44],[.07,-.14,.38]].forEach(([x,z,l],i)=>{
+      const c=part(new THREE.ConeGeometry(.09,l,4),MH,head,x,.38+l*.4,z,.03); c.rotation.set(-.35-(z<0?.3:0),i*.7,-x*2); });
+    part(box(.3,.34,.12),MH,head,0,.12,-.24,.04); // mullet root
+    [[-.12,.75],[-.04,.9],[.05,.85],[.13,.7]].forEach(([x,l])=>strand(x,-.02,-.25,[[.1,.24,.08,MH],[.1,l,.08,MU]],.15,x*.4));
+    strand(.16,0,-.14,[[.1,.2,.08,MH],[.1,.8,.08,MU]],-.25,.5); // blue lock falling over the shoulder
+  } else {
+    // dark band on top swept back, long silver hair flowing down the back and past the shoulders
+    part(box(.24,.1,.5),MD,head,0,.36,-.02,.04);
+    part(box(.3,.4,.14),MD,head,0,.2,-.24,.04);
+    const wave=(l,mat)=>[[.11,l*.36,.1,mat,.16],[.12,l*.34,.1,mat,-.18],[.11,l*.34,.1,mat,.14]];
+    [[-.14,1.25,MG],[-.05,1.45,MD],[.05,1.4,MG],[.14,1.2,MG]].forEach(([x,l,m],i)=>strand(x,.36,-.18-(i%2)*.04,wave(l,m),.45,x*.4));
+    [-1,1].forEach(s=>{ strand(s*.2,.24,-.12,wave(1.15,MG),.12,s*.14); strand(s*.1,.3,-.26,wave(1.3,s<0?MG:MD),.35,s*.25); }); // behind the ears, down to the shoulders
+  }
+
+  // arms
+  const arms=[];
+  [-1,1].forEach(s=>{
+    part(box(.36,.36,.42),s<0?MAT:MA,torso,s*.58,1.04,0,.06);
+    const arm=new THREE.Group(); arm.position.set(s*.64,.98,0); torso.add(arm);
+    part(box(.26,.6,.28),s<0?MAT:MA,arm,0,-.32,0,.06);
+    part(box(.25,.6,.27),MA,arm,0,-.9,0,.06);
+    if(s2){ part(box(.28,.3,.3),MK,arm,0,-1.06,0,.03); // arm wrap
+      part(box(.24,.26,.26),MK,arm,0,-1.33,0,.05); // claw glove
+      [-.07,0,.07].forEach(x=>{ const c=part(new THREE.ConeGeometry(.03,.12,4),MS,arm,x,-1.36,.15,0); c.rotation.x=Math.PI/2; }); }
+    else { part(box(.28,.06,.3),MT,arm,0,-1.18,0,.02); part(box(.22,.24,.24),MF,arm,0,-1.33,0,.05); }
+    arms.push(arm);
+  });
+  // hand mic with a cable; the laser beam comes out of its head
+  const mic=new THREE.Group(); mic.position.set(0,-1.4,.08); arms[1].add(mic);
+  part(new THREE.CylinderGeometry(.045,.035,.42,8),MS,mic,0,-.15,0,.03);
+  part(new THREE.SphereGeometry(.085,10,8),MK,mic,0,-.4,0,.03);
+  part(box(.02,.5,.02),MK,mic,0,.25,-.06,0);
+  const muzzle=new THREE.Object3D(); muzzle.position.y=-.5; mic.add(muzzle);
+  const lc=s2?0x4a9cff:0xff5a1a, laser=new THREE.Group(); laser.position.y=-.5; mic.add(laser);
+  const beam=new THREE.Mesh(box(.05,12,.05),basic(0xffffff,true,.95)); beam.position.y=-6; laser.add(beam);
+  const glow=new THREE.Mesh(box(.16,12,.16),basic(lc,true,.6)); glow.position.y=-6; laser.add(glow);
+  laser.traverse(o=>o.userData.nofit=1); laser.visible=false;
+
+  // legs
+  const legs=[],shins=[];
+  [-1,1].forEach(s=>{
+    const leg=new THREE.Group(); leg.position.set(s*.22,0,0); hips.add(leg);
+    part(box(.34,.8,.38),MP,leg,0,-.4,0,.06);
+    const shin=new THREE.Group(); shin.position.y=-.8; leg.add(shin);
+    part(box(.32,.6,.36),MP,shin,0,-.28,0,.06);
+    part(box(.36,.3,.55),MK,shin,0,-.67,.07,.05);
+    legs.push(leg); shins.push(shin);
+  });
+
+  // stage 2: black feathered wings. A bone arcs up and out; feathers hang from it, growing longer toward the tip,
+  // with a row of shorter coverts in front and small ones along the bone.
+  let wings=null;
+  if(s2){
+    wings=[]; MW=toon(0x16121c); MC=toon(0x2c2436); MV=toon(0x3a3046); // black by default, setHighCoRage turns them red
+    [-1,1].forEach(s=>{ const root=new THREE.Group(); root.position.set(s*.25,1.0,-.36); root.rotation.x=-.2; torso.add(root);
+      const N=9, bone=u=>[s*(.2+u*2.3), .2+Math.sin(u*Math.PI*.8)*1.4]; // arc from shoulder blade up and out
+      for(let i=0;i<N;i++){ const u=i/(N-1), [x,y]=bone(u); feather(.52,1.0+u*1.7,MW,root,x,y,0,s*(u*.9-.15)); } // primaries
+      for(let i=0;i<7;i++){ const u=i/6*.85, [x,y]=bone(u); feather(.46,.7+u*.6,MC,root,x,y+.05,.05,s*(u*.7-.1)); } // coverts
+      for(let i=0;i<6;i++){ const u=i/5*.9, [x,y]=bone(u); feather(.34,.45,MV,root,x,y+.12,.08,s*.4); } // small feathers on the bone
+      root.userData.s=s; wings.push(root); });
+  }
+  g.scale.setScalar(scale);
+  return {g,hips,torso,head,jaw,mouth,hair,arms,legs,shins,muzzle,rifle:mic,mic,laser,wings,wingMats:wings&&[MW,MC,MV],rageStripe,stage,rage:false,mats:[MF,MH,MT,MP],shadow:blob(.8*scale),kind:'highco'};
+}
+// Stage 2 rage: black wings turn crimson (coverts stay black) and a red stripe shows under the war paint.
+const HC_WINGS={calm:[0x16121c,0x2c2436,0x3a3046],rage:[0x9a1424,0x16121c,0x5a0c18]};
+function setHighCoRage(m,on){
+  if(!m.wingMats) return; m.rage=on;
+  m.wingMats.forEach((mat,i)=>mat.color.setHex(HC_WINGS[on?'rage':'calm'][i])); m.rageStripe.visible=on;
+}
 /* ================= KADRO VERİSİ ================= */
-const MAK='Makine', MEL='Melek';
+const MAK='Makine', MEL='Melek', SAH='Sahne';
 const ROSTER=[
   /* mevcut moblar */
   {k:'mob',st:'mevcut',fac:MAK,name:'Drone',role:'Temel nişancı',thr:1,ar:['A1','A2'],build:()=>buildMech(0x4c4658,0x9a2c42,0x24202c,0xff2a2a,.8),an:'mech',
@@ -433,6 +582,10 @@ const ROSTER=[
    d:'Üç çember, 24 göz. Her çember ayrı yönde dönen mermi duvarı açar, açık kalan gözler nişanlı atış yapar, faz 3\'te odayı yuvarlanarak tarar.',c:'Gözler vurulabilir: her kör edilen göz bir mermi kaynağını kapatır. Kristal sistemi yerine hedef seçme bossu.'},
   {k:'boss',st:'yeni',fac:MEL,name:'Archon',role:'Melek yargıç',thr:5,ar:['A3','A4+'],build:buildArchon,an:'archon',
    d:'Yakın dövüş bossu. Kılıçla hat boyu kesik dalgası, üstüne atılma, kalkan fazında mermilerini sana geri yansıtır.',c:'Kalkan fazında ateşi kes, arkasına geç. Atılmadan sonra 1.5 saniye açık kalır.'},
+  {k:'boss',st:'yeni',fac:SAH,name:'High-Co',role:'Frontman · faz I',thr:5,ar:['MS'],build:()=>buildHighCo(1),an:'highco',
+   d:'Main Stage\'in tek bossu, 15. odadan sonra gelir. Paraşütle sahneye iner. Mikrofon lazeri (kilitli ve süpüren), oyuncunun üstüne zıplayıp yere çökertme (şok dalgası, inişte yakındaysan 0.6 sn sersemlik), Metal Çığlık (bütün oda, mesafeyle azalır) ve üç kafa sallamalık mermi yelpazesi.',c:'Mikrofonu ağzına götürünce amfi yığınının arkasına geç ya da dash at: amfi çığlığı tamamen keser. Kırmızı halkadan çık, sersemlik dash\'i de kilitler.'},
+  {k:'boss',st:'yeni',fac:SAH,name:'High-Co · Encore',role:'Siyah melek · faz II-III',thr:5,ar:['MS'],build:()=>buildHighCo(2),an:'highco2',
+   d:'%66\'da ilk form parçalanır, ışık sütunundan siyah kanatlı ikinci form iner; inerken hasar almaz. Direk çağırır (etrafında dönen dansçı halka içini yakar, en fazla 2 tane). %33\'te öfke: kanatlar kızarır, sırayla inen ışık sütunları açılır. Formlar arasında grup üyeleri sahneye döner.',c:'İniş sırasında ateşi boşa harcama, grup üyelerini temizle. Direk halkasının dışında kal, ışık sütunlarında yanıp sönen daireleri sırayla terk et.'},
   /* varyant */
   {k:'boss',st:'varyant',fac:MAK,name:'Corrupted Colossus',role:'Varyant örneği',thr:4,ar:['A4+'],build:buildCorrupted,an:'mech',
    d:'Aynı model, renk kayması ve mor kristal dikenler. Saldırı havuzu karışık: Colossus slamı + Prism kristal parçaları.',c:'Yeni model çizmeden boss havuzunu ikiye katlamanın yolu. Her boss için bir corrupted sürüm.'},
@@ -444,7 +597,7 @@ const scene=new THREE.Scene();
 scene.add(new THREE.HemisphereLight(0xffe0c8,0x302040,.95)); const dl=new THREE.DirectionalLight(0xfff0e0,.95); dl.position.set(3,6,5); scene.add(dl); const rl=new THREE.DirectionalLight(0xff6a1a,.7); rl.position.set(-5,2,-4); scene.add(rl);
 const cam=new THREE.PerspectiveCamera(30,1,.1,500);
 const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
-const FC={[MAK]:'#ff6a1a',[MEL]:'#ffd36a'};
+const FC={[MAK]:'#ff6a1a',[MEL]:'#ffd36a',[SAH]:'#ff3aa8'};
 
 function animate(e,t){
   const m=e.m;
@@ -464,6 +617,8 @@ function animate(e,t){
     case 'censer': m.swing.rotation.z=Math.sin(t*1.6)*.28; m.swing.rotation.x=Math.cos(t*1.3)*.12; m.orbs.forEach((o,i)=>{ const a=t*.8+i*2.1; o.position.set(Math.cos(a)*1.9,-1.4+Math.sin(t*1.5+i)*.4,Math.sin(a)*1.9); }); m.glow.scale.setScalar(1+Math.sin(t*4)*.12); break;
     case 'ophan': case 'throne': m.rings.forEach((r,i)=>{ if(i===0) r.rotation.z+=.02; if(i===1) r.rotation.x+=.016; if(i===2) r.rotation.y+=.012; }); m.core.rotation.y+=.03; if(m.wings) m.wings.children.forEach((w,i)=>{ w.rotation.z=w.userData.base+Math.sin(t*1.8+i)*.1*w.userData.s; }); break;
     case 'hive': m.rotors.forEach(r=>r.rotation.y+=.45); m.body.position.y=5+Math.sin(t*1.4)*.25; m.bay.material.opacity=.55+Math.sin(t*5)*.3; break;
+    case 'highco': case 'highco2': animMech(m,0,0); m.arms[1].rotation.set(-2.1,0,.3); m.arms[0].rotation.set(-.5,0,-.4); m.head.rotation.x=Math.max(0,Math.sin(t*4))*.45-.1; m.jaw.rotation.x=.2+Math.max(0,Math.sin(t*4))*.25;
+      m.hair.forEach((h,i)=>{ h.rotation.x=h.userData.rx-Math.max(0,Math.sin(t*4-.6))*.5; }); if(m.wings) m.wings.forEach(w=>w.rotation.y=w.userData.s*Math.sin(t*2)*.25); break;
     case 'archon': m.body.position.y=4.6+Math.sin(t*1.6)*.2; m.halo.rotation.z+=.02; m.sword.rotation.x=-.25+Math.sin(t*1.1)*.15; m.wings.children.forEach((w,i)=>{ w.rotation.z=w.userData.base+Math.sin(t*2+i)*.1*w.userData.s; }); break;
   }
 }
@@ -485,9 +640,9 @@ function makeCard(e){
   hid.forEach(([o,p])=>p.add(o));
   const pr=Math.max(1.4,Math.max(s.x,s.z)*.55);
   const ped=new THREE.Mesh(new THREE.CylinderGeometry(pr,pr*1.08,.22,6),toon(0x2a2232)); ped.position.y=-.12; wrap.add(ped);
-  const ring=new THREE.Mesh(new THREE.RingGeometry(pr*1.06,pr*1.11,6),addMat(e.fac===MAK?0xff6a1a:0xffd36a,.9)); ring.rotation.x=-Math.PI/2; ring.position.y=.01; wrap.add(ring);
+  const ring=new THREE.Mesh(new THREE.RingGeometry(pr*1.06,pr*1.11,6),addMat(e.fac===MAK?0xff6a1a:e.fac===SAH?0xff3aa8:0xffd36a,.9)); ring.rotation.x=-Math.PI/2; ring.position.y=.01; wrap.add(ring);
   e.wrap=wrap;
-  const span=Math.max(s.y*1.05,pr*2.1,s.x,s.z);
+  const span=Math.max(s.y*(e.an==='highco'?1.3:1.05),pr*2.1,s.x,s.z); // the frontman's spiky hair needs headroom
   const dist=span/(2*Math.tan(15*Math.PI/180))*1.08;
   e.look=new V3(0,Math.max(c.y*.92,s.y*.42),0);
   e.camPos=e.look.clone().add(new V3(.42,.38,1).normalize().multiplyScalar(dist));
