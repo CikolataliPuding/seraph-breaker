@@ -33,6 +33,16 @@ const DBG={
   bot(on=!BOT.on){ BOT.on=on; toast(on?'Autopilot on':'Autopilot off'); return on; },
   measure(o){ return measureRun(o); },
   immortal:false,
+  // Main Stage: start it at room n · jump to wave n of the current wave room · force the BPM (0 = back to the music's own) · the wave/room curve
+  stage(n=1){ DBG.go(ARENAS.findIndex(A=>A.stage),n); },
+  wave(n){ if(!room||!room.stage||state!=='fight') return false; const W=composeStage(sortie.ri), S=room.stage; n=clamp(n|0,1,W.length);
+    for(const e of enemies.slice()) if(!e.dead&&e!==boss){ e.noLoot=true; killEnemy(e,true); } S.n=W.length; S.w=n-1; S.breath=null; room.timer=null; room.waveF=S.w/S.n; spawnQ=W.slice(n); spawnWave(W[n-1],'gate'); refreshControls(); return true; },
+  // High-Co: drop him to just past phase n's threshold (2: 66%, 3: 33%)
+  hcPhase(n){ if(!boss||boss.form!=='highco') return false; const k=n>=3?.32:n===2?.65:1; boss.hp=Math.min(boss.hp,boss.maxHp*k); return boss.hp; },
+  bpm(n=0){ BEAT.force=Math.max(0,+n||0); if(!BEAT.force) AU.tempoK=1; toast(BEAT.force?`BPM ${BEAT.force}`:'BPM: music'); return BEAT.force; },
+  stageCurve(print=true){ const a=ARENAS.findIndex(A=>A.stage), rows=[]; for(let ri=0;ri<STAGE.waves.length;ri++){ const W=composeStage(ri,false), sc=enemyScale(a,ri,null,0), sc1=enemyScale(a,ri,null,(W.length-1)/W.length);
+      rows.push({room:ri+1,waves:W.length,enemies:W.map(w=>w.length).join(' '),total:W.flat().length,budget:W.map((w,i)=>r2(STAGE.budget.base+STAGE.budget.room*ri+STAGE.budget.wave*i)).join(' '),hp:`${r2(sc.hp)}→${r2(sc1.hp)}`,dmg:`${r2(sc.dmg)}→${r2(sc1.dmg)}`,mix:W.map(w=>w.some(t=>t.startsWith('mosher'))?'M':w.filter(t=>STAGE.band.includes(t.replace('*',''))).length>=4?'E':'S').join('')}); }
+    if(print) console.table(rows); return rows; },
 };
 window.DBG=DBG;
 const r2=v=>Math.round(v*100)/100;
@@ -208,6 +218,8 @@ function initDebug(){
   <label>Enemy <select id="dbgEnemy"></select><button data-a="spawn">Spawn</button><button data-a="spawnE">Elite</button></label>
   <label>Boss <select id="dbgBoss"></select><button data-a="boss">Spawn</button></label>
   <label>Arena <select id="dbgArena" class="w"></select> room <input id="dbgARoom" class="w" type="number" min="1" max="50" value="1"><button data-a="go">Start</button></label>
+  <label>Stage room <input id="dbgSRoom" class="w" type="number" min="1" max="16" value="1"><button data-a="stage">Go</button> wave <input id="dbgWave" class="w" type="number" min="1" max="7" value="1"><button data-a="wave">Go</button></label>
+  <label>BPM <input id="dbgBpm" class="w" type="number" min="0" max="300" value="0"><button data-a="bpm">Set</button> High-Co phase <input id="dbgHc" class="w" type="number" min="2" max="3" value="2"><button data-a="hc">Go</button></label>
   <label>Core A/D/R <input id="dbgCA" class="w" type="number" min="0" max="30"><input id="dbgCD" class="w" type="number" min="0" max="30"><input id="dbgCR" class="w" type="number" min="0" max="30"><button data-a="core">Set</button></label>
   <button data-a="treeMax">Tree max</button><button data-a="treeClr">Tree clear</button><button data-a="gems">+500 gems</button>
   <button data-a="mode">Toggle mobile</button><button data-a="log">Run log (L)</button><button data-a="sim">Sim</button><button data-a="measure">Measure arena</button><button data-a="hide">Hide</button>`;
@@ -230,6 +242,7 @@ function initDebug(){
   d.addEventListener('pointerdown',e=>e.stopPropagation());
   d.addEventListener('click',e=>{ const a=e.target.dataset&&e.target.dataset.a; if(!a) return; const v=id=>$(id).value; if(a!=='hide'&&a!=='log') flagRun();
     if(a==='go') DBG.go(+v('dbgArena'),+v('dbgARoom'));
+    if(a==='stage') DBG.stage(+v('dbgSRoom')); if(a==='wave') DBG.wave(+v('dbgWave')); if(a==='bpm') DBG.bpm(+v('dbgBpm')); if(a==='hc') DBG.hcPhase(+v('dbgHc'));
     if(a==='core'){ ['armor','dmg','regen'].forEach((k,i)=>P.core[k]=clamp(+v('dbgC'+'ADR'[i])|0,0,CORE_MAX)); persist(); if(player) recalcStats(); toast('Core set'); }
     if(a==='treeMax'||a==='treeClr'){ TREE.forEach(b=>b.nodes.forEach(n=>P.skills[n.id]=a==='treeMax'?n.max:0)); persist(); if(player) recalcStats(); toast(a==='treeMax'?'Tree maxed':'Tree cleared'); }
     if(a==='gems'){ P.gems+=500; persist(); }

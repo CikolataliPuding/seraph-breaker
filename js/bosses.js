@@ -278,6 +278,11 @@ function hcPole(b,at){
   b.poles.push({m,x:at.x,z:at.z,t:0,cd:0}); shake=Math.max(shake,.3); crossBlast(at.clone(),0xff3048,.8);
 }
 function highcoPhase(b,ph){
+  // a new phase cuts the old one off: queued pillar strikes fizzle and live poles sink (the dancer stops burning)
+  for(let i=blasts.length-1;i>=0;i--) if(blasts[i].boss){ scene.remove(blasts[i].ring); blasts.splice(i,1); }
+  b.poles.forEach(P=>{ P.t=Math.max(P.t,HC_POLE_LIFE); });
+  // the band comes back on stage for the new form (Main Stage mobs from the stage lip, they hold fire while he lands)
+  (b.def.encore&&b.def.encore[ph]||[]).forEach((k,i,a)=>{ const x=(i-(a.length-1)/2)*7; spawnEnemy(k,new V3(clamp(x,-AX+2,AX-2),0,-AZ+3),false,{minion:true}); });
   if(ph>=2&&b.model.stage!==2){ const old=b.model; shatter(old,b.pos,0,0,{max:mobileMode?8:16,spd:1.2,cy:3}); scene.remove(old.g,old.shadow);
     const m=buildHighCo(2); scene.add(m.g,m.shadow); b.model=m; b.y=26; b.atk='hcdescend'; b.atkT=0; b.immune=true; hcBeam(b.pos,0xd9c9ff,2.4,2.2); popText('ENCORE'); }
   if(ph===3){ setHighCoRage(b.model,true); hcBeam(b.pos,0xff2030,2.8,1); popText('SAKİN OLMAM LAZIM'); shake=.9; buzz(160); }
