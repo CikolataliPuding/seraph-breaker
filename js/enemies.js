@@ -2,8 +2,9 @@
 /* ================= ENEMIES ================= */
 const enemyCap=()=>mobileMode?16:22;
 // enemy armor and damage multipliers of the current room (arena, room curve in balance.js, curses and modifiers)
-const roomHpScale=()=>enemyScale(stage,sortie?sortie.ri:0,sortie&&sortie.rule).hp;
-const roomDmgScale=()=>{ if(!sortie) return 1; const s=enemyScale(stage,sortie.ri); return room&&room.type==='boss'?s.bossDmg:s.dmg; };
+// Main Stage rooms also climb from wave to wave (room.waveF: 0 on the first wave .. under 1 on the last)
+const roomHpScale=()=>enemyScale(stage,sortie?sortie.ri:0,sortie&&sortie.rule,room&&room.waveF).hp;
+const roomDmgScale=()=>{ if(!sortie) return 1; const s=enemyScale(stage,sortie.ri,null,room&&room.waveF); return room&&room.type==='boss'?s.bossDmg:s.dmg; };
 // spawns a mob from ENEMY (data.js). Returns null when the room is at its entity cap (splits, summons and chains respect it).
 function spawnEnemy(type,pos,elite=false,o={}){
   const def=ENEMY[type]; if(!def) return null;
@@ -74,6 +75,8 @@ function hitEnemy(e,d,pos,dot,noProc,flat){
   // Rage (doubled by Blood Engine): more damage as your armor drops
   if(rs.rage&&!flat) d*=1+.25*rs.rage*(rs.blood?2:1)*(1-player.hp/player.maxHp);
   if(e.shieldT>0) d*=.5;
+  // Main Stage open moments (Dancer landing, Shredder headbang, Diver dazed)
+  if(e.vulnT>0&&e!==boss) d*=1.6;
   // Shielded affix: the barrier soaks 75% of every hit until it breaks; it comes back after 6 s
   if(e.esh&&e.esh.hp>0){ const ab=d*.75; e.esh.hp-=ab; d-=ab; e.esh.m.scale.setScalar(1.12); if(e.esh.hp<=0){ e.esh.cd=6; e.esh.m.visible=false; sparks(e.pos.clone().setY(1.6),0x5fe0ff,10,6); sfx('shield'); } }
   // Headshot: small chance to instantly destroy a normal enemy
@@ -103,6 +106,8 @@ function killEnemy(e,byProc){
   if(e===boss){ bossDeath(); return; }
   if(e.type==='spark'&&!e.boomed){ e.boomed=true; queueBlast(e.pos.x,e.pos.z,{t:.12,rad:2.6,dmg:10*ARENAS[stage].hpMul,color:0xffa040,size:.8,skip:e,flat:true}); }
   if(e.ring) e.ring.visible=false;
+  // Main Stage floor props (dance pad, follow spot, landing ring, flame jets) go with their owner
+  if(e.props){ e.props.forEach(o=>roomGroup.remove(o)); e.props=null; }
   if(e.plate) dropPlate(e);
   // Volatile affix: a telegraphed blast where it died (hurts you and the other enemies)
   if(e.volatile&&!e.noLoot) queueBlast(e.pos.x,e.pos.z,{t:.75,rad:3.4,dmg:10*ARENAS[stage].hpMul,hurtP:18,color:0xff3a2a,size:1,skip:e,flat:true});

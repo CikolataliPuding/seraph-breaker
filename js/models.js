@@ -1,4 +1,4 @@
-// Seraph Breaker · models.js: 3D models: mechs, angels, arena mobs and bosses (from docs/bestiary.html), High-Co and his concert stage, corrupted variants and the devil.
+// Seraph Breaker · models.js: 3D models: mechs, angels, arena mobs and bosses (from docs/bestiary.html), the Main Stage cast (docs/main-stage.html), High-Co and his concert stage, corrupted variants and the devil.
 /* ================= MODELS ================= */
 function buildMech(c1,c2,c3,eye,scale=1,frame=''){
   const g=new THREE.Group(); const M1=toon(c1),M2=toon(c2),M3=toon(c3),ME=basic(eye,false);
@@ -534,7 +534,7 @@ function buildHighCoPole(){
 // High-Co boss room: a night concert. The stage sits behind the door edge (-z), the crowd behind the front edge (+z), so the
 // playable mat stays open except the amp stacks (covers: [x,z] centers, 1.8 square) that block the Metal Scream.
 // Tall props stay on the far sides of the iso camera (-x, -z) so they never hide the fight. Decor casts no shadows.
-function buildHighCoArena(X,Z,covers){
+function buildHighCoArena(X,Z,covers,o={}){
   const g=new THREE.Group(), cs=castShadows; castShadows=false;
   const MK=toon(0x1e1a24), MD=toon(0x2c2834), MS=toon(0x9a96a6), MR=toon(0xd2382a), MW=toon(0x4a4450);
   // floor: dark stage boards
@@ -580,10 +580,13 @@ function buildHighCoArena(X,Z,covers){
   [[-1,-Z*.45],[-1,Z*.45],[1,-Z*.45]].forEach(([s,z])=>{ const t=new THREE.Group(); t.position.set(s*(X+1.6),0,z); g.add(t);
     part(box(.3,8,.3),MS,t,0,4,0,.03);
     for(let i=0;i<5;i++){ const b=part(box(1.4,.6,1.1),MK,t,-s*.5,7.6-i*.62,0,.05); b.rotation.z=s*i*.05; } });
-  // barrier and crowd beyond the front edge (one row on phones)
-  for(let x=-X;x<X;x+=2) part(box(1.9,1.1,.15),MS,g,x+1,.55,Z+.8,.04);
+  // barrier and crowd beyond the front edge (one row on phones). o.crowd 'side': along the far -x edge instead, so the crowd never stands
+  // between the iso camera and the entry (the Main Stage wave rooms start you right at the front edge)
+  const side=o.crowd==='side', rows=mobileMode?1:2, spots=[];
+  if(side){ for(let z=-Z;z<Z;z+=2) part(box(.15,1.1,1.9),MS,g,-X-.8,.55,z+1,.04); for(let r=0;r<rows;r++) for(let z=-Z+.5;z<=Z;z+=1.3) if(Math.abs(Math.abs(z)-Z*.45)>1.2) spots.push([-X-2.2-r*1.3,z+(r%2)*.65]); }
+  else { for(let x=-X;x<X;x+=2) part(box(1.9,1.1,.15),MS,g,x+1,.55,Z+.8,.04); for(let r=0;r<rows;r++) for(let x=-X-1;x<=X+1;x+=1.3) spots.push([x+(r%2)*.65,Z+2.2+r*1.3]); }
   const crowd=[], tones=[0x24202c,0x2e2836,0x1a1620,0x3a2e3a].map(c=>toon(c)), skin=toon(0xc8a088);
-  for(let r=0;r<(mobileMode?1:2);r++) for(let x=-X-1;x<=X+1;x+=1.3){ const p=new THREE.Group(); p.position.set(x+(r%2)*.65+Math.random()*.3,0,Z+2.2+r*1.3); g.add(p);
+  for(const [cx,cz] of spots){ const p=new THREE.Group(); p.position.set(cx+Math.random()*.3,0,cz); if(side) p.rotation.y=Math.PI/2; g.add(p);
     const M=pickOne(tones), up=Math.random()<.5;
     part(box(.6,.9,.4),M,p,0,1.1,0,.04); part(box(.38,.4,.38),skin,p,0,1.8,0,.04);
     [-1,1].forEach(s=>{ const a=part(box(.16,.6,.16),M,p,s*.38,up?1.75:1.1,0,0); if(up) a.rotation.z=-s*.3; });
@@ -594,16 +597,182 @@ function buildHighCoArena(X,Z,covers){
   castShadows=cs;
   return {g,pools,heads,cones,pyro,crowd,led};
 }
-// arena life per phase: I warm red/blue, II cold white/violet (the black angel), III all red (rage, faster crowd, constant pyro)
-const HC_LIGHT=[[0xff3048,0x4a9cff],[0xe8e0ff,0x8a6aff],[0xff2030,0xff2030]];
+// arena life per phase: I warm red/blue, II cold white/violet (the black angel), III all red (rage, faster crowd, constant pyro).
+// phase 0: the Main Stage wave rooms around the same stage, in the festival's pink and amber, with the pyro on the beat of the live music.
+const HC_LIGHT=[[0xff3048,0x4a9cff],[0xe8e0ff,0x8a6aff],[0xff2030,0xff2030]], STAGE_LIGHT=[0xff3aa8,0xffb84a];
 function animateHighCoArena(a,t,phase){
-  const L=HC_LIGHT[phase-1]||HC_LIGHT[0], rage=phase===3;
+  const L=phase===0?STAGE_LIGHT:HC_LIGHT[phase-1]||HC_LIGHT[0], rage=phase===3;
   a.pools.forEach((p,i)=>{ const k=t*.5+i*1.7; p.position.set(Math.sin(k)*7,.04,Math.cos(k*.8+i)*11); p.material.color.setHex(L[i%2]); });
   a.heads.forEach((h,i)=>{ h.rotation.z=Math.sin(t*.9+i)*.45; h.rotation.x=.25+Math.cos(t*.7+i*.6)*.25; });
   a.cones.forEach((c,i)=>c.material.color.setHex(L[i%2]));
   a.crowd.forEach(p=>{ p.position.y=Math.max(0,Math.sin(t*(rage?9:6)+p.userData.ph))*.35; });
-  const beat=rage||(t%2.4)<.35; a.pyro.forEach(p=>p.userData.flame.forEach(f=>{ f.visible=beat; f.scale.y=.8+Math.random()*.4; }));
+  const beat=rage||(phase===0?BEAT.idx%4===0&&BEAT.ph<.35:(t%2.4)<.35); a.pyro.forEach(p=>p.userData.flame.forEach(f=>{ f.visible=beat; f.scale.y=.8+Math.random()*.4; }));
   a.led.material.opacity=.6+.4*Math.abs(Math.sin(t*4));
+}
+/* ================= MAIN STAGE CAST (ported from docs/main-stage.html) ================= */
+/* An all-human festival cast. buildHuman uses the mech skeleton (hips/torso/head/arms/legs/shins), so stepMech, mechLean and the juice
+   springs drive it unchanged; POSE (enemy-ai.js) sets the arms after the walk. mats[0] is the shirt, so elites tint the clothes, not the skin.
+   Telegraph meshes (dance pad, landing ring, spot circle) are userData.nofit and are moved onto the floor in game. */
+const ST={black:0x1a1418,red:0xc8243a,gold:0xe8b23a,chrome:0xc8c8d4,mag:0xff3aa8,amber:0xffb84a};
+const cyl=(a,b,h,s=16)=>new THREE.CylinderGeometry(a,b,h,s);
+const SKIN=[0xf0c8a8,0xd8a07a,0xb07850,0x8a5a3a];
+function buildHuman(o={}){
+  const skin=toon(o.skin||SKIN[1]), top=toon(o.top||0x1a1418), pants=toon(o.pants||0x22222a), shoe=toon(o.shoe||0x111014), hairM=toon(o.hair||0x1a1210);
+  const g=new THREE.Group(); const hips=new THREE.Group(); hips.position.y=1.6; g.add(hips);
+  const torso=new THREE.Group(); hips.add(torso);
+  part(box(.56,.3,.32),pants,torso,0,.05,0,.05);
+  const chest=part(box(.64,.78,.36),top,torso,0,.55,0,.06);
+  if(o.belt) part(box(.6,.1,.34),toon(o.belt),torso,0,.2,0,.03);
+  part(box(.16,.14,.16),skin,torso,0,1.0,0,0);
+  // the head is a little oversized so faces and hair read from the game camera
+  const head=new THREE.Group(); head.position.set(0,1.28,.02); head.scale.setScalar(1.2); torso.add(head);
+  part(box(.4,.46,.42),skin,head,0,0,0,.06);
+  [-1,1].forEach(s=>{ const e=new THREE.Mesh(box(.07,.05,.03),basic(0x1a1012,false)); e.position.set(s*.1,.04,.215); head.add(e); });
+  const hs=o.hairStyle||'short';
+  if(hs==='long'){ part(box(.44,.14,.46),hairM,head,0,.27,0,.04); part(box(.46,.75,.14),hairM,head,0,-.18,-.22,.04); [-1,1].forEach(s=>part(box(.08,.6,.3),hairM,head,s*.23,-.1,-.06,.03)); }
+  else if(hs==='mohawk'){ part(box(.42,.06,.44),hairM,head,0,.24,0,.02); for(let i=0;i<5;i++) part(new THREE.ConeGeometry(.06,.32,4),hairM,head,0,.4,-.16+i*.08,.02); }
+  else if(hs==='bun'){ part(box(.44,.12,.46),hairM,head,0,.27,0,.04); part(new THREE.SphereGeometry(.14,10,8),hairM,head,0,.36,-.18,.03); part(box(.46,.45,.12),hairM,head,0,-.05,-.22,.03); }
+  else if(hs==='cap'){ part(box(.44,.14,.46),toon(o.capCol||ST.amber),head,0,.27,0,.04); part(box(.38,.04,.24),toon(o.capCol||ST.amber),head,0,.22,.3,.02); }
+  else if(hs==='short') part(box(.44,.12,.46),hairM,head,0,.26,0,.04);
+  if(o.beard) part(box(.36,.22,.12),hairM,head,0,-.2,.18,.03);
+  if(o.band){ const b=new THREE.Mesh(box(.45,.07,.47),basic(o.band,false)); b.position.y=.16; head.add(b); }
+  const arms=[];
+  [-1,1].forEach(s=>{ const arm=new THREE.Group(); arm.position.set(s*.42,.88,0); torso.add(arm);
+    part(box(.2,.44,.22),o.sleeves?top:skin,arm,0,-.2,0,.04);
+    const fore=new THREE.Group(); fore.position.y=-.44; arm.add(fore);
+    part(box(.17,.4,.19),skin,fore,0,-.2,0,.04); part(box(.15,.14,.16),skin,fore,0,-.46,0,.03);
+    arm.userData.fore=fore; arms.push(arm); });
+  const legs=[],shins=[];
+  [-1,1].forEach(s=>{ const leg=new THREE.Group(); leg.position.set(s*.15,0,0); hips.add(leg);
+    part(box(.24,.8,.27),pants,leg,0,-.4,0,.05);
+    const shin=new THREE.Group(); shin.position.y=-.8; leg.add(shin);
+    part(box(.22,.66,.25),pants,shin,0,-.33,0,.04); part(box(.25,.15,.42),shoe,shin,0,-.72,.07,.03);
+    legs.push(leg); shins.push(shin); });
+  // the right hand is the muzzle for anything thrown or fired
+  const muzzle=new THREE.Object3D(); muzzle.position.y=-.55; arms[1].userData.fore.add(muzzle);
+  g.scale.setScalar(o.scale||1);
+  return {g,hips,torso,chest,head,arms,legs,shins,muzzle,mats:[top,pants,skin],shadow:blob(.55*(o.scale||1))};
+}
+// arm pose (shoulder pitch, forearm pitch), applied after the walk animation
+function pose(m,a0,a1,f0=0,f1=0){ m.arms[0].rotation.x=a0; m.arms[1].rotation.x=a1; m.arms[0].userData.fore.rotation.x=f0; m.arms[1].userData.fore.rotation.x=f1; }
+// Pulse Dancer: long skirt, sequin belt, glowing scarf balls. The pink pad marks where she lands next.
+function buildDancer(){
+  const m=buildHuman({skin:0xf6dcc8,top:ST.mag,pants:ST.mag,hair:0xf0d070,hairStyle:'long',scale:1.15});
+  part(box(.68,.05,.4),toon(ST.gold),m.chest,0,0,0,0);
+  [-1,1].forEach(s=>{ const st=new THREE.Mesh(box(.05,.3,.02),basic(ST.gold,false)); st.position.set(s*.16,.42,.19); m.chest.add(st); });
+  const skirt=new THREE.Group(); m.hips.add(skirt);
+  for(let i=0;i<8;i++){ const a=i/8*Math.PI*2; const f=new THREE.Mesh(box(.16,.5,.01),addMat(i%2?ST.gold:ST.mag,.55)); f.position.set(Math.sin(a)*.3,-.2,Math.cos(a)*.2); f.rotation.y=a; skirt.add(f); }
+  const belt=new THREE.Group(); belt.position.y=.02; m.torso.add(belt);
+  for(let i=0;i<12;i++){ const a=i/12*Math.PI*2; const c=new THREE.Mesh(new THREE.CircleGeometry(.05,8),basic(ST.gold,false)); c.position.set(Math.sin(a)*.34,0,Math.cos(a)*.22); c.rotation.y=a; belt.add(c); }
+  const ribbons=m.arms.map(a=>{ const r=new THREE.Group(); r.position.y=-.62; a.userData.fore.add(r); r.add(new THREE.Mesh(new THREE.SphereGeometry(.17,14,10),basic(0xffe0f4,false))); r.add(new THREE.Mesh(new THREE.SphereGeometry(.3,14,10),basic(ST.mag,true,.45))); return r; });
+  const pad=new THREE.Group(); pad.userData.nofit=1; const pr=new THREE.Mesh(new THREE.RingGeometry(1.25,1.6,32),addMat(ST.mag,.9)); pr.rotation.x=-Math.PI/2; pr.position.y=.06; pad.add(pr);
+  const pf=new THREE.Mesh(G.disc,addMat(ST.mag,.4)); pf.rotation.x=-Math.PI/2; pf.position.y=.05; pf.scale.setScalar(1.4); pad.add(pf); pad.visible=false; m.g.add(pad);
+  m.ribbons=ribbons; m.belt=belt; m.skirt=skirt; m.pad=pad; m.padFill=pf; m.breaks=[{o:ribbons[0],at:.5}]; m.shadow=blob(.8); return m;
+}
+// Drummer: a metal drummer on his stool behind the kit. He never gets up. The red ring pulses with the kick.
+function buildDrummer(){
+  const g=new THREE.Group(); const M2=toon(ST.red),M3=toon(ST.chrome),MG=toon(ST.gold);
+  const kit=new THREE.Group(); g.add(kit);
+  const kick=part(cyl(.9,.9,.7,20),M2,kit,0,.9,.95,.07); kick.rotation.x=Math.PI/2;
+  const kh=new THREE.Mesh(new THREE.CircleGeometry(.78,20),toon(0xeee8f4)); kh.position.set(0,.9,1.31); kit.add(kh);
+  const logo=new THREE.Mesh(new THREE.RingGeometry(.28,.38,6),basic(ST.amber,false)); logo.position.set(0,.9,1.32); kit.add(logo);
+  [[-.65,1.75,.75],[.65,1.75,.75]].forEach(([x,y,z])=>{ const t=part(cyl(.32,.32,.3,14),M2,kit,x,y,z,.05); t.rotation.x=.4; });
+  part(cyl(.42,.42,.4,14),M2,kit,1.15,1.0,.2,.05); part(cyl(.32,.32,.22,14),toon(0xd8d8e0),kit,-.95,1.25,.35,.04);
+  const stands=[[-1.3,2.45,.5],[1.35,2.6,.3]].map(([x,y,z])=>{ const st=new THREE.Group(); kit.add(st); part(box(.05,y,.05),M3,st,x,y/2,z,0); const c=part(cyl(.55,.55,.04,20),MG,st,x,y,z,.03); c.rotation.z=x<0?.25:-.25; st.userData.c=c; return st; });
+  const h=buildHuman({skin:SKIN[2],top:0x141014,pants:0x22202a,hair:0x2a1a12,hairStyle:'long',band:ST.red});
+  h.g.position.set(0,.35,-.95); h.g.scale.setScalar(1.15); g.add(h.g);
+  part(cyl(.35,.4,1.25,8),toon(0x2a2632),g,0,.62,-.95,.05);
+  h.legs.forEach(l=>{ l.rotation.x=-1.4; }); h.shins.forEach(s=>s.rotation.x=1.4);
+  h.arms.forEach(a=>{ const st=part(box(.05,.7,.05),toon(0xd8c8a0),a.userData.fore,0,-.55,.3,.02); st.rotation.x=-1.1; });
+  const wave=new THREE.Mesh(new THREE.RingGeometry(2.4,2.6,40),addMat(ST.red,.6)); wave.rotation.x=-Math.PI/2; wave.position.y=.05; wave.userData.nofit=1; g.add(wave);
+  const muzzle=new THREE.Object3D(); muzzle.position.set(0,2.4,.6); g.add(muzzle);
+  g.scale.setScalar(1.1);
+  return {g,kit,kick,cym:stands.map(s=>s.userData.c),h,head:h.head,wave,muzzle,mats:[h.mats[0],M2,M3],shadow:blob(1.9),breaks:[{o:stands[0],at:.5},{o:stands[1],at:.25}]};
+}
+// Shredder: long-haired guitarist in a leather jacket with a red V guitar
+function buildShredder(){
+  const m=buildHuman({skin:SKIN[0],top:0x141014,pants:0x1e1e26,hair:0x3a2414,hairStyle:'long',sleeves:true,belt:ST.chrome,scale:1.2});
+  [-1,1].forEach(s=>{ for(let i=0;i<3;i++){ const sp=part(new THREE.ConeGeometry(.04,.14,4),toon(ST.chrome),m.chest,s*(.18+i*.06),.3,-.19,0); sp.rotation.z=-s*.6; } });
+  const MG=toon(ST.red),MN=toon(0x3a2a1a);
+  const gtr=new THREE.Group(); gtr.position.set(-.05,.25,.32); gtr.rotation.z=-.65; m.torso.add(gtr);
+  [-1,1].forEach(s=>{ const w=part(box(.26,.85,.1),MG,gtr,s*.18,-.3,0,.04); w.rotation.z=s*.45; });
+  part(box(.3,.25,.11),MG,gtr,0,-.05,0,.04); part(box(.09,1.25,.06),MN,gtr,0,.7,0,.03); const hd=part(box(.18,.24,.07),MG,gtr,0,1.4,0,.03);
+  const strings=new THREE.Mesh(box(.05,1.7,.01),addMat(ST.amber,.7)); strings.position.set(0,.5,.06); gtr.add(strings);
+  m.gtr=gtr; m.strings=strings; m.breaks=[{o:hd,at:.5}]; m.shadow=blob(.75); return m;
+}
+// Bass Brute: big bald bearded bassist in a vest. The blue rings are his low-frequency waves.
+function buildBassist(){
+  const m=buildHuman({skin:SKIN[1],top:0x2a2a34,pants:0x1a1a22,hair:0x2a1810,hairStyle:'bald',beard:true,scale:1.45});
+  part(box(.66,.6,.38),toon(0x3a2a20),m.chest,0,.05,0,.03);
+  const MB=toon(0x2b3a7a),MN=toon(0x2a1e14);
+  const bass=new THREE.Group(); bass.position.set(-.02,.2,.32); bass.rotation.z=-.55; m.torso.add(bass);
+  part(box(.55,.72,.13),MB,bass,0,-.3,0,.05); part(box(.4,.28,.13),MB,bass,.1,.12,0,.04);
+  part(box(.1,1.55,.07),MN,bass,0,.9,0,.03); const hd=part(box(.22,.28,.08),MB,bass,0,1.75,0,.03);
+  for(let i=0;i<4;i++){ const s=new THREE.Mesh(box(.01,2.1,.01),addMat(0x9ad0ff,.8)); s.position.set(-.035+i*.023,.7,.075); bass.add(s); }
+  const rip=new THREE.Group(); rip.userData.nofit=1; m.g.add(rip); for(let i=0;i<3;i++){ const r=new THREE.Mesh(new THREE.RingGeometry(1,1.12,40),addMat(0x6ad8ff,.5)); r.rotation.x=-Math.PI/2; r.position.y=.05; rip.add(r); }
+  m.bass=bass; m.rip=rip; m.breaks=[{o:hd,at:.35}]; m.shadow=blob(1); return m;
+}
+// Roadie: stage crew in a cap with a speaker cabinet on his back. He sets amps down (buildAmp) and never attacks himself.
+function buildHauler(){
+  const m=buildHuman({skin:SKIN[2],top:0x2a2a30,pants:0x3a3640,hairStyle:'cap',capCol:ST.amber,beard:true,hair:0x1a1210,scale:1.1});
+  const shirtTxt=new THREE.Mesh(box(.4,.12,.02),basic(ST.amber,false)); shirtTxt.position.set(0,.65,.19); m.torso.add(shirtTxt);
+  const cab=part(box(1.0,1.15,.6),toon(0x141016),m.torso,0,1.05,-.5,.07);
+  [-.27,.27].forEach(y=>{ const sp=new THREE.Mesh(new THREE.CircleGeometry(.27,18),basic(0x2a2226,false)); sp.position.set(0,y,.31); cab.add(sp); const ring=new THREE.Mesh(new THREE.RingGeometry(.27,.32,18),basic(ST.amber,false)); ring.position.set(0,y,.315); cab.add(ring); });
+  m.cab=cab; m.shadow=blob(.7); return m;
+}
+// amp the Roadie sets down: one shot breaks it; it pulses a yellow sound burst on the beat for 10 s
+function buildAmp(){
+  const g=new THREE.Group(), body=new THREE.Group(); g.add(body); const MK=toon(0x141016);
+  part(box(.9,1,.6),MK,body,0,.5,0,.06); part(box(.92,.08,.62),toon(ST.chrome),body,0,1.02,0,0);
+  const cone=new THREE.Mesh(new THREE.CircleGeometry(.3,18),basic(0x2a2226,false)); cone.position.set(0,.55,.31); body.add(cone);
+  const lamp=new THREE.Mesh(new THREE.RingGeometry(.3,.36,18),basic(ST.amber,false)); lamp.position.set(0,.55,.315); body.add(lamp);
+  const pulse=new THREE.Mesh(G.ring,addMat(ST.amber,.6)); pulse.rotation.x=-Math.PI/2; pulse.position.y=.05; pulse.userData.nofit=1; g.add(pulse);
+  return {g,body,cone,lamp,pulse,mats:[MK],shadow:blob(.6)};
+}
+// Mosher: mohawk, studs and a chain. Comes in packs of 6-10.
+function buildMosher(){
+  const m=buildHuman({skin:pickOne(SKIN),top:0x101012,pants:0x2a2230,hair:pickOne([0x3aff7a,0xff3aa8,0x3ab0ff,0xffd23a]),hairStyle:'mohawk',belt:ST.chrome,scale:1.05});
+  part(box(.68,.7,.4),toon(0x2a1e1a),m.chest,0,.02,0,.03);
+  [-1,1].forEach(s=>{ for(let i=0;i<3;i++){ const sp=part(new THREE.ConeGeometry(.045,.16,4),toon(ST.chrome),m.torso,s*(.22+i*.06),.95,-.05,0); sp.rotation.z=-s*.4; } });
+  const chain=new THREE.Mesh(box(.04,.04,.36),basic(ST.chrome,false)); chain.position.set(0,-.3,.12); chain.rotation.y=.4; m.arms[1].userData.fore.add(chain);
+  m.chain=chain; m.shadow=blob(.6); return m;
+}
+// Pyro Tech: fireproof suit, tank on the back, a flare in the right hand. His flame jets are separate props (buildPyroJet).
+function buildPyro(){
+  const m=buildHuman({skin:SKIN[1],top:0xc8b890,pants:0xb8a880,shoe:0x2a2420,hairStyle:'bald',sleeves:true,scale:1.1});
+  part(box(.48,.52,.48),toon(0xc8b890),m.head,0,.02,-.02,.05); const visor=new THREE.Mesh(box(.36,.2,.03),addMat(0xffb84a,.75)); visor.position.set(0,.05,.25); m.head.add(visor);
+  const tank=part(cyl(.16,.16,.7,10),toon(ST.red),m.torso,0,.6,-.3,.04);
+  const flare=new THREE.Mesh(new THREE.SphereGeometry(.1,8,6),basic(0xff6a2a,false)); flare.position.set(0,-.55,.05); m.arms[1].userData.fore.add(flare);
+  m.flare=flare; m.breaks=[{o:tank,at:.4}]; m.shadow=blob(.7); return m;
+}
+// a flame jet on the stage floor: the hex glows red before it fires (the tell), then a column of fire
+function buildPyroJet(){
+  const g=new THREE.Group(); part(box(.8,.4,.8),toon(0x1c1a20),g,0,.2,0,.05); part(cyl(.22,.3,.6,8),toon(0x1c1a20),g,0,.7,0,.04);
+  const warn=new THREE.Mesh(new THREE.CircleGeometry(1.3,6),addMat(0xff4a2a,.12)); warn.rotation.x=-Math.PI/2; warn.position.y=.05; g.add(warn);
+  const edge=new THREE.Mesh(new THREE.RingGeometry(1.15,1.3,6),addMat(0xff4a2a,.6)); edge.rotation.x=-Math.PI/2; edge.position.y=.06; g.add(edge);
+  const flame=new THREE.Group(); flame.position.y=1; g.add(flame); const fl=[]; for(let i=0;i<4;i++){ const f=new THREE.Mesh(new THREE.ConeGeometry(.42-i*.06,1.2,8),addMat(i%2?0xffb84a:0xff4a2a,.75)); f.position.y=.6+i*.8; flame.add(f); fl.push(f); }
+  flame.visible=false; return {g,warn,edge,flame,fl};
+}
+// Lighting tech: a follow spot on a tripod. The bright circle on the floor is where the light is; it follows you slowly.
+function buildSpot(){
+  const m=buildHuman({skin:SKIN[0],top:0x1e1e26,pants:0x2a2a34,hair:0x8a5a2a,hairStyle:'bun',sleeves:true,scale:1.1});
+  const hp=new THREE.Mesh(new THREE.TorusGeometry(.24,.035,6,16,Math.PI),basic(0x2a2a2a,false)); hp.position.y=.12; m.head.add(hp);
+  const rig=new THREE.Group(); rig.position.set(.75,0,.55); m.g.add(rig);
+  [0,1,2].forEach(i=>{ const a=i/3*Math.PI*2; const l=part(box(.05,1.7,.05),toon(0x2a2632),rig,Math.cos(a)*.3,.8,Math.sin(a)*.3,0); l.rotation.z=Math.cos(a)*.18; l.rotation.x=-Math.sin(a)*.18; });
+  const lamp=new THREE.Group(); lamp.position.y=1.8; rig.add(lamp);
+  const can=part(cyl(.22,.3,.8,14),toon(ST.chrome),lamp,0,0,.2,.05); can.rotation.x=Math.PI/2;
+  const lens=new THREE.Mesh(new THREE.CircleGeometry(.22,14),basic(0xfff0c0,false)); lens.position.z=.61; lamp.add(lens);
+  const spot=new THREE.Group(); spot.userData.nofit=1; const sd=new THREE.Mesh(G.disc,addMat(0xfff0c0,.28)); sd.rotation.x=-Math.PI/2; sd.position.y=.05; spot.add(sd);
+  const sr=new THREE.Mesh(G.ring,addMat(0xfff0c0,.7)); sr.rotation.x=-Math.PI/2; sr.position.y=.06; spot.add(sr); spot.scale.setScalar(2); m.g.add(spot);
+  m.rig=rig; m.lamp=lamp; m.spot=spot; m.spotFill=sd; m.breaks=[{o:rig,at:.34}]; m.shadow=blob(.7); return m;
+}
+// Stage Diver: arms out, he leaps in over the crowd and crushes the landing spot (red ring), then brawls with his fists
+function buildDiver(){
+  const m=buildHuman({skin:SKIN[3],top:ST.red,pants:0x1a1a22,hair:0x101010,hairStyle:'short',sleeves:true,band:0x101010,scale:1.2});
+  part(box(.7,.6,.4),toon(0x141014),m.chest,0,.08,0,.03);
+  const land=new THREE.Group(); land.userData.nofit=1; const lr=new THREE.Mesh(G.ring,addMat(0xff4a2a,.85)); lr.rotation.x=-Math.PI/2; lr.position.y=.06; land.add(lr);
+  const lf=new THREE.Mesh(G.disc,addMat(0xff4a2a,.2)); lf.rotation.x=-Math.PI/2; lf.position.y=.05; land.add(lf); land.visible=false; m.g.add(land);
+  m.land=land; m.landFill=lf; m.shadow=blob(.75); return m;
 }
 // Corrupted variant look: purple tint, crystal spikes and a void aura. Works on any model (mobs, bosses).
 function corruptModel(m,amt=.45){

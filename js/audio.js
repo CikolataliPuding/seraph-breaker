@@ -1,6 +1,6 @@
-// Seraph Breaker · audio.js: Synthesized soundtrack (TRACKS) and sound effects (sfx). No audio files.
+// Seraph Breaker · audio.js: Synthesized soundtrack (TRACKS), the beat clock the Main Stage syncs to (BEAT) and sound effects (sfx). No audio files.
 /* ================= AUDIO (synthesized) ================= */
-const AU={ctx:null,want:'menu',muted:false};
+const AU={ctx:null,want:'menu',muted:false,tempoK:1,beatQ:[]};
 const TRACKS={
   menu:{bpm:96,song:[0,1],bars:[
     {g:'0-------3---1---',k:'k.......k.k.....',s:'........s.......',h:'c...h...h...h...'},
@@ -10,6 +10,12 @@ const TRACKS={
     {g:'x.xxx.xxx.xx6-5-',k:'k.kkk.kkk.kkk.k.',s:'....s.......s...',h:'h.h.h.h.h.h.h.h.'},
     {g:'0---x.x.3---x.x.',k:'k...k.k.k...k.k.',s:'....s.......s...',h:'c...h.h.h.h.h.h.'},
     {g:'xx6-xx5-xx3-2-1-',k:'kkkkkkkkkkkkkkkk',s:'....s.......s...',h:'h.h.h.h.h.h.h.h.'}]},
+  // Main Stage: a slower festival groove (kick on every beat), so the beat the mobs lock to is easy to hear and dash on
+  stage:{bpm:128,song:[0,1,0,2,0,1,3,2],bars:[
+    {g:'0-x.0-x.3-x.5-x.',k:'k...k...k...k...',s:'....s.......s...',h:'c.h.o.h.h.h.o.h.'},
+    {g:'0-x.0-x.6-x.5-3-',k:'k...k...k...k.k.',s:'....s.......s...',h:'h.h.o.h.h.h.o.h.'},
+    {g:'3---x.x.5---x.x.',k:'k...k...k...k...',s:'....s.......s.s.',h:'c...h.h.o...h.h.'},
+    {g:'0.0.3.3.5.5.6-5-',k:'k.k.k.k.k.k.k.k.',s:'....s.......s...',h:'o.h.o.h.o.h.o.h.'}]},
   boss:{bpm:186,song:[0,1,0,1,2,2,3,1],bars:[
     {g:'xxxxxxxx1-xx1-xx',k:'kkkkkkkkkkkkkkkk',s:'....s.......s...',h:'c.h.h.h.h.h.h.h.'},
     {g:'xxxxxxxx6-xx5-3-',k:'kkkkkkkkkkkkkkkk',s:'....s.......s...',h:'h.h.h.h.h.h.h.h.'},
@@ -47,7 +53,7 @@ function audioInit(){
   setInterval(tickMusic,30);
 }
 function setVolumes(){ if(!AU.ctx)return; AU.music.gain.value=AU.muted?0:P.music*.9; AU.sfx.gain.value=P.sfx; }
-function playTrack(name){ AU.want=name; if(!AU.ctx||AU.mus.name===name) return; AU.mus={name,t:TRACKS[name],bar:0,step:0,next:AU.ctx.currentTime+.06}; }
+function playTrack(name){ AU.want=name; if(!AU.ctx||AU.mus.name===name) return; AU.mus={name,t:TRACKS[name],bar:0,step:0,next:AU.ctx.currentTime+.06}; AU.beatQ.length=0; }
 function noiseSrc(t,dur){ const s=AU.ctx.createBufferSource(); s.buffer=AU.noise; s.start(t,Math.random()*.5,dur+.05); return s; }
 function env(t,peak,att,dec){ const g=AU.ctx.createGain(); g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(peak,t+att); g.gain.exponentialRampToValueAtTime(.0008,t+att+dec); return g; }
 function gtrNote(t,n,len,mute){
@@ -69,9 +75,11 @@ function crash(t){ const n=noiseSrc(t,1.3),f=AU.ctx.createBiquadFilter(); f.type
 function tickMusic(){
   const m=AU.mus; if(!AU.ctx||!m||!m.t||AU.ctx.state!=='running') return;
   const now=AU.ctx.currentTime; if(m.next<now-.25) m.next=now+.05;
-  const spb=60/m.t.bpm/4;
+  // tempoK: the Main Stage drummer (and the debug BPM override) speeds the live band up; read every step, so a change lands mid-bar
+  const spb=60/(m.t.bpm*(AU.tempoK||1))/4;
   while(m.next<now+.15){
     const bar=m.t.bars[m.t.song[m.bar]], i=m.step, t=m.next;
+    if(i%4===0){ AU.beatQ.push(t); if(AU.beatQ.length>16) AU.beatQ.shift(); }
     const ev=bar.ev[i]; if(ev) gtrNote(t,ev.n,ev.len*spb,ev.mute);
     if(bar.k[i]==='k') kick(t); if(bar.s[i]==='s') snare(t);
     const h=bar.h[i]; if(h==='h') hat(t,false); else if(h==='o') hat(t,true); else if(h==='c') crash(t);
@@ -79,6 +87,27 @@ function tickMusic(){
     m.next+=spb;
   }
 }
+/* ================= BEAT CLOCK ================= */
+/* The Main Stage's rule (Ritim senkronu): mob attacks land on the beat of the live music. BEAT follows the quarter notes tickMusic schedules,
+   so it is exactly on the audible beat; with no running audio context (muted tab, suspended context, headless measurement) it falls back
+   to its own clock at the same tempo (game time, so fast-forwarded measurement runs keep the beat too). idx counts beats, ph is 0..1 inside the current beat, hit is true on the tick a new beat starts.
+   force: debug BPM override (also retunes the music through AU.tempoK). */
+const BEAT={idx:0,ph:0,bpm:120,spb:.5,hit:false,force:0,src:'clock',lastT:0};
+function beatTick(dt){
+  const tr=TRACKS[AU.mus&&AU.mus.name||AU.want]||TRACKS.battle, live=!!(AU.ctx&&AU.ctx.state==='running'&&AU.mus&&AU.mus.t&&!(typeof DBG!=='undefined'&&(DBG.turbo>1||DBG.noRender)));
+  if(BEAT.force) AU.tempoK=BEAT.force/tr.bpm;
+  BEAT.bpm=tr.bpm*(AU.tempoK||1); BEAT.spb=60/BEAT.bpm; BEAT.hit=false;
+  if(live){ const now=AU.ctx.currentTime; if(BEAT.src!=='audio'){ BEAT.src='audio'; BEAT.lastT=now-BEAT.ph*BEAT.spb; }
+    while(AU.beatQ.length&&AU.beatQ[0]<=now){ BEAT.lastT=AU.beatQ.shift(); BEAT.idx++; BEAT.hit=true; }
+    // the queue only runs ~0.15 s ahead: if it ever runs dry (tab hidden), keep counting at the tempo
+    if(now-BEAT.lastT>=BEAT.spb*1.5&&!AU.beatQ.length){ BEAT.lastT+=BEAT.spb; BEAT.idx++; BEAT.hit=true; }
+    BEAT.ph=clamp((now-BEAT.lastT)/BEAT.spb,0,.999); return; }
+  BEAT.src='clock'; BEAT.ph+=dt/BEAT.spb; while(BEAT.ph>=1){ BEAT.ph-=1; BEAT.idx++; BEAT.hit=true; }
+}
+// seconds until the first beat at least minT away whose index is a multiple of every (attacks wind up for at least minT, then land on it)
+BEAT.until=(minT=0,every=1)=>{ let t=(1-BEAT.ph)*BEAT.spb, i=BEAT.idx+1; for(let k=0;k<64&&(t<minT||i%every);k++){ t+=BEAT.spb; i++; } return t; };
+// how close (seconds) the nearest beat is
+BEAT.dist=()=>Math.min(BEAT.ph,1-BEAT.ph)*BEAT.spb;
 const sfxLast={};
 function sfx(kind){
   if(!AU.ctx||AU.ctx.state!=='running'||P.sfx<=0) return;

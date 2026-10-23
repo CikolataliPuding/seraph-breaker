@@ -13,7 +13,9 @@ function setState(next,newRun){
 }
 const playing=()=>['card','prep','warn','cine','fight','trans','bossdeath','dying','choice'].includes(state);
 const ray=new THREE.Raycaster(), aimPlane=new THREE.Plane(new V3(0,1,0),-2.3), aimPt=new V3();
-const eSpd=()=>(1+stage*.08)*(sortie&&sortie.rule.shotSpd||1);
+// spotLit: you stand in a Main Stage follow spot (enemy shots 25% faster and better aimed); spotNext collects it for the next frame
+let spotLit=false, spotNext=false;
+const eSpd=()=>(1+stage*.08)*(sortie&&sortie.rule.shotSpd||1)*(spotLit?1.25:1);
 const tgt=()=>decoy?decoy.pos:player.pos;
 
 const shieldG=new THREE.Group(); scene.add(shieldG); shieldG.visible=false;

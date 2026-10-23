@@ -30,6 +30,11 @@ input{-webkit-user-select:text;user-select:text}
 #spBar i{background:linear-gradient(90deg,var(--sp),var(--signal))} #spBar.ready{box-shadow:0 0 12px rgba(255,225,74,.8)}
 #hudR .big{font-size:20px;color:var(--paper)}
 #hudR span{color:var(--dim)}
+/* Main Stage: wave counter and the beat pip (lit on every beat, pink burst on a dash that lands on the beat) */
+#hudR .beat{display:inline-block;width:10px;height:10px;margin-right:8px;border-radius:50%;border:2px solid #ff3aa8;vertical-align:middle;opacity:.45;transition:opacity .08s,transform .08s}
+#hudR .beat.on{opacity:1;background:#ff3aa8;transform:scale(1.25)}
+#hudR .beat.dash{animation:beatDash .45s ease-out}
+@keyframes beatDash{0%{box-shadow:0 0 0 0 #ff3aa8;background:#fff}100%{box-shadow:0 0 0 14px rgba(255,58,168,0)}}
 .cur{display:inline-flex;align-items:center;gap:6px;font-family:var(--f-data);font-weight:600;font-variant-numeric:tabular-nums}
 .cur i{display:inline-block;width:11px;height:11px;flex:none}
 .cur.gold i{border-radius:50%;background:radial-gradient(circle at 35% 35%,#fff3b0,var(--gold) 55%,#a8741a)}

@@ -271,6 +271,20 @@ const ENEMY={
   cherub:{name:'Cherub',tag:'focus',mass:.6,role:'support',hp:7,r:1,speed:4.6,sc:1,fly:true,angel:true,cost:1.5,xp:1.5,gold:10,score:220,build:()=>buildCherub(),elite:false,init:e=>{ e.cd=3; }},
   censer:{name:'Censer',tag:'move',mass:1.3,role:'artillery',band:[8,12],hp:10,r:1.1,speed:1.8,sc:1,fly:true,angel:true,cost:2,xp:2,gold:12,score:240,build:()=>buildCenser(),init:e=>{ e.cd=rand(1.5,2.5); }},
   ophan:{name:'Ophan',tag:'move',mass:2,role:'charger',band:[6,10],hp:16,r:1.8,speed:11,sc:1,angel:true,cost:2.8,xp:3,gold:16,score:320,build:()=>buildOphan(1),init:e=>{ e.st='pause'; e.stT=rand(1,2); }},
+  /* Main Stage cast (docs/main-stage.html, Main Stage only; behavior in enemy-ai.js). group 'band': the four musicians (Encore = all of them),
+     the rest is stage crew and crowd. Every attack lands on a beat of the live music (BEAT in audio.js). still: never moves (no body lean).
+     seat: placed on an open spot instead of a gate (rooms.js seatSpot) · aura: Bass Brute slow radius · amps: amps a Roadie keeps out at once · jets: flame jets per Pyro Tech · spot: follow spot radius.
+     xp is half again a normal mob's: the Main Stage has no angels and one boss, so the pilot levels from the waves. */
+  bass:{name:'Bass Brute',group:'band',tag:'focus',mass:3,role:'tank',hold:4.5,aura:6.5,hp:18,r:1.5,speed:1.9,sc:1.45,cost:2.4,xp:3.9,gold:15,score:300,build:()=>buildBassist(),init:e=>{ e.cd=2; }},
+  dancer:{name:'Pulse Dancer',group:'band',tag:'move',mass:.6,role:'flanker',band:[4.5,6.5],hp:8,r:1.1,speed:5,sc:1.15,cost:1.8,xp:2.7,gold:11,score:220,build:()=>buildDancer(),init:e=>{ e.cd=rand(1,2); e.st='dance'; }},
+  shredder:{name:'Shredder',group:'band',tag:'move',mass:1.2,role:'kiter',band:[6,10],hp:11,r:1.15,speed:3.4,sc:1.2,cost:2.6,xp:3.9,gold:15,score:300,build:()=>buildShredder(),init:e=>{ e.cd=rand(1.2,2); e.riffs=0; }},
+  drummer:{name:'Drummer',group:'band',tag:'focus',mass:9,role:'artillery',slam:7.5,hp:18,r:1.9,speed:0,sc:1.1,still:true,seat:true,cost:3,xp:4.5,gold:18,score:340,build:()=>buildDrummer()},
+  roadie:{name:'Roadie',tag:'focus',mass:.9,role:'support',band:[8,12],amps:3,hp:6,r:1,speed:6,sc:1.1,cost:1.2,xp:1.65,gold:8,score:140,build:()=>buildHauler(),init:e=>{ e.cd=rand(.6,1.2); e.st='run'; }},
+  amp:{name:'Amp',mass:9,role:'static',hp:1,r:.9,speed:0,sc:1,still:true,cost:0,xp:0,gold:0,score:20,build:()=>buildAmp(),elite:false,init:e=>{ e.life=10; e.noLoot=true; e.beatOff=(Math.random()*4)|0; }},
+  mosher:{name:'Mosher',tag:'move',mass:.8,role:'rusher',hp:4,r:.95,speed:5.4,sc:1.05,cost:.45,xp:0.6,gold:3,score:60,build:()=>buildMosher(),elite:false,init:e=>{ e.cd=0; }},
+  pyro:{name:'Pyro Tech',tag:'move',mass:1,role:'denial',band:[8,11],jets:2,hp:7,r:1,speed:4.2,sc:1.1,cost:1.5,xp:2.25,gold:10,score:200,build:()=>buildPyro(),init:e=>{ e.jets=[]; e.cd=rand(.8,1.5); }},
+  spot:{name:'Lighting Tech',tag:'focus',mass:1,role:'support',band:[8,12],spot:2,hp:3,r:1,speed:3,sc:1.1,cost:1.2,xp:1.8,gold:9,score:160,build:()=>buildSpot()},
+  diver:{name:'Stage Diver',tag:'move',mass:1.3,role:'charger',hp:10,r:1.15,speed:4.8,sc:1.2,cost:2,xp:3,gold:12,score:240,build:()=>buildDiver(),init:e=>{ e.st='enter'; e.cd=rand(.6,1.2); }},
 };
 /* enemy AI by arena (index = arena). react: seconds an enemy must see you before it fires · lead: how much of your movement its aim and charges
    predict (0 = where you are, 1 = perfect intercept; arena 1 barely leads) · aggr: how often flankers go for your back and tanks push in · tokens: enemies that may attack at once
