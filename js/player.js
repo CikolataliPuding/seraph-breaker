@@ -6,7 +6,7 @@ function makePlayer(){
   const c=paint(); const m=buildMech(c.c1,c.c2,c.c3,c.eye,1,P.unit); scene.add(m.g,m.shadow);
   // stats come from balance.js (Core + tree × run buckets); recalcStats() rebuilds them whenever a skill, item or curse changes
   player={model:m,pos:new V3(0,0,6),vel:new V3(),st:null,hp:0,maxHp:0,en:100,overheat:0,regenDelay:0,fireCd:0,dashT:0,dashCd:0,dashDir:new V3(),inv:0,shield:false,aim:new V3(-1,0,-1).normalize(),aimOk:false,lastMove:new V3(0,0,-1),yaw:Math.PI,walk:0,dead:false,flash:0,
-    sp:0,od:0,leap:null,lance:0,lanceDir:new V3(),charge:0,prevFire:false,lunge:0,slashSide:1,hook:null,jump:null,gcd:[0,0],secondUsed:false,rs:{},orbA:0,jz:juiceState(),kick:new V3(),wasDash:false,dashCh:2,dashMax:2,dashRc:0,still:0,perfect:false,lives:0,luck:0,echoQ:null,enMax:100,critMul:2,extra:{},procs:{},bonus:null};
+    sp:0,od:0,leap:null,lance:0,lanceDir:new V3(),charge:0,prevFire:false,lunge:0,slashSide:1,hook:null,jump:null,gcd:[0,0],secondUsed:false,rs:{},orbA:0,jz:juiceState(),kick:new V3(),wasDash:false,dashCh:2,dashMax:2,dashRc:0,still:0,perfect:false,lives:0,luck:0,echoQ:null,enMax:100,critMul:2,extra:{},procs:{},bonus:null,stunT:0};
   recalcStats(); player.hp=player.maxHp;
   odRing.material.color.setHex(0xffe14a); pBeamO.material.color.setHex(unit.shot);
   buildOrbit(); renderRunSkills();
@@ -93,7 +93,7 @@ function zeroHp(){
   if(DBG.immortal){ p.hp=p.maxHp; p.inv=1; if(RUNLOG.cur) RUNLOG.cur.deaths++; return; }
   if(p.lives>0){ p.lives--; p.hp=p.maxHp*.5; p.inv=2; crossBlast(p.pos.clone(),0xffd36a,1.3); clearEnemyShots(p.pos,10); popText('EXTRA LIFE'); return; }
   if(p.st.second&&!p.secondUsed){ p.secondUsed=true; p.hp=p.maxHp*.3; p.inv=1.6; crossBlast(p.pos.clone(),0x7dff9a,1); clearEnemyShots(p.pos,8); return; }
-  p.hp=0; p.dead=true; dashArrow.visible=barRing.visible=false; crossBlast(p.pos.clone(),unit.shot,1.6); hitstop(120,true); shatter(p.model,p.pos,0,0,{max:14,spd:1.2}); scene.remove(p.model.g,p.model.shadow); setState('dying'); stateT=1.8; shieldG.visible=false; pBeamO.visible=pBeamC.visible=false; chargeOrb.visible=false; buzz(300);
+  p.hp=0; p.dead=true; p.stunT=0; dashArrow.visible=barRing.visible=false; crossBlast(p.pos.clone(),unit.shot,1.6); hitstop(120,true); shatter(p.model,p.pos,0,0,{max:14,spd:1.2}); scene.remove(p.model.g,p.model.shadow); setState('dying'); stateT=1.8; shieldG.visible=false; pBeamO.visible=pBeamC.visible=false; chargeOrb.visible=false; buzz(300);
 }
 const _tmp=new V3(),_tmp2=new V3(),_mz=new V3();
 function shotDir(mz){ const p=player; if(p.aimOk&&!mobileMode){ _tmp2.set(aimPt.x-mz.x,0,aimPt.z-mz.z); if(_tmp2.lengthSq()>2.2) return _tmp2.normalize().clone(); } return p.aim.clone(); }

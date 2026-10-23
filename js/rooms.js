@@ -157,7 +157,7 @@ function startRoom(i,force){
   room={type,kind:spec.kind,spec,cleared:false,hurt:false,completeT:0,boss:type==='boss'?(force&&force.boss||pickBoss()):null};
   if(type==='boss'){ buildBossRoom(); player.pos.set(0,0,AZ-3); }
   else { buildRoom(roomHalfX(),ROOM_Z,type==='angel'?SANCTUM:ROOMS[DBG.layout]||pickOne(ROOMS),true); player.pos.set(0,0,AZ-1.5); }
-  player.vel.set(0,0,0); camTarget.set(mobileMode?0:player.pos.x,0,mobileMode?mobileCamZ(player.pos.z):player.pos.z);
+  player.vel.set(0,0,0); player.stunT=0; camTarget.set(mobileMode?0:player.pos.x,0,mobileMode?mobileCamZ(player.pos.z):player.pos.z);
   if(typeof onRoomStart==='function') onRoomStart();
   logRoomStart(type);
   $('fade').classList.remove('on');
