@@ -221,8 +221,10 @@ const HC_COL=[0x5a8aff,0xd8d4ff,0xff2030]; // wave/ring colour per phase
 const HC_SLAM_R=6, HC_STUN=.6, HC_SCREAM=[30,8], HC_POLE_R=3.6, HC_POLE_DMG=9, HC_POLE_LIFE=6;
 const hcBump=(t,x,w=.3)=>Math.max(0,1-Math.abs(t-x)/w);
 // vertical light column: telegraph and impact flash
-function hcBeam(pos,color,r,life){ const m=new THREE.Mesh(new THREE.CylinderGeometry(r,r,60,20,1,true),addMat(color,.55)); m.position.set(pos.x,30,pos.z);
-  addFx(m,life,(f,dt,k)=>{ m.material.opacity=.55*Math.min(1,k*2); m.scale.set(.5+.5*k,1,.5+.5*k); },true); }
+// one shared unit column (pillars fire up to 8 in a row): scaled to the radius, only the per-beam material is freed when it ends
+const HC_BEAM_GEO=new THREE.CylinderGeometry(1,1,60,20,1,true);
+function hcBeam(pos,color,r,life){ const m=new THREE.Mesh(HC_BEAM_GEO,addMat(color,.55)); m.position.set(pos.x,30,pos.z);
+  addFx(m,life,(f,dt,k)=>{ m.material.opacity=.55*Math.min(1,k*2); const w=(.5+.5*k)*r; m.scale.set(w,1,w); },'mat'); }
 function highcoStartAttack(b,a){
   b.hb=0; b.scr=0; b.poled=0;
   if(a==='hcslam'){ const T=tgt(); b.stomp={from:b.pos.clone(),to:new V3(clamp(T.x,-AX+3,AX-3),0,clamp(T.z,-AZ+3,AZ-3))}; slamTele(b.stomp.to,HC_SLAM_R,1.1,.6); }

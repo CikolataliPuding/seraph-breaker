@@ -133,7 +133,7 @@ function tick(dt,now){
   // behind the choice screen the world keeps moving in slow motion (effects and debris only; nothing can hurt you)
   const fxdt=state==='choice'&&!paused?rawDt*.15:dt;
   updateJuice(fxdt); updateDust(fxdt);
-  for(let i=fx.length-1;i>=0;i--){ const f=fx[i]; if(fxdt>0) f.life-=fxdt; const k=Math.max(0,f.life/f.max); f.upd(f,fxdt,k); if(f.life<=0){ scene.remove(f.obj); if(f.dispose&&f.obj.geometry) f.obj.geometry.dispose(); fx.splice(i,1); } }
+  for(let i=fx.length-1;i>=0;i--){ const f=fx[i]; if(fxdt>0) f.life-=fxdt; const k=Math.max(0,f.life/f.max); f.upd(f,fxdt,k); if(f.life<=0){ scene.remove(f.obj); fxDispose(f); fx.splice(i,1); } }
   let want=1;
   if(state==='cine'&&boss){ camTarget.lerp(_tmp.set(boss.pos.x,bossCore(boss).y*.5,boss.pos.z),Math.min(1,(dt||.016)*3)); want=1.55; }
   else if(player&&!player.dead&&dt>0){ if(mobileMode) _tmp.set(0,0,mobileCamZ(player.pos.z)); else _tmp.copy(player.pos).addScaledVector(player.aim,1.5); camTarget.lerp(_tmp,Math.min(1,dt*5)); }
