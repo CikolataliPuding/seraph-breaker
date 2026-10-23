@@ -1,4 +1,4 @@
-// Seraph Breaker · bosses.js: Boss spawning, attack patterns (bossTick), beams, boss parts (rotors, eyes) and the cinematic intro.
+// Seraph Breaker · bosses.js: Boss spawning, attack patterns (bossTick), beams, boss parts (rotors, eyes), High-Co stage attacks and the cinematic intro.
 /* ================= BOSSES ================= */
 function spawnBoss(kind){
   const def=BOSSES[kind], m=BOSS_BUILD[kind](), form=def.form||kind;
@@ -8,6 +8,7 @@ function spawnBoss(kind){
   // Hive Carrier rotors and Ophanim Throne eyes are parts you can shoot out
   if(form==='hive'){ boss.rotors=m.rotors.map(r=>({m:r,hp:hp*.1,alive:true})); m.bay.material=m.bay.material.clone(); }
   if(m.eyes) m.eyes.forEach(e=>{ e.hp=hp*.012; e.alive=true; });
+  if(form==='highco'){ boss.poles=[]; boss.chute=buildHighCoChute(); boss.chuteT=0; roomGroup.add(boss.chute.g); }
   scene.add(m.g,m.shadow); enemies.push(boss);
   $('bossName').textContent=def.name.toUpperCase(); $('bossPh').textContent='PHASE I'; $('bossImg').src=PORTRAIT[kind]||'';
 }
@@ -20,11 +21,11 @@ function bossPartHit(b,pos,d){
   if(b.model.eyes){ let best=null,bd=1.6; for(const e of b.model.eyes){ if(!e.alive) continue; e.w.getWorldPosition(_tmp2); const dd=Math.hypot(_tmp2.x-pos.x,_tmp2.z-pos.z); if(dd<bd){ bd=dd; best=e; } }
     if(best){ best.hp-=d; if(best.hp<=0){ best.alive=false; best.p.visible=false; best.w.material=toon(0x2a2232); best.w.getWorldPosition(_tmp2); sparks(_tmp2,0xff2a3a,8,6); sfx('hit'); } } }
 }
-const LOCKED_ATK=['stomp','lunge','roll'];
+const LOCKED_ATK=['stomp','lunge','roll','hcslam','hcdescend'];
 /* fairness: attacks never overlap. An attack is over when its own projectiles have resolved (missiles landed, shockwaves and boss
    blasts gone), then the boss takes a short breather (BOSS_BREATH by phase, plus BOSS_SETTLE for volleys that are still in the air).
    While a heavy attack runs, summoned minions hold their fire (bossHeavy). */
-const BOSS_BREATH=[.9,.7,.5], BOSS_SETTLE={ring:.5,spiral:.3,shards:.8,summon:.4,drones:.4,sparks:.4,mines:1.3,aimed:.2,eyes:.2,wave:.3};
+const BOSS_BREATH=[.9,.7,.5], BOSS_SETTLE={ring:.5,spiral:.3,shards:.8,summon:.4,drones:.4,sparks:.4,mines:1.3,aimed:.2,eyes:.2,wave:.3,scream:.3,headbang:.3,pole:.3,pillars:.4};
 const LIGHT_ATK=['idle','enter','summon','drones','sparks','aimed','eyes','shieldup'];
 const SLAM_T=1.15; // slam wind-up: the red ring shows the shockwave's reach and fills up as the countdown
 function bossPending(){ for(const x of bullets) if(x.tag==='bmis') return true; for(const s of shocks) if(!s.friendly) return true; for(const x of blasts) if(x.boss) return true; return false; }
@@ -62,6 +63,7 @@ function bossStartAttack(b){
     for(let i=0;i<n;i++){ const u=-len/2+(i+.5)*len/n; queueBlast(hz?u:T.x,hz?T.z:u,{t:1.1+i*.05,rad:1.5,dmg:0,hurtP:16,hurtE:false,color:0xff5a2a,size:.55,boss:true}); } }
   if(a==='lunge'){ const d=toDir(b), len=Math.max(3,Math.min(15,lineLen(b.pos.x,b.pos.z,d.x,d.z,15,1))); b.lunge={dir:d,len,done:0,hit:false}; teleStrip(b.pos,d.x,d.z,len,2.8,0xff2236,.7); }
   if(a==='roll'){ const d=toDir(b), len=Math.max(4,lineLen(b.pos.x,b.pos.z,d.x,d.z,30,2)-1); b.rollC={dir:d,len,done:0,hit:false,dropT:0}; teleStrip(b.pos,d.x,d.z,len,6,0xffd36a,1); }
+  if(b.form==='highco') highcoStartAttack(b,a);
 }
 // Archon sword wave: a fan of light shots plus a big slash
 function swordWave(b,ph){
@@ -108,6 +110,7 @@ function bossTick(b,dt,to){
       if(L.done>=L.len-.01){ b.vuln=1.5; b.jz.pop.v=-7; shake=.4; crossBlast(b.pos.clone(),0xffd36a,.7); return true; } return false; }
     case 'shieldup':{ if(b.atkT<.35) return false; b.reflectT=Math.max(.01,3.35-b.atkT); if(b.atkT>3.35){ b.reflectT=0; return true; } return false; }
     case 'beam': case 'sweep': case 'sweep180': return updateBeam(b,dt);
+    case 'hcslam': case 'scream': case 'headbang': case 'pole': case 'pillars': case 'hcdescend': return highcoTick(b,dt,ph);
   }
   return true;
 }
@@ -140,7 +143,7 @@ function updateBoss(dt){
   const T=tgt(); const to=_tmp.subVectors(T,b.pos).setY(0); const d=to.length()||1; to.divideScalar(d);
   const pd=Math.hypot(player.pos.x-b.pos.x,player.pos.z-b.pos.z);
   const newPh=b.hp<b.maxHp*.33?3:b.hp<b.maxHp*.66?2:1;
-  if(newPh!==b.phase&&b.atk!=='enter'){ b.phase=newPh; $('bossPh').textContent='PHASE '+['I','II','III'][newPh-1]; groundRing(b.pos,0xff2236,14,1); shake=.6; hitstop(85,true); b.jz.pop.v=-8; if(def.barrier) b.barrier=3; b.atk='idle'; b.atkT=.7; b.beam=null; b.jumpY=0; b.reflectT=0; b.vuln=0; hideBeams(); clearEnemyShots(); }
+  if(newPh!==b.phase&&b.atk!=='enter'){ b.phase=newPh; $('bossPh').textContent='PHASE '+['I','II','III'][newPh-1]; groundRing(b.pos,0xff2236,14,1); shake=.6; hitstop(85,true); b.jz.pop.v=-8; if(def.barrier) b.barrier=3; b.atk='idle'; b.atkT=.7; b.beam=null; b.jumpY=0; b.reflectT=0; b.vuln=0; hideBeams(); clearEnemyShots(); if(f==='highco') highcoPhase(b,newPh); }
   b.vuln=Math.max(0,b.vuln-dt);
   if(b.atk==='enter'){ b.y+=(b.base-b.y)*Math.min(1,dt*2.6); b.atkT-=dt;
     if(b.atkT<=0){ b.y=b.base; b.atk='idle'; b.atkT=1; groundRing(b.pos,ARENAS[stage].theme.edge,16,1.2); crossBlast(b.pos.clone(),0xff6a1a,1.2); shake=.8; buzz(120); } }
@@ -178,6 +181,7 @@ function updateBoss(dt){
   else if(f==='throne'){ const spin=b.atk==='walls'||b.atk==='walls2'?3:1; m.rings.forEach((r,i)=>{ if(i===0) r.rotation.z+=dt*1.2*spin; if(i===1) r.rotation.x+=dt*spin; if(i===2) r.rotation.y+=dt*.8*spin; }); m.core.rotation.y+=dt*2;
     if(m.wings) m.wings.children.forEach((w,i)=>{ w.rotation.z=w.userData.base+Math.sin(b.t*1.8+i)*.1*w.userData.s; });
     if(b.atk==='roll'&&b.atkT>1) m.body.rotation.x+=dt*16/2.4; else m.body.rotation.x*=Math.pow(.05,dt); }
+  else if(f==='highco') highcoAnim(b,m,dt);
   else if(f==='archon'){ m.halo.rotation.z+=dt; m.wings.children.forEach((w,i)=>{ w.rotation.z=w.userData.base+Math.sin(b.t*2+i)*.1*w.userData.s; });
     // wind-ups: the sword rises before a wave, the knight crouches before the lunge and kneels while it is open
     let by=4.6,swx=-.25+Math.sin(b.t*1.1)*.15,swz=-.35;
@@ -190,6 +194,7 @@ function updateBoss(dt){
 }
 function bossDeath(){
   if(!player||player.dead||state==='dying'||state==='result') return;
+  if(boss.poles){ boss.poles.forEach(p=>roomGroup.remove(p.m.g)); boss.poles.length=0; }
   const def=boss.def; score+=[5000,8000,12000,16000][stage]; kills++; hideBeams(); fizzleRoom(); boss.jumpY=0; boss.reflectT=0;
   const gm=Math.round(def.gems*ECON.bossGems[sortie.a]*sortie.farm); P.gems+=gm; sortie.gems+=gm; logEarn('gems','boss',gm);
   setState('bossdeath'); stateT=3.2; boss.final=false; buzz(200); hitstop(120,true);
@@ -207,4 +212,104 @@ function endCine(){
   if(state!=='cine') return;
   const c=$('cine'); c.classList.remove('on'); setTimeout(()=>{ if(state!=='cine') c.hidden=true; },650);
   setState('fight'); if(boss){ boss.atkT=.25; boss.y=Math.min(boss.y,boss.base+6); } refreshControls();
+}
+/* ---- High-Co (Main Stage headliner) ----
+   Phase I frontman · phase II the black angel lands in his place (Encore) · phase III rage: red wings, light pillars, faster crowd.
+   Metal Scream hits the whole room (weaker with distance) unless an amp stack stands between him and you; a dash also clears it. */
+let hcArena=null; // concert stage of the current High-Co room (built in buildBossRoom)
+const HC_COL=[0x5a8aff,0xd8d4ff,0xff2030]; // wave/ring colour per phase
+const HC_SLAM_R=6, HC_STUN=.6, HC_SCREAM=[30,8], HC_POLE_R=3.6, HC_POLE_DMG=9, HC_POLE_LIFE=6;
+const hcBump=(t,x,w=.3)=>Math.max(0,1-Math.abs(t-x)/w);
+// vertical light column: telegraph and impact flash
+function hcBeam(pos,color,r,life){ const m=new THREE.Mesh(new THREE.CylinderGeometry(r,r,60,20,1,true),addMat(color,.55)); m.position.set(pos.x,30,pos.z);
+  addFx(m,life,(f,dt,k)=>{ m.material.opacity=.55*Math.min(1,k*2); m.scale.set(.5+.5*k,1,.5+.5*k); },true); }
+function highcoStartAttack(b,a){
+  b.hb=0; b.scr=0; b.poled=0;
+  if(a==='hcslam'){ const T=tgt(); b.stomp={from:b.pos.clone(),to:new V3(clamp(T.x,-AX+3,AX-3),0,clamp(T.z,-AZ+3,AZ-3))}; slamTele(b.stomp.to,HC_SLAM_R,1.1,.6); }
+  if(a==='pole'){ const T=tgt(); let x=0,z=0; for(let k=0;k<20;k++){ const an=rand(0,Math.PI*2), r=rand(1.5,4); x=clamp(T.x+Math.cos(an)*r,-AX+2.5,AX-2.5); z=clamp(T.z+Math.sin(an)*r,-AZ+2.5,AZ-2.5); if(!inBlock(x,z,1.5)) break; }
+    b.poleAt=new V3(x,0,z); slamTele(b.poleAt,HC_POLE_R,.9,.2); }
+  if(a==='pillars'){ const T=tgt(), n=b.phase===3?8:6; b.pq=[];
+    for(let i=0;i<n;i++){ let x=i%2?rand(-AX+2,AX-2):T.x+rand(-2.5,2.5), z=i%2?rand(-AZ+2,AZ-2):T.z+rand(-2.5,2.5); x=clamp(x,-AX+1.5,AX-1.5); z=clamp(z,-AZ+1.5,AZ-1.5);
+      const t=1+i*.35; b.pq.push({x,z,t,done:false}); queueBlast(x,z,{t,rad:1.8,dmg:0,hurtP:18,hurtE:false,color:0xff2030,size:.9,boss:true}); } }
+}
+function highcoTick(b,dt,ph){
+  switch(b.atk){
+    // jumps onto you: shockwave out to the red ring, and a short stun if you were still close when he landed
+    case 'hcslam':{ const S=b.stomp, k=Math.min(1,b.atkT/1.1); b.pos.lerpVectors(S.from,S.to,k); b.jumpY=Math.sin(Math.PI*k)*6;
+      if(k>=1&&!S.done){ S.done=1; b.jumpY=0; shockwave(b.pos,12,HC_SLAM_R,0xffd36a); groundRing(b.pos,0xffd36a,HC_SLAM_R*.55,.8); shake=.8; b.jz.pop.v=-9; hitstop(60,true);
+        if(!player.dead&&player.dashT<=0&&player.inv<=0&&Math.hypot(player.pos.x-b.pos.x,player.pos.z-b.pos.z)<HC_SLAM_R*.55){ player.stunT=HC_STUN; popText('STUNNED'); } }
+      return b.atkT>1.7; }
+    // mic to the mouth (1 s wind-up, rings pulse out), then one scream over the whole room
+    case 'scream':{ if(b.atkT<1){ if(b.subT<=0){ b.subT=.25; groundRing(b.pos,HC_COL[ph-1],3+b.atkT*5,.3); } return false; }
+      if(!b.scr){ b.scr=1; hcScream(b); } return b.atkT>1.6; }
+    // three head swings, each throws a fan of shots forward
+    case 'headbang':{ const sw=[.5,1.1,1.7]; if(b.hb<3&&b.atkT>=sw[b.hb]){ hcHeadbang(b,ph); b.hb++; } return b.atkT>2.2; }
+    // a pole bursts out of the floor where the red ring filled up; the dancer burns everything inside the ring
+    case 'pole': if(b.atkT>=.9&&!b.poled){ b.poled=1; hcPole(b,b.poleAt); } return b.atkT>1.2;
+    case 'pillars':{ for(const q of b.pq) if(!q.done&&b.atkT>=q.t){ q.done=true; hcBeam(new V3(q.x,0,q.z),0xff2030,1.4,.5); shake=Math.max(shake,.25); } return b.atkT>b.pq[b.pq.length-1].t+.3; }
+    // phase II entrance: the black angel drops down the light column (immune until it lands)
+    case 'hcdescend':{ const k=Math.min(1,b.atkT/1.8); b.y=26*(1-k)*(1-k);
+      if(k>=1&&b.immune){ b.immune=false; b.y=0; groundRing(b.pos,0xd9c9ff,10,1); crossBlast(b.pos.clone(),0xd9c9ff,1.2); shake=.7; b.jz.pop.v=-8; } return b.atkT>2.4; }
+  }
+  return true;
+}
+function hcScream(b){
+  const c=HC_COL[b.phase-1];
+  [0,.18,.36].forEach(d=>{ const r=new THREE.Mesh(G.ring,addMat(c,.9)), life=1.1+d; r.rotation.x=-Math.PI/2; r.position.set(b.pos.x,.08,b.pos.z);
+    addFx(r,life,(f,dt,k)=>{ const u=Math.max(0,(1-k)*life-d)/1.1; r.visible=u>0; r.scale.setScalar(1+u*30); r.material.opacity=.9*(1-u)*(1-u); }); });
+  shake=Math.max(shake,.8); buzz(140); sfx('beam');
+  if(!player||player.dead) return;
+  const dx=player.pos.x-b.pos.x, dz=player.pos.z-b.pos.z, d=Math.hypot(dx,dz)||1;
+  for(let t=b.r;t<d;t+=.4){ const o=inBlock(b.pos.x+dx/d*t,b.pos.z+dz/d*t,0,'block'); if(o){ sparks(new V3((o.x0+o.x1)/2,2.4,(o.z0+o.z1)/2),c,10,6); popText('COVERED'); return; } }
+  hurt(Math.round(HC_SCREAM[0]-(HC_SCREAM[0]-HC_SCREAM[1])*clamp(d/30,0,1)));
+}
+function hcHeadbang(b,ph){
+  const T=tgt(), base=Math.atan2(T.x-b.pos.x,T.z-b.pos.z), n=ph===1?9:11, c=HC_COL[ph-1], o=new V3(b.pos.x,1.8,b.pos.z), sp=eSpd();
+  for(let i=0;i<n;i++){ const a=base+(i/(n-1)-.5)*2.2; shoot('e',o,new V3(Math.sin(a),0,Math.cos(a)),8.5*sp,12,c,{life:3,r:.5}); }
+  if(ph===3) for(let i=0;i<n-1;i++){ const a=base+((i+.5)/(n-1)-.5)*2.2; shoot('e',o,new V3(Math.sin(a),0,Math.cos(a)),6*sp,10,c,{life:3.5,r:.45}); }
+  const g=new THREE.Group(), w=new THREE.Mesh(new THREE.RingGeometry(1,1.5,32,1,0,Math.PI),addMat(c,.85)); w.rotation.x=-Math.PI/2; g.add(w); g.position.set(b.pos.x,.08,b.pos.z); g.rotation.y=base+Math.PI;
+  addFx(g,.9,(f,dt,k)=>{ w.scale.setScalar(1.5+(1-k)*10); w.material.opacity=.85*k; }); shake=Math.max(shake,.25); sfx('boom');
+}
+function hcPole(b,at){
+  if(b.poles.length>=2){ const old=b.poles.shift(); roomGroup.remove(old.m.g); }
+  const m=buildHighCoPole(); m.g.position.set(at.x,-9.8,at.z); const s=HC_POLE_R/4; m.aura.scale.setScalar(s); m.fill.scale.setScalar(s); roomGroup.add(m.g);
+  b.poles.push({m,x:at.x,z:at.z,t:0,cd:0}); shake=Math.max(shake,.3); crossBlast(at.clone(),0xff3048,.8);
+}
+function highcoPhase(b,ph){
+  if(ph>=2&&b.model.stage!==2){ const old=b.model; shatter(old,b.pos,0,0,{max:mobileMode?8:16,spd:1.2,cy:3}); scene.remove(old.g,old.shadow);
+    const m=buildHighCo(2); scene.add(m.g,m.shadow); b.model=m; b.y=26; b.atk='hcdescend'; b.atkT=0; b.immune=true; hcBeam(b.pos,0xd9c9ff,2.4,2.2); popText('ENCORE'); }
+  if(ph===3){ setHighCoRage(b.model,true); hcBeam(b.pos,0xff2030,2.8,1); popText('SAKİN OLMAM LAZIM'); shake=.9; buzz(160); }
+}
+function highcoAnim(b,m,dt){
+  if(stepMech(m,b,b.vel.length(),dt,b.sc)&&!b.y){ b.byaw=b.yaw; footfall(b,m,b.sc,.12); } mechLean(m,b.jz,dt,b.vel.x*.5,b.vel.z*.5,b.yaw,b.yaw);
+  const a=b.atk, t=b.atkT; let jaw=.12+Math.sin(b.t*3)*.04, lag=0, flap=2;
+  m.head.rotation.x=0;
+  if(a==='enter'){ m.arms[0].rotation.set(-2.9,0,.35); m.arms[1].rotation.set(-2.9,0,-.35); m.legs[0].rotation.x=.25; m.legs[1].rotation.x=-.15; m.shins[0].rotation.x=.4; }
+  else if(a==='hcdescend'){ m.arms[0].rotation.set(-.3,0,.7); m.arms[1].rotation.set(-.3,0,-.7); flap=b.immune?10:3; }
+  else if(a==='beam'||a==='sweep'){ m.arms[1].rotation.set(-1.5,0,0); m.arms[0].rotation.set(-.3,0,.4); jaw=.35; }
+  else if(a==='hcslam'){ if(t<1.1){ const k=Math.min(1,t/.4); m.arms[0].rotation.set(-2.8*k,0,.2); m.arms[1].rotation.set(-2.8*k,0,-.2); }
+    else { m.hips.position.y=1.25; m.torso.rotation.x=.45; m.arms[0].rotation.set(-.7,0,.2); m.arms[1].rotation.set(-.7,0,-.2); jaw=.5; } }
+  else if(a==='scream'){ const k=Math.min(1,t*3), tr=t<1?Math.sin(b.t*50)*.03:0; m.arms[1].rotation.set(-2.2*k,0,.35*k); m.arms[0].rotation.set(-.6*k,0,-.5*k);
+    jaw=.15+.45*k; m.head.rotation.x=-.25*k+tr; m.torso.rotation.x=.15*k; flap=6; }
+  else if(a==='headbang'){ let s=0; for(const x of [.5,1.1,1.7]){ s=Math.max(s,hcBump(t,x)); lag=Math.max(lag,hcBump(t-.12,x)); }
+    m.head.rotation.x=s*.8-.15; m.torso.rotation.x=.1+s*.3; m.hips.position.y-=s*.12; jaw=.3+.2*s; m.arms[0].rotation.set(-.3,0,.4+s*.3); m.arms[1].rotation.set(-.3,0,-.4-s*.3); flap=4; }
+  else if(a==='pole'){ const k=Math.min(1,t*3); m.arms[0].rotation.set(-2.8*k,0,.2); jaw=.4*k; m.head.rotation.x=-.2*k; }
+  else if(a==='pillars'){ const k=Math.min(1,t*3); m.arms[0].rotation.set(-2.9*k,0,.3); m.arms[1].rotation.set(-2.9*k,0,-.3); m.head.rotation.x=-.4*k; jaw=.45*k; }
+  m.jaw.rotation.x=jaw; m.mouth.scale.y=1+jaw*2.5;
+  m.hair.forEach((p,i)=>{ p.rotation.x=p.userData.rx-(a==='headbang'?lag*1.3-.3:0)*.9+Math.sin(b.t*2+i)*.04; p.rotation.z=p.userData.rz+Math.sin(b.t*1.6+i)*.05; });
+  if(m.wings) m.wings.forEach(w=>w.rotation.y=w.userData.s*Math.sin(b.t*flap)*.25);
+  // parachute: hangs over him while he drops in, then collapses behind the landing spot and goes away
+  const C=b.chute;
+  if(C){ if(a==='enter'){ C.g.position.set(b.pos.x,b.y+7,b.pos.z); C.g.rotation.z=Math.sin(b.t*2)*.06; }
+    else { if(!C.land) C.land=b.pos.clone(); b.chuteT+=dt; const k=Math.min(1,b.chuteT/1.2);
+      C.g.position.set(C.land.x,7-k*5.5,C.land.z-k*2.5); C.g.rotation.set(-k*1.35,0,0); C.canopy.scale.set(1+k*.2,1-k*.85,1); C.lines.forEach(l=>l.visible=k<.3);
+      if(b.chuteT>1.8) C.g.scale.setScalar(Math.max(.001,1-(b.chuteT-1.8)/.6)); if(b.chuteT>2.4){ roomGroup.remove(C.g); b.chute=null; } } }
+  // poles: rise, spin, burn whoever stands in the ring, sink back
+  for(let i=b.poles.length-1;i>=0;i--){ const P=b.poles[i], pm=P.m; P.t+=dt; P.cd-=dt;
+    const h=Math.min(1,P.t/.35)*(1-Math.max(0,Math.min(1,(P.t-HC_POLE_LIFE)/.6))); pm.g.position.y=-9.8*(1-h);
+    pm.spin.rotation.y=b.t*4; pm.body.position.y=Math.sin(b.t*4)*.3; pm.tail.rotation.z=Math.sin(b.t*8)*.3;
+    const live=P.t>.35&&P.t<HC_POLE_LIFE; pm.aura.visible=pm.fill.visible=live; pm.aura.material.opacity=.5+.3*Math.sin(b.t*12);
+    if(live&&state==='fight'&&player&&!player.dead&&P.cd<=0&&Math.hypot(player.pos.x-P.x,player.pos.z-P.z)<HC_POLE_R){ P.cd=.5; hurt(HC_POLE_DMG); }
+    if(P.t>HC_POLE_LIFE+.6){ roomGroup.remove(pm.g); b.poles.splice(i,1); } }
+  if(hcArena&&hcArena.g.parent) animateHighCoArena(hcArena,b.t,b.phase);
 }

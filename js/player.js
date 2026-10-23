@@ -16,7 +16,7 @@ function busy(){ const p=player; return p.leap||p.jump||(p.hook&&p.hook.phase===
 // direction: desktop = held keys, else the mouse aim. Phone = flick, else the stick, else the last way you moved; never the auto-aim,
 // which locks onto the nearest enemy and would dash you into it.
 function tryDash(dir){
-  if(state!=='fight'||!player||player.dead||paused||busy()) return;
+  if(state!=='fight'||!player||player.dead||paused||busy()||player.stunT>0) return;
   const p=player;
   if(mobileMode){ if(p.dashCh<1) return; p.dashCh--; }
   else { if(p.overheat>0||p.en<35||p.dashCd>0) return; p.en-=35; p.regenDelay=.9; }
@@ -136,7 +136,9 @@ function updatePlayer(dt,canAct){
     if(d<=step+.1){ p.pos.set(dest.x,0,dest.z); pushOut(p.pos,.7); if(h.target&&!h.target.dead){ if(h.target!==boss) h.target.stun=1.2; hitEnemy(h.target,8*p.st.dmg,h.target.pos.clone().setY(2)); } p.hook=null; groundRing(p.pos,0xffe0a0,2,.3); }
     else p.pos.addScaledVector(_tmp.normalize(),step); p.vel.set(0,0,0); }
   else {
-    const mv=canAct||state==='trans'?moveVec():_tmp2.set(0,0,0);
+    // stunned (High-Co's slam): no moving or dashing for a moment, stars over the head
+    if(p.stunT>0){ p.stunT-=dt; if(Math.random()<dt*14) sparks(p.pos.clone().setY(3.2),0xffd36a,1,2); }
+    const mv=(canAct||state==='trans')&&!(p.stunT>0)?moveVec():_tmp2.set(0,0,0);
     const sp=unit.speed*p.st.spd*(p.shield?.45:1)*(p.od>0?1.2:1)*(p.lance>0?0:1);
     if(p.dashT>0){ p.dashT-=dt; p.vel.copy(p.dashDir).multiplyScalar(30);
       if(p.rs.trail){ p.trailT=(p.trailT||0)-dt; if(p.trailT<=0){ p.trailT=.04; dropTrail(p.pos); } }

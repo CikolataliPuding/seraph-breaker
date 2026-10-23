@@ -302,6 +302,7 @@ const BOSS_TEACH={
   seraph:['seraph','seraph','warden','cherub'],         // charges and rings
   throne:['ophan','warden','censer'],                   // rolls and bullet walls
   archon:['seraph','bulwark','warden'],                 // lunges, a shield to flank, waves
+  highco:['spark','spark','lancer','howitzer'],         // blasts, a laser that tracks you, marked impacts (pillars)
 };
 /* room kinds. minRoom / minArena gate them early on. Ambush: they come from the sides and from behind. Reinforcements: waves arrive through gates.
    Survive: hold out for time seconds against endless spawns (spawns pay reward × the normal kill). Hunt: an elite flees and escapes after time
@@ -353,6 +354,10 @@ const BOSSES={
     pool:[['walls','eyes'],['walls','eyes','walls2'],['walls2','eyes','roll','walls','roll']]},
   archon:{name:'Archon',cls:'Class · Angel · Judge',epi:'An armored knight with a sword of light. Stay out of the lunge, punish the recovery, and stop firing into the shield.',threat:5,warn:'JUDGEMENT DESCENDS',hp:820,r:2.6,fly:.01,coreY:4.6,barrier:false,minion:'seraph',gold:560,gems:56,angel:true,
     pool:[['wave','lunge','aimed'],['wave','lunge','shieldup','wave'],['lunge','wave','shieldup','lunge','ring']]},
+  // High-Co (Main Stage headliner): phase I frontman, phase II the black angel lands in his place, phase III rage (red wings, light pillars).
+  // His room is a concert stage (buildHighCoArena); the amp stacks on the mat are the only cover from the Metal Scream.
+  highco:{name:'High-Co',cls:'Class · Frontman · Fallen angel',epi:'The headliner parachutes in, screams the room flat and comes back with wings. Hide behind the amps when he raises the mic.',threat:5,warn:'THE HEADLINER IS DROPPING IN',hp:900,r:1.8,fly:0,coreY:6.5,barrier:false,minion:'spark',gold:620,gems:62,angel:false,
+    pool:[['beam','hcslam','scream','headbang'],['beam','hcslam','scream','headbang','pole','sweep'],['sweep','hcslam','scream','headbang','pole','pillars','pillars']]},
 };
 /* corrupted variants: any boss + purple tint, crystal spikes and a few attacks borrowed from another boss. Arena 4 draws from all of them. */
 const CORRUPT_DONOR={colossus:['shards','beam'],prism:['missiles','slam'],seraph:['walls','bombline'],hive:['mines','spiral'],arachne:['bombline','ring'],throne:['spiral','missiles'],archon:['slam','shards']};
