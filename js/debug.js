@@ -103,7 +103,7 @@ function simulate(o={}){
       for(let ri=0;ri<N;ri++){
         const spec=plan[ri], type=spec.type, sc=enemyScale(a,ri,rule); let count=0,g=0,gm=0;
         if(type==='combat'||type==='elite'){
-          const list=composeRoom(spec,a,ri,rule,11).flat(), K=ROOM_KINDS.survive;
+          const list=(spec.kind==='stage'?composeStage(ri,false):composeRoom(spec,a,ri,rule,11)).flat(), K=ROOM_KINDS.survive;
           // Survive: about one extra spawn every 1.3 s, paying K.reward of a normal kill
           if(spec.kind==='survive') for(let i=0;i<Math.round(K.time/1.3);i++) list.push(pickOne(arenaPool(a,ri))+'~');
           for(const t0 of list){ const tg=t0.slice(-1), el=tg==='*'||tg==='!', k=el||tg==='~'?t0.slice(0,-1):t0, d=ENEMY[k], fam=(k==='shardling'?1+6*SPLIT_REWARD:1)*(tg==='~'?K.reward:1), mul=el?3:1;
@@ -115,7 +115,9 @@ function simulate(o={}){
         if(ri===N-1){ gm+=ECON.repeatClear(a); src.gemClear+=ECON.repeatClear(a); }
         goldT+=g; gemT+=gm;
         // mob strength at this room index (combat room curve × crowd) and the boss strength, whatever the room type
-        const pw=est(ctx), enemy=Math.sqrt(sc.hp*sc.dmg)*Math.sqrt(roomBudget(a,ri,false)/base0), bossE=Math.sqrt(sc.boss*sc.bossDmg);
+        // Main Stage: the crowd is the room's wave budget against Arena 1's room budget, and the curve is taken at the room's middle wave
+        const scm=A.stage?enemyScale(a,ri,rule,.5):sc, crowd=A.stage&&ri<STAGE.waves.length?(STAGE.budget.base+STAGE.budget.room*ri+STAGE.budget.wave*(STAGE.waves[ri]-1)/2)/base0:roomBudget(a,ri,false)/base0;
+        const pw=est(ctx), enemy=Math.sqrt(scm.hp*scm.dmg)*Math.sqrt(crowd), bossE=Math.sqrt(sc.boss*sc.bossDmg);
         const r=acc[ri]||(acc[ri]={room:ri+1,type,lv:0,dps:0,ehp:0,power:0,enemyHp:sc.hp,enemyDmg:sc.dmg,enemy,boss:bossE,pressure:0,bossPressure:0,count:0});
         r.lv+=lv/trials; r.dps+=pw.dps/trials; r.ehp+=pw.ehp/trials; r.power+=pw.power/trials; r.pressure+=enemy/pw.power/trials; r.bossPressure+=bossE/pw.power/trials; r.count+=count/trials;
       }
@@ -123,9 +125,9 @@ function simulate(o={}){
     acc.forEach(r=>{ for(const k in r) if(typeof r[k]==='number') r[k]=r2(r[k]); r.build=bd; out.rooms.push(r); });
     out.econ[bd]={gold:Math.round(goldT/trials),gems:Math.round(gemT/trials),goldBy:{kill:Math.round(src.kill/trials),boss:Math.round(src.boss/trials),clear:Math.round(src.clear/trials)},gemsBy:{kill:r2(src.gemKill/trials),boss:r2(src.gemBoss/trials),clear:r2(src.gemClear/trials)},target:{gold:ECON.target.gold[a],gems:ECON.target.gems[a]}};
   }
-  const pts=[1,10,20,30,40,50].filter(n=>n<=N);
-  out.table=pts.map(n=>{ const r0=out.rooms.find(x=>x.room===n), row={room:n,'enemy mob':r0.enemy,'enemy boss':n%10?'':r0.boss};
-    builds.forEach(bd=>{ const r=out.rooms.find(x=>x.build===bd&&x.room===n); row[bd+' lv']=r.lv; row[bd+' power']=r.power; row[bd+' mob pressure']=r.pressure; if(!(n%10)) row[bd+' boss pressure']=r.bossPressure; }); return row; });
+  const pts=(A.stage?[1,4,8,12,15,16]:[1,10,20,30,40,50]).filter(n=>n<=N);
+  out.table=pts.map(n=>{ const r0=out.rooms.find(x=>x.room===n), row={room:n,'enemy mob':r0.enemy,'enemy boss':n%10&&!(A.stage&&n===N)?'':r0.boss};
+    builds.forEach(bd=>{ const r=out.rooms.find(x=>x.build===bd&&x.room===n); row[bd+' lv']=r.lv; row[bd+' power']=r.power; row[bd+' mob pressure']=r.pressure; if(!(n%10)||A.stage&&n===N) row[bd+' boss pressure']=r.bossPressure; }); return row; });
   if(o.print!==false){ console.log(`Seraph Breaker sim · arena ${a+1} (${A.name}) · meta ${out.meta} · ${trials} trials`); console.table(out.table); console.table(out.econ); }
   return out;
 }
@@ -150,7 +152,7 @@ function botTick(dt){
   for(const e of enemies){ if(e.dead) continue; if(e.shell&&e.shell.t<1.2-BOT.react) flee(e.shell.x,e.shell.z,3,3); if(e.atk===ATK.slam&&e.ph==='tele'&&e.phMax-e.phT>BOT.react) flee(e.pos.x,e.pos.z,e.def.slam+1.3,4); if(e.st==='blink') flee(e.pos.x,e.pos.z,3.4,4); if(e.ph==='charge'||e.st==='roll') flee(e.pos.x,e.pos.z,4,2); }
   for(const s of shocks){ if(s.hit||s.friendly) continue; const df=Math.hypot(p.pos.x-s.x,p.pos.z-s.z)-s.r; if(df>0&&df<1.6&&Math.random()<BOT.skill) dashDir=new V3(s.x-p.pos.x,0,s.z-p.pos.z).normalize(); else if(df>0&&df<s.max-s.r+1) flee(s.x,s.z,s.max+1.5,2.5); }
   for(const m of emines) flee(m.x,m.z,2.4,2);
-  for(const t of traps){ if(!trapDanger(t)) continue; if(t.kind==='saw') flee(t.x,t.z,t.r+1.7,3); else for(const c of t.cells) flee(c.x,c.z,t.cw*.75+.9,3); }
+  for(const t of traps){ if(room&&room.cleared||!trapDanger(t)) continue; /* traps are off once the room is clear (a stopped saw would pin the bot) */ if(t.kind==='saw') flee(t.x,t.z,t.r+1.7,3); else for(const c of t.cells) flee(c.x,c.z,t.cw*.75+.9,3); }
   for(const h of hazards) if(h.ph>=1||h.t<.3&&h.ph===0) flee(h.x,h.z,2.4,2.5);
   // spacing: circle the nearest enemy at 6-10 units, switch direction now and then
   BOT.sideT-=dt; if(BOT.sideT<=0){ BOT.sideT=rand(1.4,3); BOT.side=Math.random()<.5?-1:1; }
@@ -174,7 +176,8 @@ function botGo(x,z,add){ const p=player; BOT.pT=(BOT.pT||0)-1/30;
   if(!BOT.path||BOT.pT<=0){ BOT.pT=.5; BOT.path=navPath(p.pos.x,p.pos.z,clamp(x,-AX+.5,AX-.5),clamp(z,-AZ+.5,AZ-.5),.7); BOT.pi=0; }
   const P=BOT.path; if(!P||!P.length){ add(x-p.pos.x,z-p.pos.z,1); return; }
   while(BOT.pi<P.length-2&&(Math.hypot(P[BOT.pi]-p.pos.x,P[BOT.pi+1]-p.pos.z)<.6||walkClear(p.pos.x,p.pos.z,P[BOT.pi+2],P[BOT.pi+3],.7))) BOT.pi+=2;
-  add(P[BOT.pi]-p.pos.x,P[BOT.pi+1]-p.pos.z,1); }
+  // a waypoint right under the bot (the path's last cell is the one it stands on) would leave it standing still: head for the target instead
+  const wx=P[BOT.pi]-p.pos.x, wz=P[BOT.pi+1]-p.pos.z; if(Math.hypot(wx,wz)<.3){ BOT.path=null; add(x-p.pos.x,z-p.pos.z,1); } else add(wx,wz,1); }
 // measurement run: the bot plays an arena with a given meta (Core + tree), fast-forwarded and without rendering. Damage is real, death is not:
 // at zero armor the pilot is refilled and the room counts a death. Returns a per-arena summary (no-damage share, time per room, gold per minute).
 async function measureRun(o={}){

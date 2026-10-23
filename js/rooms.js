@@ -130,18 +130,58 @@ function ambushSpot(i){ const p=player.pos; for(let k=0;k<30;k++){ const side=(i
     else { x=(side===1?-1:1)*(AX-rand(1.3,2.5)); z=clamp(p.z+rand(-4,3),-AZ+1.5,AZ-1.5); }
     if(!inBlock(x,z,1)&&Math.hypot(x-p.x,z-p.z)>3.2) return new V3(x,0,z); } return freeSpot(); }
 function gateSpot(g){ const G_=room.gates[g%room.gates.length]; for(let k=0;k<20;k++){ const x=clamp(G_.x+rand(-1.5,1.5)*(G_.side?0:1)+(G_.side?-G_.side*rand(.4,1.4):0),-AX+1,AX-1), z=clamp(G_.z+rand(-1.5,1.5)*(G_.side?1:0)+(G_.side?0:rand(.5,1.5)),-AZ+1,AZ-1); if(!inBlock(x,z,1)) return new V3(x,0,z); } return freeSpot(); }
+// a seat for an enemy that never moves (the Main Stage drummer): the far half of the mat, clear of blocks all around, away from you
+function seatSpot(){ for(let k=0;k<60;k++){ const x=rand(-AX+3,AX-3), z=rand(-AZ+3,-1); if(inBlock(x,z,2.6)||player&&Math.hypot(x-player.pos.x,z-player.pos.z)<7) continue; return new V3(x,0,z); } return freeSpot(); }
 function spawnWave(list,mode){ list.forEach((t,i)=>{ const tag=t.slice(-1), elite=tag==='*'||tag==='!', k=elite?t.slice(0,-1):t;
-  const pos=mode==='ambush'?ambushSpot(i):mode==='gate'?gateSpot(i):freeSpot(), e=spawnEnemy(k,pos,elite,{noDrop:mode==='gate',hunt:tag==='!'});
+  const pos=ENEMY[k]&&ENEMY[k].seat?seatSpot():mode==='ambush'?ambushSpot(i):mode==='gate'?gateSpot(i):freeSpot(), e=spawnEnemy(k,pos,elite,{noDrop:mode==='gate'&&!ENEMY[k].seat,hunt:tag==='!'});
   if(e&&mode==='gate'){ e.wake=.25; groundRing(pos,0xff5a3a,2,.4); } }); }
 // reinforcement gates on the mat edge: the top one (by the door) and one on each side
 function buildGates(){ room.gates=[{x:0,z:-AZ+1.2,side:0},{x:-AX+1.2,z:-3,side:-1},{x:AX-1.2,z:-3,side:1}];
   room.gates.forEach(g=>{ const m=new THREE.Mesh(box(g.side?.3:3.4,.1,g.side?3.4:.3),basic(0xff5a3a,false)); m.position.set(g.side?g.side*AX:0,.07,g.side?g.z:-AZ+.2); roomGroup.add(m);
     if(g.side){ const f=new THREE.Mesh(box(.5,2.2,.4),toon(0x2c2632)); [-1.8,1.8].forEach(o=>{ const p=f.clone(); p.position.set(g.side*(AX+.3),1.1,g.z+o); roomGroup.add(p); }); } }); }
+/* ================= MAIN STAGE WAVE ROOMS ================= */
+// Main Stage mobs open up room by room (STAGE.unlock); the four band members come one at a time
+const stageUnlocked=ri=>Object.keys(STAGE.unlock).filter(k=>ENEMY[k]&&ri+1>=STAGE.unlock[k]);
+/* the waves of Main Stage room ri (0-based): lists of types ('*' = elite), built from the bestiary's compositions. Sound check: one band member
+   (the newest one opens the room) + stage crew. Moshpit: a pack of Moshers (+ crew with what is left of the budget). Encore: the whole band.
+   Each wave's budget grows inside the room and from room to room (STAGE.budget). Pure: the debug simulation and DBG.stageCurve use it too. */
+function composeStage(ri,mob=mobileMode){
+  const W=STAGE, n=W.waves[clamp(ri,0,W.waves.length-1)], ok=stageUnlocked(ri), band=W.band.filter(k=>ok.includes(k)), crew=W.crew.filter(k=>ok.includes(k)), cap=W.cap[mob?0:1], out=[];
+  for(let w=0;w<n;w++){ let budget=W.budget.base+W.budget.room*ri+W.budget.wave*w; const list=[], add=t=>{ if(list.length<cap){ list.push(t); budget-=ENEMY[t].cost; } };
+    const encore=ri+1>=W.encore.from&&w===n-1&&band.length===W.band.length, mosh=!encore&&ok.includes('mosher')&&ri+1>=W.mosh.from&&(w+1)%W.mosh.every===0;
+    if(encore){ band.forEach(add); if(ri+1>=W.encore.elite) list[(Math.random()*list.length)|0]+='*'; }
+    else if(mosh){ const sz=mob?W.mosh.sizeM:W.mosh.size, k=Math.min(cap-1,Math.round(rand(sz[0],sz[1]))); for(let i=0;i<k;i++) add('mosher'); }
+    else { add(w===0?band[band.length-1]:pickOne(band)); }
+    if(crew.length){ add(pickOne(crew)); let g=0; while(budget>.5&&list.length<cap&&g++<40){ const t=pickOne(crew); if(ENEMY[t].cost<=budget+.4) add(t); } }
+    out.push(list); }
+  return out;
+}
+// the festival around every Main Stage room: the stage behind the door, screens, light truss, speaker towers and the crowd (built once per size)
+let stageDecor=null;
+function addStageDecor(){ if(!stageDecor||stageDecor.ax!==AX||stageDecor.az!==AZ){ stageDecor=buildHighCoArena(AX,AZ,[],{crowd:'side'}); stageDecor.ax=AX; stageDecor.az=AZ; } roomGroup.add(stageDecor.g); }
+/* wave flow of a Main Stage room (from roomKinds): when a wave is down (amps and summons do not count, they fizzle), a 3-4 s breather shows
+   NEXT WAVE on the HUD, then the next wave comes through the gates. The last wave cleared clears the room. */
+function stageWaves(dt){
+  const S=room.stage, alive=enemies.filter(e=>!e.dead&&!e.minion).length; if(alive) return;
+  const fizzle=()=>{ for(const e of enemies.slice()) if(!e.dead&&e!==boss){ e.noLoot=true; killEnemy(e,true); } };
+  if(!spawnQ.length){ fizzle(); return; }
+  if(S.breath==null){ fizzle(); S.breath=rand(STAGE.breather[0],STAGE.breather[1]); room.timer={name:'NEXT WAVE',t:S.breath,max:S.breath}; refreshControls(); toast('Wave clear',`Wave ${S.w+2}/${S.n} next`); }
+  S.breath-=dt; room.timer.t=S.breath;
+  if(S.breath<=0){ S.breath=null; room.timer=null; S.w++; room.waveF=S.w/S.n; const list=spawnQ.shift(), enc=list.filter(t=>STAGE.band.includes(t.replace('*',''))).length>=STAGE.band.length;
+    spawnWave(list,'gate'); toast(enc?'Encore':`Wave ${S.w+1}/${S.n}`,enc?'The whole band is on stage':''); sfx('door'); refreshControls(); }
+}
+// every frame in a Main Stage room: the drummer speeds the band up while he plays, the festival lights move
+function stageTick(dt){
+  if(!BEAT.force) AU.tempoK=enemies.some(e=>e.type==='drummer'&&!e.dead)?STAGE.drumTempo:1;
+  if(stageDecor&&stageDecor.g.parent) animateHighCoArena(stageDecor,playTime,0);
+}
+const fightTrack=()=>ARENAS[stage]&&ARENAS[stage].stage?'stage':'battle';
 /* room kinds (ROOM_KINDS): how a combat room starts. roomUpdate (main.js) runs the waves, the Survive / Hunt timers and the dark overlay. */
 function startCombat(spec,tag){
-  const K=ROOM_KINDS[spec.kind]||ROOM_KINDS.normal, waves=composeRoom(spec);
+  const K=ROOM_KINDS[spec.kind]||ROOM_KINDS.normal, waves=spec.kind==='stage'?null:composeRoom(spec);
   if(spec.kind==='gauntlet'){ addRandomTraps(4+Math.min(2,sortie.a),2*AX/11,2*AZ/15); addHazards(3); } else addHazards();
   room.timer=null; room.dark=false;
+  if(spec.kind==='stage'){ const W=composeStage(sortie.ri); buildGates(); room.stage={n:W.length,w:0,breath:null}; room.waveF=0; spawnWave(W[0],'gate'); spawnQ=W.slice(1); toast(K.name,`${tag} · Wave 1/${W.length}`); return; }
   if(spec.kind==='ambush'){ room.ambushT=.7; room.ambush=waves[0]; spawnQ=[]; }
   else if(spec.kind==='reinforce'){ buildGates(); spawnWave(waves[0]); spawnQ=waves.slice(1); room.waveMode='gate'; room.waveT=9; }
   else { spawnWave(waves[0]); spawnQ=waves.slice(1); }
@@ -156,14 +196,14 @@ function startRoom(i,force){
   clearEnemiesAndShots();
   room={type,kind:spec.kind,spec,cleared:false,hurt:false,completeT:0,boss:type==='boss'?(force&&force.boss||pickBoss()):null};
   if(type==='boss'){ buildBossRoom(); player.pos.set(0,0,AZ-3); }
-  else { buildRoom(roomHalfX(),ROOM_Z,type==='angel'?SANCTUM:ROOMS[DBG.layout]||pickOne(ROOMS),true); player.pos.set(0,0,AZ-1.5); }
-  player.vel.set(0,0,0); player.stunT=0; camTarget.set(mobileMode?0:player.pos.x,0,mobileMode?mobileCamZ(player.pos.z):player.pos.z);
+  else { buildRoom(roomHalfX(),ROOM_Z,type==='angel'?SANCTUM:ROOMS[DBG.layout]||pickOne(ROOMS),true); player.pos.set(0,0,AZ-1.5); if(ARENAS[stage].stage) addStageDecor(); }
+  player.vel.set(0,0,0); player.stunT=0; player.slowT=0; AU.tempoK=BEAT.force?AU.tempoK:1; camTarget.set(mobileMode?0:player.pos.x,0,mobileMode?mobileCamZ(player.pos.z):player.pos.z);
   if(typeof onRoomStart==='function') onRoomStart();
   logRoomStart(type);
   $('fade').classList.remove('on');
   const tag=`Room ${i+1}/${sortie.N}`;
   if(type==='boss'){ $('warnTxt').textContent=BOSSES[room.boss].warn; setState('warn'); stateT=2.2; $('warn').hidden=false; playTrack('boss'); sfx('beam'); refreshControls(); return; }
-  setState('fight'); playTrack('battle');
+  setState('fight'); playTrack(fightTrack());
   if(type==='angel'){ spawnNpc('angel',new V3(0,0,-2)); openDoor(); toast('Sanctuary',tag); }
   else startCombat(spec,tag);
   refreshControls();

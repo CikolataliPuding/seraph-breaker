@@ -6,6 +6,7 @@ const _sunOff=new V3(-6,32,3);
    Survive (endless spawns until the timer ends; the leftovers fizzle), Hunt (the elite escapes when the timer ends) */
 function roomKinds(dt){
   if(room.ambush){ room.ambushT-=dt; if(room.ambushT<=0){ spawnWave(room.ambush,'ambush'); room.ambush=null; toast('Ambush!'); sfx('door'); } return; }
+  if(room.stage){ stageWaves(dt); return; }
   const alive=enemies.filter(e=>!e.dead&&!e.minion).length;
   if(spawnQ.length){ room.waveT=(room.waveT==null?99:room.waveT)-dt; if(!alive||room.waveMode==='gate'&&(alive<=2||room.waveT<=0)){ spawnWave(spawnQ.shift(),room.waveMode); room.waveT=9; toast(room.waveMode==='gate'?'Reinforcements':'Second wave'); } }
   const T=room.timer; if(!T||room.cleared) return; T.t-=dt;
@@ -18,6 +19,7 @@ function roomKinds(dt){
 }
 function roomUpdate(dt,edt){
   if(room.type!=='boss'&&room.type!=='angel') roomKinds(dt);
+  if(ARENAS[stage].stage) stageTick(dt);
   updateEnemies(edt); updateEMines(edt,performance.now()/1000); updateHazards(dt); updateTraps(dt);
   if(room.type!=='boss'&&room.type!=='angel'&&!room.cleared&&!enemies.length&&!spawnQ.length&&!room.ambush&&!(room.timer&&room.kind==='survive')){
     roomCleared();
@@ -40,7 +42,7 @@ function frame(now){
 }
 function tick(dt,now){
   if(BOT.on) botTick(dt);
-  const rawDt=dt; if(paused||state==='choice'||state==='result') dt=0;
+  const rawDt=dt; beatTick(rawDt); if(paused||state==='choice'||state==='result') dt=0;
   const rdt=dt; hsCool=Math.max(0,hsCool-rdt);
   // hitstop freezes the simulation while rendering continues; slow motion only slows enemies and their shots
   if(dt>0&&hitstopT>0){ hitstopT-=dt; dt=0; }
@@ -111,6 +113,8 @@ function tick(dt,now){
           // Bulwark: the front shield stops plain shots (pierce and ricochet get through, wall-bounce shots bounce off it)
           if(e.type==='bulwark'&&!b.pierce&&!b.bounce){ const fx=Math.sin(e.yaw),fz=Math.cos(e.yaw),l=Math.hypot(dx,dz)||1; if((dx*fx+dz*fz)/l>.3){ sparks(p,0xffa04a,3,4); sfx('shield'); e.model.hex.scale.setScalar(1.5); e.jz.pop.v+=.6;
             if(b.wall>0){ b.wall--; const dn=b.vel.x*fx+b.vel.z*fz; b.vel.x-=2*dn*fx; b.vel.z-=2*dn*fz; p.x+=fx*.6; p.z+=fz*.6; b.m.lookAt(p.clone().add(b.vel)); } else gone=true; break; } }
+          // Pulse Dancer: her spinning scarves swat 40% of plain shots away (not while she lands, nor piercing shots)
+          if(e.type==='dancer'&&e.scarf&&!b.pierce&&Math.random()<.4){ sparks(p,0xff3aa8,3,5); gone=true; break; }
           // Archon shield phase: your shots fly back at you
           if(e===boss&&boss.reflectT>0){ const v=new V3(player.pos.x-p.x,0,player.pos.z-p.z).normalize(); shoot('e',p.clone().setY(1.8),v,13*eSpd(),9,0xffd36a,{life:2.4,r:.42}); sparks(p,0xffd36a,2,4); gone=true; break; }
           hitEnemy(e,b.dmg,p.clone(),false,b.proc,b.flat);
@@ -122,7 +126,7 @@ function tick(dt,now){
       _tmp.set(p.x-player.pos.x,0,p.z-player.pos.z); const d=_tmp.length(), pr=.75+b.r*.5;
       if(player.shield&&d<2.6&&d>.01&&_tmp.divideScalar(d).dot(player.aim)>.45){ sparks(p,0xffa04a,4,5); player.en-=7; player.regenDelay=.9; sfx('shield'); if(player.rs.reflect) reflectShot(b); killBullet(i); continue; }
       if(d<3.4&&orbitG.children.length&&orbitBlocks(b)){ killBullet(i); continue; }
-      if(d<pr||segDist(ox,oz,p.x,p.z,player.pos.x,player.pos.z).d2<pr*pr){ if(player.dashT>.04){ perfectDodge(); continue; } if(tryBarrier(b)){ killBullet(i); continue; } hurt(b.dmg); killBullet(i); continue; }
+      if(d<pr||segDist(ox,oz,p.x,p.z,player.pos.x,player.pos.z).d2<pr*pr){ if(player.dashT>(player.beatDash?0:.04)){ perfectDodge(); continue; } if(tryBarrier(b)){ killBullet(i); continue; } hurt(b.dmg); killBullet(i); continue; }
     }
   }
   if(dt>0) for(let i=shocks.length-1;i>=0;i--){ const s=shocks[i]; s.r+=s.speed*edt; const k=.35+.65*(1-s.r/s.max); s.ring.scale.setScalar(s.r); s.wall.scale.set(s.r,.9,s.r); s.ring.material.opacity=k; s.wall.material.opacity=k*.55;
@@ -147,6 +151,9 @@ function tick(dt,now){
     $('enBar').firstElementChild.style.width=Math.max(0,p.en/p.enMax*100)+'%'; $('enBar').classList.toggle('hot',p.overheat>0); $('enLbl').textContent=p.overheat>0?'Overheat':mobileMode?'Barrier':'Power'; $('enTxt').textContent=Math.max(0,Math.floor(p.en));
     const spv=p.od>0?p.od/5*100:p.lance>0?p.lance/2.4*100:p.sp; $('spBar').firstElementChild.style.width=spv+'%'; $('spBar').classList.toggle('ready',p.sp>=100); $('spLbl').textContent=SPECIALS[P.unit].name; $('spTxt').textContent=p.sp>=100?'READY':Math.floor(p.sp)+'%';
     $('roomTxt').textContent=String(sortie.ri+1).padStart(2,'0'); $('roomN').textContent='/'+sortie.N;
+    // Main Stage: wave counter and the beat pip (it flashes on every beat of the live music)
+    const ws=room&&room.stage; $('waveRow').hidden=!ws; if(ws) $('waveTxt').textContent=`${Math.min(ws.w+1,ws.n)}/${ws.n}`;
+    const bp=$('beatPip'), bs=!!sortie.rule.beatSync; bp.hidden=!bs; if(bs) bp.classList.toggle('on',BEAT.ph<.25);
     $('arTxt').textContent=ARENAS[sortie.a].name.toUpperCase(); $('goldTxt').textContent=P.gold.toLocaleString(); $('gemTxt').textContent=P.gems;
     $('xpFill').style.width=(sortie.xp/xpNeed()*100)+'%'; const lr=$('lvReady'), pl=sortie.pendingLv; lr.hidden=!pl; if(pl) lr.textContent=pl>1?`LEVEL READY ×${pl}`:'LEVEL READY'; const lv=$('lvTxt'); if(lv) lv.textContent='LV '+sortie.lv;
     if(boss) $('bossBar').firstElementChild.style.width=Math.max(0,boss.hp/boss.maxHp*100)+'%';

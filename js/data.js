@@ -180,11 +180,11 @@ const XP_NEED={base:6,per:.35}, XP_BOSS=10;
 /* economy: target earnings for one full run of each arena without gold bonuses (first-clear diamonds come on top, once).
    The per-kill, boss and clear numbers below are tuned so a full run lands near the targets (check with DBG.sim()). */
 const ECON={
-  target:{gold:[1200,2000,3000,4000],gems:[30,45,60,80]},
-  killGold:[.9,.8,.8,1],              // × ENEMY gold per arena
-  bossGold:[.55,.4,.26,.4],           // × BOSSES gold per arena
-  bossGems:[.28,.25,.14,.22],         // × BOSSES gems per arena, paid on the kill
-  clearGold:[6,9,12,15],              // per cleared combat/elite room
+  target:{gold:[1200,2000,3000,4000,4800],gems:[30,45,60,80,95]},
+  killGold:[.9,.8,.8,1,1.65],         // × ENEMY gold per arena (Main Stage: fewer, tougher kills in long wave rooms)
+  bossGold:[.55,.4,.26,.4,.5],        // × BOSSES gold per arena
+  bossGems:[.28,.25,.14,.22,1],       // × BOSSES gems per arena, paid on the kill (the Main Stage has one boss, so he pays the run's share)
+  clearGold:[6,9,12,15,45],           // per cleared combat/elite room (Main Stage rooms are long wave sets)
   gemChance:{small:.008,big:.03,elite:.2},
   firstClear:a=>40+30*a, repeatClear:a=>5+5*a,
   // farm check (tester.js farmMul): gold and diamonds when replaying an arena 0 / 1 / 2+ below your highest unlocked one
@@ -234,6 +234,12 @@ const ARENAS=[
   {name:'Fallen Sky', rooms:50, hpMul:1.9, dmgMul:1.45, bossMul:1.8, mixed:true, mobs:['drone','lancer','seraph','spark','crawler','cherub','shardling','warden','heavy','censer','howitzer','bulwark','ophan'], bosses:'all', rule:{hazards:.45,corruptElites:true}, trap:'mix', ruleTxt:'Both factions, corrupted elites, 2 random modifiers',
    theme:{bg:0x170e22,hemiS:0xe0c8ff,hemiG:0x22123a,ground:0x4a3a64,city:0xb8a0e0,edge:0xb070ff,rim:0xff4ad0,win:0xd8a0ff,floor:0x9a8ab8,wall:0x2e2244,block:0x5a3a8a,water:0xb070ff},
    colorCss:'#b070ff'},
+  /* Main Stage (High-Co's festival): unlocked by Arena 4's first clear, one notch above it. 15 wave rooms (STAGE) and High-Co after room 15
+     (rooms counts the boss room, like the other arenas). roomK: the enemy curve runs roomK rooms per room (and per wave inside it, see
+     enemyScale), so the 15 long rooms climb like Arena 4's 50 short ones. par: seconds per room for the run score's speed bonus. */
+  {name:'Main Stage', rooms:16, roomsTxt:'15 ROOMS + BOSS', hpMul:2.2, dmgMul:1.6, bossMul:1.7, roomK:3.3, par:95, stage:true, mobs:['roadie','bass','spot','mosher','dancer','pyro','shredder','diver','drummer'], bosses:['highco'], rule:{beatSync:true}, trap:'spike', ruleTxt:'Beat sync: attacks lock to the music, a dash on the beat dodges twice as wide',
+   theme:{bg:0x120a1c,hemiS:0xf0d0e4,hemiG:0x1c1028,ground:0x2a2032,city:0x5a3e68,edge:0xff3aa8,rim:0xffb84a,win:0xffb84a,floor:0x4a4054,wall:0x1e1826,block:0x1e1826,water:0xff3aa8},
+   colorCss:'#ff3aa8'},
 ];
 /* Arena 4 rolls two of these per run */
 const MODS={
@@ -274,6 +280,7 @@ const AI_LV=[
   {react:.35,lead:.45,aggr:.6,tokens:4,read:0},
   {react:.27,lead:.7,aggr:.8,tokens:4,read:.4},
   {react:.2,lead:.9,aggr:1,tokens:5,read:.8},
+  {react:.2,lead:.9,aggr:1,tokens:6,read:.8},
 ];
 /* enemy movement feel (enemy-ai.js steer): accel = how fast a mass-1 enemy reaches the velocity it wants (units/s²), brake = stopping is this much
    faster, turn = how fast a mass-1 walker turns its body before it walks (rad/s). Every enemy divides both by its ENEMY mass (heavy = slow, light = agile).
@@ -292,6 +299,8 @@ const COMPS=[
    {name:'Bastion',core:['heavy','cherub','warden']},{name:'Skirmish',core:['move','focus','seraph']}],
   [{name:'Lanes',core:['lancer','ophan','drone']},{name:'Medics',core:['cherub','heavy','spark','spark']},{name:'Siege line',core:['howitzer','bulwark','lancer']},
    {name:'Hunters',core:['crawler','crawler','cherub','censer']},{name:'Judgement',core:['warden','lancer','seraph']},{name:'Skirmish',core:['move','focus','move']}],
+  // Main Stage rooms are composed wave by wave from STAGE (composeStage); these only cover a forced plain room there
+  [{name:'Sound check',core:['bass','roadie','spot']},{name:'Moshpit',core:['mosher','mosher','mosher','mosher','mosher','mosher']},{name:'Encore',core:['bass','dancer','shredder','drummer']}],
 ];
 /* the rooms right before a boss teach its patterns with smaller versions (core of the teaching room, see PACING) */
 const BOSS_TEACH={
@@ -311,11 +320,27 @@ const ROOM_KINDS={
   normal:{name:'Hostiles'},
   ambush:{name:'Ambush',sub:'From the sides and behind',minRoom:2},
   reinforce:{name:'Reinforcements',sub:'Waves through the gates',minRoom:3,waves:3},
-  survive:{name:'Survive',sub:'Hold out',minRoom:8,time:20,reward:.4,cap:[5,6,7,7]},
+  survive:{name:'Survive',sub:'Hold out',minRoom:8,time:20,reward:.4,cap:[5,6,7,7,7]},
   hunt:{name:'Hunt',sub:'The elite runs. Catch it.',minRoom:7,time:16},
   gauntlet:{name:'Trap gauntlet',sub:'Few enemies, many traps',minRoom:3,k:.55},
   dark:{name:'Dark room',sub:'Stay close to the light',minRoom:11,light:{d:8.5,m:9}},
   teach:{name:'Hostiles'},
+  stage:{name:'Live set',sub:'Waves through the gates'},
+};
+/* Main Stage wave rooms (rooms.js composeStage, main.js roomKinds). Every room is a set of waves through the gates: clear a wave, take a
+   breather (seconds, a range), the next one comes in; clear the last one and the door opens. waves: per room 1-15. A wave's budget (ENEMY cost)
+   = base + room × (room - 1) + wave × (wave - 1), capped at cap enemies ([phone, desktop]).
+   The bestiary's room types are wave compositions: Sound check (one band member + stage crew), Moshpit (a pack of Moshers, mosh.size, from
+   room mosh.from on every mosh.every-th wave) and Encore (the full band on stage at once: the last wave of rooms encore.from+, one of them an
+   elite from encore.elite). unlock: the first room each mob can show up in (band members one at a time, crew fills the budget). */
+const STAGE={
+  waves:[2,2,3,3,3,3,4,4,4,4,4,5,5,5,5],
+  budget:{base:3,room:.3,wave:.5}, cap:[9,11], breather:[3,4],
+  band:['bass','dancer','shredder','drummer'], crew:['roadie','spot','pyro','diver'],
+  unlock:{bass:1,roadie:1,spot:2,dancer:3,pyro:4,mosher:5,shredder:6,diver:7,drummer:9},
+  mosh:{from:5,every:3,size:[6,10],sizeM:[6,8]}, encore:{from:11,elite:13},
+  // Ritim senkronu: the beat counts as hit when the dash lands within win seconds of it; the drummer raises the band's tempo by drumTempo while he lives
+  beatWin:.11, drumTempo:1.15, ampMax:6,
 };
 /* pacing inside every 10-room block (index = position in the block, 10 = boss): the kinds it can roll and a budget multiplier.
    Tension comes in waves: a breather after the boss, a first spike, the angel, a climb, a hard room and a teaching room before the next boss. */

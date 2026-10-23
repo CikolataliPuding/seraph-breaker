@@ -11,6 +11,8 @@ function seeded(seed){ let t=seed>>>0; return ()=>{ t=(t+0x6D2B79F5)>>>0; let r=
    simulation and the arena preview use it too. */
 function arenaPlan(a,seed,lastBoss=''){
   const A=ARENAS[a], N=A.rooms, rnd=seeded((seed|0)*7919+a*104729+1), pool=arenaBossPool(a), plan=[]; let last=lastBoss, bb='';
+  // Main Stage: every room is a wave room (STAGE), the boss comes after the last one
+  if(A.stage){ for(let n=1;n<=N;n++) plan.push(n===N?{n,boss:pool[0],k:1,type:'boss',kind:'boss'}:{n,boss:pool[0],k:1,type:'combat',kind:'stage'}); return plan; }
   for(let n=1;n<=N;n++){ const pos=n===N?10:((n-1)%10)+1, pc=PACING[pos];
     if((n-1)%10===0||!bb){ const c=pool.filter(k=>k!==last); bb=c.length?c[(rnd()*c.length)|0]:pool[0]; last=bb; }
     const r={n,boss:bb,k:pc.k||1};
@@ -44,10 +46,10 @@ function launchArena(a,saved){
   if(saved) restoreRun(saved);
   sortie.plan=arenaPlan(a,sortie.seed,saved&&!saved.seed?sortie.lastBoss:'');
   buildRoom(roomHalfX(),ROOM_Z,SANCTUM,true); player.pos.set(0,0,AZ-1.5); camTarget.copy(player.pos);
-  $('cardNum').textContent=`ARENA 0${a+1} · `+(saved?`CONTINUE · ROOM ${sortie.ri+1}/${N}`:`${N} ROOMS`); $('cardT').textContent=A.name;
+  $('cardNum').textContent=`ARENA 0${a+1} · `+(saved?`CONTINUE · ROOM ${sortie.ri+1}/${N}`:roomsLabel(A)); $('cardT').textContent=A.name;
   $('cardS').textContent=[A.ruleTxt,...sortie.mods.map(m=>MODS[m].name)].join(' · ');
   const c=$('card'); c.hidden=false; const inner=c.firstElementChild; inner.style.animation='none'; void inner.offsetWidth; inner.style.animation='';
-  setState('card',true); stateT=2; refreshControls(); playTrack('battle');
+  setState('card',true); stateT=2; refreshControls(); playTrack(fightTrack());
 }
 /* run save: written after every cleared room so a closed tab or app can continue from the next room */
 function saveRun(nextRi){
