@@ -201,6 +201,22 @@ function botTick(dt){
   const flee=(x,z,r,w)=>{ const dx=p.pos.x-x, dz=p.pos.z-z, d=Math.hypot(dx,dz); if(d<r) add(dx||rand(-1,1),dz||rand(-1,1),w*(1-d/r)+.4); };
   for(const b of blasts) if(b.hurtP) flee(b.x,b.z,b.rad+1.4,3);
   for(const e of enemies){ if(e.dead) continue; if(e.shell&&e.shell.t<1.2-BOT.react) flee(e.shell.x,e.shell.z,3,3); if(e.atk===ATK.slam&&e.ph==='tele'&&e.phMax-e.phT>BOT.react) flee(e.pos.x,e.pos.z,e.def.slam+1.3,4); if(e.st==='blink') flee(e.pos.x,e.pos.z,3.4,4); if(e.ph==='charge'||e.st==='roll') flee(e.pos.x,e.pos.z,4,2); }
+  // Main Stage telegraphs: the Bass Brute cone, the Drummer kick ring and sky drop markers, the Stage Diver landing ring, a burning follow spot
+  if(ARENAS[stage]&&ARENAS[stage].stage){ for(const e of enemies){ if(e.dead) continue;
+      if(e.type==='bass'&&e.ph==='tele'&&e.aim&&e.phMax-e.phT>BOT.react&&Math.random()<BOT.skill*1.5){ const dx=p.pos.x-e.pos.x, dz=p.pos.z-e.pos.z; if(Math.hypot(dx,dz)<e.def.cone[0]+1) add(-e.aim.z*Math.sign(dx*-e.aim.z+dz*e.aim.x||1),e.aim.x*Math.sign(dx*-e.aim.z+dz*e.aim.x||1),3); }
+      if(e.type==='drummer'&&e.kickArm) flee(e.pos.x,e.pos.z,e.def.slam+1.3,3);
+      if(e.type==='diver'&&e.st==='leap'&&e.leap&&e.leap.t>BOT.react) flee(e.leap.to.x,e.leap.to.z,4.4,3.5);
+      if(e.type==='spot'&&e.sp&&spotLit) flee(e.sp.x,e.sp.z,e.def.spot[0]+1,2.5); }
+    for(const M of stageMeteors) if(!M.done&&M.t>BOT.react) flee(M.x,M.z,M.R+1.2,3);
+    // High-Co: dash through the Metal Scream (once per scream, skill of the time), step out of his slam ring, pillar marks and pole rings
+    const b=boss; if(b&&!b.dead&&b.formN){ if(b.atk==='scream'){ if(b.atkT>.86&&b.atkT<.97&&BOT.scr!==b.t0s){ BOT.scr=b.t0s; if(Math.random()<BOT.skill) dashDir=new V3(p.pos.z-b.pos.z,0,b.pos.x-p.pos.x).normalize(); } } else b.t0s=playTime;
+      if(b.atk==='hcslam'&&b.stomp&&b.atkT>BOT.react) flee(b.stomp.to.x,b.stomp.to.z,HC_SLAM_R+1.5,4);
+      if(b.atk==='pillars'&&b.pq) for(const q of b.pq) if(!q.done) flee(q.x,q.z,2.6,3);
+      if(b.poles) for(const P of b.poles) flee(P.x,P.z,HC_POLE_R+1,3);
+      // his beam: once it stops tracking, step off its line; a sweeping beam is dashed through as it reaches you
+      const bm=b.beam; if(bm&&(b.atk==='beam'||b.atk==='sweep')){ const rx=p.pos.x-b.pos.x, rz=p.pos.z-b.pos.z, side=Math.sign(rx*bm.dir.z-rz*bm.dir.x)||1;
+        if(!bm.fire&&!bm.sweep&&bm.t>bm.tele*.7+BOT.react*.5) add(bm.dir.z*side,-bm.dir.x*side,4*BOT.skill+1);
+        if(bm.fire&&bm.sweep){ const off=((Math.atan2(rx,rz)-Math.atan2(bm.dir.x,bm.dir.z))+Math.PI*3)%(Math.PI*2)-Math.PI; if(Math.sign(off)===Math.sign(bm.sweep)&&Math.abs(off)<.35&&Math.random()<BOT.skill*.25) dashDir=new V3(bm.dir.z*side,0,-bm.dir.x*side); } } } }
   for(const s of shocks){ if(s.hit||s.friendly) continue; const df=Math.hypot(p.pos.x-s.x,p.pos.z-s.z)-s.r; if(df>0&&df<1.6&&Math.random()<BOT.skill) dashDir=new V3(s.x-p.pos.x,0,s.z-p.pos.z).normalize(); else if(df>0&&df<s.max-s.r+1) flee(s.x,s.z,s.max+1.5,2.5); }
   for(const m of emines) flee(m.x,m.z,2.4,2);
   for(const t of traps){ if(room&&room.cleared||!trapDanger(t)) continue; /* traps are off once the room is clear (a stopped saw would pin the bot) */ if(t.kind==='saw') flee(t.x,t.z,t.r+1.7,3); else for(const c of t.cells) flee(c.x,c.z,t.cw*.75+.9,3); }
@@ -242,6 +258,61 @@ async function measureRun(o={}){
   BOT.on=false; DBG.immortal=false; DBG.turbo=1; DBG.noRender=false;
   const out=summarizeLog(RUNLOG.rooms); P=normP(JSON.parse(saveP)); persist(); toMenu('home'); return out;
 }
+/* ================= MAIN STAGE DIFFICULTY ================= */
+/* Main Stage difficulty check (the Part 4 table of the balance PR). Profiles model a pilot by how often and how late the autopilot reacts to
+   telegraphs (BOT.skill, BOT.react) and how it picks cards: average {skill:.7,react:.3, random cards}, skilled {skill:.92,react:.18, best card}.
+   The game is stepped by hand (1/30 s ticks, no rendering). Max Core + tree by default. Measure at a desktop size (1280x800: tall phone rooms
+   throw the autopilot off) and reload the page every ~8 runs: after that the autopilot starts to lose whole rooms (its state drifts). */
+const STAGE_PRO={avg:{skill:.7,react:.3},pro:{skill:.92,react:.18,smart:true}};
+function stepGame(sec){ paused=false; DBG.noRender=true; let t=performance.now(); for(let i=0;i<sec*30;i++){ t+=33.3;
+    if(state==='card'||state==='warn') stateT=0; if(state==='cine') endCine(); if(state==='choice') botPick();
+    // an error in a tick is kept (DBG.tickErr, with its stack) instead of ending the measurement
+    try{ tick(1/30,t); }catch(e){ if(!DBG.tickErr) DBG.tickErr=e.stack; } }
+  DBG.noRender=false; }
+// a level-up card for the autopilot: at random, or (smart) the one with the biggest power gain
+function botPick(){ if(state!=='choice'||!chCfg) return; if(spin) spin.left=0; ignoreClickUntil=0; const O=chCfg.options; let best=(Math.random()*O.length)|0;
+  if(BOT.smart){ let bv=-1; O.forEach((o,i)=>{ if(!o.id||!RSK[o.id]) return; const rs=player.rs; rs[o.id]=(rs[o.id]||0)+1; const v=powerEstimate(deriveStats(metaStats(P,P.unit),sumBonus(rs,sortie.items,[],player.extra)),rs).power; rs[o.id]--; if(!rs[o.id]) delete rs[o.id]; if(v>bv){ bv=v; best=i; } }); }
+  pickChoice(best); }
+const pause0=()=>new Promise(r=>setTimeout(r,0));
+async function withMeta(meta,fn){ const save=JSON.stringify(P), M=typeof meta==='object'?meta:SIM_META[meta||'max']; P.skills=JSON.parse(JSON.stringify(M.skills)); P.core=Object.assign({armor:0,dmg:0,regen:0},M.core); P.unit='azure'; P.weapon='sig';
+  try{ return await fn(); } finally { BOT.on=false; DBG.immortal=false; BOT.smart=false; P=normP(JSON.parse(save)); persist(); } }
+async function stageTo(n){ DBG.immortal=true; DBG.stage(n); for(let i=0;i<120&&!(state==='fight'&&sortie&&sortie.ri===n-1);i++){ await new Promise(r=>setTimeout(r,60)); DBG.skipCard(); stepGame(.3); } }
+/* one autopilot run of rooms 1-15 (immortal: a death refills the pilot and counts). Per room: lost = armor taken (% of max), net = what is
+   missing at the end + 100 per death (the heals in the room taken off), deaths, t = seconds, lv at the end. */
+async function stageRun(o={}){ const pf=STAGE_PRO[o.profile||'avg']; return withMeta(o.meta,async()=>{ BOT.skill=pf.skill; BOT.react=pf.react; BOT.smart=!!pf.smart; await stageTo(1);
+  BOT.on=true; godMode=false; RUNLOG.cur={deaths:0}; const rows=[]; let ri=sortie.ri, t0=playTime, tk0=sortie.dmgTaken||0, d0=0, hp0=player.hp;
+  for(let g=0;g<6000;g++){ if(state==='result') break; stepGame(1); if(g%3===0) await pause0();
+    // an autopilot stuck behind a block for 400 s: the room is cut
+    if(state==='fight'&&playTime-t0>400&&!boss){ for(const e of enemies.slice()) if(!e.dead){ e.noLoot=true; killEnemy(e,true); } spawnQ=[]; }
+    if(sortie.ri!==ri){ const dd=RUNLOG.cur.deaths-d0; rows.push({room:ri+1,lost:Math.round(((sortie.dmgTaken||0)-tk0)/player.maxHp*100),net:Math.round((hp0-player.hp)/player.maxHp*100+dd*100),deaths:dd,t:Math.round(playTime-t0),lv:sortie.lv});
+      ri=sortie.ri; t0=playTime; tk0=sortie.dmgTaken||0; d0=RUNLOG.cur.deaths; hp0=player.hp; if(ri>14) break; } }
+  return rows; }); }
+// one High-Co fight at the level cap (29 cards, random or smart), from full armor, immortal: seconds per form, deaths, net armor needed (%)
+async function hcFight(o={}){ const pf=STAGE_PRO[o.profile||'avg']; return withMeta(o.meta,async()=>{ BOT.skill=pf.skill; BOT.react=pf.react; BOT.smart=!!pf.smart; await stageTo(16);
+  for(let i=0;i<STAGE.lvCap-1;i++){ const O=skillOptions(3); if(!O.length) break; let id=pickOne(O);
+    if(pf.smart){ let bv=-1; for(const k of O){ player.rs[k]=(player.rs[k]||0)+1; const v=powerEstimate(deriveStats(metaStats(P,P.unit),sumBonus(player.rs,[],[],{})),player.rs).power; player.rs[k]--; if(!player.rs[k]) delete player.rs[k]; if(v>bv){ bv=v; id=k; } } }
+    applySkill(id); }
+  sortie.pendingLv=0; sortie.lv=STAGE.lvCap; recalcStats(); player.hp=player.maxHp; BOT.on=true; godMode=false; RUNLOG.cur={deaths:0};
+  const forms=[]; let f=1,ft=0,t=0; while(t<(o.max||900)&&boss&&!boss.dead){ stepGame(5); t+=5; ft+=5; await pause0(); const nf=boss&&!boss.dead?boss.formN:4; if(nf!==f){ forms.push(ft); f=nf; ft=0; } }
+  return {forms,deaths:RUNLOG.cur.deaths,net:Math.round(RUNLOG.cur.deaths*100+(1-player.hp/player.maxHp)*100)}; }); }
+/* odds of whole attempts from measured runs: armor carries from room to room (net loss of a random measured run of that room, ±15%), one
+   Second Wind at 30% (max tree), STAGE.bossRepair before High-Co, then a measured High-Co fight × hcK. hcK: the share of the autopilot's boss
+   damage a human pilot of the profile takes (the autopilot does not use the amps or read the beam lock; the PR uses 0.5 for average).
+   score = 10 × (1 - share of average attempts that beat High-Co): 7.5 = one attempt in four wins. */
+function stageOdds(runs,fights,o={}){ const N=o.n||20000, k=o.hcK==null?1:o.hcK, pool=[]; for(let i=1;i<=15;i++) pool[i]=runs.map(r=>r.find(x=>x.room===i)).filter(Boolean).map(x=>x.net);
+  const nets=fights.map(f=>f.net); let reach=0,win=0; const died=new Array(17).fill(0);
+  for(let n=0;n<N;n++){ let hp=100,sw=true,dead=0; const hit=L=>{ hp-=L; if(hp<=0){ if(!sw) return true; sw=false; hp+=30; if(hp<=0) return true; } hp=Math.min(100,hp); return false; };
+    for(let i=1;i<=15&&!dead;i++) if(pool[i].length&&hit(pickOne(pool[i])*rand(.85,1.15))) dead=i;
+    if(dead){ died[dead]++; continue; } reach++; hp=Math.min(100,hp+STAGE.bossRepair*100); if(nets.length&&hit(pickOne(nets)*k*rand(.85,1.15))) died[16]++; else win++; }
+  const pc=v=>Math.round(v/N*1000)/10;
+  return {reach:pc(reach),win:pc(win),score:Math.round(10*(1-win/N)*10)/10,deathByRoom:died.map((d,i)=>i?pc(d):null).slice(1)}; }
+Object.assign(DBG,{stageRun,hcFight,stageOdds,
+  // n autopilot runs per profile (and fights), then the per-room table and the odds; e.g. await DBG.stageCheck({runs:8,fights:6})
+  async stageCheck(o={}){ const out={}; for(const pf of o.profiles||['avg','pro']){ const runs=[], fights=[]; for(let i=0;i<(o.runs||6);i++) runs.push(await stageRun({profile:pf,meta:o.meta}));
+      for(let i=0;i<(o.fights||4);i++) fights.push(await hcFight({profile:pf,meta:o.meta}));
+      const rows=[]; for(let r=1;r<=15;r++){ const rs=runs.map(x=>x.find(y=>y.room===r)).filter(Boolean), av=key=>r2(rs.reduce((a,b)=>a+b[key],0)/Math.max(1,rs.length)); rows.push({room:r,lost:av('lost'),net:av('net'),deaths:av('deaths'),t:av('t'),lv:av('lv')}); }
+      out[pf]={rows,runs,fights,odds:stageOdds(runs,fights,{hcK:pf==='avg'?.5:1})}; if(o.print!==false){ console.log('Main Stage · '+pf); console.table(rows); console.log(out[pf].odds); } }
+    return out; }});
 // per-arena summary of the run log: share of combat rooms cleared without damage, damage and time per room, gold per minute
 function summarizeLog(rows){ const by={};
   for(const r of rows){ const A=by[r.arena]||(by[r.arena]={arena:r.arena,rooms:0,combat:0,noDmg:0,time:0,gold:0,deaths:0,dmg:0,bossT:0,bosses:0});

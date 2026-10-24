@@ -265,7 +265,10 @@ function updateSkyDrops(dt){
       if(Math.random()<dt*20&&fall>0) sparks(new V3(M.x,M.orb.position.y+.6,M.z),0xffb84a,1,2);
       if(k>=1){ M.done=true; M.orb.visible=false; M.fill.visible=false; crossBlast(new V3(M.x,.1,M.z),MS_COL.amber,.8); sparks(new V3(M.x,.4,M.z),MS_COL.yellow,8,7); shake=Math.max(shake,.12); sfx('boom');
         if(!player.dead&&state==='fight'&&Math.hypot(player.pos.x-M.x,player.pos.z-M.z)<M.R+.4){ if(player.dashT>0){ player.inv=Math.max(player.inv,.35); perfectDodge(); } else hurt(M.dmg); } M.t=0; } }
-    else { M.ring.material.opacity=Math.max(0,.8-M.t*3); if(M.t>.3){ roomGroup.remove(M.g); stageMeteors.splice(i,1); } } } }
+    else { M.ring.material.opacity=Math.max(0,.8-M.t*3); if(M.t>.3){ roomGroup.remove(M.g); [M.ring,M.fill].forEach(o=>o.material.dispose()); stageMeteors.splice(i,1); } } } }
+// thin floor line from pos toward (dx,dz), len long, on the shared unit plane (no geometry per shot: Pyro Tech fires often)
+function teleLine(pos,dx,dz,len,w,color,life){ const g=new THREE.Group(), mat=addMat(color,.3), pl=new THREE.Mesh(G.plane,mat); pl.rotation.x=-Math.PI/2; pl.scale.set(w,len,1); pl.position.z=len/2; g.add(pl);
+  g.position.set(pos.x,.05,pos.z); g.rotation.y=Math.atan2(dx,dz); addFx(g,life,(f,dt,k)=>{ mat.opacity=.18+.22*Math.abs(Math.sin((1-k)*life*9)); }); return g; }
 const MS_ATK={
   // Shredder riff: an amber sound-wave cone of shots toward you, on the beat
   riff:{beat:true,tele:.45,rec:.4,cd:[1.3,2],need:e=>e.see,start(e){ const s=9*eSpd(); e.aim=leadDir(e.pos.x,e.pos.z,s,new V3()); teleCone(e,e.aim,7,e.phT+.05); sfx('click'); },
@@ -278,10 +281,10 @@ const MS_ATK={
       if(!player.dead&&Math.hypot(player.pos.x-e.pos.x,player.pos.z-e.pos.z)<7.5){ bolt(from,player.pos.clone().setY(1.8),0xfff0c0); hurt(9); } else bolt(from,e.pos.clone().add(new V3(rand(-4,4),2,rand(-4,4))),0xffe08a); sfx('zap'); },
     after(e){ e.soloing=false; e.bangT=1; e.vulnT=1; }},
   // Bass Brute headbang: plants, the red cone shows the reach for a short wind-up, then the hit lands on the beat (step out or dash through)
-  bang:{beat:true,tele:.45,rec:.75,cd:[1.8,2.6],start(e){ const T=tgt(); e.aim=new V3(T.x-e.pos.x,0,T.z-e.pos.z).normalize(); teleCone(e,e.aim,e.def.cone[0],e.phT+.05,MS_COL.red,CONE_BASS); sfx('click'); },
+  bang:{beat:true,tele:.55,rec:.75,cd:[1.8,2.6],start(e){ const T=tgt(); e.aim=new V3(T.x-e.pos.x,0,T.z-e.pos.z).normalize(); teleCone(e,e.aim,e.def.cone[0],e.phT+.05,MS_COL.red,CONE_BASS); sfx('click'); },
     fire(e){ coneHit(e,e.aim,e.def.cone[0],e.def.cone[1],e.def.cone[2],CONE_BASS); e.bangT=.45; e.jz.pop.v=-6; shake=Math.max(shake,.18); sfx('heavy'); }},
   // Pyro Tech fireworks: the lit rocket goes up in his hand (the tell), then a volley flies at you on the beat, trailing sparks; blocks stop it
-  rocket:{beat:true,tele:.55,rec:.45,cd:[1.5,2.3],need:e=>e.see,start(e){ e.flareT=e.phT+.1; const T=tgt(); teleStrip(e.pos,T.x-e.pos.x,T.z-e.pos.z,Math.min(12,Math.hypot(T.x-e.pos.x,T.z-e.pos.z)),.35,0xff6a2a,e.phT); sfx('click'); },
+  rocket:{beat:true,tele:.55,rec:.45,cd:[1.5,2.3],need:e=>e.see,start(e){ e.flareT=e.phT+.1; const T=tgt(); teleLine(e.pos,T.x-e.pos.x,T.z-e.pos.z,Math.min(12,Math.hypot(T.x-e.pos.x,T.z-e.pos.z)),.35,0xff6a2a,e.phT); sfx('click'); },
     // the first rocket of a volley flies at you, the next ones at where you are heading (led more each), so neither standing nor running straight is safe
     fire(e){ const [sp,dmg,n]=e.def.rockets, s=sp*eSpd(), o=e.pos.clone().setY(1.9);
       for(let i=0;i<n;i++){ const dd=leadDir(o.x,o.z,s,_ld,i/Math.max(1,n-1)); shoot('e',o,dd.clone(),s,dmg,0xff6a2a,{life:1.5,r:.5,fw:0xffb84a}); } e.jz.rec.v+=4; sfx('torch'); }},

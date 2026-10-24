@@ -205,6 +205,8 @@ function startRoom(i,force){
   logRoomStart(type);
   $('fade').classList.remove('on');
   const tag=`Room ${i+1}/${sortie.N}`;
+  // Main Stage: no Sanctuary on the way, so the crew patches the pilot up backstage before the headliner (STAGE.bossRepair of max armor)
+  if(type==='boss'&&ARENAS[stage].stage){ player.hp=Math.min(player.maxHp,player.hp+player.maxHp*STAGE.bossRepair*player.st.heal); toast('Backstage repair',`+${Math.round(STAGE.bossRepair*player.st.heal*100)}% armor`); }
   if(type==='boss'){ snapBoss(); $('warnTxt').textContent=BOSSES[room.boss].warn; setState('warn'); stateT=2.2; $('warn').hidden=false; playTrack('boss'); sfx('beam'); refreshControls(); return; }
   setState('fight'); playTrack(fightTrack());
   if(type==='angel'){ spawnNpc('angel',new V3(0,0,-2)); openDoor(); toast('Sanctuary',tag); }
