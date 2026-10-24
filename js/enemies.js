@@ -83,6 +83,7 @@ function hitEnemy(e,d,pos,dot,noProc,flat){
   if(rs.headshot&&!dot&&e!==boss&&!e.elite&&Math.random()<Math.min(BAL.cap.headshot,.015*rs.headshot)){ d=e.hp+1; crit=true; sparks(pos,0xffffff,10,8); }
   if(sortie) sortie.dmgDealt=(sortie.dmgDealt||0)+Math.max(0,Math.min(d,e.hp));
   e.hp-=d;
+  if(e===boss&&e.streams) hcStreamHit(e,d); // High-Co: hitting him while he channels cuts the crowd streams
   if(e.model.breaks&&e!==boss&&e.hp>0) breakParts(e);
   if(!(player.od>0||player.lance>0)) player.sp=Math.min(100,player.sp+d*.55*player.st.sp);
   if(!dot||Math.random()<.12) flashModel(e);
@@ -102,7 +103,10 @@ function hitEnemy(e,d,pos,dot,noProc,flat){
 function aoe(pos,rad,dmg,stun=0,knock=0){ for(const e of enemies.slice()){ if(e.dead)continue; const d=Math.hypot(e.pos.x-pos.x,e.pos.z-pos.z); if(d<rad+e.r*.6){ if(stun&&e!==boss) e.stun=Math.max(e.stun,stun); if(knock&&e!==boss&&d>.01){ e.pos.x+=(e.pos.x-pos.x)/d*knock; e.pos.z+=(e.pos.z-pos.z)/d*knock; } hitEnemy(e,dmg,e.pos.clone().setY(2)); } } }
 // byProc: the kill came from a proc (or is a cleanup kill), so on-kill procs do not fire again
 function killEnemy(e,byProc){
-  if(e.dead) return; e.dead=true; dropToken(e);
+  if(e.dead) return;
+  // High-Co: forms I and II going down start the next form (bosses.js); only form III's death is the boss kill
+  if(e===boss&&e.formN&&e.formN<e.formHp.length){ if(!e.immune) highcoFormDown(e); return; }
+  e.dead=true; dropToken(e);
   if(e===boss){ bossDeath(); return; }
   if(e.type==='spark'&&!e.boomed){ e.boomed=true; queueBlast(e.pos.x,e.pos.z,{t:.12,rad:2.6,dmg:10*ARENAS[stage].hpMul,color:0xffa040,size:.8,skip:e,flat:true}); }
   if(e.ring) e.ring.visible=false;

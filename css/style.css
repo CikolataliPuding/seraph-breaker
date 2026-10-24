@@ -43,6 +43,11 @@ input{-webkit-user-select:text;user-select:text}
 #bossHud .lbl{justify-content:space-between;color:var(--alert)}
 #bossBar{height:12px;grid-column:2}
 #bossBar i{background:var(--alert)}
+/* High-Co forms: one pip per form next to FORM I/II/III (bosses.js hcHud) */
+#bossPh .hcpip{display:inline-block;width:9px;height:9px;margin-left:4px;border:1px solid var(--c);transform:rotate(45deg);opacity:.45}
+#bossPh .hcpip.on{background:var(--c);opacity:1;box-shadow:0 0 6px var(--c)} #bossPh .hcpip.done{opacity:.2;border-style:dashed}
+#bossBar i{transition:background .4s} #bossBar.regen{animation:hcRegen .5s ease-in-out infinite alternate}
+@keyframes hcRegen{from{box-shadow:0 0 6px #9fffd0}to{box-shadow:0 0 18px #9fffd0}}
 .bossThumb{grid-row:span 2;width:40px;height:40px;clip-path:polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%);background:radial-gradient(circle,rgba(232,36,60,.5),rgba(12,9,16,.9) 70%);object-fit:contain}
 #abBar{bottom:calc(14px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);display:flex;gap:8px}
 .ab{position:relative;width:54px;height:54px;border:1px solid rgba(255,255,255,.3);background:rgba(12,9,16,.6);display:grid;place-items:center;color:var(--paper)}

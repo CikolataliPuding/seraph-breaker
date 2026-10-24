@@ -37,8 +37,15 @@ const DBG={
   stage(n=1){ DBG.go(ARENAS.findIndex(A=>A.stage),n); },
   wave(n){ if(!room||!room.stage||state!=='fight') return false; const W=composeStage(sortie.ri), S=room.stage; n=clamp(n|0,1,W.length);
     for(const e of enemies.slice()) if(!e.dead&&e!==boss){ e.noLoot=true; killEnemy(e,true); } S.n=W.length; S.w=n-1; S.breath=null; room.timer=null; room.waveF=S.w/S.n; spawnQ=W.slice(n); spawnWave(W[n-1],'gate'); refreshControls(); return true; },
-  // High-Co: drop him to just past phase n's threshold (2: 66%, 3: 33%)
-  hcPhase(n){ if(!boss||boss.form!=='highco') return false; const k=n>=3?.32:n===2?.65:1; boss.hp=Math.min(boss.hp,boss.maxHp*k); return boss.hp; },
+  // High-Co: jump to form n (its entrance plays) · set the current form's armor to a share f (0..1)
+  hcForm(n){ if(!boss||!boss.formN||boss.dead) return false; n=clamp(n|0,1,3); while(boss.formN<n) highcoFormDown(boss); return boss.formN; },
+  hcRegen(on=!HC_REGEN_ON){ HC_REGEN_ON=!!on; toast(on?'High-Co regen on':'High-Co regen off'); return HC_REGEN_ON; },
+  // High-Co music: play form track slot i (0-2); with src (and bpm) it fills the slot for this page load first, e.g. DBG.hcTrack(1,'assets/audio/highco-2.mp3',140)
+  hcTrack(i=0,src,bpm){ const T=(BOSSES.highco.tracks||[])[i|0]; if(!T) return false; if(src!=null){ T.src=String(src); T.bpm=+bpm||0; } hcMusic(i|0); return {slot:i|0,src:T.src,bpm:T.bpm}; },
+  // the pilot goes down where he stands (result screen, Retry boss)
+  die(){ if(!player||player.dead) return false; godMode=false; DBG.immortal=false; player.inv=0; player.lives=0; player.secondUsed=true; player.hp=0; zeroHp(); return true; },
+  hcSim(o){ return hcSim(o); },
+  hcHp(f){ if(!boss||!boss.formN||boss.dead||boss.immune) return false; boss.hp=Math.max(1,boss.maxHp*clamp(+f,0,1)); return Math.round(boss.hp); },
   bpm(n=0){ BEAT.force=Math.max(0,+n||0); if(!BEAT.force) AU.tempoK=1; toast(BEAT.force?`BPM ${BEAT.force}`:'BPM: music'); return BEAT.force; },
   stageCurve(print=true){ const a=ARENAS.findIndex(A=>A.stage), rows=[]; for(let ri=0;ri<STAGE.waves.length;ri++){ const W=composeStage(ri,false), sc=enemyScale(a,ri,null,0), sc1=enemyScale(a,ri,null,(W.length-1)/W.length);
       rows.push({room:ri+1,waves:W.length,enemies:W.map(w=>w.length).join(' '),total:W.flat().length,budget:W.map((w,i)=>r2(STAGE.budget.base+STAGE.budget.room*ri+STAGE.budget.wave*i)).join(' '),hp:`${r2(sc.hp)}→${r2(sc1.hp)}`,dmg:`${r2(sc.dmg)}→${r2(sc1.dmg)}`,mix:W.map(w=>w.some(t=>t.startsWith('mosher'))?'M':w.filter(t=>STAGE.band.includes(t.replace('*',''))).length>=4?'E':'S').join('')}); }
@@ -141,6 +148,26 @@ function simulate(o={}){
   if(o.print!==false){ console.log(`Seraph Breaker sim · arena ${a+1} (${A.name}) · meta ${out.meta} · ${trials} trials`); console.table(out.table); console.table(out.econ); }
   return out;
 }
+/* High-Co crowd regen check: fight length per form for a pilot who deals dps (share of the form's armor per second) all the time, with every
+   crowd channel he can start (as soon as it is off cooldown, no attack in between: the worst case). Damage during a channel cuts streams
+   (regen.cut each). The stagger bonus is left out. healed never passes regen.cap, so a form never takes more than (1 + cap) × its armor. */
+function hcSim(o={}){
+  const D=BOSSES.highco, R=D.regen, rows=[], dt=.05;
+  for(const dps of o.dps||[.01,.015,.02,.03,.05]) for(let f=0;f<3;f++){
+    const F=D.forms[f]; let hp=1,t=0,healed=0,cd=R.cd[f]*.6,ch=null,cuts=0,chans=0;
+    while(hp>0&&t<900){ t+=dt; hp-=dps*dt; if(!F.regen) continue;
+      if(!ch){ cd-=dt; if(cd<=0&&R.cap-healed>.02&&hp<.92){ ch={t:0,live:R.streams,acc:0}; cd=R.cd[f]; chans++; } continue; }
+      ch.t+=dt; if(ch.t>=R.tele){ ch.acc+=dps*dt; while(ch.acc>=R.cut&&ch.live>0){ ch.acc-=R.cut; ch.live--; cuts++; }
+        const h=Math.max(0,Math.min(R.rate*ch.live*dt,R.cap-healed,1-hp)); hp+=h; healed+=h; }
+      if(ch.t>=R.tele+R.dur||!ch.live) ch=null; }
+    rows.push({'dps %/s':r2(dps*100),form:f+1,'time s':r2(t),'no-regen s':r2(1/dps),'healed %':r2(healed*100),channels:chans,'streams cut':cuts,'cap holds':healed<=R.cap+1e-9,won:hp<=0}); }
+  // strength against the old single-bar High-Co (armor 1, damage 1): armor to remove with the healing above, damage weighted by fight time,
+  // and their geometric mean, the factor on DBG.sim()'s boss pressure
+  const sum=[]; for(const dps of o.dps||[.01,.015,.02,.03,.05]){ const rs=rows.filter(r=>r['dps %/s']===r2(dps*100)); let arm=0,dm=0,tt=0;
+    rs.forEach((r,i)=>{ const F=D.forms[i]; arm+=F.hp*(1+r['healed %']/100); dm+=F.dmg*F.hp*r['time s']; tt+=F.hp*r['time s']; });
+    sum.push({'dps %/s':r2(dps*100),armor:r2(arm),damage:r2(dm/tt),pressure:r2(Math.sqrt(arm*dm/tt))}); }
+  if(o.print!==false){ console.table(rows); console.table(sum); } return {rows,sum};
+}
 /* ================= AUTOPILOT + MEASUREMENT ================= */
 /* a scripted "average player" for headless measurement runs: keeps 6-10 units from the nearest enemy and circles it, sidesteps shots on a
    collision course (dashes when one is about to land), steps out of telegraphed rings (slams, shells, blasts, Spark fuses, mines, traps),
@@ -219,7 +246,7 @@ function initDebug(){
   <label>Boss <select id="dbgBoss"></select><button data-a="boss">Spawn</button></label>
   <label>Arena <select id="dbgArena" class="w"></select> room <input id="dbgARoom" class="w" type="number" min="1" max="50" value="1"><button data-a="go">Start</button></label>
   <label>Stage room <input id="dbgSRoom" class="w" type="number" min="1" max="16" value="1"><button data-a="stage">Go</button> wave <input id="dbgWave" class="w" type="number" min="1" max="7" value="1"><button data-a="wave">Go</button></label>
-  <label>BPM <input id="dbgBpm" class="w" type="number" min="0" max="300" value="0"><button data-a="bpm">Set</button> High-Co phase <input id="dbgHc" class="w" type="number" min="2" max="3" value="2"><button data-a="hc">Go</button></label>
+  <label>BPM <input id="dbgBpm" class="w" type="number" min="0" max="300" value="0"><button data-a="bpm">Set</button> High-Co form <input id="dbgHc" class="w" type="number" min="1" max="3" value="2"><button data-a="hc">Go</button> HP <input id="dbgHcHp" class="w" type="number" min="0" max="100" value="10">%<button data-a="hchp">Set</button> <button data-a="hcregen">Regen on/off</button> Track <input id="dbgHcT" class="w" type="number" min="1" max="3" value="1"><button data-a="hctrack">Play</button> <button data-a="die">Die</button></label>
   <label>Core A/D/R <input id="dbgCA" class="w" type="number" min="0" max="30"><input id="dbgCD" class="w" type="number" min="0" max="30"><input id="dbgCR" class="w" type="number" min="0" max="30"><button data-a="core">Set</button></label>
   <button data-a="treeMax">Tree max</button><button data-a="treeClr">Tree clear</button><button data-a="gems">+500 gems</button>
   <button data-a="mode">Toggle mobile</button><button data-a="log">Run log (L)</button><button data-a="sim">Sim</button><button data-a="measure">Measure arena</button><button data-a="hide">Hide</button>`;
@@ -242,7 +269,7 @@ function initDebug(){
   d.addEventListener('pointerdown',e=>e.stopPropagation());
   d.addEventListener('click',e=>{ const a=e.target.dataset&&e.target.dataset.a; if(!a) return; const v=id=>$(id).value; if(a!=='hide'&&a!=='log') flagRun();
     if(a==='go') DBG.go(+v('dbgArena'),+v('dbgARoom'));
-    if(a==='stage') DBG.stage(+v('dbgSRoom')); if(a==='wave') DBG.wave(+v('dbgWave')); if(a==='bpm') DBG.bpm(+v('dbgBpm')); if(a==='hc') DBG.hcPhase(+v('dbgHc'));
+    if(a==='stage') DBG.stage(+v('dbgSRoom')); if(a==='wave') DBG.wave(+v('dbgWave')); if(a==='bpm') DBG.bpm(+v('dbgBpm')); if(a==='hc') DBG.hcForm(+v('dbgHc')); if(a==='hchp') DBG.hcHp(+v('dbgHcHp')/100); if(a==='hcregen') DBG.hcRegen(); if(a==='hctrack') DBG.hcTrack(+v('dbgHcT')-1); if(a==='die') DBG.die();
     if(a==='core'){ ['armor','dmg','regen'].forEach((k,i)=>P.core[k]=clamp(+v('dbgC'+'ADR'[i])|0,0,CORE_MAX)); persist(); if(player) recalcStats(); toast('Core set'); }
     if(a==='treeMax'||a==='treeClr'){ TREE.forEach(b=>b.nodes.forEach(n=>P.skills[n.id]=a==='treeMax'?n.max:0)); persist(); if(player) recalcStats(); toast(a==='treeMax'?'Tree maxed':'Tree cleared'); }
     if(a==='gems'){ P.gems+=500; persist(); }

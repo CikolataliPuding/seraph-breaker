@@ -1,4 +1,4 @@
-// Seraph Breaker · run.js: Arena runs: room schedule, boss picks, Arena 4 modifiers, run save / continue and unlocks.
+// Seraph Breaker · run.js: Arena runs: room schedule, boss picks, Arena 4 modifiers, run save / continue, Retry boss and unlocks.
 /* ================= ARENA RUNS ================= */
 const RUN_KEY='seraph-breaker-run-v1';
 // '30 ROOMS', or the arena's own label ('15 ROOMS + BOSS' on the Main Stage)
@@ -37,7 +37,8 @@ function buildRule(){
   sortie.mods.forEach(m=>merge(MODS[m]&&MODS[m].rule)); sortie.curses.forEach(c=>merge(typeof CURSES!=='undefined'&&CURSES[c]&&CURSES[c].rule));
   sortie.rule=r;
 }
-function launchArena(a,saved){
+function launchArena(a,saved,retry){
+  if(!retry) bossSnap=null;
   audioInit(); clearWorld(); hideOverlays(); paused=false; $('vign').style.opacity=0;
   if(saved) restoreLoadout(saved);
   stage=a; applyTheme(a);
@@ -49,7 +50,7 @@ function launchArena(a,saved){
   if(saved) restoreRun(saved);
   sortie.plan=arenaPlan(a,sortie.seed,saved&&!saved.seed?sortie.lastBoss:'');
   buildRoom(roomHalfX(),ROOM_Z,SANCTUM,true); player.pos.set(0,0,AZ-1.5); camTarget.copy(player.pos);
-  $('cardNum').textContent=`ARENA 0${a+1} · `+(saved?`CONTINUE · ROOM ${sortie.ri+1}/${N}`:roomsLabel(A)); $('cardT').textContent=A.name;
+  $('cardNum').textContent=`ARENA 0${a+1} · `+(retry?`RETRY BOSS · ROOM ${sortie.ri+1}/${N}`:saved?`CONTINUE · ROOM ${sortie.ri+1}/${N}`:roomsLabel(A)); $('cardT').textContent=A.name;
   $('cardS').textContent=[A.ruleTxt,...sortie.mods.map(m=>MODS[m].name)].join(' · ');
   const c=$('card'); c.hidden=false; const inner=c.firstElementChild; inner.style.animation='none'; void inner.offsetWidth; inner.style.animation='';
   setState('card',true); stateT=2; refreshControls(); playTrack(fightTrack());
@@ -57,13 +58,32 @@ function launchArena(a,saved){
 /* run save: written after every cleared room so a closed tab or app can continue from the next room */
 function saveRun(nextRi){
   if(!sortie||!player||player.dead||nextRi>=sortie.N) return;
-  const r={v:1,a:sortie.a,seed:sortie.seed,tester:!!sortie.tester,ri:nextRi,hp:Math.max(1,Math.round(player.hp)),sp:Math.floor(player.sp),rs:player.rs,lv:sortie.lv,xp:sortie.xp,pendingLv:sortie.pendingLv,rerolls:sortie.rerolls,
-    curses:sortie.curses,items:sortie.items.map(i=>i.id||i),lastBoss:sortie.lastBoss,mods:sortie.mods,score,kills,playTime,gold:sortie.gold,gems:sortie.gems,dmgTaken:Math.round(sortie.dmgTaken||0),extra:player.extra,unit:P.unit,weapon:P.weapon,gadgets:P.gadgets,t:Date.now()};
+  const r=runSnap(nextRi);
   try{ localStorage.setItem(RUN_KEY,JSON.stringify(r)); }catch(e){}
   if(sortie.ri+1>(P.bestRoom[sortie.a]||0)) P.bestRoom[sortie.a]=sortie.ri+1;
   persist();
 }
-function loadRun(){ try{ const s=localStorage.getItem(RUN_KEY); if(!s) return null; const r=JSON.parse(s); return r&&r.v===1&&ARENAS[r.a]&&r.a<P.arenas?r:null; }catch(e){ return null; } }
+// everything a run needs to continue at room ri (the run save, and the Retry boss snapshot)
+function runSnap(ri){
+  return {v:1,a:sortie.a,seed:sortie.seed,tester:!!sortie.tester,ri,hp:Math.max(1,Math.round(player.hp)),sp:Math.floor(player.sp),rs:player.rs,lv:sortie.lv,xp:sortie.xp,pendingLv:sortie.pendingLv,rerolls:sortie.rerolls,
+    curses:sortie.curses,items:sortie.items.map(i=>i.id||i),lastBoss:sortie.lastBoss,mods:sortie.mods,score,kills,playTime,gold:sortie.gold,gems:sortie.gems,dmgTaken:Math.round(sortie.dmgTaken||0),extra:player.extra,unit:P.unit,weapon:P.weapon,gadgets:P.gadgets.slice(),t:Date.now()};
+}
+/* Retry boss: entering a boss room (any arena) snapshots the run (runSnap: armor, build, skills, items, curses, run gold and diamonds, room)
+   plus the first-clear state. If the pilot goes down in that room, the result screen offers Retry boss: the run is rebuilt from the snapshot and
+   starts again at the boss, who starts over from his first form with full armor. Gold and diamonds picked up during the failed attempt are taken
+   back (never below zero), so rewards and the first-clear bonus are only paid once, on the kill and the clear. Each retry goes into the run log
+   (sortie.retries, and RUNLOG in tester mode). The snapshot is dropped when you leave the result screen. */
+let bossSnap=null;
+function snapBoss(){ if(!sortie||!player||player.dead) return; const s=JSON.parse(JSON.stringify(runSnap(sortie.ri))); s.first=sortie.firstClear!=null?sortie.firstClear:(P.bestRoom[sortie.a]||0)<sortie.N; s.retries=sortie.retries||0; s.boss=room&&room.boss; bossSnap=s; }
+const canRetryBoss=()=>!!(bossSnap&&sortie&&room&&room.type==='boss'&&bossSnap.a===sortie.a&&bossSnap.ri===sortie.ri);
+function retryBoss(){
+  const s=bossSnap; if(!s||!canRetryBoss()) return;
+  P.gold=Math.max(0,P.gold-Math.max(0,sortie.gold-s.gold)); P.gems=Math.max(0,P.gems-Math.max(0,sortie.gems-s.gems));
+  s.retries++; const log=(sortie.log||[]).concat([{room:s.ri+1,type:'boss',result:'retry',retry:s.retries,t:Math.round(playTime)}]);
+  if(typeof RUNLOG!=='undefined'&&DEBUG) RUNLOG.rooms.push({arena:s.a+1,room:s.ri+1,type:'boss',result:'retry',retry:s.retries});
+  launchArena(s.a,s,true); sortie.retries=s.retries; sortie.firstClear=s.first; sortie.log=log; sortie.force={type:'boss',boss:s.boss}; bossSnap=s;
+}
+function loadRun(){ try{ const s=localStorage.getItem(RUN_KEY); if(!s) return null; const r=JSON.parse(s); return r&&r.v===1&&ARENAS[r.a]&&arenaOpen(r.a)?r:null; }catch(e){ return null; } }
 function clearRun(){ try{ localStorage.removeItem(RUN_KEY); }catch(e){} }
 // the run keeps the frame and loadout it started with
 function restoreLoadout(r){
@@ -85,8 +105,10 @@ function restoreRun(r){
 }
 function arenaComplete(){
   if(!player||player.dead||state==='dying'||state==='result') return;
-  const a=sortie.a, N=sortie.N, first=(P.bestRoom[a]||0)<N;
+  // after Retry boss the first-clear state is the one from the boss room's entry (a death in the last room counts it as reached)
+  const a=sortie.a, N=sortie.N, first=sortie.firstClear!=null?sortie.firstClear:(P.bestRoom[a]||0)<N;
   const bonus=first?ECON.firstClear(a):Math.round(ECON.repeatClear(a)*sortie.farm); P.gems+=bonus; sortie.gems+=bonus; logEarn('gems','clear',bonus); logRoomEnd('complete');
-  P.bestRoom[a]=N; P.arenas=Math.max(P.arenas,Math.min(ARENAS.length,a+2)); P.clears++;
+  // the Main Stage (opened by its access code) unlocks nothing after it
+  P.bestRoom[a]=N; if(!ARENAS[a].stage) P.arenas=Math.max(P.arenas,Math.min(ARENAS.length,a+2)); P.clears++;
   clearRun(); persist(); showResult(true,bonus,first);
 }

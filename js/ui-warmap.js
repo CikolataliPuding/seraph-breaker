@@ -1,14 +1,15 @@
 // Seraph Breaker · ui-warmap.js: Arena select, plus the armory, skill tree, frames and system panels.
 /* ================= ARENA SELECT ================= */
 function renderMap(){
-  const sel=clamp(P.selArena,0,P.arenas-1); P.selArena=sel;
-  $('mapProg').textContent=`ARENAS · ${P.arenas}/${ARENAS.length} OPEN`;
+  const sel=openSel(P.selArena); P.selArena=sel;
+  $('mapProg').textContent=`ARENAS · ${openArenaCount()}/${ARENAS.length} OPEN`;
   const inner=$('mapInner'); inner.innerHTML='';
-  ARENAS.forEach((A,i)=>{ const locked=i>=P.arenas, best=P.bestRoom[i]||0, done=best>=A.rooms;
+  // beta: the Main Stage shows locked with a beta tag until its access code is entered in System (tester.js)
+  ARENAS.forEach((A,i)=>{ const locked=!arenaOpen(i), beta=!!A.stage&&!stageOK(), best=P.bestRoom[i]||0, done=best>=A.rooms;
     const b=document.createElement('button'); b.className='arena'+(locked?' lock':'')+(i===sel?' sel':'')+(done?' done':''); b.id='ar'+i; b.style.setProperty('--c',A.colorCss);
     b.innerHTML=`<span class="n"></span><b></b><span class="r"></span><span class="bp"></span><span class="pr"><i style="width:${Math.min(100,best/A.rooms*100)}%"></i></span>`;
-    b.querySelector('.n').textContent=`0${i+1} · ${roomsLabel(A)}`+(locked?' · LOCKED':done?' · CLEARED':'');
-    b.querySelector('b').textContent=A.name; b.querySelector('.r').textContent=locked?`Clear ${ARENAS[i-1].name} to unlock`:`Best room ${best}/${A.rooms} · ${A.ruleTxt}`;
+    b.querySelector('.n').textContent=`0${i+1} · ${roomsLabel(A)}`+(locked?' · LOCKED':done?' · CLEARED':'')+(A.stage?' · BETA':'');
+    b.querySelector('b').textContent=A.name; b.querySelector('.r').textContent=beta?'Beta: enter the access code in System to open it':locked?`Clear ${ARENAS[i-1].name} to unlock`:`Best room ${best}/${A.rooms} · ${A.ruleTxt}`;
     const bp=b.querySelector('.bp'); arenaBossPool(i).slice(0,i===3?7:3).forEach(k=>{ const img=document.createElement('img'); img.src=PORTRAIT[k]||''; img.alt=BOSSES[k].name; img.title=BOSSES[k].name; bp.appendChild(img); });
     b.onclick=()=>{ if(locked) return; P.selArena=i; sfx('click'); delete $('launchBtn').dataset.arm; renderMap(); };
     inner.appendChild(b); });
@@ -98,7 +99,7 @@ function renderFrames(){
   item('sp','Special',SPECIALS[P.unit].name,()=>{});
   [0,1].forEach(i=>{ const g=P.gadgets[i]; item(g||'hook','Gadget '+(i+1),g?GADGETS[g].name:'Empty slot',()=>openView('armory')); });
 }
-function renderSystem(){ $('buildTxt').textContent='Build '+BUILD+'.'; renderTester(); $('volM').value=Math.round(P.music*100); $('volMo').textContent=Math.round(P.music*100); $('volS').value=Math.round(P.sfx*100); $('volSo').textContent=Math.round(P.sfx*100);
+function renderSystem(){ $('buildTxt').textContent='Build '+BUILD+'.'; renderTester(); renderStageCode(); $('volM').value=Math.round(P.music*100); $('volMo').textContent=Math.round(P.music*100); $('volS').value=Math.round(P.sfx*100); $('volSo').textContent=Math.round(P.sfx*100);
   document.querySelectorAll('#ctrlSeg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.c===P.ctrl)); document.querySelectorAll('#shSeg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.s===P.mshield)); $('autoG').checked=P.autoGadget; }
 document.querySelectorAll('#ctrlSeg button').forEach(b=>b.onclick=()=>{ P.ctrl=b.dataset.c; sfx('click'); persist(); setMode(); renderSystem(); });
 document.querySelectorAll('#shSeg button').forEach(b=>b.onclick=()=>{ P.mshield=b.dataset.s; sfx('click'); persist(); renderSystem(); refreshControls(); });
@@ -109,10 +110,10 @@ $('volM').oninput=e=>{ P.music=e.target.value/100; $('volMo').textContent=e.targ
 $('volS').oninput=e=>{ P.sfx=e.target.value/100; $('volSo').textContent=e.target.value; setVolumes(); };
 $('volM').onchange=$('volS').onchange=()=>persist();
 $('fsBtn').onclick=()=>{ try{ const r=document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen(); r&&r.catch&&r.catch(()=>{}); }catch(e){} };
-// Reset my progress: a fresh pilot, but the beta badge and the tester code (and its flag) stay
+// Reset my progress: a fresh pilot, but the beta badge, the tester code (and its flag) and the Main Stage access code stay
 let resetArm=false;
 $('resetBtn').onclick=()=>{ if(!resetArm){ resetArm=true; $('resetBtn').textContent='Tap again to erase your progress'; setTimeout(()=>{ resetArm=false; $('resetBtn').textContent='Reset my progress'; },4000); return; }
-  const keep={rev:P.rev,beta:P.beta,testerCode:P.testerCode,testerSave:P.testerSave,testerTools:P.testerTools}; P=freshP(); Object.assign(P,keep); resetArm=false; $('resetBtn').textContent='Reset my progress'; clearRun(); persist(); rebuildPreview(); renderMenu(); };
+  const keep={rev:P.rev,beta:P.beta,testerCode:P.testerCode,testerSave:P.testerSave,testerTools:P.testerTools,stageCode:P.stageCode}; P=freshP(); Object.assign(P,keep); resetArm=false; $('resetBtn').textContent='Reset my progress'; clearRun(); persist(); rebuildPreview(); renderMenu(); };
 /* tester code: only its SHA-256 is in the code (tester.js). Unlocked: a toggle for the in-game tester tools (reloads the page). */
 function renderTester(){ const ok=testerOK(), n=$('testerNote'); $('testerToolsL').hidden=!ok; $('testerTools').checked=P.testerTools; $('testerBtn').textContent=ok?'Lock':'Unlock';
   $('testerIn').hidden=ok; n.className='note'+(ok?' ok':''); n.textContent=ok?'Tester mode unlocked. Runs with tester tools are flagged and never count for rankings.':'For testers only. Tester runs are flagged and never count for rankings.'; }
@@ -120,6 +121,12 @@ $('testerBtn').onclick=()=>{ if(testerOK()){ lockTester(); renderTester(); if(DE
   const ok=unlockTester($('testerIn').value); $('testerIn').value=''; renderTester(); if(!ok){ const n=$('testerNote'); n.className='note bad'; n.textContent='That code is not valid.'; } sfx('click'); };
 $('testerIn').addEventListener('keydown',e=>{ if(e.code==='Enter') $('testerBtn').click(); });
 $('testerTools').onchange=e=>{ P.testerTools=e.target.checked; persist(); location.reload(); };
+/* Main Stage access code (tester.js): only its SHA-256 is in the code. Unlocked: the stage opens on the warmap; Lock closes it again. */
+function renderStageCode(){ const ok=stageOK(), n=$('stageNote'); $('stageBtn').textContent=ok?'Lock':'Unlock'; $('stageIn').hidden=ok; n.className='note'+(ok?' ok':'');
+  n.textContent=ok?'Main Stage unlocked. It is open on the arena map.':'The Main Stage is in beta. Enter the access code to open it.'; }
+$('stageBtn').onclick=()=>{ if(stageOK()){ lockStage(); renderStageCode(); renderMenu(); return; }
+  const ok=unlockStage($('stageIn').value); $('stageIn').value=''; renderStageCode(); if(ok) renderMenu(); else { const n=$('stageNote'); n.className='note bad'; n.textContent='That code is not valid.'; } sfx('click'); };
+$('stageIn').addEventListener('keydown',e=>{ if(e.code==='Enter') $('stageBtn').click(); });
 function renderAbilityIcons(){
   $('abQ').querySelector('span').innerHTML=svg('sp');
   [0,1].forEach(i=>{ const g=P.gadgets[i], el=$(i?'abR':'abE'); el.querySelector('span').innerHTML=g?svg(g):''; el.classList.toggle('empty',!g); const t=$(i?'tG2':'tG1'); t.classList.toggle('off',!g); t.innerHTML=g?svg(g):''; });

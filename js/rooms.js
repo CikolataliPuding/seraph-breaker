@@ -202,7 +202,7 @@ function startRoom(i,force){
   logRoomStart(type);
   $('fade').classList.remove('on');
   const tag=`Room ${i+1}/${sortie.N}`;
-  if(type==='boss'){ $('warnTxt').textContent=BOSSES[room.boss].warn; setState('warn'); stateT=2.2; $('warn').hidden=false; playTrack('boss'); sfx('beam'); refreshControls(); return; }
+  if(type==='boss'){ snapBoss(); $('warnTxt').textContent=BOSSES[room.boss].warn; setState('warn'); stateT=2.2; $('warn').hidden=false; playTrack('boss'); sfx('beam'); refreshControls(); return; }
   setState('fight'); playTrack(fightTrack());
   if(type==='angel'){ spawnNpc('angel',new V3(0,0,-2)); openDoor(); toast('Sanctuary',tag); }
   else startCombat(spec,tag);
