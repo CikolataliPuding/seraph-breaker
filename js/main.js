@@ -140,9 +140,12 @@ function tick(dt,now){
   for(let i=fx.length-1;i>=0;i--){ const f=fx[i]; if(fxdt>0) f.life-=fxdt; const k=Math.max(0,f.life/f.max); f.upd(f,fxdt,k); if(f.life<=0){ scene.remove(f.obj); fxDispose(f); fx.splice(i,1); } }
   let want=1;
   if(state==='cine'&&boss){ camTarget.lerp(_tmp.set(boss.pos.x,bossCore(boss).y*.5,boss.pos.z),Math.min(1,(dt||.016)*3)); want=1.55; }
+  // High-Co entrances: the camera holds on him for a moment with a zoom punch (bosses.js hcCam)
+  else if(HC_CAM.t>0&&player&&!player.dead&&dt>0){ HC_CAM.t-=dt; if(mobileMode) _tmp.set(0,0,mobileCamZ(HC_CAM.pos.z)); else _tmp.copy(HC_CAM.pos); camTarget.lerp(_tmp,Math.min(1,dt*4)); want=HC_CAM.zoom; }
   else if(player&&!player.dead&&dt>0){ if(mobileMode) _tmp.set(0,0,mobileCamZ(player.pos.z)); else _tmp.copy(player.pos).addScaledVector(player.aim,1.5); camTarget.lerp(_tmp,Math.min(1,dt*5)); }
   camZoom+=(want-camZoom)*Math.min(1,(dt||.016)*3); if(Math.abs(cam.zoom-camZoom)>.001){ cam.zoom=camZoom; cam.updateProjectionMatrix(); }
   cam.position.copy(camTarget).add(mobileMode?CAM_OFF_M:CAM_OFF);
+  if(REDUCED_MOTION) shake=0;
   if(shake>0){ cam.position.x+=rand(-1,1)*shake; cam.position.y+=rand(-1,1)*shake*.6; shake=Math.max(0,shake-(dt||.016)*1.8); }
   cam.lookAt(camTarget);
   sun.position.copy(camTarget).add(_sunOff); sun.target.position.copy(camTarget);

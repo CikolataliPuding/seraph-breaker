@@ -147,7 +147,9 @@ function updateBoss(dt){
   const newPh=def.forms?b.phase:b.hp<b.maxHp*.33?3:b.hp<b.maxHp*.66?2:1;
   if(newPh!==b.phase&&b.atk!=='enter'){ b.phase=newPh; $('bossPh').textContent='PHASE '+['I','II','III'][newPh-1]; groundRing(b.pos,0xff2236,14,1); shake=.6; hitstop(85,true); b.jz.pop.v=-8; if(def.barrier) b.barrier=3; b.atk='idle'; b.atkT=.7; b.beam=null; b.jumpY=0; b.reflectT=0; b.vuln=0; hideBeams(); clearEnemyShots(); if(f==='highco') highcoPhase(b,newPh); }
   b.vuln=Math.max(0,b.vuln-dt);
-  if(b.atk==='enter'){ b.y+=(b.base-b.y)*Math.min(1,dt*2.6); b.atkT-=dt;
+  // High-Co's parachute drop is slow and lands during the cinematic (hcDrop); he starts once the cinematic is over
+  if(b.atk==='enter'&&def.forms){ hcDrop(b,dt); b.atkT-=dt; if(b.landed&&b.atkT<=0){ b.atk='idle'; b.atkT=1.2; } }
+  else if(b.atk==='enter'){ b.y+=(b.base-b.y)*Math.min(1,dt*2.6); b.atkT-=dt;
     if(b.atkT<=0){ b.y=b.base; b.atk='idle'; b.atkT=1; groundRing(b.pos,ARENAS[stage].theme.edge,16,1.2); crossBlast(b.pos.clone(),0xff6a1a,1.2); shake=.8; buzz(120); } }
   else if(b.stun>0){ b.stun-=dt; b.jumpY=0; b.reflectT=0; b.vel.multiplyScalar(.9); if(Math.random()<dt*8) sparks(bossCore(b),0x5fe0ff,2,4); b.pos.addScaledVector(b.vel,dt); }
   else {
@@ -315,13 +317,37 @@ function highcoFormDown(b){
   hcHud(b); popText(n===2?'ENCORE':'SAKİN OLMAM LAZIM');
 }
 const HC_DESC=[0,2.2,1.5]; // entrance descent time per form (form I parachutes in during the cinematic)
-const hcShake=v=>{ shake=Math.max(shake,v); };
+/* game feel: hcShake / hcCam scale with the device (phones get less, prefers-reduced-motion gets no shake and no camera moves; main.js
+   also drops all screen shake for reduced motion). HC_CAM: a short camera hold on a point with a zoom punch, read by main.js. */
+const REDUCED_MOTION=!!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches);
+const hcFeel=()=>REDUCED_MOTION?0:mobileMode?.55:1;
+const hcShake=v=>{ shake=Math.max(shake,v*hcFeel()); };
+const HC_CAM={t:0,zoom:1,pos:new V3()};
+function hcCam(pos,zoom,t){ if(REDUCED_MOTION) return; HC_CAM.pos.set(pos.x,0,pos.z); HC_CAM.zoom=1+(zoom-1)*(mobileMode?.5:1); HC_CAM.t=t; }
+// every hit the pilot takes in his room scales with the current form (forms[n].dmg), and one hit never goes past hitCap (raw, before the room curve)
+function hcDmg(d){ const b=boss; if(!b||!b.formN||b.dead) return d; return Math.min(d*b.def.forms[b.phase-1].dmg,Math.max(d,b.def.hitCap)); }
+/* form I entrance: the parachute drop as a cinematic. He sinks under the canopy (the cinematic camera follows him down; if it is skipped
+   HC_CAM keeps tracking him), then lands hard: hitstop, heavy shake and rumble, a ring of dust, a shockwave ring and a camera punch-in. */
+function hcDrop(b,dt){
+  if(b.landed) return; b.y=Math.max(b.base,b.y-dt*(state==='cine'?7.2:14));
+  if(state==='fight') hcCam(b.pos,1.25,.25);
+  if(b.y>b.base) return;
+  b.landed=true; const p=b.pos, c=b.def.forms[0].col;
+  hitstop(110,true); hcShake(1.4); buzz(260); sfx('bigboom'); b.jz.pop.v=-10;
+  groundRing(p,c,18,1.1); groundRing(p,0xffffff,9,.7); crossBlast(p.clone(),c,1.5);
+  const n=mobileMode?10:18; for(let i=0;i<n;i++){ const a=i/n*Math.PI*2; dustPuff(p.x+Math.cos(a)*3.2,p.z+Math.sin(a)*3.2,1.5); }
+  const w=new THREE.Mesh(G.ring,addMat(0xfff0d0,.8)); w.rotation.x=-Math.PI/2; w.position.set(p.x,.1,p.z);
+  addFx(w,.9,(f,dt,k)=>{ w.scale.setScalar(2+(1-k)*26); w.material.opacity=.8*k*k; });
+  hcCam(p,1.4,.9); if(typeof hcCrowd==='function') hcCrowd(1);
+}
 function hcEntrance(b){ const c=b.def.forms[b.phase-1].col; hcBeam(b.pos,c,2.4,HC_DESC[b.phase-1]+.4); }
 function hcLand(b){ const c=b.def.forms[b.phase-1].col; groundRing(b.pos,c,10,1); crossBlast(b.pos.clone(),c,1.2); hcShake(.7); b.jz.pop.v=-8; }
 function hcStreamsEnd(b){ b.streams=null; }
 function highcoAnim(b,m,dt){
   if(stepMech(m,b,b.vel.length(),dt,b.sc)&&!b.y){ b.byaw=b.yaw; footfall(b,m,b.sc,.12); } mechLean(m,b.jz,dt,b.vel.x*.5,b.vel.z*.5,b.yaw,b.yaw);
   const a=b.atk, t=b.atkT; let jaw=.12+Math.sin(b.t*3)*.04, lag=0, flap=2;
+  // form I burns: embers come off the white outfit, more while he attacks
+  if(b.phase===1&&b.landed&&Math.random()<dt*(mobileMode?5:12)*(a==='idle'?1:2)) sparks(new V3(b.pos.x+rand(-.9,.9),b.y+rand(2,5.5),b.pos.z+rand(-.9,.9)),Math.random()<.5?0xff7a2a:0xffc040,1,3);
   m.head.rotation.x=0;
   if(a==='enter'){ m.arms[0].rotation.set(-2.9,0,.35); m.arms[1].rotation.set(-2.9,0,-.35); m.legs[0].rotation.x=.25; m.legs[1].rotation.x=-.15; m.shins[0].rotation.x=.4; }
   else if(a==='hcdescend'){ m.arms[0].rotation.set(-.3,0,.7); m.arms[1].rotation.set(-.3,0,-.7); flap=b.immune?10:3; }
