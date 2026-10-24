@@ -1,9 +1,12 @@
 // Seraph Breaker · run.js: Arena runs: room schedule, boss picks, Arena 4 modifiers, run save / continue and unlocks.
 /* ================= ARENA RUNS ================= */
 const RUN_KEY='seraph-breaker-run-v1';
+// '30 ROOMS', or the arena's own label ('15 ROOMS + BOSS' on the Main Stage)
+const roomsLabel=A=>A.roomsTxt||A.rooms+' ROOMS';
 // room n (1-based): from the run plan when there is one, else the PACING slot (boss, angel, elite or combat)
 const arenaRoomType=n=>{ const p=sortie&&sortie.plan&&sortie.plan[n-1]; if(p) return p.type; const c=PACING[((n-1)%10)+1]; return c.boss?'boss':c.angel?'angel':c.elite?'elite':'combat'; };
-function arenaBossPool(a){ const A=ARENAS[a]; return (A.bosses==='all'?Object.keys(BOSSES):A.bosses).filter(k=>BOSSES[k]); }
+// 'all' (Arena 4) is every boss and corrupted variant except an arena's own headliner (stageOnly: High-Co belongs to the Main Stage)
+function arenaBossPool(a){ const A=ARENAS[a]; return (A.bosses==='all'?Object.keys(BOSSES).filter(k=>!BOSSES[k].stageOnly):A.bosses).filter(k=>BOSSES[k]); }
 // seeded random: the same run seed always gives the same plan, so a continued run keeps its rooms and bosses
 function seeded(seed){ let t=seed>>>0; return ()=>{ t=(t+0x6D2B79F5)>>>0; let r=Math.imul(t^t>>>15,1|t); r^=r+Math.imul(r^r>>>7,61|r); return ((r^r>>>14)>>>0)/4294967296; }; }
 /* the arena plan, one entry per room: {type:'combat'|'elite'|'angel'|'boss', kind (ROOM_KINDS), k (budget multiplier from PACING), boss (the boss
@@ -11,6 +14,8 @@ function seeded(seed){ let t=seed>>>0; return ()=>{ t=(t+0x6D2B79F5)>>>0; let r=
    simulation and the arena preview use it too. */
 function arenaPlan(a,seed,lastBoss=''){
   const A=ARENAS[a], N=A.rooms, rnd=seeded((seed|0)*7919+a*104729+1), pool=arenaBossPool(a), plan=[]; let last=lastBoss, bb='';
+  // Main Stage: every room is a wave room (STAGE), the boss comes after the last one
+  if(A.stage){ for(let n=1;n<=N;n++) plan.push(n===N?{n,boss:pool[0],k:1,type:'boss',kind:'boss'}:{n,boss:pool[0],k:1,type:'combat',kind:'stage'}); return plan; }
   for(let n=1;n<=N;n++){ const pos=n===N?10:((n-1)%10)+1, pc=PACING[pos];
     if((n-1)%10===0||!bb){ const c=pool.filter(k=>k!==last); bb=c.length?c[(rnd()*c.length)|0]:pool[0]; last=bb; }
     const r={n,boss:bb,k:pc.k||1};
@@ -44,10 +49,10 @@ function launchArena(a,saved){
   if(saved) restoreRun(saved);
   sortie.plan=arenaPlan(a,sortie.seed,saved&&!saved.seed?sortie.lastBoss:'');
   buildRoom(roomHalfX(),ROOM_Z,SANCTUM,true); player.pos.set(0,0,AZ-1.5); camTarget.copy(player.pos);
-  $('cardNum').textContent=`ARENA 0${a+1} · `+(saved?`CONTINUE · ROOM ${sortie.ri+1}/${N}`:`${N} ROOMS`); $('cardT').textContent=A.name;
+  $('cardNum').textContent=`ARENA 0${a+1} · `+(saved?`CONTINUE · ROOM ${sortie.ri+1}/${N}`:roomsLabel(A)); $('cardT').textContent=A.name;
   $('cardS').textContent=[A.ruleTxt,...sortie.mods.map(m=>MODS[m].name)].join(' · ');
   const c=$('card'); c.hidden=false; const inner=c.firstElementChild; inner.style.animation='none'; void inner.offsetWidth; inner.style.animation='';
-  setState('card',true); stateT=2; refreshControls(); playTrack('battle');
+  setState('card',true); stateT=2; refreshControls(); playTrack(fightTrack());
 }
 /* run save: written after every cleared room so a closed tab or app can continue from the next room */
 function saveRun(nextRi){

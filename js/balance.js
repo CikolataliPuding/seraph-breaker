@@ -64,10 +64,11 @@ function procOk(id){
 
 /* ================= ENEMY SCALING ================= */
 const growth=(g,ri)=>Math.pow(1+g,ri);
-// armor (hp) and damage multipliers for room index ri (0-based) of arena a; boss rooms use the same curve divided by its room 10 value
-function enemyScale(a,ri,rule){ const A=ARENAS[a], hm=rule&&rule.hpMul||1, dm=A.dmgMul||1, fin=ri>=A.rooms-1;
-  return {hp:A.hpMul*growth(SCALE.hp,ri)*hm, dmg:dm*growth(SCALE.dmg,ri),
-    boss:A.bossMul*growth(SCALE.hp,ri)/growth(SCALE.hp,SCALE.bossRef)*hm*(fin?SCALE.finalHp:1), bossDmg:dm*growth(SCALE.dmg,ri)/growth(SCALE.dmg,SCALE.bossRef)*(fin?SCALE.finalDmg:1)}; }
+/* armor (hp) and damage multipliers for room index ri (0-based) of arena a; boss rooms use the same curve divided by its room 10 value.
+   An arena with roomK (Main Stage) runs the curve roomK rooms per room, and wf (0..1, the wave inside the room) climbs within a room. */
+function enemyScale(a,ri,rule,wf){ const A=ARENAS[a], hm=rule&&rule.hpMul||1, dm=A.dmgMul||1, fin=ri>=A.rooms-1, x=A.roomK?(ri+(wf||0))*A.roomK:ri;
+  return {hp:A.hpMul*growth(SCALE.hp,x)*hm, dmg:dm*growth(SCALE.dmg,x),
+    boss:A.bossMul*growth(SCALE.hp,x)/growth(SCALE.hp,SCALE.bossRef)*hm*(fin?SCALE.finalHp:1), bossDmg:dm*growth(SCALE.dmg,x)/growth(SCALE.dmg,SCALE.bossRef)*(fin?SCALE.finalDmg:1)}; }
 // enemy budget for a room (sum of ENEMY cost); grows slowly next to the exponential armor curve
 function roomBudget(a,ri,elite){ const B=SCALE.budget; return (B.base+a*B.arena+(ri+1)*B.room)*(elite?B.elite:1); }
 const xpNeedAt=lv=>XP_NEED.base+Math.floor(lv*XP_NEED.per*10)/10;

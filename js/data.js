@@ -180,11 +180,11 @@ const XP_NEED={base:6,per:.35}, XP_BOSS=10;
 /* economy: target earnings for one full run of each arena without gold bonuses (first-clear diamonds come on top, once).
    The per-kill, boss and clear numbers below are tuned so a full run lands near the targets (check with DBG.sim()). */
 const ECON={
-  target:{gold:[1200,2000,3000,4000],gems:[30,45,60,80]},
-  killGold:[.9,.8,.8,1],              // × ENEMY gold per arena
-  bossGold:[.55,.4,.26,.4],           // × BOSSES gold per arena
-  bossGems:[.28,.25,.14,.22],         // × BOSSES gems per arena, paid on the kill
-  clearGold:[6,9,12,15],              // per cleared combat/elite room
+  target:{gold:[1200,2000,3000,4000,4800],gems:[30,45,60,80,95]},
+  killGold:[.9,.8,.8,1,1.65],         // × ENEMY gold per arena (Main Stage: fewer, tougher kills in long wave rooms)
+  bossGold:[.55,.4,.26,.4,.5],        // × BOSSES gold per arena
+  bossGems:[.28,.25,.14,.22,1],       // × BOSSES gems per arena, paid on the kill (the Main Stage has one boss, so he pays the run's share)
+  clearGold:[6,9,12,15,45],           // per cleared combat/elite room (Main Stage rooms are long wave sets)
   gemChance:{small:.008,big:.03,elite:.2},
   firstClear:a=>40+30*a, repeatClear:a=>5+5*a,
   // farm check (tester.js farmMul): gold and diamonds when replaying an arena 0 / 1 / 2+ below your highest unlocked one
@@ -234,6 +234,12 @@ const ARENAS=[
   {name:'Fallen Sky', rooms:50, hpMul:1.9, dmgMul:1.45, bossMul:1.8, mixed:true, mobs:['drone','lancer','seraph','spark','crawler','cherub','shardling','warden','heavy','censer','howitzer','bulwark','ophan'], bosses:'all', rule:{hazards:.45,corruptElites:true}, trap:'mix', ruleTxt:'Both factions, corrupted elites, 2 random modifiers',
    theme:{bg:0x170e22,hemiS:0xe0c8ff,hemiG:0x22123a,ground:0x4a3a64,city:0xb8a0e0,edge:0xb070ff,rim:0xff4ad0,win:0xd8a0ff,floor:0x9a8ab8,wall:0x2e2244,block:0x5a3a8a,water:0xb070ff},
    colorCss:'#b070ff'},
+  /* Main Stage (High-Co's festival): unlocked by Arena 4's first clear, one notch above it. 15 wave rooms (STAGE) and High-Co after room 15
+     (rooms counts the boss room, like the other arenas). roomK: the enemy curve runs roomK rooms per room (and per wave inside it, see
+     enemyScale), so the 15 long rooms climb like Arena 4's 50 short ones. par: seconds per room for the run score's speed bonus. */
+  {name:'Main Stage', rooms:16, roomsTxt:'15 ROOMS + BOSS', hpMul:2.2, dmgMul:1.6, bossMul:1.7, roomK:3.3, par:95, stage:true, mobs:['roadie','bass','spot','mosher','dancer','pyro','shredder','diver','drummer'], bosses:['highco'], rule:{beatSync:true}, trap:'spike', ruleTxt:'Beat sync: attacks lock to the music, a dash on the beat dodges twice as wide',
+   theme:{bg:0x120a1c,hemiS:0xf0d0e4,hemiG:0x1c1028,ground:0x2a2032,city:0x5a3e68,edge:0xff3aa8,rim:0xffb84a,win:0xffb84a,floor:0x4a4054,wall:0x1e1826,block:0x1e1826,water:0xff3aa8},
+   colorCss:'#ff3aa8'},
 ];
 /* Arena 4 rolls two of these per run */
 const MODS={
@@ -265,6 +271,20 @@ const ENEMY={
   cherub:{name:'Cherub',tag:'focus',mass:.6,role:'support',hp:7,r:1,speed:4.6,sc:1,fly:true,angel:true,cost:1.5,xp:1.5,gold:10,score:220,build:()=>buildCherub(),elite:false,init:e=>{ e.cd=3; }},
   censer:{name:'Censer',tag:'move',mass:1.3,role:'artillery',band:[8,12],hp:10,r:1.1,speed:1.8,sc:1,fly:true,angel:true,cost:2,xp:2,gold:12,score:240,build:()=>buildCenser(),init:e=>{ e.cd=rand(1.5,2.5); }},
   ophan:{name:'Ophan',tag:'move',mass:2,role:'charger',band:[6,10],hp:16,r:1.8,speed:11,sc:1,angel:true,cost:2.8,xp:3,gold:16,score:320,build:()=>buildOphan(1),init:e=>{ e.st='pause'; e.stT=rand(1,2); }},
+  /* Main Stage cast (docs/main-stage.html, Main Stage only; behavior in enemy-ai.js). group 'band': the four musicians (Encore = all of them),
+     the rest is stage crew and crowd. Every attack lands on a beat of the live music (BEAT in audio.js). still: never moves (no body lean).
+     seat: placed on an open spot instead of a gate (rooms.js seatSpot) · aura: Bass Brute slow radius · amps: amps a Roadie keeps out at once · jets: flame jets per Pyro Tech · spot: follow spot radius.
+     xp is half again a normal mob's: the Main Stage has no angels and one boss, so the pilot levels from the waves. */
+  bass:{name:'Bass Brute',group:'band',tag:'focus',mass:3,role:'tank',hold:4.5,aura:6.5,hp:18,r:1.5,speed:1.9,sc:1.45,cost:2.4,xp:3.9,gold:15,score:300,build:()=>buildBassist(),init:e=>{ e.cd=2; }},
+  dancer:{name:'Pulse Dancer',group:'band',tag:'move',mass:.6,role:'flanker',band:[4.5,6.5],hp:8,r:1.1,speed:5,sc:1.15,cost:1.8,xp:2.7,gold:11,score:220,build:()=>buildDancer(),init:e=>{ e.cd=rand(1,2); e.st='dance'; }},
+  shredder:{name:'Shredder',group:'band',tag:'move',mass:1.2,role:'kiter',band:[6,10],hp:11,r:1.15,speed:3.4,sc:1.2,cost:2.6,xp:3.9,gold:15,score:300,build:()=>buildShredder(),init:e=>{ e.cd=rand(1.2,2); e.riffs=0; }},
+  drummer:{name:'Drummer',group:'band',tag:'focus',mass:9,role:'artillery',slam:7.5,hp:18,r:1.9,speed:0,sc:1.1,still:true,seat:true,cost:3,xp:4.5,gold:18,score:340,build:()=>buildDrummer()},
+  roadie:{name:'Roadie',tag:'focus',mass:.9,role:'support',band:[8,12],amps:3,hp:6,r:1,speed:6,sc:1.1,cost:1.2,xp:1.65,gold:8,score:140,build:()=>buildHauler(),init:e=>{ e.cd=rand(.6,1.2); e.st='run'; }},
+  amp:{name:'Amp',mass:9,role:'static',hp:1,r:.9,speed:0,sc:1,still:true,cost:0,xp:0,gold:0,score:20,build:()=>buildAmp(),elite:false,init:e=>{ e.life=10; e.noLoot=true; e.beatOff=(Math.random()*4)|0; }},
+  mosher:{name:'Mosher',tag:'move',mass:.8,role:'rusher',hp:4,r:.95,speed:5.4,sc:1.05,cost:.45,xp:0.6,gold:3,score:60,build:()=>buildMosher(),elite:false,init:e=>{ e.cd=0; }},
+  pyro:{name:'Pyro Tech',tag:'move',mass:1,role:'denial',band:[8,11],jets:2,hp:7,r:1,speed:4.2,sc:1.1,cost:1.5,xp:2.25,gold:10,score:200,build:()=>buildPyro(),init:e=>{ e.jets=[]; e.cd=rand(.8,1.5); }},
+  spot:{name:'Lighting Tech',tag:'focus',mass:1,role:'support',band:[8,12],spot:2,hp:3,r:1,speed:3,sc:1.1,cost:1.2,xp:1.8,gold:9,score:160,build:()=>buildSpot()},
+  diver:{name:'Stage Diver',tag:'move',mass:1.3,role:'charger',hp:10,r:1.15,speed:4.8,sc:1.2,cost:2,xp:3,gold:12,score:240,build:()=>buildDiver(),init:e=>{ e.st='enter'; e.cd=rand(.6,1.2); }},
 };
 /* enemy AI by arena (index = arena). react: seconds an enemy must see you before it fires · lead: how much of your movement its aim and charges
    predict (0 = where you are, 1 = perfect intercept; arena 1 barely leads) · aggr: how often flankers go for your back and tanks push in · tokens: enemies that may attack at once
@@ -274,6 +294,7 @@ const AI_LV=[
   {react:.35,lead:.45,aggr:.6,tokens:4,read:0},
   {react:.27,lead:.7,aggr:.8,tokens:4,read:.4},
   {react:.2,lead:.9,aggr:1,tokens:5,read:.8},
+  {react:.2,lead:.9,aggr:1,tokens:6,read:.8},
 ];
 /* enemy movement feel (enemy-ai.js steer): accel = how fast a mass-1 enemy reaches the velocity it wants (units/s²), brake = stopping is this much
    faster, turn = how fast a mass-1 walker turns its body before it walks (rad/s). Every enemy divides both by its ENEMY mass (heavy = slow, light = agile).
@@ -292,6 +313,8 @@ const COMPS=[
    {name:'Bastion',core:['heavy','cherub','warden']},{name:'Skirmish',core:['move','focus','seraph']}],
   [{name:'Lanes',core:['lancer','ophan','drone']},{name:'Medics',core:['cherub','heavy','spark','spark']},{name:'Siege line',core:['howitzer','bulwark','lancer']},
    {name:'Hunters',core:['crawler','crawler','cherub','censer']},{name:'Judgement',core:['warden','lancer','seraph']},{name:'Skirmish',core:['move','focus','move']}],
+  // Main Stage rooms are composed wave by wave from STAGE (composeStage); these only cover a forced plain room there
+  [{name:'Sound check',core:['bass','roadie','spot']},{name:'Moshpit',core:['mosher','mosher','mosher','mosher','mosher','mosher']},{name:'Encore',core:['bass','dancer','shredder','drummer']}],
 ];
 /* the rooms right before a boss teach its patterns with smaller versions (core of the teaching room, see PACING) */
 const BOSS_TEACH={
@@ -302,7 +325,7 @@ const BOSS_TEACH={
   seraph:['seraph','seraph','warden','cherub'],         // charges and rings
   throne:['ophan','warden','censer'],                   // rolls and bullet walls
   archon:['seraph','bulwark','warden'],                 // lunges, a shield to flank, waves
-  highco:['spark','spark','lancer','howitzer'],         // blasts, a laser that tracks you, marked impacts (pillars)
+  highco:['shredder','diver','pyro','bass'],           // cones and lightning (scream), a landing crush (slam stun), marked floor fire (pillars), slows
 };
 /* room kinds. minRoom / minArena gate them early on. Ambush: they come from the sides and from behind. Reinforcements: waves arrive through gates.
    Survive: hold out for time seconds against endless spawns (spawns pay reward × the normal kill). Hunt: an elite flees and escapes after time
@@ -311,11 +334,27 @@ const ROOM_KINDS={
   normal:{name:'Hostiles'},
   ambush:{name:'Ambush',sub:'From the sides and behind',minRoom:2},
   reinforce:{name:'Reinforcements',sub:'Waves through the gates',minRoom:3,waves:3},
-  survive:{name:'Survive',sub:'Hold out',minRoom:8,time:20,reward:.4,cap:[5,6,7,7]},
+  survive:{name:'Survive',sub:'Hold out',minRoom:8,time:20,reward:.4,cap:[5,6,7,7,7]},
   hunt:{name:'Hunt',sub:'The elite runs. Catch it.',minRoom:7,time:16},
   gauntlet:{name:'Trap gauntlet',sub:'Few enemies, many traps',minRoom:3,k:.55},
   dark:{name:'Dark room',sub:'Stay close to the light',minRoom:11,light:{d:8.5,m:9}},
   teach:{name:'Hostiles'},
+  stage:{name:'Live set',sub:'Waves through the gates'},
+};
+/* Main Stage wave rooms (rooms.js composeStage, main.js roomKinds). Every room is a set of waves through the gates: clear a wave, take a
+   breather (seconds, a range), the next one comes in; clear the last one and the door opens. waves: per room 1-15. A wave's budget (ENEMY cost)
+   = base + room × (room - 1) + wave × (wave - 1), capped at cap enemies ([phone, desktop]).
+   The bestiary's room types are wave compositions: Sound check (one band member + stage crew), Moshpit (a pack of Moshers, mosh.size, from
+   room mosh.from on every mosh.every-th wave) and Encore (the full band on stage at once: the last wave of rooms encore.from+, one of them an
+   elite from encore.elite). unlock: the first room each mob can show up in (band members one at a time, crew fills the budget). */
+const STAGE={
+  waves:[2,2,3,3,3,3,4,4,4,4,4,5,5,5,5],
+  budget:{base:3,room:.3,wave:.5}, cap:[9,11], breather:[3,4],
+  band:['bass','dancer','shredder','drummer'], crew:['roadie','spot','pyro','diver'],
+  unlock:{bass:1,roadie:1,spot:2,dancer:3,pyro:4,mosher:5,shredder:6,diver:7,drummer:9},
+  mosh:{from:5,every:3,size:[6,10],sizeM:[6,8]}, encore:{from:11,elite:13},
+  // Ritim senkronu: the beat counts as hit when the dash lands within win seconds of it; the drummer raises the band's tempo by drumTempo while he lives
+  beatWin:.11, drumTempo:1.15, ampMax:6,
 };
 /* pacing inside every 10-room block (index = position in the block, 10 = boss): the kinds it can roll and a budget multiplier.
    Tension comes in waves: a breather after the boss, a first spike, the angel, a climb, a hard room and a teaching room before the next boss. */
@@ -356,7 +395,9 @@ const BOSSES={
     pool:[['wave','lunge','aimed'],['wave','lunge','shieldup','wave'],['lunge','wave','shieldup','lunge','ring']]},
   // High-Co (Main Stage headliner): phase I frontman, phase II the black angel lands in his place, phase III rage (red wings, light pillars).
   // His room is a concert stage (buildHighCoArena); the amp stacks on the mat are the only cover from the Metal Scream.
-  highco:{name:'High-Co',cls:'Class · Frontman · Fallen angel',epi:'The headliner parachutes in, screams the room flat and comes back with wings. Hide behind the amps when he raises the mic.',threat:5,warn:'THE HEADLINER IS DROPPING IN',hp:900,r:1.8,fly:0,coreY:6.5,barrier:false,minion:'spark',gold:620,gems:62,angel:false,
+  // stageOnly: the Main Stage's boss and nobody else's (left out of Arena 4's 'all' pool, no corrupted variant). minion: his crowd.
+  // encore: band members (Main Stage mobs) who come back on stage when a phase begins ("Grup üyeleri formlar arasında sahneye dönebilir").
+  highco:{name:'High-Co',cls:'Class · Frontman · Fallen angel',epi:'The headliner parachutes in, screams the room flat and comes back with wings. Hide behind the amps when he raises the mic.',threat:5,warn:'THE HEADLINER IS DROPPING IN',hp:900,r:1.8,fly:0,coreY:6.5,barrier:false,minion:'mosher',stageOnly:true,encore:{2:['bass','dancer'],3:['shredder','drummer']},gold:620,gems:62,angel:false,
     pool:[['beam','hcslam','scream','headbang'],['beam','hcslam','scream','headbang','pole','sweep'],['sweep','hcslam','scream','headbang','pole','pillars','pillars']]},
 };
 /* corrupted variants: any boss + purple tint, crystal spikes and a few attacks borrowed from another boss. Arena 4 draws from all of them. */

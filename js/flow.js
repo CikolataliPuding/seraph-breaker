@@ -1,8 +1,8 @@
 // Seraph Breaker · flow.js: Level flow: launching a level, room transitions, results, pause.
 /* ================= LEVEL FLOW ================= */
 function clearWorld(){
-  clearEnemiesAndShots(); clearRoom(); clearJuice(); clearDust(); clearTraps();
-  fx.forEach(f=>{ scene.remove(f.obj); if(f.dispose&&f.obj.geometry) f.obj.geometry.dispose(); }); fx.length=0;
+  clearEnemiesAndShots(); if(!BEAT.force) AU.tempoK=1; clearRoom(); clearJuice(); clearDust(); clearTraps();
+  fx.forEach(f=>{ scene.remove(f.obj); fxDispose(f); }); fx.length=0;
   if(buddy){ scene.remove(buddy.g); buddy=null; } if(wingman){ scene.remove(wingman.g); wingman=null; } chrono=0; clearBlasts();
   if(player){ scene.remove(player.model.g,player.model.shadow); player=null; }
   orbitG.children.slice().forEach(c=>orbitG.remove(c));
@@ -37,11 +37,11 @@ function showResult(win,bonusG=0,first=false){
   persist();
   $('result').hidden=false;
 }
-/* run score (result screen only): RUN_SCORE.room per cleared room, plus RUN_SCORE.speed per second under par (RUN_SCORE.par seconds a room),
+/* run score (result screen only): RUN_SCORE.room per cleared room, plus RUN_SCORE.speed per second under par (RUN_SCORE.par seconds a room, or the arena's par),
    minus RUN_SCORE.dmg per armor point lost */
 const RUN_SCORE={room:1000,par:40,speed:10,dmg:2};
-function runScore(win){ const rooms=win?sortie.N:sortie.ri+(room&&room.cleared?1:0), taken=Math.round(sortie.dmgTaken||0);
-  const speed=Math.round(Math.max(0,rooms*RUN_SCORE.par-playTime)*RUN_SCORE.speed), dmg=taken*RUN_SCORE.dmg;
+function runScore(win){ const rooms=win?sortie.N:sortie.ri+(room&&room.cleared?1:0), taken=Math.round(sortie.dmgTaken||0), par=ARENAS[sortie.a].par||RUN_SCORE.par;
+  const speed=Math.round(Math.max(0,rooms*par-playTime)*RUN_SCORE.speed), dmg=taken*RUN_SCORE.dmg;
   return {rooms,taken,speed,dmg,total:Math.max(0,rooms*RUN_SCORE.room+speed-dmg)}; }
 function togglePause(){ if(!playing()||state==='cine'||state==='choice') return; paused=!paused; $('pause').hidden=!paused; resetTouch(); hideRsPop(); for(const k in keys)keys[k]=false; mouseDown=rightDown=false; if(paused){ renderPauseBuild(); persist(); } }
 function toMenu(view){ persist(); hideOverlays(); clearWorld(); setState('menu'); paused=false; refreshControls(); applyTheme(0); playTrack('menu'); openView(view||'home'); $('menu').hidden=false; }

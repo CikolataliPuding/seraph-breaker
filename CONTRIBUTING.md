@@ -30,9 +30,9 @@ Bir dosyada en üst seviyede tanımlanan her şey (fonksiyonlar, `const`/`let`) 
 | `js/data.js` | **Oyun verisi.** Birimler (`UNITS`), silahlar (`WEAPONS`), aletler (`GADGETS`), yetenek ağacı (`TREE`), Core statlar (`CORE`), arenalar (`ARENAS`, `MODS`), düşmanlar (`ENEMY`), koşu yetenekleri (`RSK`, `RARITY`), şeytan lanetleri (`CURSES`), eşyalar (`ITEMS`), bosslar (`BOSSES` + corrupted varyantlar), oda düzenleri (`ROOMS`), ikonlar (`IC`). Katkıların çoğu buradan başlar. |
 | `js/balance.js` | Denge sistemi: stat kovaları (aynı stattaki bonuslar toplanır, kovalar çarpılır), soft/hard cap'ler, proc limitleri, düşman ölçek eğrisi (`enemyScale`), oyuncu güç tahmini (`powerEstimate`), ekonomi yardımcıları. Sayılar `data.js` içindeki `BAL`, `SCALE`, `XP_NEED`, `ECON`'da. |
 | `js/save.js` | Kayıt (localStorage). Yeni alanlar `DEF_P`'ye varsayılanla eklenir, eski kayıtlar `normP` ile açılır. |
-| `js/audio.js` | Tarayıcıda üretilen müzik (`TRACKS`) ve ses efektleri (`sfx`) |
+| `js/audio.js` | Tarayıcıda üretilen müzik (`TRACKS`), Main Stage moblarının kilitlendiği vuruş saati (`BEAT`) ve ses efektleri (`sfx`) |
 | `js/renderer.js` | Three.js sahnesi, kamera (bilgisayar: izometrik, telefon: dik ve odaya sığan), ışıklar, şehir; oda boyutları (`ROOM_X`, `ROOM_Z`, `BOSS_X`, `BOSS_Z`, telefonda `ROOM_X_M`, `BOSS_X_M`) |
-| `js/models.js` | Mecha, melek, arena mobları ve boss 3D modelleri (`buildMech`, `BOSS_BUILD`, `corruptModel`). Yeni modellerin kaynağı `docs/bestiary.html`. |
+| `js/models.js` | Mecha, melek, arena mobları ve boss 3D modelleri (`buildMech`, `BOSS_BUILD`, `corruptModel`). Yeni modellerin kaynağı `docs/bestiary.html`, Main Stage kadrosununki `docs/main-stage.html`. |
 | `js/preview.js` | Hangardaki dönen mecha ve boss portreleri |
 | `js/input.js` | Klavye ve fare |
 | `js/mobile.js` | Kontrol modu, telefon joystick'i, otomatik nişan, otomatik kalkan |
@@ -40,7 +40,7 @@ Bir dosyada en üst seviyede tanımlanan her şey (fonksiyonlar, `const`/`let`) 
 | `js/fx.js` | Görsel efektler |
 | `js/juice.js` | Oyun hissi: hitstop, yavaş çekim, yaylar (`spring`), vuruş tepkisi, ölüm parçaları |
 | `js/tester.js` | Tester kodu (sadece SHA-256 özeti), beta rozeti, farm kontrolü (`farmMul`) |
-| `js/rooms.js` | Oda kurulumu, engeller, kapı, zemin tehlikeleri, rol tabanlı kompozisyon ve oda tipleri (`buildRoom`, `composeRoom`, `startCombat`, `startRoom`) |
+| `js/rooms.js` | Oda kurulumu, engeller, kapı, zemin tehlikeleri, rol tabanlı kompozisyon ve oda tipleri (`buildRoom`, `composeRoom`, `startCombat`, `startRoom`), Main Stage dalga odaları (`composeStage`, `stageWaves`; sayılar `data.js` içindeki `STAGE`'de) |
 | `js/nav.js` | Düşman navigasyonu: oda ızgarası, flow field, görüş haritası, A* yollar, açı slotları, saldırı jetonları |
 | `js/traps.js` | Tuzaklar (`~`): testere rayı, diken karoları, ışık sütunları |
 | `js/bullets.js` | Mermiler |

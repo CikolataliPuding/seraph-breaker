@@ -7,17 +7,20 @@ function renderMap(){
   ARENAS.forEach((A,i)=>{ const locked=i>=P.arenas, best=P.bestRoom[i]||0, done=best>=A.rooms;
     const b=document.createElement('button'); b.className='arena'+(locked?' lock':'')+(i===sel?' sel':'')+(done?' done':''); b.id='ar'+i; b.style.setProperty('--c',A.colorCss);
     b.innerHTML=`<span class="n"></span><b></b><span class="r"></span><span class="bp"></span><span class="pr"><i style="width:${Math.min(100,best/A.rooms*100)}%"></i></span>`;
-    b.querySelector('.n').textContent=`0${i+1} · ${A.rooms} ROOMS`+(locked?' · LOCKED':done?' · CLEARED':'');
+    b.querySelector('.n').textContent=`0${i+1} · ${roomsLabel(A)}`+(locked?' · LOCKED':done?' · CLEARED':'');
     b.querySelector('b').textContent=A.name; b.querySelector('.r').textContent=locked?`Clear ${ARENAS[i-1].name} to unlock`:`Best room ${best}/${A.rooms} · ${A.ruleTxt}`;
     const bp=b.querySelector('.bp'); arenaBossPool(i).slice(0,i===3?7:3).forEach(k=>{ const img=document.createElement('img'); img.src=PORTRAIT[k]||''; img.alt=BOSSES[k].name; img.title=BOSSES[k].name; bp.appendChild(img); });
     b.onclick=()=>{ if(locked) return; P.selArena=i; sfx('click'); delete $('launchBtn').dataset.arm; renderMap(); };
     inner.appendChild(b); });
   const A=ARENAS[sel], first=(P.bestRoom[sel]||0)<A.rooms, fm=farmMul(sel);
-  $('shEye').textContent=`ARENA 0${sel+1} · ${A.rooms} ROOMS`+(fm<1?` · REWARDS ${Math.round(fm*100)}%`:''); $('shEye').style.color=A.colorCss; $('shName').textContent=A.name;
+  $('shEye').textContent=`ARENA 0${sel+1} · ${roomsLabel(A)}`+(fm<1?` · REWARDS ${Math.round(fm*100)}%`:''); $('shEye').style.color=A.colorCss; $('shName').textContent=A.name;
   $('shReward').innerHTML=`<i></i>+${first?ECON.firstClear(sel):Math.round(ECON.repeatClear(sel)*fm)}${first?' first clear':''}`;
-  const rooms=$('shRooms'); rooms.innerHTML=''; const t=document.createElement('span'); t.textContent='ROOMS 1-10'; rooms.appendChild(t);
-  // one 10-room block of PACING: C combat, ! a special room (ambush, waves, survive, hunt, traps, dark), T the next boss's teaching room
-  for(let n=1;n<=10;n++){ const c=PACING[n], i=document.createElement('i'), sp=c.kinds&&c.kinds.some(k=>k!=='normal'&&k!=='teach');
+  const rooms=$('shRooms'); rooms.innerHTML=''; const t=document.createElement('span'); t.textContent=A.stage?`WAVE ROOMS 1-${A.rooms-1}`:'ROOMS 1-10'; rooms.appendChild(t);
+  // Main Stage: S sound check rooms, M rooms with Moshpit waves, E rooms that end in an Encore, then the boss
+  if(A.stage){ for(let n=1;n<=A.rooms;n++){ const i=document.createElement('i'), boss=n===A.rooms, enc=n>=STAGE.encore.from, mo=n>=STAGE.mosh.from;
+    i.textContent=boss?'B':enc?'E':mo?'M':'S'; i.className=boss?'b':enc?'e':mo?'s':''; i.title=boss?'High-Co':`${STAGE.waves[n-1]} waves · `+(enc?'ends in an Encore':mo?'Sound check + Moshpit':'Sound check'); rooms.appendChild(i); } }
+  // other arenas: one 10-room block of PACING: C combat, ! a special room (ambush, waves, survive, hunt, traps, dark), T the next boss's teaching room
+  else for(let n=1;n<=10;n++){ const c=PACING[n], i=document.createElement('i'), sp=c.kinds&&c.kinds.some(k=>k!=='normal'&&k!=='teach');
     i.textContent=c.boss?'B':c.angel?'A':c.elite?'E':c.kinds.includes('teach')?'T':sp?'!':'C'; i.className=c.boss?'b':c.angel?'a':c.elite?'e':sp?'s':''; i.title=c.kinds?c.kinds.map(k=>ROOM_KINDS[k].name).join(' / '):''; rooms.appendChild(i); }
   const tags=$('shTags'); tags.innerHTML='';
   A.mobs.filter(e=>ENEMY[e]).forEach(e=>{ const s=document.createElement('span'); s.textContent=ENEMY[e].name; tags.appendChild(s); });

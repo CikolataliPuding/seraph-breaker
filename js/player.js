@@ -6,7 +6,7 @@ function makePlayer(){
   const c=paint(); const m=buildMech(c.c1,c.c2,c.c3,c.eye,1,P.unit); scene.add(m.g,m.shadow);
   // stats come from balance.js (Core + tree × run buckets); recalcStats() rebuilds them whenever a skill, item or curse changes
   player={model:m,pos:new V3(0,0,6),vel:new V3(),st:null,hp:0,maxHp:0,en:100,overheat:0,regenDelay:0,fireCd:0,dashT:0,dashCd:0,dashDir:new V3(),inv:0,shield:false,aim:new V3(-1,0,-1).normalize(),aimOk:false,lastMove:new V3(0,0,-1),yaw:Math.PI,walk:0,dead:false,flash:0,
-    sp:0,od:0,leap:null,lance:0,lanceDir:new V3(),charge:0,prevFire:false,lunge:0,slashSide:1,hook:null,jump:null,gcd:[0,0],secondUsed:false,rs:{},orbA:0,jz:juiceState(),kick:new V3(),wasDash:false,dashCh:2,dashMax:2,dashRc:0,still:0,perfect:false,lives:0,luck:0,echoQ:null,enMax:100,critMul:2,extra:{},procs:{},bonus:null};
+    sp:0,od:0,leap:null,lance:0,lanceDir:new V3(),charge:0,prevFire:false,lunge:0,slashSide:1,hook:null,jump:null,gcd:[0,0],secondUsed:false,rs:{},orbA:0,jz:juiceState(),kick:new V3(),wasDash:false,dashCh:2,dashMax:2,dashRc:0,still:0,perfect:false,lives:0,luck:0,echoQ:null,enMax:100,critMul:2,extra:{},procs:{},bonus:null,stunT:0,slowT:0,beatDash:false};
   recalcStats(); player.hp=player.maxHp;
   odRing.material.color.setHex(0xffe14a); pBeamO.material.color.setHex(unit.shot);
   buildOrbit(); renderRunSkills();
@@ -20,20 +20,24 @@ function tryDash(dir){
   const p=player;
   if(mobileMode){ if(p.dashCh<1) return; p.dashCh--; }
   else { if(p.overheat>0||p.en<35||p.dashCd>0) return; p.en-=35; p.regenDelay=.9; }
-  p.dashT=.17; p.dashCd=1.4*p.st.dashCd; p.perfect=false;
+  // Main Stage (Ritim senkronu): a dash on the beat has a perfect-dodge window twice as wide, in time and in reach
+  p.beatDash=!!(sortie&&sortie.rule.beatSync&&BEAT.dist()<STAGE.beatWin); const W=p.beatDash?2:1;
+  p.dashT=.17; p.dashCd=1.4*p.st.dashCd*(p.slowT>0?1.5:1); p.perfect=false;
   p.dashDir.copy(dashAim(dir)).normalize();
-  groundRing(p.pos,unit.shot,2,.35); sfx('dash'); if(p.mineLayer) placeMine(p.pos);
+  groundRing(p.pos,p.beatDash?0xff3aa8:unit.shot,p.beatDash?3:2,.35); sfx('dash'); if(p.mineLayer) placeMine(p.pos); if(p.beatDash) beatFlash();
   // perfect dodge: an enemy shot was about to land (within ~0.15 s)
   for(const b of bullets){ if(b.from!=='e') continue; const rx=p.pos.x-b.m.position.x,rz=p.pos.z-b.m.position.z,vv=b.vel.x*b.vel.x+b.vel.z*b.vel.z; if(vv<1) continue;
-    const t=(rx*b.vel.x+rz*b.vel.z)/vv; if(t<0||t>.18) continue; if(Math.hypot(rx-b.vel.x*t,rz-b.vel.z*t)<.75+b.r*.5+.35){ perfectDodge(); break; } }
-  if(!p.perfect) for(const s of shocks){ const dd=Math.hypot(p.pos.x-s.x,p.pos.z-s.z); if(!s.hit&&dd>s.r&&dd-s.r<s.speed*.15+.7){ perfectDodge(); break; } }
+    const t=(rx*b.vel.x+rz*b.vel.z)/vv; if(t<0||t>.18*W) continue; if(Math.hypot(rx-b.vel.x*t,rz-b.vel.z*t)<.75+b.r*.5+.35*W){ perfectDodge(); break; } }
+  if(!p.perfect) for(const s of shocks){ const dd=Math.hypot(p.pos.x-s.x,p.pos.z-s.z); if(!s.hit&&dd>s.r&&dd-s.r<(s.speed*.15+.7)*W){ perfectDodge(); break; } }
 }
 function dashAim(dir){ const p=player, mv=dir&&dir.isVector3&&dir.lengthSq()>.01?dir:moveVec(); return mv.lengthSq()>.01?mv:mobileMode?p.lastMove:p.aim; }
 function perfectDodge(){
   const p=player; if(!p||p.perfect) return; p.perfect=true;
   slowmo(.4); if(!(p.od>0||p.lance>0)) p.sp=Math.min(100,p.sp+15); sfx('perfect'); buzz(25);
-  groundRing(p.pos,0xffffff,3.2,.45); groundRing(p.pos,unit.shot,2,.3); popText('PERFECT');
+  groundRing(p.pos,0xffffff,3.2,.45); groundRing(p.pos,unit.shot,2,.3); popText(p.beatDash?'ON BEAT · PERFECT':'PERFECT');
 }
+// the HUD beat pip flashes when a dash lands on the beat
+function beatFlash(){ const el=$('beatPip'); if(!el) return; el.classList.remove('dash'); void el.offsetWidth; el.classList.add('dash'); }
 function trySpecial(){
   if(state!=='fight'||!player||player.dead||paused||busy()) return;
   const p=player; if(p.sp<100||p.od>0) return;
@@ -93,7 +97,7 @@ function zeroHp(){
   if(DBG.immortal){ p.hp=p.maxHp; p.inv=1; if(RUNLOG.cur) RUNLOG.cur.deaths++; return; }
   if(p.lives>0){ p.lives--; p.hp=p.maxHp*.5; p.inv=2; crossBlast(p.pos.clone(),0xffd36a,1.3); clearEnemyShots(p.pos,10); popText('EXTRA LIFE'); return; }
   if(p.st.second&&!p.secondUsed){ p.secondUsed=true; p.hp=p.maxHp*.3; p.inv=1.6; crossBlast(p.pos.clone(),0x7dff9a,1); clearEnemyShots(p.pos,8); return; }
-  p.hp=0; p.dead=true; dashArrow.visible=barRing.visible=false; crossBlast(p.pos.clone(),unit.shot,1.6); hitstop(120,true); shatter(p.model,p.pos,0,0,{max:14,spd:1.2}); scene.remove(p.model.g,p.model.shadow); setState('dying'); stateT=1.8; shieldG.visible=false; pBeamO.visible=pBeamC.visible=false; chargeOrb.visible=false; buzz(300);
+  p.hp=0; p.dead=true; p.stunT=0; p.slowT=0; dashArrow.visible=barRing.visible=false; crossBlast(p.pos.clone(),unit.shot,1.6); hitstop(120,true); shatter(p.model,p.pos,0,0,{max:14,spd:1.2}); scene.remove(p.model.g,p.model.shadow); setState('dying'); stateT=1.8; shieldG.visible=false; pBeamO.visible=pBeamC.visible=false; chargeOrb.visible=false; buzz(300);
 }
 const _tmp=new V3(),_tmp2=new V3(),_mz=new V3();
 function shotDir(mz){ const p=player; if(p.aimOk&&!mobileMode){ _tmp2.set(aimPt.x-mz.x,0,aimPt.z-mz.z); if(_tmp2.lengthSq()>2.2) return _tmp2.normalize().clone(); } return p.aim.clone(); }
@@ -105,7 +109,7 @@ function updatePlayer(dt,canAct){
   if(p.flash>0){p.flash-=dt;if(p.flash<=0)unflash(p);}
   let touchFire=false; p.aimOk=false;
   if(mobileMode){
-    if(p.dashCh<p.dashMax){ p.dashRc+=dt; if(p.dashRc>=1.5*p.st.dashCd){ p.dashRc=0; p.dashCh++; } }
+    if(p.dashCh<p.dashMax){ p.dashRc+=dt*(p.slowT>0?.67:1); if(p.dashRc>=1.5*p.st.dashCd){ p.dashRc=0; p.dashCh++; } }
     if(hexFlashT>0){ hexFlashT-=dt; if(hexFlashT<=0) shieldG.visible=false; }
     // moving = not firing. Standing still auto-fires at the nearest enemy in sight and slowly steadies the aim (+fire rate).
     const mv=moveVec();
@@ -139,7 +143,9 @@ function updatePlayer(dt,canAct){
     // stunned (High-Co's slam): no moving or dashing for a moment, stars over the head
     if(p.stunT>0){ p.stunT-=dt; if(Math.random()<dt*14) sparks(p.pos.clone().setY(3.2),0xffd36a,1,2); }
     const mv=(canAct||state==='trans')&&!(p.stunT>0)?moveVec():_tmp2.set(0,0,0);
-    const sp=unit.speed*p.st.spd*(p.shield?.45:1)*(p.od>0?1.2:1)*(p.lance>0?0:1);
+    // Bass Brute rings: 35% slower while you stand in them
+    if(p.slowT>0){ p.slowT-=dt; if(Math.random()<dt*6) sparks(p.pos.clone().setY(.4),0x6ad8ff,1,2); }
+    const sp=unit.speed*p.st.spd*(p.shield?.45:1)*(p.od>0?1.2:1)*(p.lance>0?0:1)*(p.slowT>0?.65:1);
     if(p.dashT>0){ p.dashT-=dt; p.vel.copy(p.dashDir).multiplyScalar(30);
       if(p.rs.trail){ p.trailT=(p.trailT||0)-dt; if(p.trailT<=0){ p.trailT=.04; dropTrail(p.pos); } }
       if(Math.random()<.6){ const ghost=new THREE.Mesh(box(.9,2.6,.6),addMat(unit.shot,.35)); ghost.position.copy(p.pos).setY(1.6); addFx(ghost,.25,(f,dt,k)=>{ghost.material.opacity=k*.35;}); } }

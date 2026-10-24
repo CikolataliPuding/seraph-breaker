@@ -195,7 +195,7 @@ function updateBoss(dt){
 function bossDeath(){
   if(!player||player.dead||state==='dying'||state==='result') return;
   if(boss.poles){ boss.poles.forEach(p=>roomGroup.remove(p.m.g)); boss.poles.length=0; }
-  const def=boss.def; score+=[5000,8000,12000,16000][stage]; kills++; hideBeams(); fizzleRoom(); boss.jumpY=0; boss.reflectT=0;
+  const def=boss.def; score+=[5000,8000,12000,16000,20000][stage]; kills++; hideBeams(); fizzleRoom(); boss.jumpY=0; boss.reflectT=0;
   const gm=Math.round(def.gems*ECON.bossGems[sortie.a]*sortie.farm); P.gems+=gm; sortie.gems+=gm; logEarn('gems','boss',gm);
   setState('bossdeath'); stateT=3.2; boss.final=false; buzz(200); hitstop(120,true);
   dropGold(boss.pos,def.gold*ECON.bossGold[sortie.a]*sortie.farm,'boss'); dropItem(boss.pos); gainXp(XP_BOSS);
@@ -221,8 +221,10 @@ const HC_COL=[0x5a8aff,0xd8d4ff,0xff2030]; // wave/ring colour per phase
 const HC_SLAM_R=6, HC_STUN=.6, HC_SCREAM=[30,8], HC_POLE_R=3.6, HC_POLE_DMG=9, HC_POLE_LIFE=6;
 const hcBump=(t,x,w=.3)=>Math.max(0,1-Math.abs(t-x)/w);
 // vertical light column: telegraph and impact flash
-function hcBeam(pos,color,r,life){ const m=new THREE.Mesh(new THREE.CylinderGeometry(r,r,60,20,1,true),addMat(color,.55)); m.position.set(pos.x,30,pos.z);
-  addFx(m,life,(f,dt,k)=>{ m.material.opacity=.55*Math.min(1,k*2); m.scale.set(.5+.5*k,1,.5+.5*k); },true); }
+// one shared unit column (pillars fire up to 8 in a row): scaled to the radius, only the per-beam material is freed when it ends
+const HC_BEAM_GEO=new THREE.CylinderGeometry(1,1,60,20,1,true);
+function hcBeam(pos,color,r,life){ const m=new THREE.Mesh(HC_BEAM_GEO,addMat(color,.55)); m.position.set(pos.x,30,pos.z);
+  addFx(m,life,(f,dt,k)=>{ m.material.opacity=.55*Math.min(1,k*2); const w=(.5+.5*k)*r; m.scale.set(w,1,w); },'mat'); }
 function highcoStartAttack(b,a){
   b.hb=0; b.scr=0; b.poled=0;
   if(a==='hcslam'){ const T=tgt(); b.stomp={from:b.pos.clone(),to:new V3(clamp(T.x,-AX+3,AX-3),0,clamp(T.z,-AZ+3,AZ-3))}; slamTele(b.stomp.to,HC_SLAM_R,1.1,.6); }
@@ -276,6 +278,11 @@ function hcPole(b,at){
   b.poles.push({m,x:at.x,z:at.z,t:0,cd:0}); shake=Math.max(shake,.3); crossBlast(at.clone(),0xff3048,.8);
 }
 function highcoPhase(b,ph){
+  // a new phase cuts the old one off: queued pillar strikes fizzle and live poles sink (the dancer stops burning)
+  for(let i=blasts.length-1;i>=0;i--) if(blasts[i].boss){ scene.remove(blasts[i].ring); blasts.splice(i,1); }
+  b.poles.forEach(P=>{ P.t=Math.max(P.t,HC_POLE_LIFE); });
+  // the band comes back on stage for the new form (Main Stage mobs from the stage lip, they hold fire while he lands)
+  (b.def.encore&&b.def.encore[ph]||[]).forEach((k,i,a)=>{ const x=(i-(a.length-1)/2)*7; spawnEnemy(k,new V3(clamp(x,-AX+2,AX-2),0,-AZ+3),false,{minion:true}); });
   if(ph>=2&&b.model.stage!==2){ const old=b.model; shatter(old,b.pos,0,0,{max:mobileMode?8:16,spd:1.2,cy:3}); scene.remove(old.g,old.shadow);
     const m=buildHighCo(2); scene.add(m.g,m.shadow); b.model=m; b.y=26; b.atk='hcdescend'; b.atkT=0; b.immune=true; hcBeam(b.pos,0xd9c9ff,2.4,2.2); popText('ENCORE'); }
   if(ph===3){ setHighCoRage(b.model,true); hcBeam(b.pos,0xff2030,2.8,1); popText('SAKİN OLMAM LAZIM'); shake=.9; buzz(160); }

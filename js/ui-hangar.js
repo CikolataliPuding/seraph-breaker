@@ -17,7 +17,7 @@ function renderMenu(){
 }
 function renderHome(){
   const a=clamp(P.selArena,0,P.arenas-1), A=ARENAS[a];
-  $('hEye').textContent=`ARENA 0${a+1} · ${A.rooms} ROOMS`+((P.bestRoom[a]||0)>=A.rooms?' · CLEARED':'');
+  $('hEye').textContent=`ARENA 0${a+1} · ${roomsLabel(A)}`+((P.bestRoom[a]||0)>=A.rooms?' · CLEARED':'');
   $('hStage').textContent=A.name;
   const pips=$('hPips'); pips.innerHTML=''; ARENAS.forEach((x,i)=>{ const p=document.createElement('i'); if((P.bestRoom[i]||0)>=x.rooms) p.className='f'; else if(i<P.arenas) p.className='c'; pips.appendChild(p); });
   const hb=$('hBosses'); hb.innerHTML=''; arenaBossPool(a).slice(0,3).forEach(k=>{ const img=document.createElement('img'); img.src=PORTRAIT[k]||''; img.alt=BOSSES[k].name; img.title=BOSSES[k].name; hb.appendChild(img); }); const bl=document.createElement('span'); bl.textContent='BOSSES'; hb.appendChild(bl);
