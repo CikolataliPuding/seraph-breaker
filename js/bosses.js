@@ -401,8 +401,9 @@ function highcoAnim(b,m,dt){
   if(stepMech(m,b,b.vel.length(),dt,b.sc)&&!b.y){ b.byaw=b.yaw; footfall(b,m,b.sc,.12); } mechLean(m,b.jz,dt,b.vel.x*.5,b.vel.z*.5,b.yaw,b.yaw);
   const a=b.atk, t=b.atkT; let jaw=.12+Math.sin(b.t*3)*.04, lag=0, flap=2;
   if(!b.immune&&b.drainCd>0) b.drainCd-=dt;
-  // form I burns: embers come off the white outfit, more while he attacks
-  if(b.phase===1&&b.landed&&Math.random()<dt*(mobileMode?5:12)*(a==='idle'?1:2)) sparks(new V3(b.pos.x+rand(-.9,.9),b.y+rand(2,5.5),b.pos.z+rand(-.9,.9)),Math.random()<.5?0xff7a2a:0xffc040,1,3);
+  // form I burns: embers come off the white outfit, more while he attacks. Form III (rage) sheds red sparks off the wings and scorches the floor
+  if(b.phase!==2&&b.landed&&!b.immune&&Math.random()<dt*(mobileMode?5:12)*(a==='idle'?1:2)) sparks(new V3(b.pos.x+rand(-.9,.9),b.y+rand(2,5.5),b.pos.z+rand(-.9,.9)),b.phase===1?(Math.random()<.5?0xff7a2a:0xffc040):(Math.random()<.5?0xff2030:0xff6a50),1,3);
+  if(b.phase===3&&!b.immune){ b.scorchT=(b.scorchT||0)-dt; if(b.scorchT<=0){ b.scorchT=BEAT.spb*2; groundRing(b.pos,0x6a1018,4.5,.5); } }
   m.head.rotation.x=0;
   if(a==='enter'){ m.arms[0].rotation.set(-2.9,0,.35); m.arms[1].rotation.set(-2.9,0,-.35); m.legs[0].rotation.x=.25; m.legs[1].rotation.x=-.15; m.shins[0].rotation.x=.4; }
   else if(a==='hcdescend'){ m.arms[0].rotation.set(-.3,0,.7); m.arms[1].rotation.set(-.3,0,-.7); flap=b.immune?10:3; }
