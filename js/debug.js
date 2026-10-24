@@ -40,6 +40,10 @@ const DBG={
   // High-Co: jump to form n (its entrance plays) · set the current form's armor to a share f (0..1)
   hcForm(n){ if(!boss||!boss.formN||boss.dead) return false; n=clamp(n|0,1,3); while(boss.formN<n) highcoFormDown(boss); return boss.formN; },
   hcRegen(on=!HC_REGEN_ON){ HC_REGEN_ON=!!on; toast(on?'High-Co regen on':'High-Co regen off'); return HC_REGEN_ON; },
+  // High-Co music: play form track slot i (0-2); with src (and bpm) it fills the slot for this page load first, e.g. DBG.hcTrack(1,'assets/audio/highco-2.mp3',140)
+  hcTrack(i=0,src,bpm){ const T=(BOSSES.highco.tracks||[])[i|0]; if(!T) return false; if(src!=null){ T.src=String(src); T.bpm=+bpm||0; } hcMusic(i|0); return {slot:i|0,src:T.src,bpm:T.bpm}; },
+  // the pilot goes down where he stands (result screen, Retry boss)
+  die(){ if(!player||player.dead) return false; godMode=false; DBG.immortal=false; player.inv=0; player.lives=0; player.secondUsed=true; player.hp=0; zeroHp(); return true; },
   hcHp(f){ if(!boss||!boss.formN||boss.dead||boss.immune) return false; boss.hp=Math.max(1,boss.maxHp*clamp(+f,0,1)); return Math.round(boss.hp); },
   bpm(n=0){ BEAT.force=Math.max(0,+n||0); if(!BEAT.force) AU.tempoK=1; toast(BEAT.force?`BPM ${BEAT.force}`:'BPM: music'); return BEAT.force; },
   stageCurve(print=true){ const a=ARENAS.findIndex(A=>A.stage), rows=[]; for(let ri=0;ri<STAGE.waves.length;ri++){ const W=composeStage(ri,false), sc=enemyScale(a,ri,null,0), sc1=enemyScale(a,ri,null,(W.length-1)/W.length);
@@ -221,7 +225,7 @@ function initDebug(){
   <label>Boss <select id="dbgBoss"></select><button data-a="boss">Spawn</button></label>
   <label>Arena <select id="dbgArena" class="w"></select> room <input id="dbgARoom" class="w" type="number" min="1" max="50" value="1"><button data-a="go">Start</button></label>
   <label>Stage room <input id="dbgSRoom" class="w" type="number" min="1" max="16" value="1"><button data-a="stage">Go</button> wave <input id="dbgWave" class="w" type="number" min="1" max="7" value="1"><button data-a="wave">Go</button></label>
-  <label>BPM <input id="dbgBpm" class="w" type="number" min="0" max="300" value="0"><button data-a="bpm">Set</button> High-Co form <input id="dbgHc" class="w" type="number" min="1" max="3" value="2"><button data-a="hc">Go</button> HP <input id="dbgHcHp" class="w" type="number" min="0" max="100" value="10">%<button data-a="hchp">Set</button></label>
+  <label>BPM <input id="dbgBpm" class="w" type="number" min="0" max="300" value="0"><button data-a="bpm">Set</button> High-Co form <input id="dbgHc" class="w" type="number" min="1" max="3" value="2"><button data-a="hc">Go</button> HP <input id="dbgHcHp" class="w" type="number" min="0" max="100" value="10">%<button data-a="hchp">Set</button> <button data-a="hcregen">Regen on/off</button> Track <input id="dbgHcT" class="w" type="number" min="1" max="3" value="1"><button data-a="hctrack">Play</button> <button data-a="die">Die</button></label>
   <label>Core A/D/R <input id="dbgCA" class="w" type="number" min="0" max="30"><input id="dbgCD" class="w" type="number" min="0" max="30"><input id="dbgCR" class="w" type="number" min="0" max="30"><button data-a="core">Set</button></label>
   <button data-a="treeMax">Tree max</button><button data-a="treeClr">Tree clear</button><button data-a="gems">+500 gems</button>
   <button data-a="mode">Toggle mobile</button><button data-a="log">Run log (L)</button><button data-a="sim">Sim</button><button data-a="measure">Measure arena</button><button data-a="hide">Hide</button>`;
@@ -244,7 +248,7 @@ function initDebug(){
   d.addEventListener('pointerdown',e=>e.stopPropagation());
   d.addEventListener('click',e=>{ const a=e.target.dataset&&e.target.dataset.a; if(!a) return; const v=id=>$(id).value; if(a!=='hide'&&a!=='log') flagRun();
     if(a==='go') DBG.go(+v('dbgArena'),+v('dbgARoom'));
-    if(a==='stage') DBG.stage(+v('dbgSRoom')); if(a==='wave') DBG.wave(+v('dbgWave')); if(a==='bpm') DBG.bpm(+v('dbgBpm')); if(a==='hc') DBG.hcForm(+v('dbgHc')); if(a==='hchp') DBG.hcHp(+v('dbgHcHp')/100);
+    if(a==='stage') DBG.stage(+v('dbgSRoom')); if(a==='wave') DBG.wave(+v('dbgWave')); if(a==='bpm') DBG.bpm(+v('dbgBpm')); if(a==='hc') DBG.hcForm(+v('dbgHc')); if(a==='hchp') DBG.hcHp(+v('dbgHcHp')/100); if(a==='hcregen') DBG.hcRegen(); if(a==='hctrack') DBG.hcTrack(+v('dbgHcT')-1); if(a==='die') DBG.die();
     if(a==='core'){ ['armor','dmg','regen'].forEach((k,i)=>P.core[k]=clamp(+v('dbgC'+'ADR'[i])|0,0,CORE_MAX)); persist(); if(player) recalcStats(); toast('Core set'); }
     if(a==='treeMax'||a==='treeClr'){ TREE.forEach(b=>b.nodes.forEach(n=>P.skills[n.id]=a==='treeMax'?n.max:0)); persist(); if(player) recalcStats(); toast(a==='treeMax'?'Tree maxed':'Tree cleared'); }
     if(a==='gems'){ P.gems+=500; persist(); }

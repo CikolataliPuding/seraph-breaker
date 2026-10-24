@@ -608,6 +608,17 @@ function animateHighCoArena(a,t,phase){
   a.crowd.forEach(p=>{ p.position.y=Math.max(0,Math.sin(t*(rage?9:6)+p.userData.ph))*.35; });
   const beat=rage||(phase===0?BEAT.idx%4===0&&BEAT.ph<.35:(t%2.4)<.35); a.pyro.forEach(p=>p.userData.flame.forEach(f=>{ f.visible=beat; f.scale.y=.8+Math.random()*.4; }));
   a.led.material.opacity=.6+.4*Math.abs(Math.sin(t*4));
+  if(phase>0) hypeHighCoArena(a,t,phase);
+}
+/* High-Co's room only (the Main Stage wave rooms keep the look above): the crowd jumps on the beat of his music and the light pools pulse
+   with it; a.hype (bosses.js hcCrowd: 1 on a form entrance or a crowd channel, 2 for the final form's roar) makes both go wild for a few
+   seconds, and the final form keeps the crowd at a high floor. */
+function hypeHighCoArena(a,t,phase){
+  const dt=Math.min(.1,Math.max(0,t-(a.lt==null?t:a.lt))); a.lt=t;
+  a.hype=Math.max(phase===3?.6:0,(a.hype||0)-dt*.5); const h=Math.min(2,a.hype), k=1-BEAT.ph, kick=k*k*k;
+  a.crowd.forEach(p=>{ const q=(BEAT.ph+p.userData.ph*.03)%1, u=(1-q)*(1-q); p.position.y=u*(.3+.35*h); p.rotation.z=h>.5?Math.sin(t*7+p.userData.ph)*.08*h:0; });
+  a.pools.forEach(p=>{ p.material.opacity=.14+kick*(.12+.12*h); p.scale.setScalar(1+kick*.15*h); });
+  if(h>1.2) a.cones.forEach((c,i)=>{ if((BEAT.idx+i)%2===0&&k>.6) c.material.color.setHex(0xffffff); });
 }
 /* ================= MAIN STAGE CAST (ported from docs/main-stage.html) ================= */
 /* An all-human festival cast. buildHuman uses the mech skeleton (hips/torso/head/arms/legs/shins), so stepMech, mechLean and the juice

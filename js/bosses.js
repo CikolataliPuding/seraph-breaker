@@ -165,7 +165,8 @@ function updateBoss(dt){
     if(pd<b.r+.4&&f!=='arachne'&&!locked){ contactHurt(b,18); _tmp2.set(player.pos.x-b.pos.x,0,player.pos.z-b.pos.z).normalize(); player.pos.addScaledVector(_tmp2,2); }
     if(def.barrier){ b.barrierCd-=dt; if(b.barrier>0) b.barrier-=dt; if(b.barrierCd<=0&&b.phase>=2){ b.barrier=3.2; b.barrierCd=rand(9,12); } }
     // the breather only counts down once the last attack's missiles, shockwaves and blasts are gone
-    if(b.atk==='idle'){ if(!bossPending()) b.atkT-=dt; if(b.atkT<=0&&b.vuln<=0) bossStartAttack(b); }
+    // High-Co starts his attacks on the beat of his music (the form track's BPM, or the live band's), waiting at most one beat
+    if(b.atk==='idle'){ if(!bossPending()) b.atkT-=dt; if(b.atkT<=0&&b.vuln<=0&&(!def.forms||BEAT.hit||b.atkT<-BEAT.spb)) bossStartAttack(b); }
     else if(bossTick(b,dt,to)){ b.atkT=(BOSS_SETTLE[b.atk]||0)+(def.forms?def.forms[b.phase-1].breath:BOSS_BREATH[b.phase-1]); b.atk='idle'; }
   }
   m.g.position.set(b.pos.x,b.y+b.jumpY,b.pos.z); m.shadow.position.set(b.pos.x,.03,b.pos.z); m.shadow.scale.setScalar(clamp(1-(b.y+b.jumpY-b.base)/30,.2,1));
@@ -293,7 +294,7 @@ function hcPole(b,at){
    longer breather (BOSS_SETTLE.hcdescend) before the first attack. Only form III's death reaches bossDeath. */
 function highcoInit(b){
   const F=b.def.forms; b.formHp=F.map(f=>Math.max(1,Math.round(b.maxHp*f.hp))); b.maxHp=b.hp=b.formHp[0]; b.formN=1; b.phase=1;
-  b.drainCd=0; b.regenUsed=0; b.streams=null; hcHud(b);
+  b.drainCd=0; b.regenUsed=0; b.streams=null; hcHud(b); hcMusic(0);
 }
 function hcHud(b){ const f=b.def.forms[b.phase-1];
   $('bossName').textContent='HIGH-CO · '+f.name.toUpperCase();
@@ -313,8 +314,9 @@ function highcoFormDown(b){
   const m=buildHighCo(2); if(n===3) setHighCoRage(m,true); m.g.visible=m.shadow.visible=false; scene.add(m.g,m.shadow); b.model=m; b.sc=m.g.scale.x;
   // the band comes back on stage for the new form (Main Stage mobs from the stage lip, they hold fire while he lands)
   (b.def.encore&&b.def.encore[n]||[]).forEach((k,i,a)=>{ const x=(i-(a.length-1)/2)*7; spawnEnemy(k,new V3(clamp(x,-AX+2,AX-2),0,-AZ+3),false,{minion:true}); });
-  // landing on a strong beat: the descent takes HC_DESC[n] s, so the pause before it ends that long before a downbeat (bar of 4)
-  const land=typeof BEAT!=='undefined'?BEAT.until(HC_DESC[n-1]+.7,4):HC_DESC[n-1]+.7;
+  // landing on a strong beat: the descent takes HC_DESC[n] s, so the pause before it ends that long before a downbeat (bar of 4).
+  // With a form track in the slot, the new track is started so its downbeat falls on the landing; otherwise the live band's next downbeat.
+  const T=(b.def.tracks||[])[n-1], file=!!(T&&T.src&&T.bpm>0), land=file?HC_DESC[n-1]+.9:BEAT.until(HC_DESC[n-1]+.7,4); hcMusic(n-1,land);
   b.atk='hcform'; b.atkT=0; b.formWait=clamp(land-HC_DESC[n-1],.6,2.2); b.y=26; b.vel.set(0,0,0);
   hcHud(b); popText(n===2?'ENCORE':'SAKİN OLMAM LAZIM');
 }
@@ -348,7 +350,7 @@ function hcDrop(b,dt){
    the camera holds on him. III, rage: eight red pillars ring the mat first, then a red column; shorter and harder. */
 function hcEntrance(b){ const ph=b.phase, c=b.def.forms[ph-1].col, D=HC_DESC[ph-1], p=b.pos;
   hcBeam(p,c,ph===3?2.8:3.4,D+.5); hcBeam(p,0xffffff,1.1,D+.3); hcCam(p,1.3,D+.4); hcShake(.35); sfx('beam');
-  if(ph===3) for(let i=0;i<8;i++){ const a=i/8*Math.PI*2, q=new V3(clamp(p.x+Math.cos(a)*7,-AX+1,AX-1),0,clamp(p.z+Math.sin(a)*7,-AZ+1,AZ-1)); hcBeam(q,c,.9,D*.8); groundRing(q,c,2.4,D*.8); }
+  if(ph===3) for(let i=0,N=mobileMode?4:8;i<N;i++){ const a=i/N*Math.PI*2+.4, q=new V3(clamp(p.x+Math.cos(a)*7,-AX+1,AX-1),0,clamp(p.z+Math.sin(a)*7,-AZ+1,AZ-1)); hcBeam(q,c,.9,D*.8); groundRing(q,c,2.4,D*.8); }
   hcCrowd(ph===3?2:1); }
 function hcLand(b){ const ph=b.phase, c=b.def.forms[ph-1].col, p=b.pos;
   groundRing(p,c,16,1.1); groundRing(p,0xffffff,8,.7); crossBlast(p.clone(),c,1.4); hitstop(90,true); hcShake(ph===3?1.2:1); buzz(180); sfx('bigboom'); b.jz.pop.v=-9;
@@ -403,6 +405,8 @@ function highcoAnim(b,m,dt){
   if(!b.immune&&b.drainCd>0) b.drainCd-=dt;
   // form I burns: embers come off the white outfit, more while he attacks. Form III (rage) sheds red sparks off the wings and scorches the floor
   if(b.phase!==2&&b.landed&&!b.immune&&Math.random()<dt*(mobileMode?5:12)*(a==='idle'?1:2)) sparks(new V3(b.pos.x+rand(-.9,.9),b.y+rand(2,5.5),b.pos.z+rand(-.9,.9)),b.phase===1?(Math.random()<.5?0xff7a2a:0xffc040):(Math.random()<.5?0xff2030:0xff6a50),1,3);
+  // the final form's crowd keeps cheering
+  if(b.phase===3&&!b.immune){ b.cheerT=(b.cheerT||4)-dt; if(b.cheerT<=0){ b.cheerT=rand(5,8); hcCrowd(1); } }
   if(b.phase===3&&!b.immune){ b.scorchT=(b.scorchT||0)-dt; if(b.scorchT<=0){ b.scorchT=BEAT.spb*2; groundRing(b.pos,0x6a1018,4.5,.5); } }
   m.head.rotation.x=0;
   if(a==='enter'){ m.arms[0].rotation.set(-2.9,0,.35); m.arms[1].rotation.set(-2.9,0,-.35); m.legs[0].rotation.x=.25; m.legs[1].rotation.x=-.15; m.shins[0].rotation.x=.4; }

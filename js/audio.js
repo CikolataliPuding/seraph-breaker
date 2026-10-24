@@ -1,6 +1,6 @@
 // Seraph Breaker · audio.js: Synthesized soundtrack (TRACKS), the beat clock the Main Stage syncs to (BEAT) and sound effects (sfx). No audio files.
 /* ================= AUDIO (synthesized) ================= */
-const AU={ctx:null,want:'menu',muted:false,tempoK:1,beatQ:[]};
+const AU={ctx:null,want:'menu',muted:false,tempoK:1,beatQ:[],ext:null,hcWant:-1};
 const TRACKS={
   menu:{bpm:96,song:[0,1],bars:[
     {g:'0-------3---1---',k:'k.......k.k.....',s:'........s.......',h:'c...h...h...h...'},
@@ -32,6 +32,8 @@ function audioInit(){
   const comp=ctx.createDynamicsCompressor(); comp.threshold.value=-12; comp.ratio.value=4; comp.connect(ctx.destination);
   AU.master=ctx.createGain(); AU.master.gain.value=.9; AU.master.connect(comp);
   AU.music=ctx.createGain(); AU.music.connect(AU.master);
+  // the live band plays into AU.live, so a High-Co form track (hcMusic) can crossfade with it under the same music volume
+  AU.live=ctx.createGain(); AU.live.connect(AU.music);
   AU.sfx=ctx.createGain(); AU.sfx.connect(AU.master);
   setVolumes();
   const hp=ctx.createBiquadFilter(); hp.type='highpass'; hp.frequency.value=75;
@@ -43,17 +45,19 @@ function audioInit(){
   const gOut=ctx.createGain(); gOut.gain.value=.17;
   hp.connect(pre); pre.connect(sh); sh.connect(mid); mid.connect(pres); pres.connect(lp); lp.connect(gOut);
   const pl=ctx.createStereoPanner?ctx.createStereoPanner():null, pr=ctx.createStereoPanner?ctx.createStereoPanner():null, dl=ctx.createDelay(); dl.delayTime.value=.014;
-  if(pl&&pr){ pl.pan.value=-.6; pr.pan.value=.6; gOut.connect(pl); pl.connect(AU.music); gOut.connect(dl); dl.connect(pr); pr.connect(AU.music); } else gOut.connect(AU.music);
+  if(pl&&pr){ pl.pan.value=-.6; pr.pan.value=.6; gOut.connect(pl); pl.connect(AU.live); gOut.connect(dl); dl.connect(pr); pr.connect(AU.live); } else gOut.connect(AU.live);
   AU.gtr=hp;
-  const bl=ctx.createBiquadFilter(); bl.type='lowpass'; bl.frequency.value=700; const bg=ctx.createGain(); bg.gain.value=.55; bl.connect(bg); bg.connect(AU.music); AU.bass=bl;
-  AU.drums=ctx.createGain(); AU.drums.gain.value=.8; AU.drums.connect(AU.music);
+  const bl=ctx.createBiquadFilter(); bl.type='lowpass'; bl.frequency.value=700; const bg=ctx.createGain(); bg.gain.value=.55; bl.connect(bg); bg.connect(AU.live); AU.bass=bl;
+  AU.drums=ctx.createGain(); AU.drums.gain.value=.8; AU.drums.connect(AU.live);
   const nb=ctx.createBuffer(1,ctx.sampleRate,ctx.sampleRate), d=nb.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1; AU.noise=nb;
   AU.mus={name:null};
-  playTrack(AU.want);
+  playTrack(AU.want); if(AU.hcWant>=0) hcMusic(AU.hcWant);
   setInterval(tickMusic,30);
 }
-function setVolumes(){ if(!AU.ctx)return; AU.music.gain.value=AU.muted?0:P.music*.9; AU.sfx.gain.value=P.sfx; }
-function playTrack(name){ AU.want=name; if(!AU.ctx||AU.mus.name===name) return; AU.mus={name,t:TRACKS[name],bar:0,step:0,next:AU.ctx.currentTime+.06}; AU.beatQ.length=0; }
+// ?mute=1 silences music and sound effects for this page load (local test sessions), without touching the saved volumes
+AU.qmute=new URLSearchParams(location.search).get('mute')==='1';
+function setVolumes(){ if(!AU.ctx)return; AU.music.gain.value=AU.muted||AU.qmute?0:P.music*.9; AU.sfx.gain.value=AU.qmute?0:P.sfx; }
+function playTrack(name){ if(name!=='boss') hcMusicStop(); AU.want=name; if(!AU.ctx||AU.mus.name===name) return; AU.mus={name,t:TRACKS[name],bar:0,step:0,next:AU.ctx.currentTime+.06}; AU.beatQ.length=0; }
 function noiseSrc(t,dur){ const s=AU.ctx.createBufferSource(); s.buffer=AU.noise; s.start(t,Math.random()*.5,dur+.05); return s; }
 function env(t,peak,att,dec){ const g=AU.ctx.createGain(); g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(peak,t+att); g.gain.exponentialRampToValueAtTime(.0008,t+att+dec); return g; }
 function gtrNote(t,n,len,mute){
@@ -95,6 +99,7 @@ function tickMusic(){
 const BEAT={idx:0,ph:0,bpm:120,spb:.5,hit:false,force:0,src:'clock',lastT:0};
 function beatTick(dt){
   const tr=TRACKS[AU.mus&&AU.mus.name||AU.want]||TRACKS.battle, live=!!(AU.ctx&&AU.ctx.state==='running'&&AU.mus&&AU.mus.t&&!(typeof DBG!=='undefined'&&(DBG.turbo>1||DBG.noRender)));
+  if(extBeat()) return;
   if(BEAT.force) AU.tempoK=BEAT.force/tr.bpm;
   BEAT.bpm=tr.bpm*(AU.tempoK||1); BEAT.spb=60/BEAT.bpm; BEAT.hit=false;
   if(live){ const now=AU.ctx.currentTime; if(BEAT.src!=='audio'){ BEAT.src='audio'; BEAT.lastT=now-BEAT.ph*BEAT.spb; }
@@ -108,6 +113,42 @@ function beatTick(dt){
 BEAT.until=(minT=0,every=1)=>{ let t=(1-BEAT.ph)*BEAT.spb, i=BEAT.idx+1; for(let k=0;k<64&&(t<minT||i%every);k++){ t+=BEAT.spb; i++; } return t; };
 // how close (seconds) the nearest beat is
 BEAT.dist=()=>Math.min(BEAT.ph,1-BEAT.ph)*BEAT.spb;
+/* ================= HIGH-CO FORM TRACKS ================= */
+/* High-Co has one track per form: BOSSES.highco.tracks in data.js. To add them, drop the files in assets/audio/ (e.g. assets/audio/highco-1.mp3,
+   highco-2.mp3, highco-3.mp3) and fill each slot: src (the path), bpm (the track's tempo) and offset (seconds from the file start to the first
+   downbeat). An empty src keeps the live synthesized boss music and its BPM, and no file is requested.
+   A file plays through an <audio> element routed into AU.music, so the music volume, the Music on/off button and ?mute=1 apply. hcMusic(slot,
+   landIn) crossfades from what is playing (the live band or the previous form's file) and, given landIn seconds, starts the file so a bar's
+   downbeat falls exactly then (the next form's landing). While a file with a bpm plays, the beat clock (BEAT) follows the file's own position,
+   so Main Stage beat sync and High-Co's attack timing follow that track; a hidden tab or a suspended context cannot drift it. */
+const HC_FADE=1.2;
+function hcMusic(slot,landIn){
+  AU.hcWant=slot; if(!AU.ctx) return; // no audio yet (no input so far): audioInit plays it
+  const T=(BOSSES.highco.tracks||[])[slot]||{}, src=String(T.src||''), now=AU.ctx.currentTime, old=AU.ext;
+  if(old&&old.src===src&&src) return;
+  if(old){ extFade(old); AU.ext=null; }
+  if(!src){ AU.live.gain.setTargetAtTime(1,now,HC_FADE/3); return; }
+  const el=new Audio(); el.preload='auto'; el.loop=true; el.src=src;
+  let node; try{ node=AU.ctx.createMediaElementSource(el); }catch(e){ AU.live.gain.setTargetAtTime(1,now,.3); return; }
+  const g=AU.ctx.createGain(); g.gain.value=0; node.connect(g); g.connect(AU.music);
+  const x={el,src,g,node,bpm:+T.bpm||0,offset:+T.offset||0,ok:false,base:0,last:-1}; AU.ext=x;
+  // a missing or broken file falls back to the live band
+  el.addEventListener('error',()=>{ if(AU.ext===x){ AU.ext=null; AU.live.gain.setTargetAtTime(1,AU.ctx.currentTime,.3); } extFade(x); },{once:true});
+  el.addEventListener('loadedmetadata',()=>{ if(x.bpm>0&&landIn>0){ const bar=240/x.bpm; let s=x.offset+bar-(landIn%bar); while(s>=el.duration-1&&s>bar) s-=bar; try{ el.currentTime=Math.max(0,s); }catch(e){} } },{once:true});
+  el.addEventListener('playing',()=>{ if(AU.ext!==x) return; x.ok=true; const t=AU.ctx.currentTime; g.gain.setTargetAtTime(1,t,HC_FADE/3); AU.live.gain.setTargetAtTime(0,t,HC_FADE/3); },{once:true});
+  const p=el.play(); if(p&&p.catch) p.catch(()=>{}); // blocked until the first input: unlock() retries
+}
+function extFade(x){ if(!AU.ctx) return; x.g.gain.setTargetAtTime(0,AU.ctx.currentTime,HC_FADE/3); setTimeout(()=>{ try{ x.el.pause(); x.el.removeAttribute('src'); x.el.load(); x.g.disconnect(); }catch(e){} },HC_FADE*1000+300); }
+function hcMusicStop(){ AU.hcWant=-1; if(!AU.ctx) return; if(AU.ext){ extFade(AU.ext); AU.ext=null; } AU.live.gain.setTargetAtTime(1,AU.ctx.currentTime,.15); }
+// beat clock from the playing form track: absolute beats since the track's offset; a loop back keeps idx counting up in whole bars
+function extBeat(){
+  const X=AU.ext; if(!X||!X.ok||!(X.bpm>0)||X.el.paused) return false;
+  BEAT.bpm=X.bpm; BEAT.spb=60/X.bpm; BEAT.hit=false; BEAT.src='file';
+  const pos=Math.max(0,(X.el.currentTime-X.offset)/BEAT.spb), i=Math.floor(pos);
+  if(i<X.last) X.base+=Math.ceil((X.last+1)/4)*4;
+  if(i!==X.last){ X.last=i; BEAT.idx=X.base+i; BEAT.hit=true; }
+  BEAT.ph=clamp(pos-i,0,.999); return true;
+}
 const sfxLast={};
 function sfx(kind){
   if(!AU.ctx||AU.ctx.state!=='running'||P.sfx<=0) return;
@@ -136,6 +177,8 @@ function sfx(kind){
     case 'step': osc('sine',95,38,.14,.2); nz('lowpass',320,.1,.12); break;
     case 'door': osc('triangle',440,880,.25,.12); osc('sine',660,1320,.3,.08); break;
     case 'perfect': [1568,2093,2637].forEach((f,i)=>{ const o=ctx.createOscillator(); o.type='sine'; o.frequency.value=f; const g=env(t+i*.04,.11,.002,.35); o.connect(g); g.connect(AU.sfx); o.start(t+i*.04); o.stop(t+i*.04+.4); }); nz('highpass',5000,.25,.08); break;
+    // crowd noise for High-Co's room: a swell of voices (crowd) and the final form's roar
+    case 'crowd': case 'roar':{ const big=kind==='roar', dur=big?2.6:1.4; for(const f of [450,1000,2200]){ const n=noiseSrc(t,dur), fl=ctx.createBiquadFilter(); n.loop=true; fl.type='bandpass'; fl.frequency.value=f*(.9+Math.random()*.2); fl.Q.value=.9; const g=env(t,(big?.34:.2)*(f<600?1:.6),dur*.35,dur*.65); n.connect(fl); fl.connect(g); g.connect(AU.sfx); } break; }
     case 'tick': osc('square',1400+Math.random()*400,900,.025,.03); break;
     case 'r_common': osc('triangle',660,700,.12,.08); break;
     case 'r_rare': [660,990].forEach((f,i)=>{ const o=ctx.createOscillator(); o.type='triangle'; o.frequency.value=f; const g=env(t+i*.05,.09,.003,.16); o.connect(g); g.connect(AU.sfx); o.start(t+i*.05); o.stop(t+i*.05+.2); }); break;
@@ -144,5 +187,5 @@ function sfx(kind){
     case 'lvup': [523,659,784,1046].forEach((f,i)=>{ const o=ctx.createOscillator(); o.type='square'; o.frequency.value=f; const g=env(t+i*.07,.07,.003,.16); o.connect(g); g.connect(AU.sfx); o.start(t+i*.07); o.stop(t+i*.07+.2); }); break;
   }
 }
-const unlock=()=>{ audioInit(); };
+const unlock=()=>{ audioInit(); const X=AU.ext; if(X&&X.el.paused){ const p=X.el.play(); if(p&&p.catch) p.catch(()=>{}); } };
 addEventListener('pointerdown',unlock); addEventListener('keydown',unlock);
