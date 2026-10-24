@@ -748,21 +748,15 @@ function buildMosher(){
   const chain=new THREE.Mesh(box(.04,.04,.36),basic(ST.chrome,false)); chain.position.set(0,-.3,.12); chain.rotation.y=.4; m.arms[1].userData.fore.add(chain);
   m.chain=chain; m.shadow=blob(.6); return m;
 }
-// Pyro Tech: fireproof suit, tank on the back, a flare in the right hand. His flame jets are separate props (buildPyroJet).
+// Pyro Tech: fireproof suit, a quiver of fireworks on the back and a lit rocket in the right hand (the burning fuse is m.flare)
 function buildPyro(){
   const m=buildHuman({skin:SKIN[1],top:0xc8b890,pants:0xb8a880,shoe:0x2a2420,hairStyle:'bald',sleeves:true,scale:1.1});
   part(box(.48,.52,.48),toon(0xc8b890),m.head,0,.02,-.02,.05); const visor=new THREE.Mesh(box(.36,.2,.03),addMat(0xffb84a,.75)); visor.position.set(0,.05,.25); m.head.add(visor);
-  const tank=part(cyl(.16,.16,.7,10),toon(ST.red),m.torso,0,.6,-.3,.04);
-  const flare=new THREE.Mesh(new THREE.SphereGeometry(.1,8,6),basic(0xff6a2a,false)); flare.position.set(0,-.55,.05); m.arms[1].userData.fore.add(flare);
+  const tank=new THREE.Group(); tank.position.set(0,.6,-.3); m.torso.add(tank); part(cyl(.2,.2,.5,10),toon(0x2a2420),tank,0,0,0,.04);
+  [[-.1,0xff3a3a],[.1,0xffd23a],[0,0x3ad0ff]].forEach(([x,c],i)=>{ part(cyl(.07,.07,.7,8),toon(c),tank,x,.25,i===2?-.08:.05,.03); part(new THREE.ConeGeometry(.08,.16,8),toon(0xeeeeee),tank,x,.68,i===2?-.08:.05,.02); });
+  const fore=m.arms[1].userData.fore, rk=part(cyl(.08,.08,.75,8),toon(ST.red),fore,0,-.55,.12,.03); rk.rotation.x=Math.PI/2; part(new THREE.ConeGeometry(.09,.2,8),toon(0xffd23a),fore,0,-.55,.57,.02).rotation.x=Math.PI/2;
+  const flare=new THREE.Mesh(new THREE.SphereGeometry(.1,8,6),basic(0xff6a2a,false)); flare.position.set(0,-.55,-.28); fore.add(flare);
   m.flare=flare; m.breaks=[{o:tank,at:.4}]; m.shadow=blob(.7); return m;
-}
-// a flame jet on the stage floor: the hex glows red before it fires (the tell), then a column of fire
-function buildPyroJet(){
-  const g=new THREE.Group(); part(box(.8,.4,.8),toon(0x1c1a20),g,0,.2,0,.05); part(cyl(.22,.3,.6,8),toon(0x1c1a20),g,0,.7,0,.04);
-  const warn=new THREE.Mesh(new THREE.CircleGeometry(1.3,6),addMat(0xff4a2a,.12)); warn.rotation.x=-Math.PI/2; warn.position.y=.05; g.add(warn);
-  const edge=new THREE.Mesh(new THREE.RingGeometry(1.15,1.3,6),addMat(0xff4a2a,.6)); edge.rotation.x=-Math.PI/2; edge.position.y=.06; g.add(edge);
-  const flame=new THREE.Group(); flame.position.y=1; g.add(flame); const fl=[]; for(let i=0;i<4;i++){ const f=new THREE.Mesh(new THREE.ConeGeometry(.42-i*.06,1.2,8),addMat(i%2?0xffb84a:0xff4a2a,.75)); f.position.y=.6+i*.8; flame.add(f); fl.push(f); }
-  flame.visible=false; return {g,warn,edge,flame,fl};
 }
 // Lighting tech: a follow spot on a tripod. The bright circle on the floor is where the light is; it follows you slowly.
 function buildSpot(){
@@ -775,7 +769,7 @@ function buildSpot(){
   const lens=new THREE.Mesh(new THREE.CircleGeometry(.22,14),basic(0xfff0c0,false)); lens.position.z=.61; lamp.add(lens);
   const spot=new THREE.Group(); spot.userData.nofit=1; const sd=new THREE.Mesh(G.disc,addMat(0xfff0c0,.28)); sd.rotation.x=-Math.PI/2; sd.position.y=.05; spot.add(sd);
   const sr=new THREE.Mesh(G.ring,addMat(0xfff0c0,.7)); sr.rotation.x=-Math.PI/2; sr.position.y=.06; spot.add(sr); spot.scale.setScalar(2); m.g.add(spot);
-  m.rig=rig; m.lamp=lamp; m.spot=spot; m.spotFill=sd; m.breaks=[{o:rig,at:.34}]; m.shadow=blob(.7); return m;
+  m.rig=rig; m.lamp=lamp; m.spot=spot; m.spotFill=sd; m.spotRing=sr; m.breaks=[{o:rig,at:.34}]; m.shadow=blob(.7); return m;
 }
 // Stage Diver: arms out, he leaps in over the crowd and crushes the landing spot (red ring), then brawls with his fists
 function buildDiver(){

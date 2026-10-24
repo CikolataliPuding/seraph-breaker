@@ -45,6 +45,9 @@ const DBG={
   // the pilot goes down where he stands (result screen, Retry boss)
   die(){ if(!player||player.dead) return false; godMode=false; DBG.immortal=false; player.inv=0; player.lives=0; player.secondUsed=true; player.hp=0; zeroHp(); return true; },
   hcSim(o){ return hcSim(o); },
+  // Main Stage tester: one mob alone (the wave and everything else on the mat goes, no loot), so its attack can be checked by itself
+  solo(type,elite=false){ if(!player||!ENEMY[type]) return false; for(const e of enemies.slice()) if(!e.dead&&e!==boss){ e.noLoot=true; killEnemy(e,true); } spawnQ=[];
+    return !!spawnEnemy(type,ENEMY[type].seat?seatSpot():freeSpot(3),elite,{noDrop:true}); },
   hcHp(f){ if(!boss||!boss.formN||boss.dead||boss.immune) return false; boss.hp=Math.max(1,boss.maxHp*clamp(+f,0,1)); return Math.round(boss.hp); },
   bpm(n=0){ BEAT.force=Math.max(0,+n||0); if(!BEAT.force) AU.tempoK=1; toast(BEAT.force?`BPM ${BEAT.force}`:'BPM: music'); return BEAT.force; },
   stageCurve(print=true){ const a=ARENAS.findIndex(A=>A.stage), rows=[]; for(let ri=0;ri<STAGE.waves.length;ri++){ const W=composeStage(ri,false), sc=enemyScale(a,ri,null,0), sc1=enemyScale(a,ri,null,(W.length-1)/W.length);

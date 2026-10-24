@@ -92,7 +92,7 @@ function tick(dt,now){
     else if(b.home>0&&player){ b.home-=bdt; const sp=b.vel.length(), T=tgt(); _tmp.set(T.x-b.m.position.x,0,T.z-b.m.position.z).setLength(sp); b.vel.lerp(_tmp,Math.min(1,bdt*b.turn)).setLength(sp); if(b.home<=0) b.vel.setLength(b.after); }
     else if(b.seek){ if(b.seek.dead) b.seek=nearestFoe(b.m.position,14); if(b.seek){ const sp=b.vel.length(); _tmp.set(b.seek.pos.x-b.m.position.x,0,b.seek.pos.z-b.m.position.z).setLength(sp); b.vel.lerp(_tmp,Math.min(1,bdt*b.turn)).setLength(sp); b.m.lookAt(b.m.position.clone().add(b.vel)); } }
     const p=b.m.position, ox=p.x, oz=p.z;
-    p.addScaledVector(b.vel,bdt);
+    p.addScaledVector(b.vel,bdt); if(b.fw&&Math.random()<bdt*40) sparks(p,b.fw,1,1.2); // firework trail
     // airborne shots (missiles, Censer orbs): height, shadow and landing marker; a missile that reaches the ground explodes
     if(b.air&&airStep(b,bdt)){ airLand(b); killBullet(i); continue; }
     // collisions are swept along this frame's path (ox,oz → p), with the shot's radius, so fast shots and frame spikes cannot skip corners

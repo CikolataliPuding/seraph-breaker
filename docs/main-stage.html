@@ -499,17 +499,15 @@ function buildMosher(){
   const chain=new THREE.Mesh(box(.04,.04,.36),basic(ST.chrome,false)); chain.position.set(.3,.05,.12); chain.rotation.y=.4; m.torso.add(chain);
   return m;
 }
-// Pyro Tech: yanmaz kıyafetli piroteknisyen. Sahneye alev jetleri kurar, elindeki fişekle tetikler.
+// Pyro Tech: yanmaz kıyafetli piroteknisyen. Sırtında havai fişek sadağı, elinde yanan bir roket; uzaktan sana fişek atar.
 function buildPyro(){
   const m=buildHuman({skin:SKIN[1],top:0xc8b890,pants:0xb8a880,shoe:0x2a2420,hairStyle:'bald',sleeves:true});
   const hood=part(box(.48,.52,.48),toon(0xc8b890),m.head,0,.02,-.02,.05); const visor=new THREE.Mesh(box(.36,.2,.03),addMat(0xffb84a,.75)); visor.position.set(0,.05,.25); m.head.add(visor);
-  const tank=part(cyl(.16,.16,.7,10),toon(ST.red),m.torso,0,.6,-.3,.04);
-  const flare=new THREE.Mesh(new THREE.SphereGeometry(.1,8,6),basic(0xff6a2a,false)); flare.position.set(0,-.55,.05); m.arms[1].userData.fore.add(flare);
-  const jet=new THREE.Group(); jet.position.set(2.3,0,-1); jet.userData.nofit=1; m.g.add(jet);
-  part(box(.8,.4,.8),toon(0x1c1a20),jet,0,.2,0,.05); part(cyl(.22,.3,.6,8),toon(0x1c1a20),jet,0,.7,0,.04);
-  const warn=new THREE.Mesh(new THREE.RingGeometry(1.1,1.3,6),addMat(0xff4a2a,.7)); warn.rotation.x=-Math.PI/2; warn.position.y=.05; jet.add(warn);
-  const flame=new THREE.Group(); flame.position.y=1; jet.add(flame); const fl=[]; for(let i=0;i<4;i++){ const f=new THREE.Mesh(new THREE.ConeGeometry(.42-i*.06,1.2,8),addMat(i%2?0xffb84a:0xff4a2a,.75)); f.position.y=.6+i*.8; flame.add(f); fl.push(f); }
-  m.flare=flare; m.jet=jet; m.flame=flame; m.fl=fl; m.warn=warn; return m;
+  const tank=new THREE.Group(); tank.position.set(0,.6,-.3); m.torso.add(tank); part(cyl(.2,.2,.5,10),toon(0x2a2420),tank,0,0,0,.04);
+  [[-.1,0xff3a3a],[.1,0xffd23a],[0,0x3ad0ff]].forEach(([x,c],i)=>{ part(cyl(.07,.07,.7,8),toon(c),tank,x,.25,i===2?-.08:.05,.03); part(new THREE.ConeGeometry(.08,.16,8),toon(0xeeeeee),tank,x,.68,i===2?-.08:.05,.02); });
+  const fore=m.arms[1].userData.fore, rk=part(cyl(.08,.08,.75,8),toon(ST.red),fore,0,-.55,.12,.03); rk.rotation.x=Math.PI/2; part(new THREE.ConeGeometry(.09,.2,8),toon(0xffd23a),fore,0,-.55,.57,.02).rotation.x=Math.PI/2;
+  const flare=new THREE.Mesh(new THREE.SphereGeometry(.1,8,6),basic(0xff6a2a,false)); flare.position.set(0,-.55,-.28); fore.add(flare);
+  m.flare=flare; return m;
 }
 // Işıkçı: tripod üstünde takip spotu çeviren teknisyen. Işığa aldığı oyuncuyu herkese işaretler.
 function buildSpot(){
@@ -534,23 +532,23 @@ function buildDiver(){
 const BAND='Grup', CROWD='Sahne';
 const ROSTER=[
   {k:'mob',st:'yeni',fac:BAND,name:'Pulse Dancer',role:'Işınlanan dansöz',thr:3,build:buildDancer,an:'dancer',
-   d:'Müziğin her ikinci vuruşunda ışınlanır, indiği yerde 8 notalık bir halka açar. Işınlanmadan önce gideceği yerde pembe bir dans pisti belirir. Kaçmaz, etrafında döner, eşarpları dönerken yakın mermileri savurur.',c:'Pisti gör, oraya ateşle. İndiği an 0.4 s savunmasız.'},
+   d:'Müziğin her ikinci vuruşunda ışınlanır (eskisinden daha sık ve daha hızlı), indiği yerde 8 notalık bir halka açar. Işınlanmadan önce gideceği yerde pembe bir dans pisti belirir. Kaçmaz, etrafında döner, eşarpları dönerken yakın mermileri savurur.',c:'Pisti gör, oraya ateşle. İndiği an 0.4 s savunmasız.'},
   {k:'mob',st:'yeni',fac:BAND,name:'Baterist',role:'Sabit baterist',thr:4,build:buildDrummer,an:'drum',
-   d:'Tabureden hiç kalkmaz. Her kick vuruşunda yere kırmızı bir şok halkası yayılır, zil vuruşlarında 5\'li yelpaze mermi atar. Yaşadığı sürece diğer grup üyeleri %15 hızlı vurur.',c:'Halkaların arasındaki ritim boşluğunda dash at. Önce onu indir, grubun temposu düşer.'},
+   d:'Tabureden hiç kalkmaz. Her iki ölçüde bir kick vuruşunda yere kırmızı bir şok halkası yayılır. Yatay mermi atmaz: her ölçünün 4. vuruşunda baget fırlatır, haritanın rastgele yerlerinde (biri hep gittiğin yerde) kırmızı daireler dolar ve gökten düşen meteorlar vuruşta bu dairelere iner. Yaşadığı sürece diğer grup üyeleri %15 hızlı vurur.',c:'Dolan daireden çık ya da iniş anında dash at. Önce onu indir, grubun temposu düşer.'},
   {k:'mob',st:'yeni',fac:BAND,name:'Shredder',role:'Elektro gitarcı',thr:4,build:buildShredder,an:'shred',
    d:'Riff atarken önüne turuncu ses dalgası konisi yollar. Arada solo moduna girer: 3 saniye boyunca yakındaki hedefler arasında zıplayan şimşekler. Solo bitince kafa sallar ve 1 s durur.',c:'Koninin yanına geç. Solodan sonraki kafa sallama anı en iyi vuruş fırsatı.'},
   {k:'mob',st:'yeni',fac:BAND,name:'Bass Brute',role:'Basçı · yavaşlatma',thr:3,build:buildBassist,an:'bass',
-   d:'İri ve yavaş. Alt frekans dalgaları zemine halka halka yayılır, içinde kalan oyuncu %35 yavaşlar ve dash bekleme süresi uzar. Ekran hafifçe titrer.',c:'Halkaların dışından vur, yakın dövüşe girme. Diğer moblarla birlikteyken öncelikli hedef.'},
+   d:'İri ve yavaş. Alt frekans dalgaları zemine halka halka yayılır, içinde kalan oyuncu %35 yavaşlar ve dash bekleme süresi uzar. Menzile girince durur, geriye kaykılır ve önünde kırmızı V şeklinde bir koni belirir; vuruşta kafa sallar, koninin içi ağır hasar yer (uzun menzil).',c:'Koni belirince yana çık ya da koninin içinden dash at (perfect dodge). Yakın dövüşe girme.'},
   {k:'mob',st:'yeni',fac:CROWD,name:'Roadie',role:'Sahne ekibi · amfi kurar',thr:2,build:buildHauler,an:'hauler',
-   d:'Sırtında hoparlörle koşar, odaya 2-3 amfi bırakır. Amfiler vuruşta sarı ses darbesi atar ve 10 saniye yaşar. Kendisi saldırmaz.',c:'Amfi kurmadan yakala, ya da amfileri tek atışta kır.'},
+   d:'Sırtında hoparlörle koşar, odaya 2-3 amfi bırakır. Amfiler vuruşta geniş bir sarı ses darbesi atar (yaklaşık 4.8 birim) ve 10 saniye yaşar. Kendisi saldırmaz.',c:'Amfi kurmadan yakala, ya da amfileri tek atışta kır.'},
   {k:'mob',st:'yeni',fac:CROWD,name:'Mosher',role:'Kalabalık sürüsü',thr:1,build:buildMosher,an:'mosh',
    d:'6-10\'luk gruplar halinde gelir, ateş etmez. Seni itip sıkıştırır, hasar az ama itme güçlü. Köşeye sıkışınca zincirli kolları acıtır.',c:'Açık alanda kal, alan hasarı ve orbitler çok iyi işler.'},
   {k:'mob',st:'yeni',fac:CROWD,name:'Pyro Tech',role:'Piroteknisyen',thr:2,build:buildPyro,an:'pyro',
-   d:'Yanmaz kıyafetiyle sahneye alev jetleri kurar, elindeki fişekle vuruşta tetikler. Jet tetiklenmeden önce zemin kızarır. Kendisi kaçar.',c:'Önce teknisyeni indir, kurduğu jetler söner. Kızaran zeminden uzak dur.'},
+   d:'Elinde yanan havai fişeklerle mesafesini korur, yaklaşınca geri kaçar. Roketi kaldırıp sana ince turuncu bir çizgi çektiği an atış gelir: vuruşta iki fişek uçar, biri sana, biri gittiğin yere; kıvılcım izi bırakır, çarptığı yerde patlar. Bloklar fişeği durdurur.',c:'Çizgiyi görünce yön değiştir ya da blok arkasına geç. Kırılgan, yakalanınca çabuk düşer.'},
   {k:'mob',st:'yeni',fac:CROWD,name:'Işıkçı',role:'Takip spotu · işaretleyici',thr:2,build:buildSpot,an:'spot',
-   d:'Tripoddaki takip spotunu sana çevirir. Işığın içindeyken tüm düşmanlar sana %25 daha isabetli ve hızlı mermi atar. Işık yavaşça takip eder.',c:'Işıktan çık ya da ışıkçıyı indir. Kırılgan, iki üç atış yeter.'},
+   d:'Tripoddaki takip spotunu sana çevirir. Işık yavaşça takip eder; içinde kaldığın sürece daire kızarır ve her vuruşta yakar (molotof gibi, çıkınca durur; birden fazla ışık üst üste binmez). Ayrıca ışıktayken tüm düşmanlar sana %25 daha isabetli ve hızlı mermi atar.',c:'Hareket etmeye devam et, ışıktan çık ya da ışıkçıyı indir. Kırılgan, iki üç atış yeter.'},
   {k:'mob',st:'yeni',fac:CROWD,name:'Stage Diver',role:'Atlayan ezici',thr:3,build:buildDiver,an:'diver',
-   d:'Arenanın dışından kollarını açıp sahneye atlar, iner ve çevresine ezme dalgası yapar. İndiği yer 1 saniye önce kırmızı halka olarak görünür. Sonra yumruklarıyla yakın dövüşe girer.',c:'Halkadan çık, iniş sonrası 1 saniye sersem. O an vur.'},
+   d:'Arenanın dışından kollarını açıp sahneye atlar ve durmadan atlamaya devam eder: gittiğin yerde kısa süre kırmızı bir iniş halkası belirir, vuruşta iner, ezme dalgası yayılır. İnişten sonra kısa bir sersemlik, birkaç yumruk, sonra yeni sıçrayış (1.4-2.2 s).',c:'Halka belirince refleksle çık ya da dalgadan dash ile geç. İniş sonrası 0.6 s sersem, o an vur.'},
 ];
 /* ================= RENDER ================= */
 const R=new THREE.WebGLRenderer({antialias:true,alpha:true}); R.setPixelRatio(1); const RS=360; R.setSize(RS,RS,false);
@@ -571,7 +569,7 @@ function animate(e,t){ const m=e.m, b=beat(t), hit=Math.max(0,1-b*4);
     case 'bass': animMech(m,t*1.2,.2); pose(m,-.6,-.5+Math.sin(t*10)*.06,-1.2,-1.0); m.arms[0].rotation.z=-.15; bang(m.head,t*.5,.25); m.rip.children.forEach((r,i)=>{ const k=(t*.7+i/3)%1; r.scale.setScalar(.8+k*3.2); r.material.opacity=(1-k)*.55; }); break;
     case 'hauler': animMech(m,t*6,.8); pose(m,-2.9,-2.9,-.4,-.4); m.pulse.scale.setScalar(.6+b*1.1); m.pulse.material.opacity=(1-b)*.7; break;
     case 'mosh': animMech(m,t*7,.9); m.torso.rotation.z=Math.sin(t*7)*.15; pose(m,-1.2+hit*.6,-1.2-hit*.6,-1.3,-1.3); bang(m.head,t,.4); break;
-    case 'pyro': { animMech(m,t*3,.3); pose(m,-.2,-1.8,0,-.6); const ph=(t*.6)%1, on=ph>.55; m.flame.visible=on; m.flare.scale.setScalar(on?1.6:1); m.warn.material.opacity=on?.15:.3+Math.sin(t*20)*.3*(ph>.3?1:0); if(on) m.fl.forEach((f,i)=>f.scale.set(1+Math.sin(t*30+i)*.1,1+Math.sin(t*25+i)*.15,1+Math.sin(t*30+i)*.1)); break; }
+    case 'pyro': { animMech(m,t*3,.3); const ph=(t*.6)%1, up=ph>.55; pose(m,-.2,up?-2.9:-1.8,0,up?0:-.6); m.flare.scale.setScalar(up?1.6+Math.random()*.8:1); break; }
     case 'spot': animMech(m,0,0); pose(m,-1.0,-1.1,-.7,-.6); m.arms[1].rotation.z=.4; m.lamp.rotation.y=Math.sin(t*.8)*.35; m.head.rotation.y=Math.sin(t*.8)*.35; m.spot.position.x=.75+Math.sin(t*.8)*1.8; break;
     case 'diver': { const ph=(t*.45)%1; animMech(m,0,0); const y=ph<.6?Math.sin(ph/.6*Math.PI)*1.8:0; m.g.position.y=y; if(ph<.6){ pose(m,-1.6,-1.6,0,0); m.arms[0].rotation.z=-1.2; m.arms[1].rotation.z=1.2; m.torso.rotation.x=.5; m.legs[0].rotation.x=.4; m.legs[1].rotation.x=.4; } else { pose(m,-1.3,-1.3,-1.4,-1.4); m.arms[0].rotation.z=0; m.arms[1].rotation.z=0; m.torso.rotation.x=.15; }
       m.land.material.opacity=ph<.6?.3+ph:.8*(1-(ph-.6)/.4); m.land.scale.setScalar(ph<.6?1:1+(ph-.6)*2); break; }
