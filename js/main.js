@@ -158,7 +158,7 @@ function tick(dt,now){
     const ws=room&&room.stage; $('waveRow').hidden=!ws; if(ws) $('waveTxt').textContent=`${Math.min(ws.w+1,ws.n)}/${ws.n}`;
     const bp=$('beatPip'), bs=!!sortie.rule.beatSync; bp.hidden=!bs; if(bs) bp.classList.toggle('on',BEAT.ph<.25);
     $('arTxt').textContent=ARENAS[sortie.a].name.toUpperCase(); $('goldTxt').textContent=P.gold.toLocaleString(); $('gemTxt').textContent=P.gems;
-    $('xpFill').style.width=(sortie.xp/xpNeed()*100)+'%'; const lr=$('lvReady'), pl=sortie.pendingLv; lr.hidden=!pl; if(pl) lr.textContent=pl>1?`LEVEL READY ×${pl}`:'LEVEL READY'; const lv=$('lvTxt'); if(lv) lv.textContent='LV '+sortie.lv;
+    const cap=atCap(); $('xpFill').style.width=(cap?100:sortie.xp/xpNeed()*100)+'%'; const lr=$('lvReady'), pl=sortie.pendingLv; lr.hidden=!pl; if(pl) lr.textContent=pl>1?`LEVEL READY ×${pl}`:'LEVEL READY'; const lv=$('lvTxt'); if(lv) lv.textContent=cap?'MAX LVL':'LV '+sortie.lv;
     if(boss) $('bossBar').firstElementChild.style.width=Math.max(0,boss.hp/boss.maxHp*100)+'%';
     else if(room&&room.timer){ const T=room.timer; $('bossName').textContent=T.name; $('bossPh').textContent=Math.ceil(Math.max(0,T.t))+' s'; $('bossBar').firstElementChild.style.width=Math.max(0,T.t/T.max*100)+'%'; }
     const spReady=p.sp>=100&&!busy(); $('abQ').classList.toggle('ready',spReady); $('abQ').style.setProperty('--cd',1-p.sp/100); $('tSP').classList.toggle('ready',spReady); $('tSP').style.setProperty('--cd',1-p.sp/100);

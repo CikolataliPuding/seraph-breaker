@@ -48,6 +48,10 @@ const DBG={
   // Main Stage tester: one mob alone (the wave and everything else on the mat goes, no loot), so its attack can be checked by itself
   solo(type,elite=false){ if(!player||!ENEMY[type]) return false; for(const e of enemies.slice()) if(!e.dead&&e!==boss){ e.noLoot=true; killEnemy(e,true); } spawnQ=[];
     return !!spawnEnemy(type,ENEMY[type].seat?seatSpot():freeSpot(3),elite,{noDrop:true}); },
+  // tester: set the pilot level (capped like the run; the levels gained queue their cards) · level, xp and armor lost per room as a live overlay (O)
+  level(n){ if(!sortie) return false; const c=lvCap(sortie.a), to=clamp(n|0,1,c||99); if(to>sortie.lv) sortie.pendingLv+=to-sortie.lv; sortie.lv=to; sortie.xp=0; return sortie.lv; },
+  overlay(on=!DBG.ov){ DBG.ov=on; let el=$('dbgOv'); if(!el){ el=document.createElement('pre'); el.id='dbgOv'; el.style.cssText='position:fixed;left:8px;bottom:8px;z-index:60;margin:0;padding:6px 8px;background:#000a;color:#ffd36a;font:11px/1.35 monospace;pointer-events:none;white-space:pre'; document.body.appendChild(el); }
+    el.hidden=!on; if(!DBG.ovT) DBG.ovT=setInterval(ovTick,250); return on; },
   hcHp(f){ if(!boss||!boss.formN||boss.dead||boss.immune) return false; boss.hp=Math.max(1,boss.maxHp*clamp(+f,0,1)); return Math.round(boss.hp); },
   bpm(n=0){ BEAT.force=Math.max(0,+n||0); if(!BEAT.force) AU.tempoK=1; toast(BEAT.force?`BPM ${BEAT.force}`:'BPM: music'); return BEAT.force; },
   stageCurve(print=true){ const a=ARENAS.findIndex(A=>A.stage), rows=[]; for(let ri=0;ri<STAGE.waves.length;ri++){ const W=composeStage(ri,false), sc=enemyScale(a,ri,null,0), sc1=enemyScale(a,ri,null,(W.length-1)/W.length);
@@ -55,6 +59,13 @@ const DBG={
     if(print) console.table(rows); return rows; },
 };
 window.DBG=DBG;
+// live overlay rows (DBG.overlay): one per room of this run, armor lost as a share of max armor, level and xp when the room ended
+const OV={rows:[],key:null,t0:0,lv0:1};
+function ovTick(){ const el=$('dbgOv'); if(!el||el.hidden||!sortie||!player) return; const key=sortie.a+':'+sortie.ri, taken=sortie.dmgTaken||0;
+  if(key!==OV.key){ if(OV.key&&OV.cur) OV.rows.push(OV.cur); if(OV.rows.length>16) OV.rows.shift(); OV.key=key; OV.t0=taken; OV.lv0=sortie.lv; }
+  OV.cur={room:sortie.ri+1,lost:Math.round((taken-OV.t0)/player.maxHp*100),lv:sortie.lv,lvUp:sortie.lv-OV.lv0};
+  const cap=atCap(), xp=cap?'MAX LVL':`LV ${sortie.lv} · xp ${sortie.xp.toFixed(1)}/${xpNeed().toFixed(1)}`;
+  el.textContent=`${xp}${sortie.pendingLv?' · '+sortie.pendingLv+' queued':''} · armor ${Math.round(player.hp)}/${player.maxHp}\nroom  lost%  lv(+)\n`+OV.rows.concat([OV.cur]).map(r=>`${String(r.room).padStart(4)}  ${String(r.lost).padStart(5)}  ${r.lv}(+${r.lvUp})`).join('\n'); }
 const r2=v=>Math.round(v*100)/100;
 
 /* ================= RUN LOG ================= */
@@ -118,7 +129,7 @@ function simulate(o={}){
         else { let bv=bd==='strong'?-1e9:1e9; for(const k of ids){ ctx.rs[k]=(ctx.rs[k]||0)+1; const v=est(ctx).power; ctx.rs[k]--; if(!ctx.rs[k]) delete ctx.rs[k]; if(bd==='strong'?v>bv:v<bv){ bv=v; id=k; } } }
         ctx.rs[id]=(ctx.rs[id]||0)+1; };
       const item=()=>{ if(ctx.items.length>=ITEM_SLOTS) return; const ids=Object.keys(ITEMS).filter(i=>!ctx.items.includes(i)); ctx.items.push(pickOne(ids)); ctx.luck=ctx.items.includes('lucky')?1:0; };
-      const gain=v=>{ xp+=v; while(xp>=xpNeedAt(lv)){ xp-=xpNeedAt(lv); lv++; pick(skillOptions(3,null,ctx)); } };
+      const cap=lvCap(a), gain=v=>{ if(cap&&lv>=cap) return; xp+=v; while(xp>=xpNeedAt(lv)){ xp-=xpNeedAt(lv); lv++; pick(skillOptions(3,null,ctx)); if(cap&&lv>=cap) break; } };
       const plan=arenaPlan(a,(Math.random()*2e9)|0);
       for(let ri=0;ri<N;ri++){
         const spec=plan[ri], type=spec.type, sc=enemyScale(a,ri,rule); let count=0,g=0,gm=0;
@@ -281,5 +292,5 @@ function initDebug(){
     if(a==='jump'&&DBG.jump) DBG.jump(+v('dbgRoom')); if(a==='skill'&&DBG.skill) DBG.skill(v('dbgSkill')); if(a==='item'&&DBG.item) DBG.item(v('dbgItem'));
     if(a==='spawn') DBG.spawn(v('dbgEnemy')); if(a==='spawnE') DBG.spawn(v('dbgEnemy'),true); if(a==='boss'&&DBG.boss) DBG.boss(v('dbgBoss'));
     if(a==='mode'&&DBG.mode) DBG.mode(); if(a==='hide') d.classList.toggle('min'); if(a==='log') toggleLog(); if(a==='sim') exportRunLog(simText()); });
-  addEventListener('keydown',e=>{ if(e.target&&(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')) return; if(['KeyN','KeyK','KeyG'].includes(e.code)) flagRun(); if(e.code==='KeyN'&&DBG.next) DBG.next(); if(e.code==='KeyK') DBG.killAll(); if(e.code==='KeyG') DBG.god(); if(e.code==='KeyL'&&!e.repeat) toggleLog(); });
+  addEventListener('keydown',e=>{ if(e.target&&(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')) return; if(['KeyN','KeyK','KeyG'].includes(e.code)) flagRun(); if(e.code==='KeyN'&&DBG.next) DBG.next(); if(e.code==='KeyK') DBG.killAll(); if(e.code==='KeyG') DBG.god(); if(e.code==='KeyL'&&!e.repeat) toggleLog(); if(e.code==='KeyO'&&!e.repeat) DBG.overlay(); });
 }
