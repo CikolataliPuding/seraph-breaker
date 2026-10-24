@@ -243,7 +243,8 @@ const CONE_GEO=new THREE.CircleGeometry(1,24,Math.PI/2-.45,.9); // a .9 rad slic
 const coneGeo=arc=>new THREE.CircleGeometry(1,24,Math.PI/2-arc/2,arc), CONE_BASS=coneGeo(ENEMY.bass.cone[1]);
 function teleCone(e,dir,len,life,col=MS_COL.amber,geo=CONE_GEO){ const g=new THREE.Group(), mat=addMat(col,.25), m=new THREE.Mesh(geo,mat);
   m.rotation.x=-Math.PI/2; g.add(m); g.position.set(e.pos.x,.06,e.pos.z); g.rotation.y=Math.atan2(dir.x,dir.z)+Math.PI;
-  addFx(g,life,(f,dt,k)=>{ mat.opacity=.15+.3*(1-k)+.12*Math.abs(Math.sin((1-k)*life*14)); m.scale.setScalar(len*(.35+.65*(1-k))); }); return g; }
+  const o=col===MS_COL.red?1.6:1; // the Bass Brute's red cone reads fainter on the dark mat, so it is drawn stronger
+  addFx(g,life,(f,dt,k)=>{ mat.opacity=(.15+.3*(1-k)+.12*Math.abs(Math.sin((1-k)*life*14)))*o; m.scale.setScalar(len*(.35+.65*(1-k))); }); return g; }
 /* the pilot inside a floor cone from e along dir (len, arc in rad): hurt, or a perfect dodge when the dash is running through it. The cone
    flashes full size for a moment either way. */
 function coneHit(e,dir,len,arc,dmg,geo){ const g=new THREE.Group(), mat=addMat(MS_COL.red,.7), m=new THREE.Mesh(geo,mat); m.rotation.x=-Math.PI/2; m.scale.setScalar(len); g.add(m);
