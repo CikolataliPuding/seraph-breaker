@@ -25,6 +25,21 @@ const testerOK=()=>!!P.testerCode&&sha256(normCode(P.testerCode))===TESTER_HASH;
 function unlockTester(code){ if(sha256(normCode(code))!==TESTER_HASH) return false; P.testerCode=normCode(code); P.testerSave=true; persist(); return true; }
 function lockTester(){ P.testerCode=''; P.testerTools=false; persist(); }
 
+/* ================= MAIN STAGE ACCESS CODE ================= */
+/* During the beta the Main Stage is locked for regular players and opens only with an access code entered in System (its own field, separate
+   from the tester code: it opens the stage, not the tester tools). Same pattern as the tester code: only the SHA-256 is in the repo, the code
+   is kept in the save (P.stageCode), checked on every boot, and kept through Reset my progress. With the code the stage is open whatever the
+   arena progress; without it the warmap shows it locked with a beta tag. */
+const STAGE_HASH='1435d4827eeb0b870e881d8bc6c01012e897eb9cafb99cb828295becb05ba3da';
+const stageOK=()=>!!P.stageCode&&sha256(normCode(P.stageCode))===STAGE_HASH;
+function unlockStage(code){ if(sha256(normCode(code))!==STAGE_HASH) return false; P.stageCode=normCode(code); persist(); return true; }
+function lockStage(){ P.stageCode=''; persist(); }
+// arenas the pilot can start: the normal unlocks, except the Main Stage, which needs the access code
+const arenaOpen=i=>!!ARENAS[i]&&(ARENAS[i].stage?stageOK():i<P.arenas);
+const openArenaCount=()=>ARENAS.filter((A,i)=>arenaOpen(i)).length;
+// the selected arena, moved down to the nearest open one
+const openSel=i=>{ for(let k=clamp(i|0,0,ARENAS.length-1);k>=0;k--) if(arenaOpen(k)) return k; return 0; };
+
 /* ================= FARM CHECK ================= */
 /* replaying an arena below your highest unlocked one pays less (gold and diamonds; ECON.farm by how many arenas below). The highest arena always
    pays in full, and the big diamond bonus is only paid on a first clear. sortie.farm is fixed when the run starts. */

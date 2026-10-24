@@ -16,18 +16,18 @@ function renderMenu(){
   if(view==='home') renderHome(); if(view==='map') renderMap(); if(view==='armory') renderArmory(); if(view==='skills') renderTree($('treeHangar')); if(view==='frames') renderFrames(); if(view==='system') renderSystem();
 }
 function renderHome(){
-  const a=clamp(P.selArena,0,P.arenas-1), A=ARENAS[a];
+  const a=openSel(P.selArena), A=ARENAS[a];
   $('hEye').textContent=`ARENA 0${a+1} · ${roomsLabel(A)}`+((P.bestRoom[a]||0)>=A.rooms?' · CLEARED':'');
   $('hStage').textContent=A.name;
-  const pips=$('hPips'); pips.innerHTML=''; ARENAS.forEach((x,i)=>{ const p=document.createElement('i'); if((P.bestRoom[i]||0)>=x.rooms) p.className='f'; else if(i<P.arenas) p.className='c'; pips.appendChild(p); });
+  const pips=$('hPips'); pips.innerHTML=''; ARENAS.forEach((x,i)=>{ const p=document.createElement('i'); if((P.bestRoom[i]||0)>=x.rooms) p.className='f'; else if(arenaOpen(i)) p.className='c'; pips.appendChild(p); });
   const hb=$('hBosses'); hb.innerHTML=''; arenaBossPool(a).slice(0,3).forEach(k=>{ const img=document.createElement('img'); img.src=PORTRAIT[k]||''; img.alt=BOSSES[k].name; img.title=BOSSES[k].name; hb.appendChild(img); }); const bl=document.createElement('span'); bl.textContent='BOSSES'; hb.appendChild(bl);
   $('pvUnit').textContent=UNITS[P.unit].name; $('pvSp').textContent='SP · '+SPECIALS[P.unit].name;
   const run=loadRun(), cb=$('contBtn'); cb.hidden=!run; if(run) cb.textContent=`Continue · ${ARENAS[run.a].name} · room ${run.ri+1}/${ARENAS[run.a].rooms}`;
   // personal record: the furthest arena you reached and your best room there
   let ra=-1; P.bestRoom.forEach((r,i)=>{ if(r>0&&i<ARENAS.length) ra=i; });
-  $('bestTxt').textContent=(ra<0?'Record: no runs yet':`Record: Arena ${ra+1} · Room ${P.bestRoom[ra]}/${ARENAS[ra].rooms}`)+` · ${P.arenas}/${ARENAS.length} arenas open`;
+  $('bestTxt').textContent=(ra<0?'Record: no runs yet':`Record: Arena ${ra+1} · Room ${P.bestRoom[ra]}/${ARENAS[ra].rooms}`)+` · ${openArenaCount()}/${ARENAS.length} arenas open`;
 }
 $('sortieBtn').onclick=()=>{ sfx('click'); openView('map'); };
 $('contBtn').onclick=()=>{ const r=loadRun(); if(r){ sfx('click'); launchArena(r.a,r); } else renderHome(); };
 $('mapBack').onclick=()=>openView('home');
-$('launchBtn').onclick=()=>{ const a=P.selArena; if(a>=P.arenas) return; if(loadRun()&&!$('launchBtn').dataset.arm){ $('launchBtn').dataset.arm='1'; $('launchBtn').textContent='Start over? Your saved run ends'; return; } delete $('launchBtn').dataset.arm; clearRun(); launchArena(a); };
+$('launchBtn').onclick=()=>{ const a=openSel(P.selArena); if(!arenaOpen(a)) return; if(loadRun()&&!$('launchBtn').dataset.arm){ $('launchBtn').dataset.arm='1'; $('launchBtn').textContent='Start over? Your saved run ends'; return; } delete $('launchBtn').dataset.arm; clearRun(); launchArena(a); };

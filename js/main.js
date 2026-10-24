@@ -57,7 +57,7 @@ function tick(dt,now){
     if(['fight','card','warn','cine','bossdeath','trans','prep'].includes(state)){ updatePlayer(dt,act); playTime+=dt; }
     // a resumed run first shows the level-ups it saved, then starts the room
     if(state==='card'){ stateT-=dt; if(stateT<=0){ $('card').hidden=true; setState('prep'); } }
-    else if(state==='prep'){ if(!pumpChoices()) startRoom(sortie.ri); }
+    else if(state==='prep'){ if(!pumpChoices()){ const f=sortie.force; sortie.force=null; startRoom(sortie.ri,f); } } // force: Retry boss brings back the same boss
     else if(state==='warn'){ stateT-=dt; if(stateT<=0){ $('warn').hidden=true; startCine(); } }
     else if(state==='cine'){ stateT-=dt; updateBoss(dt); if(stateT<=0) endCine(); }
     else if(state==='trans'){ stateT-=dt; if(!sortie.swapped&&stateT<=.22){ sortie.swapped=true; const f=sortie.force; sortie.force=null; startRoom(sortie.ri+1,f); } }
