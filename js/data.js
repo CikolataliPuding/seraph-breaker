@@ -411,10 +411,12 @@ const BOSSES={
     pool:[['beam','hcslam','scream','headbang','pole'],['sweep','scream','headbang','pole','headbang'],['sweep','hcslam','scream','headbang','pole','pillars','pillars']],
     /* forms: hp = share of the boss armor (hp above × the room curve), dmg = multiplier on every hit the pilot takes in his room, capped at hitCap
        (raw, before the room curve: 30 = the hardest existing boss hit, his own point-blank Metal Scream), breath = pause between attacks
-       (other bosses: 0.9 / 0.7 / 0.5 s), spd = walk speed multiplier, regen = draws power from the crowd (regen below), bar/col = HUD bar and effects */
+       (other bosses: 0.9 / 0.7 / 0.5 s), spd = walk speed multiplier, regen = draws power from the crowd (regen below), bar/col = HUD bar and effects.
+       Fight length at the stage level cap (lv 30, max Core + tree, DBG.hcSim with regen): average pilot (≈64 dps on him) I 2:00 · II 2:00 · III 2:15,
+       skilled (≈110-150 dps) I 0:50-1:10 · II 0:50-1:15 · III 1:00-1:15. The music loops are sized on the average column. */
     forms:[{name:'White',hp:.28,dmg:1.3,breath:.42,spd:1.1,bar:'#ffb04a',col:0xffa040},
-           {name:'Black Angel',hp:.28,dmg:.7,breath:.8,spd:.9,regen:true,bar:'#a58cff',col:0xd9c9ff},
-           {name:'Red Rage',hp:.32,dmg:1.3,breath:.36,spd:1.2,regen:true,bar:'#ff2a3a',col:0xff2030}],
+           {name:'Black Angel',hp:.23,dmg:.7,breath:.8,spd:.9,regen:true,bar:'#a58cff',col:0xd9c9ff},
+           {name:'Red Rage',hp:.25,dmg:1.3,breath:.36,spd:1.2,regen:true,bar:'#ff2a3a',col:0xff2030}],
     hitCap:30,
     /* crowd regen (forms II and III): every cd s (by form) he raises his arms (tele s), the three crowd sections light up and send light streams to
        him for dur s. Each live stream heals rate × form armor per second. Hitting him while he channels cuts the streams: every cut × form armor
