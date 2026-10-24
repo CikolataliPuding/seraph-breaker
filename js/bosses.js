@@ -10,7 +10,8 @@ function spawnBoss(kind){
   if(m.eyes) m.eyes.forEach(e=>{ e.hp=hp*.012; e.alive=true; });
   if(form==='highco'){ boss.poles=[]; boss.chute=buildHighCoChute(); boss.chuteT=0; roomGroup.add(boss.chute.g); }
   scene.add(m.g,m.shadow); enemies.push(boss);
-  $('bossName').textContent=def.name.toUpperCase(); $('bossPh').textContent='PHASE I'; $('bossImg').src=PORTRAIT[kind]||'';
+  $('bossName').textContent=def.name.toUpperCase(); $('bossPh').textContent='PHASE I'; $('bossImg').src=PORTRAIT[kind]||''; $('bossBar').firstElementChild.style.background='';
+  if(form==='highco') highcoInit(boss);
 }
 const toDir=b=>{ const T=tgt(); return new V3(T.x-b.pos.x,0,T.z-b.pos.z).normalize(); };
 const bossCore=b=>new V3(b.pos.x,b.y+(b.def.coreY!=null?b.def.coreY:b.form==='colossus'?6:0)+(b.jumpY||0),b.pos.z);
@@ -21,11 +22,11 @@ function bossPartHit(b,pos,d){
   if(b.model.eyes){ let best=null,bd=1.6; for(const e of b.model.eyes){ if(!e.alive) continue; e.w.getWorldPosition(_tmp2); const dd=Math.hypot(_tmp2.x-pos.x,_tmp2.z-pos.z); if(dd<bd){ bd=dd; best=e; } }
     if(best){ best.hp-=d; if(best.hp<=0){ best.alive=false; best.p.visible=false; best.w.material=toon(0x2a2232); best.w.getWorldPosition(_tmp2); sparks(_tmp2,0xff2a3a,8,6); sfx('hit'); } } }
 }
-const LOCKED_ATK=['stomp','lunge','roll','hcslam','hcdescend'];
+const LOCKED_ATK=['stomp','lunge','roll','hcslam','hcdescend','hcform','hcdrain'];
 /* fairness: attacks never overlap. An attack is over when its own projectiles have resolved (missiles landed, shockwaves and boss
    blasts gone), then the boss takes a short breather (BOSS_BREATH by phase, plus BOSS_SETTLE for volleys that are still in the air).
    While a heavy attack runs, summoned minions hold their fire (bossHeavy). */
-const BOSS_BREATH=[.9,.7,.5], BOSS_SETTLE={ring:.5,spiral:.3,shards:.8,summon:.4,drones:.4,sparks:.4,mines:1.3,aimed:.2,eyes:.2,wave:.3,scream:.3,headbang:.3,pole:.3,pillars:.4};
+const BOSS_BREATH=[.9,.7,.5], BOSS_SETTLE={ring:.5,spiral:.3,shards:.8,summon:.4,drones:.4,sparks:.4,mines:1.3,aimed:.2,eyes:.2,wave:.3,scream:.3,headbang:.3,pole:.3,pillars:.4,hcdescend:1.1,hcdrain:.3};
 const LIGHT_ATK=['idle','enter','summon','drones','sparks','aimed','eyes','shieldup'];
 const SLAM_T=1.15; // slam wind-up: the red ring shows the shockwave's reach and fills up as the countdown
 function bossPending(){ for(const x of bullets) if(x.tag==='bmis') return true; for(const s of shocks) if(!s.friendly) return true; for(const x of blasts) if(x.boss) return true; return false; }
@@ -110,7 +111,7 @@ function bossTick(b,dt,to){
       if(L.done>=L.len-.01){ b.vuln=1.5; b.jz.pop.v=-7; shake=.4; crossBlast(b.pos.clone(),0xffd36a,.7); return true; } return false; }
     case 'shieldup':{ if(b.atkT<.35) return false; b.reflectT=Math.max(.01,3.35-b.atkT); if(b.atkT>3.35){ b.reflectT=0; return true; } return false; }
     case 'beam': case 'sweep': case 'sweep180': return updateBeam(b,dt);
-    case 'hcslam': case 'scream': case 'headbang': case 'pole': case 'pillars': case 'hcdescend': return highcoTick(b,dt,ph);
+    case 'hcslam': case 'scream': case 'headbang': case 'pole': case 'pillars': case 'hcdescend': case 'hcform': case 'hcdrain': return highcoTick(b,dt,ph);
   }
   return true;
 }
@@ -142,7 +143,8 @@ function updateBoss(dt){
   if(b.flash>0){b.flash-=dt;if(b.flash<=0)unflash(b);}
   const T=tgt(); const to=_tmp.subVectors(T,b.pos).setY(0); const d=to.length()||1; to.divideScalar(d);
   const pd=Math.hypot(player.pos.x-b.pos.x,player.pos.z-b.pos.z);
-  const newPh=b.hp<b.maxHp*.33?3:b.hp<b.maxHp*.66?2:1;
+  // High-Co has no thresholds: his phase is the form, changed by highcoFormDown when a form's armor runs out
+  const newPh=def.forms?b.phase:b.hp<b.maxHp*.33?3:b.hp<b.maxHp*.66?2:1;
   if(newPh!==b.phase&&b.atk!=='enter'){ b.phase=newPh; $('bossPh').textContent='PHASE '+['I','II','III'][newPh-1]; groundRing(b.pos,0xff2236,14,1); shake=.6; hitstop(85,true); b.jz.pop.v=-8; if(def.barrier) b.barrier=3; b.atk='idle'; b.atkT=.7; b.beam=null; b.jumpY=0; b.reflectT=0; b.vuln=0; hideBeams(); clearEnemyShots(); if(f==='highco') highcoPhase(b,newPh); }
   b.vuln=Math.max(0,b.vuln-dt);
   if(b.atk==='enter'){ b.y+=(b.base-b.y)*Math.min(1,dt*2.6); b.atkT-=dt;
@@ -154,14 +156,14 @@ function updateBoss(dt){
     else if(f==='archon'){ b.y=b.base+Math.sin(b.t*1.6)*.2; const spd=b.phase===3?4.2:3.4; let want; if(d>7) want=to.clone().multiplyScalar(spd); else if(d<4.5) want=to.clone().multiplyScalar(-spd); else want=new V3(-to.z,0,to.x).multiplyScalar(spd*.6); if(b.vuln>0||b.atk==='wave'||b.atk==='shieldup') want.multiplyScalar(.1); b.vel.lerp(want,Math.min(1,dt*2.5)); }
     else if(f==='throne'){ b.y=b.base+Math.sin(b.t*1.1)*.3; const want=new V3(Math.cos(b.t*.3)*3,0,Math.sin(b.t*.3)*3-3).sub(b.pos).multiplyScalar(.5); b.vel.lerp(want,Math.min(1,dt*1.5)); }
     else if(def.fly){ b.y=b.base+Math.sin(b.t*1.3)*.35; const orbit=new V3(Math.cos(b.t*.25)*7,0,Math.sin(b.t*.25)*7-2); const want=orbit.sub(b.pos).multiplyScalar(.6*b.spdK); if(d<7) want.addScaledVector(to,-4*b.spdK); if(b.beam&&b.beam.fire) want.multiplyScalar(.1); b.vel.lerp(want,Math.min(1,dt*1.5)); }
-    else { const spd=(b.phase===3?3.6:2.6)*(f==='arachne'?.85:1); let want; if(d>10) want=to.clone().multiplyScalar(spd); else if(d<5.5) want=to.clone().multiplyScalar(-spd); else want=new V3(-to.z,0,to.x).multiplyScalar(spd*.5); if(b.atk==='burst'||b.atk==='burst2'||(b.beam&&b.beam.fire)) want.multiplyScalar(.1); if(b.atk==='slam') want.set(0,0,0); b.vel.lerp(want,Math.min(1,dt*2)); }
+    else { const spd=(b.phase===3?3.6:2.6)*(f==='arachne'?.85:1)*(def.forms?def.forms[b.phase-1].spd:1); let want; if(d>10) want=to.clone().multiplyScalar(spd); else if(d<5.5) want=to.clone().multiplyScalar(-spd); else want=new V3(-to.z,0,to.x).multiplyScalar(spd*.5); if(b.atk==='burst'||b.atk==='burst2'||(b.beam&&b.beam.fire)) want.multiplyScalar(.1); if(b.atk==='slam') want.set(0,0,0); b.vel.lerp(want,Math.min(1,dt*2)); }
     b.pos.addScaledVector(b.vel,dt*(b.slow>0?.6:1)); b.pos.x=clamp(b.pos.x,-AX+3,AX-3); b.pos.z=clamp(b.pos.z,-AZ+3,AZ-3);
     // touching the boss hurts (the Arachne's belly is a safe blind spot; lunges and rolls deal their own hit)
     if(pd<b.r+.4&&f!=='arachne'&&!locked){ contactHurt(b,18); _tmp2.set(player.pos.x-b.pos.x,0,player.pos.z-b.pos.z).normalize(); player.pos.addScaledVector(_tmp2,2); }
     if(def.barrier){ b.barrierCd-=dt; if(b.barrier>0) b.barrier-=dt; if(b.barrierCd<=0&&b.phase>=2){ b.barrier=3.2; b.barrierCd=rand(9,12); } }
     // the breather only counts down once the last attack's missiles, shockwaves and blasts are gone
     if(b.atk==='idle'){ if(!bossPending()) b.atkT-=dt; if(b.atkT<=0&&b.vuln<=0) bossStartAttack(b); }
-    else if(bossTick(b,dt,to)){ b.atkT=(BOSS_SETTLE[b.atk]||0)+BOSS_BREATH[b.phase-1]; b.atk='idle'; }
+    else if(bossTick(b,dt,to)){ b.atkT=(BOSS_SETTLE[b.atk]||0)+(def.forms?def.forms[b.phase-1].breath:BOSS_BREATH[b.phase-1]); b.atk='idle'; }
   }
   m.g.position.set(b.pos.x,b.y+b.jumpY,b.pos.z); m.shadow.position.set(b.pos.x,.03,b.pos.z); m.shadow.scale.setScalar(clamp(1-(b.y+b.jumpY-b.base)/30,.2,1));
   const faceDir=b.atk==='lunge'&&b.lunge?b.lunge.dir:b.atk==='roll'&&b.rollC?b.rollC.dir:to;
@@ -194,7 +196,7 @@ function updateBoss(dt){
 }
 function bossDeath(){
   if(!player||player.dead||state==='dying'||state==='result') return;
-  if(boss.poles){ boss.poles.forEach(p=>roomGroup.remove(p.m.g)); boss.poles.length=0; }
+  if(boss.poles){ boss.poles.forEach(p=>roomGroup.remove(p.m.g)); boss.poles.length=0; hcStreamsEnd(boss,false); }
   const def=boss.def; score+=[5000,8000,12000,16000,20000][stage]; kills++; hideBeams(); fizzleRoom(); boss.jumpY=0; boss.reflectT=0;
   const gm=Math.round(def.gems*ECON.bossGems[sortie.a]*sortie.farm); P.gems+=gm; sortie.gems+=gm; logEarn('gems','boss',gm);
   setState('bossdeath'); stateT=3.2; boss.final=false; buzz(200); hitstop(120,true);
@@ -249,9 +251,11 @@ function highcoTick(b,dt,ph){
     // a pole bursts out of the floor where the red ring filled up; the dancer burns everything inside the ring
     case 'pole': if(b.atkT>=.9&&!b.poled){ b.poled=1; hcPole(b,b.poleAt); } return b.atkT>1.2;
     case 'pillars':{ for(const q of b.pq) if(!q.done&&b.atkT>=q.t){ q.done=true; hcBeam(new V3(q.x,0,q.z),0xff2030,1.4,.5); shake=Math.max(shake,.25); } return b.atkT>b.pq[b.pq.length-1].t+.3; }
-    // phase II entrance: the black angel drops down the light column (immune until it lands)
-    case 'hcdescend':{ const k=Math.min(1,b.atkT/1.8); b.y=26*(1-k)*(1-k);
-      if(k>=1&&b.immune){ b.immune=false; b.y=0; groundRing(b.pos,0xd9c9ff,10,1); crossBlast(b.pos.clone(),0xd9c9ff,1.2); shake=.7; b.jz.pop.v=-8; } return b.atkT>2.4; }
+    // between forms: the old body's debris settles, then the next form's entrance starts
+    case 'hcform':{ b.hp=0; if(b.atkT>=b.formWait){ b.atk='hcdescend'; b.atkT=0; b.model.g.visible=b.model.shadow.visible=true; hcEntrance(b); } return false; }
+    // form II / III entrance: drops down the light column (immune until it lands, the bar fills on the way down)
+    case 'hcdescend':{ const D=HC_DESC[ph-1], k=Math.min(1,b.atkT/D); b.y=26*(1-k)*(1-k); if(b.immune) b.hp=Math.max(1,b.maxHp*k);
+      if(k>=1&&b.immune){ b.immune=false; b.hp=b.maxHp; b.y=0; hcLand(b); } return b.atkT>D+.3; }
   }
   return true;
 }
@@ -277,16 +281,44 @@ function hcPole(b,at){
   const m=buildHighCoPole(); m.g.position.set(at.x,-9.8,at.z); const s=HC_POLE_R/4; m.aura.scale.setScalar(s); m.fill.scale.setScalar(s); roomGroup.add(m.g);
   b.poles.push({m,x:at.x,z:at.z,t:0,cd:0}); shake=Math.max(shake,.3); crossBlast(at.clone(),0xff3048,.8);
 }
-function highcoPhase(b,ph){
-  // a new phase cuts the old one off: queued pillar strikes fizzle and live poles sink (the dancer stops burning)
+/* ---- three forms ----
+   Each form has its own armor bar (def.forms[n].hp share of the boss armor). When a form's armor runs out killEnemy hands it to
+   highcoFormDown instead of bossDeath: a short hitstop, the old body shatters, enemy shots are cleared and every live attack (pillars, poles,
+   beams, crowd streams) is cut off. The next form stays immune through its entrance ('hcform': a pause, then 'hcdescend' down a light column,
+   timed so he lands on a bar's downbeat when the beat clock allows it), its bar fills up while he comes down, and after landing he takes a
+   longer breather (BOSS_SETTLE.hcdescend) before the first attack. Only form III's death reaches bossDeath. */
+function highcoInit(b){
+  const F=b.def.forms; b.formHp=F.map(f=>Math.max(1,Math.round(b.maxHp*f.hp))); b.maxHp=b.hp=b.formHp[0]; b.formN=1; b.phase=1;
+  b.drainCd=0; b.regenUsed=0; b.streams=null; hcHud(b);
+}
+function hcHud(b){ const f=b.def.forms[b.phase-1];
+  $('bossName').textContent='HIGH-CO · '+f.name.toUpperCase();
+  $('bossPh').innerHTML='FORM '+['I','II','III'][b.phase-1]+' '+b.def.forms.map((x,i)=>`<i class="hcpip${i<b.phase-1?' done':i===b.phase-1?' on':''}" style="--c:${x.bar}"></i>`).join('');
+  $('bossBar').firstElementChild.style.background=f.bar; }
+function highcoClearAttacks(b){
   for(let i=blasts.length-1;i>=0;i--) if(blasts[i].boss){ scene.remove(blasts[i].ring); blasts.splice(i,1); }
   b.poles.forEach(P=>{ P.t=Math.max(P.t,HC_POLE_LIFE); });
-  // the band comes back on stage for the new form (Main Stage mobs from the stage lip, they hold fire while he lands)
-  (b.def.encore&&b.def.encore[ph]||[]).forEach((k,i,a)=>{ const x=(i-(a.length-1)/2)*7; spawnEnemy(k,new V3(clamp(x,-AX+2,AX-2),0,-AZ+3),false,{minion:true}); });
-  if(ph>=2&&b.model.stage!==2){ const old=b.model; shatter(old,b.pos,0,0,{max:mobileMode?8:16,spd:1.2,cy:3}); scene.remove(old.g,old.shadow);
-    const m=buildHighCo(2); scene.add(m.g,m.shadow); b.model=m; b.y=26; b.atk='hcdescend'; b.atkT=0; b.immune=true; hcBeam(b.pos,0xd9c9ff,2.4,2.2); popText('ENCORE'); }
-  if(ph===3){ setHighCoRage(b.model,true); hcBeam(b.pos,0xff2030,2.8,1); popText('SAKİN OLMAM LAZIM'); shake=.9; buzz(160); }
+  if(b.pq) b.pq.forEach(q=>q.done=true);
+  hcStreamsEnd(b,false); b.beam=null; hideBeams(); b.jumpY=0; b.reflectT=0; b.vuln=0; b.stun=0;
 }
+function highcoFormDown(b){
+  const n=b.formN+1, old=b.model; b.hp=0; b.immune=true; highcoClearAttacks(b); clearEnemyShots();
+  hitstop(120,true); hcShake(1); buzz(220); sfx('bigboom'); crossBlast(bossCore(b),b.def.forms[b.formN-1].col,1.6);
+  shatter(old,b.pos,0,0,{max:mobileMode?8:18,spd:1.4,cy:3}); scene.remove(old.g,old.shadow);
+  b.formN=n; b.phase=n; b.maxHp=b.formHp[n-1]; b.regenUsed=0; b.drainCd=b.def.regen.cd[n-1]*.6;
+  const m=buildHighCo(2); if(n===3) setHighCoRage(m,true); m.g.visible=m.shadow.visible=false; scene.add(m.g,m.shadow); b.model=m; b.sc=m.g.scale.x;
+  // the band comes back on stage for the new form (Main Stage mobs from the stage lip, they hold fire while he lands)
+  (b.def.encore&&b.def.encore[n]||[]).forEach((k,i,a)=>{ const x=(i-(a.length-1)/2)*7; spawnEnemy(k,new V3(clamp(x,-AX+2,AX-2),0,-AZ+3),false,{minion:true}); });
+  // landing on a strong beat: the descent takes HC_DESC[n] s, so the pause before it ends that long before a downbeat (bar of 4)
+  const land=typeof BEAT!=='undefined'?BEAT.until(HC_DESC[n-1]+.7,4):HC_DESC[n-1]+.7;
+  b.atk='hcform'; b.atkT=0; b.formWait=clamp(land-HC_DESC[n-1],.6,2.2); b.y=26; b.vel.set(0,0,0);
+  hcHud(b); popText(n===2?'ENCORE':'SAKİN OLMAM LAZIM');
+}
+const HC_DESC=[0,2.2,1.5]; // entrance descent time per form (form I parachutes in during the cinematic)
+const hcShake=v=>{ shake=Math.max(shake,v); };
+function hcEntrance(b){ const c=b.def.forms[b.phase-1].col; hcBeam(b.pos,c,2.4,HC_DESC[b.phase-1]+.4); }
+function hcLand(b){ const c=b.def.forms[b.phase-1].col; groundRing(b.pos,c,10,1); crossBlast(b.pos.clone(),c,1.2); hcShake(.7); b.jz.pop.v=-8; }
+function hcStreamsEnd(b){ b.streams=null; }
 function highcoAnim(b,m,dt){
   if(stepMech(m,b,b.vel.length(),dt,b.sc)&&!b.y){ b.byaw=b.yaw; footfall(b,m,b.sc,.12); } mechLean(m,b.jz,dt,b.vel.x*.5,b.vel.z*.5,b.yaw,b.yaw);
   const a=b.atk, t=b.atkT; let jaw=.12+Math.sin(b.t*3)*.04, lag=0, flap=2;
