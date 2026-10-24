@@ -27,7 +27,8 @@ function pshot(mz,dir,speed,dmg,color,o={}){
   if(rs.rear&&room>=1) mk(base+Math.PI,0,.7);
 }
 function freeBullet(b){ scene.remove(b.m); if(b.air){ scene.remove(b.air.sh,b.air.mk); } }
-function killBullet(i){ freeBullet(bullets[i]); bullets.splice(i,1); }
+// b (optional): the shot meant to go. If the array shifted since i was read, find it again; if it is already gone, do nothing.
+function killBullet(i,b){ if(b&&bullets[i]!==b) i=bullets.indexOf(b); if(i<0||!bullets[i]) return; freeBullet(bullets[i]); bullets.splice(i,1); }
 function clearEnemyShots(pos,rad){ for(let i=bullets.length-1;i>=0;i--){ const b=bullets[i]; if(b.from!=='e')continue; if(!pos||Math.hypot(b.m.position.x-pos.x,b.m.position.z-pos.z)<rad){ if(pos) sparks(b.m.position,0x5fe0ff,1,3); killBullet(i); } } }
 
 /* ================= SWEPT COLLISION ================= */

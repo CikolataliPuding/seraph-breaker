@@ -87,14 +87,15 @@ function tick(dt,now){
       if(h.t<=0){ aoe(h.pos,4.8,24*player.st.dmg); crossBlast(h.pos.clone().setY(0),0xb070ff,1.1); scene.remove(h.g); holes.splice(i,1); } }
   }
   if(dt>0) for(let i=bullets.length-1;i>=0;i--){
-    const b=bullets[i]; const bdt=b.from==='e'?edt:dt; b.life-=bdt;
+    // a hit in this loop can kill the boss, and its death clears enemy shots: indexes may shift, so the slot can be empty or hold another shot
+    const b=bullets[i]; if(!b) continue; const bdt=b.from==='e'?edt:dt; b.life-=bdt;
     if(b.delay>0){ b.delay-=bdt; b.vel.multiplyScalar(Math.pow(.03,bdt)); if(b.delay<=0&&player){ const T=tgt(); b.vel.set(T.x-b.m.position.x,0,T.z-b.m.position.z).setLength(b.after); } }
     else if(b.home>0&&player){ b.home-=bdt; const sp=b.vel.length(), T=tgt(); _tmp.set(T.x-b.m.position.x,0,T.z-b.m.position.z).setLength(sp); b.vel.lerp(_tmp,Math.min(1,bdt*b.turn)).setLength(sp); if(b.home<=0) b.vel.setLength(b.after); }
     else if(b.seek){ if(b.seek.dead) b.seek=nearestFoe(b.m.position,14); if(b.seek){ const sp=b.vel.length(); _tmp.set(b.seek.pos.x-b.m.position.x,0,b.seek.pos.z-b.m.position.z).setLength(sp); b.vel.lerp(_tmp,Math.min(1,bdt*b.turn)).setLength(sp); b.m.lookAt(b.m.position.clone().add(b.vel)); } }
     const p=b.m.position, ox=p.x, oz=p.z;
     p.addScaledVector(b.vel,bdt);
     // airborne shots (missiles, Censer orbs): height, shadow and landing marker; a missile that reaches the ground explodes
-    if(b.air&&airStep(b,bdt)){ airLand(b); killBullet(i); continue; }
+    if(b.air&&airStep(b,bdt)){ airLand(b); killBullet(i,b); continue; }
     // collisions are swept along this frame's path (ox,oz → p), with the shot's radius, so fast shots and frame spikes cannot skip corners
     const low=!b.air||p.y<AIR_LOW, rr=b.r*.5;
     // Wall Bounce: player shots reflect off the room edge and blocks
@@ -103,8 +104,8 @@ function tick(dt,now){
       else if(h){ const o=h.o, dx=Math.min(p.x-o.x0,o.x1-p.x), dz=Math.min(p.z-o.z0,o.z1-p.z); if(dx<dz){ b.vel.x*=-1; p.x+=b.vel.x>0?dx+rr+.05:-dx-rr-.05; } else { b.vel.z*=-1; p.z+=b.vel.z>0?dz+rr+.05:-dz-rr-.05; } hitW=true; }
       else if(Math.abs(p.x)>AX){ p.x=Math.sign(p.x)*AX; b.vel.x*=-1; hitW=true; } else if(Math.abs(p.z)>AZ){ p.z=Math.sign(p.z)*AZ; b.vel.z*=-1; hitW=true; }
       if(hitW){ b.wall--; b.life=Math.max(b.life,.5); b.m.lookAt(p.clone().add(b.vel)); sparks(p,unit.shot,2,3); if(b.hit) b.hit.clear(); } }
-    if(b.life<=0||Math.abs(p.x)>AX+OUTW||Math.abs(p.z)>AZ+OUTW){ if(b.grav) makeHole(p); else if(b.life>0) sparks(p,b.from==='p'?unit.shot:0xff8a40,2,3); killBullet(i); continue; }
-    if(low&&obstacles.length){ const h=sweepBlock(ox,oz,p.x,p.z,rr); if(h){ p.x=ox+(p.x-ox)*h.t; p.z=oz+(p.z-oz)*h.t; if(b.grav) makeHole(p); sparks(p,b.from==='p'?unit.shot:0xff8a40,3,4); killBullet(i); continue; } }
+    if(b.life<=0||Math.abs(p.x)>AX+OUTW||Math.abs(p.z)>AZ+OUTW){ if(b.grav) makeHole(p); else if(b.life>0) sparks(p,b.from==='p'?unit.shot:0xff8a40,2,3); killBullet(i,b); continue; }
+    if(low&&obstacles.length){ const h=sweepBlock(ox,oz,p.x,p.z,rr); if(h){ p.x=ox+(p.x-ox)*h.t; p.z=oz+(p.z-oz)*h.t; if(b.grav) makeHole(p); sparks(p,b.from==='p'?unit.shot:0xff8a40,3,4); killBullet(i,b); continue; } }
     if(b.from==='p'){
       let gone=false;
       for(const e of enemies){ if(e.dead||e.born<.4)continue; if(b.hit&&b.hit.has(e))continue;
@@ -121,12 +122,12 @@ function tick(dt,now){
           if(b.pierce&&!shieldPad) b.hit.add(e);
           else if(b.bounce>0&&!shieldPad){ b.bounce--; b.hit.add(e); b.dmg*=BAL.proc.ricochet.falloff; const nx=nearestFoe(e.pos,8,null,b.hit); if(nx){ const sp=b.vel.length(); b.vel.set(nx.pos.x-p.x,0,nx.pos.z-p.z).setLength(sp); b.m.lookAt(p.clone().add(b.vel)); b.life=Math.max(b.life,.6); } else { gone=true; } break; }
           else { gone=true; break; } } }
-      if(gone) killBullet(i);
+      if(gone) killBullet(i,b);
     } else if(player&&!player.dead&&(!b.air||p.y<2.4)){
       _tmp.set(p.x-player.pos.x,0,p.z-player.pos.z); const d=_tmp.length(), pr=.75+b.r*.5;
-      if(player.shield&&d<2.6&&d>.01&&_tmp.divideScalar(d).dot(player.aim)>.45){ sparks(p,0xffa04a,4,5); player.en-=7; player.regenDelay=.9; sfx('shield'); if(player.rs.reflect) reflectShot(b); killBullet(i); continue; }
-      if(d<3.4&&orbitG.children.length&&orbitBlocks(b)){ killBullet(i); continue; }
-      if(d<pr||segDist(ox,oz,p.x,p.z,player.pos.x,player.pos.z).d2<pr*pr){ if(player.dashT>(player.beatDash?0:.04)){ perfectDodge(); continue; } if(tryBarrier(b)){ killBullet(i); continue; } hurt(b.dmg); killBullet(i); continue; }
+      if(player.shield&&d<2.6&&d>.01&&_tmp.divideScalar(d).dot(player.aim)>.45){ sparks(p,0xffa04a,4,5); player.en-=7; player.regenDelay=.9; sfx('shield'); if(player.rs.reflect) reflectShot(b); killBullet(i,b); continue; }
+      if(d<3.4&&orbitG.children.length&&orbitBlocks(b)){ killBullet(i,b); continue; }
+      if(d<pr||segDist(ox,oz,p.x,p.z,player.pos.x,player.pos.z).d2<pr*pr){ if(player.dashT>(player.beatDash?0:.04)){ perfectDodge(); continue; } if(tryBarrier(b)){ killBullet(i,b); continue; } hurt(b.dmg); killBullet(i,b); continue; }
     }
   }
   if(dt>0) for(let i=shocks.length-1;i>=0;i--){ const s=shocks[i]; s.r+=s.speed*edt; const k=.35+.65*(1-s.r/s.max); s.ring.scale.setScalar(s.r); s.wall.scale.set(s.r,.9,s.r); s.ring.material.opacity=k; s.wall.material.opacity=k*.55;
