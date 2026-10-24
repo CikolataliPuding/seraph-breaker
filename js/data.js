@@ -404,15 +404,15 @@ const BOSSES={
     /* forms: hp = share of the boss armor (hp above × the room curve), dmg = multiplier on every hit the pilot takes in his room, capped at hitCap
        (raw, before the room curve: 30 = the hardest existing boss hit, his own point-blank Metal Scream), breath = pause between attacks
        (other bosses: 0.9 / 0.7 / 0.5 s), spd = walk speed multiplier, regen = draws power from the crowd (regen below), bar/col = HUD bar and effects */
-    forms:[{name:'White',hp:.38,dmg:1.3,breath:.42,spd:1.1,bar:'#ffb04a',col:0xffa040},
-           {name:'Black Angel',hp:.38,dmg:.7,breath:.8,spd:.9,regen:true,bar:'#a58cff',col:0xd9c9ff},
-           {name:'Red Rage',hp:.44,dmg:1.3,breath:.36,spd:1.2,regen:true,bar:'#ff2a3a',col:0xff2030}],
+    forms:[{name:'White',hp:.28,dmg:1.3,breath:.42,spd:1.1,bar:'#ffb04a',col:0xffa040},
+           {name:'Black Angel',hp:.28,dmg:.7,breath:.8,spd:.9,regen:true,bar:'#a58cff',col:0xd9c9ff},
+           {name:'Red Rage',hp:.32,dmg:1.3,breath:.36,spd:1.2,regen:true,bar:'#ff2a3a',col:0xff2030}],
     hitCap:30,
     /* crowd regen (forms II and III): every cd s (by form) he raises his arms (tele s), the three crowd sections light up and send light streams to
        him for dur s. Each live stream heals rate × form armor per second. Hitting him while he channels cuts the streams: every cut × form armor
        of damage breaks one (a big hit can break several), and with all three cut he staggers (stagger s, takes +60%). He never heals past
        cap × form armor per form in total, and never while immune. */
-    regen:{cd:[0,10,8.5],tele:.9,dur:4,streams:3,rate:.02,cut:.04,cap:.3,stagger:1.4},
+    regen:{cd:[0,10,8.5],tele:.9,dur:4,streams:3,rate:.012,cut:.025,cap:.25,stagger:1.4},
     /* music (bosses.js, hcMusic): one track per form. Drop the files in assets/audio/ and fill src (e.g. 'assets/audio/highco-1.mp3'), bpm (the
        track's tempo, used by the beat clock and his attack timing) and offset (seconds from the file start to the first beat). An empty src keeps
        the live synthesized boss music and its BPM. */

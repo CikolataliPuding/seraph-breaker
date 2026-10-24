@@ -1,4 +1,4 @@
-// Seraph Breaker · audio.js: Synthesized soundtrack (TRACKS), the beat clock the Main Stage syncs to (BEAT) and sound effects (sfx). No audio files.
+// Seraph Breaker · audio.js: Synthesized soundtrack (TRACKS), the beat clock the Main Stage syncs to (BEAT), sound effects (sfx) and the slots for High-Co's form tracks (hcMusic; empty until files are added to assets/audio/).
 /* ================= AUDIO (synthesized) ================= */
 const AU={ctx:null,want:'menu',muted:false,tempoK:1,beatQ:[],ext:null,hcWant:-1};
 const TRACKS={

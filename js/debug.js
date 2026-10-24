@@ -44,6 +44,7 @@ const DBG={
   hcTrack(i=0,src,bpm){ const T=(BOSSES.highco.tracks||[])[i|0]; if(!T) return false; if(src!=null){ T.src=String(src); T.bpm=+bpm||0; } hcMusic(i|0); return {slot:i|0,src:T.src,bpm:T.bpm}; },
   // the pilot goes down where he stands (result screen, Retry boss)
   die(){ if(!player||player.dead) return false; godMode=false; DBG.immortal=false; player.inv=0; player.lives=0; player.secondUsed=true; player.hp=0; zeroHp(); return true; },
+  hcSim(o){ return hcSim(o); },
   hcHp(f){ if(!boss||!boss.formN||boss.dead||boss.immune) return false; boss.hp=Math.max(1,boss.maxHp*clamp(+f,0,1)); return Math.round(boss.hp); },
   bpm(n=0){ BEAT.force=Math.max(0,+n||0); if(!BEAT.force) AU.tempoK=1; toast(BEAT.force?`BPM ${BEAT.force}`:'BPM: music'); return BEAT.force; },
   stageCurve(print=true){ const a=ARENAS.findIndex(A=>A.stage), rows=[]; for(let ri=0;ri<STAGE.waves.length;ri++){ const W=composeStage(ri,false), sc=enemyScale(a,ri,null,0), sc1=enemyScale(a,ri,null,(W.length-1)/W.length);
@@ -146,6 +147,26 @@ function simulate(o={}){
     builds.forEach(bd=>{ const r=out.rooms.find(x=>x.build===bd&&x.room===n); row[bd+' lv']=r.lv; row[bd+' power']=r.power; row[bd+' mob pressure']=r.pressure; if(!(n%10)||A.stage&&n===N) row[bd+' boss pressure']=r.bossPressure; }); return row; });
   if(o.print!==false){ console.log(`Seraph Breaker sim · arena ${a+1} (${A.name}) · meta ${out.meta} · ${trials} trials`); console.table(out.table); console.table(out.econ); }
   return out;
+}
+/* High-Co crowd regen check: fight length per form for a pilot who deals dps (share of the form's armor per second) all the time, with every
+   crowd channel he can start (as soon as it is off cooldown, no attack in between: the worst case). Damage during a channel cuts streams
+   (regen.cut each). The stagger bonus is left out. healed never passes regen.cap, so a form never takes more than (1 + cap) × its armor. */
+function hcSim(o={}){
+  const D=BOSSES.highco, R=D.regen, rows=[], dt=.05;
+  for(const dps of o.dps||[.01,.015,.02,.03,.05]) for(let f=0;f<3;f++){
+    const F=D.forms[f]; let hp=1,t=0,healed=0,cd=R.cd[f]*.6,ch=null,cuts=0,chans=0;
+    while(hp>0&&t<900){ t+=dt; hp-=dps*dt; if(!F.regen) continue;
+      if(!ch){ cd-=dt; if(cd<=0&&R.cap-healed>.02&&hp<.92){ ch={t:0,live:R.streams,acc:0}; cd=R.cd[f]; chans++; } continue; }
+      ch.t+=dt; if(ch.t>=R.tele){ ch.acc+=dps*dt; while(ch.acc>=R.cut&&ch.live>0){ ch.acc-=R.cut; ch.live--; cuts++; }
+        const h=Math.max(0,Math.min(R.rate*ch.live*dt,R.cap-healed,1-hp)); hp+=h; healed+=h; }
+      if(ch.t>=R.tele+R.dur||!ch.live) ch=null; }
+    rows.push({'dps %/s':r2(dps*100),form:f+1,'time s':r2(t),'no-regen s':r2(1/dps),'healed %':r2(healed*100),channels:chans,'streams cut':cuts,'cap holds':healed<=R.cap+1e-9,won:hp<=0}); }
+  // strength against the old single-bar High-Co (armor 1, damage 1): armor to remove with the healing above, damage weighted by fight time,
+  // and their geometric mean, the factor on DBG.sim()'s boss pressure
+  const sum=[]; for(const dps of o.dps||[.01,.015,.02,.03,.05]){ const rs=rows.filter(r=>r['dps %/s']===r2(dps*100)); let arm=0,dm=0,tt=0;
+    rs.forEach((r,i)=>{ const F=D.forms[i]; arm+=F.hp*(1+r['healed %']/100); dm+=F.dmg*F.hp*r['time s']; tt+=F.hp*r['time s']; });
+    sum.push({'dps %/s':r2(dps*100),armor:r2(arm),damage:r2(dm/tt),pressure:r2(Math.sqrt(arm*dm/tt))}); }
+  if(o.print!==false){ console.table(rows); console.table(sum); } return {rows,sum};
 }
 /* ================= AUTOPILOT + MEASUREMENT ================= */
 /* a scripted "average player" for headless measurement runs: keeps 6-10 units from the nearest enemy and circles it, sidesteps shots on a

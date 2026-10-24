@@ -1,4 +1,4 @@
-// Seraph Breaker · bosses.js: Boss spawning, attack patterns (bossTick), beams, boss parts (rotors, eyes), High-Co stage attacks and the cinematic intro.
+// Seraph Breaker · bosses.js: Boss spawning, attack patterns (bossTick), beams, boss parts (rotors, eyes), High-Co (three forms, stage attacks, crowd regen, entrance cinematics and game feel) and the cinematic intro.
 /* ================= BOSSES ================= */
 function spawnBoss(kind){
   const def=BOSSES[kind], m=BOSS_BUILD[kind](), form=def.form||kind;

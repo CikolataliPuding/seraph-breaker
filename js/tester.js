@@ -1,4 +1,4 @@
-// Seraph Breaker · tester.js: Tester mode (unlocked with a code in System), the beta tester badge and the farm check (reward share by arena).
+// Seraph Breaker · tester.js: Tester mode (unlocked with a code in System), the Main Stage beta access code, the beta tester badge and the farm check (reward share by arena).
 /* ================= TESTER MODE ================= */
 /* The repo only keeps the SHA-256 of the tester code; the code itself is handed to testers. A pilot who enters it in System keeps it in
    their save (P.testerCode) and it is checked against TESTER_HASH on every boot. Tester tools (the debug panel, ?debug=1, measurement)

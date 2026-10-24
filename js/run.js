@@ -1,4 +1,4 @@
-// Seraph Breaker · run.js: Arena runs: room schedule, boss picks, Arena 4 modifiers, run save / continue and unlocks.
+// Seraph Breaker · run.js: Arena runs: room schedule, boss picks, Arena 4 modifiers, run save / continue, Retry boss and unlocks.
 /* ================= ARENA RUNS ================= */
 const RUN_KEY='seraph-breaker-run-v1';
 // '30 ROOMS', or the arena's own label ('15 ROOMS + BOSS' on the Main Stage)
