@@ -94,7 +94,7 @@ function restoreLoadout(r){
 // rebuild the run from a save: unknown skill/item/curse ids (removed by an update) are dropped safely
 function restoreRun(r){
   const num=(v,d=0)=>Number.isFinite(+v)?+v:d;
-  sortie.xp=num(r.xp); sortie.lv=Math.max(1,num(r.lv,1)); sortie.pendingLv=clamp(num(r.pendingLv),0,5); sortie.rerolls=clamp(num(r.rerolls,1),0,9); sortie.lastBoss=BOSSES[r.lastBoss]?r.lastBoss:'';
+  sortie.xp=num(r.xp); sortie.lv=Math.max(1,num(r.lv,1)); if(lvCap(sortie.a)) sortie.lv=Math.min(sortie.lv,lvCap(sortie.a)); if(atCap()) sortie.xp=0; sortie.pendingLv=clamp(num(r.pendingLv),0,5); sortie.rerolls=clamp(num(r.rerolls,1),0,9); sortie.lastBoss=BOSSES[r.lastBoss]?r.lastBoss:'';
   sortie.gold=num(r.gold); sortie.gems=num(r.gems); sortie.dmgTaken=num(r.dmgTaken); score=num(r.score); kills=num(r.kills); playTime=num(r.playTime);
   if(r.extra&&typeof r.extra==='object') for(const k in r.extra) if(BUCKET_KEYS.includes(k)&&Number.isFinite(+r.extra[k])) player.extra[k]=+r.extra[k];
   (Array.isArray(r.curses)?r.curses:[]).forEach(c=>{ if(typeof CURSES!=='undefined'&&CURSES[c]&&!sortie.curses.includes(c)) applyCurse(c,true); });

@@ -2,7 +2,10 @@
 /* ================= RUN SKILLS / XP ================= */
 // tuned for 30-50 room runs: frequent level-ups early, without maxing everything by mid-run
 const xpNeed=()=>xpNeedAt(sortie.lv);
-function gainXp(v){ if(!sortie) return; sortie.xp+=v; while(sortie.xp>=xpNeed()){ sortie.xp-=xpNeed(); sortie.lv++; sortie.pendingLv++; } }
+// the run's level cap (Main Stage: STAGE.lvCap, 0 = none); at the cap xp is dropped, so no more level-ups or cards
+const lvCap=a=>ARENAS[a]&&ARENAS[a].stage?STAGE.lvCap:0, atCap=()=>{ const c=lvCap(sortie.a); return !!c&&sortie.lv>=c; };
+function gainXp(v){ if(!sortie) return; if(atCap()){ sortie.xp=0; return; } sortie.xp+=v;
+  while(sortie.xp>=xpNeed()){ sortie.xp-=xpNeed(); sortie.lv++; sortie.pendingLv++; if(atCap()){ sortie.xp=0; break; } } }
 // a skill is offered while it can rank up; projectile and orbit skills stop at the hard cap (evolutions are trimmed instead, see pshot/buildOrbit)
 const skillOk=(id,rs=player.rs)=>{ const s=RSK[id]; if((rs[id]||0)>=s.max||(s.req&&!s.req(rs))) return false;
   if(s.rarity!=='legendary'&&(s.proj&&extraProj(rs)+s.proj>BAL.cap.proj||s.orb&&orbCount(rs)+s.orb>BAL.cap.orbit)) return false; return true; };
@@ -84,7 +87,8 @@ function hexNova(){ const p=player; aoe(p.pos,6,(14+6*(p.rs.hexnova||1))*p.st.dm
 // every blast is a proc: it hits with noProc, so its kills never chain into more on-kill procs. flat blasts skip crit and Rage too.
 function queueBlast(x,z,o){ if(blasts.length>=40) return; const ring=new THREE.Mesh(G.ring,addMat(o.color||0xff6a1a,.9)); ring.rotation.x=-Math.PI/2; ring.position.set(x,.07,z); ring.scale.setScalar(o.rad); scene.add(ring); blasts.push({x,z,t:o.t||.15,max:o.t||.15,rad:o.rad,dmg:o.dmg,color:o.color||0xff6a1a,hurtP:o.hurtP||0,hurtE:o.hurtE!==false,size:o.size||.8,ring,skip:o.skip||null,flat:!!o.flat,boss:!!o.boss}); }
 function updateBlasts(dt){
-  for(let i=blasts.length-1;i>=0;i--){ const b=blasts[i]; b.t-=dt; const k=1-b.t/b.max; b.ring.material.opacity=.4+Math.sin(k*30)*.3; b.ring.scale.setScalar(b.rad*(1.15-k*.15));
+  // a blast's hit can clear the list (High-Co's form change), so an index past the end is skipped
+  for(let i=blasts.length-1;i>=0;i--){ const b=blasts[i]; if(!b) continue; b.t-=dt; const k=1-b.t/b.max; b.ring.material.opacity=.4+Math.sin(k*30)*.3; b.ring.scale.setScalar(b.rad*(1.15-k*.15));
     if(b.t>0) continue;
     scene.remove(b.ring); blasts.splice(i,1); const pos=new V3(b.x,0,b.z);
     crossBlast(pos,b.color,b.size);

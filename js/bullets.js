@@ -10,7 +10,7 @@ function shoot(from,pos,dir,speed,dmg,color,o={}){
   else { const c=new THREE.Mesh(G.orb,basic(0xffffff,false)); c.scale.setScalar(.5); m.add(c); if(o.scale) m.scale.setScalar(o.scale); }
   scene.add(m);
   const bounce=o.bounce||0;
-  const b={m,from,vel:dir.clone().multiplyScalar(speed),dmg,life:o.life||2.2,r:o.r||.45,wall:o.wall||0,tag:o.tag||'',pierce:!!o.pierce,proc:!!o.proc,flat:!!o.flat,hit:(o.pierce||bounce)?new Set():null,home:o.home||0,turn:o.turn||2,after:o.after||speed,delay:o.delay||0,seek:o.seek||null,grav:!!o.grav,bounce,air:null,t0:playTime};
+  const b={m,from,vel:dir.clone().multiplyScalar(speed),dmg,life:o.life||2.2,r:o.r||.45,wall:o.wall||0,tag:o.tag||'',pierce:!!o.pierce,proc:!!o.proc,flat:!!o.flat,hit:(o.pierce||bounce)?new Set():null,fw:o.fw||0,home:o.home||0,turn:o.turn||2,after:o.after||speed,delay:o.delay||0,seek:o.seek||null,grav:!!o.grav,bounce,air:null,t0:playTime};
   if(o.air) b.air=airInit(o.air,pos);
   bullets.push(b);
 }
@@ -26,7 +26,7 @@ function pshot(mz,dir,speed,dmg,color,o={}){
   if(rs.side) two(base+Math.PI/2,base-Math.PI/2,.7);
   if(rs.rear&&room>=1) mk(base+Math.PI,0,.7);
 }
-function freeBullet(b){ scene.remove(b.m); if(b.air){ scene.remove(b.air.sh,b.air.mk); } }
+function freeBullet(b){ scene.remove(b.m); if(b.air){ scene.remove(b.air.sh,b.air.mk); } if(b.fw&&b.life>0){ crossBlast(b.m.position.clone().setY(.6),b.fw,.45); sparks(b.m.position,b.fw,6,6); } }
 function killBullet(i){ freeBullet(bullets[i]); bullets.splice(i,1); }
 function clearEnemyShots(pos,rad){ for(let i=bullets.length-1;i>=0;i--){ const b=bullets[i]; if(b.from!=='e')continue; if(!pos||Math.hypot(b.m.position.x-pos.x,b.m.position.z-pos.z)<rad){ if(pos) sparks(b.m.position,0x5fe0ff,1,3); killBullet(i); } } }
 

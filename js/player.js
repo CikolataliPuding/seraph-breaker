@@ -80,6 +80,12 @@ function moveVec(){
   _mv.set(x,0,z); const l=_mv.length(); if(l>1)_mv.divideScalar(l); return _mv;
 }
 function nearestFoe(from,maxD=1e9,cone=null,skip=null){ let best=null,bd=maxD*maxD; for(const e of enemies){ if(e.dead||e.born<.4||(skip&&skip.has(e)))continue; const dx=e.pos.x-from.x,dz=e.pos.z-from.z,d=dx*dx+dz*dz; if(d>=bd)continue; if(cone){ const l=Math.sqrt(d)||1; if((dx*cone.x+dz*cone.z)/l<cone.c) continue; } bd=d; best=e; } return best; }
+// damage over time (Main Stage follow spot): no invulnerability window, no hit flash or hitstop, dodge and Aegis do not apply; the room curve does
+function dotHurt(d){
+  const p=player; if(godMode||!p||p.dead||p.dashT>0||state!=='fight') return;
+  if(boss&&boss.formN) d=hcDmg(d); d*=roomDmgScale()*p.st.armor; if(sortie) sortie.dmgTaken=(sortie.dmgTaken||0)+Math.min(d,Math.max(0,p.hp));
+  p.hp-=d; p.jz.sq.v+=1; buzz(15); if(room) room.hurt=true; if(p.hp<=0) zeroHp();
+}
 function hurt(d){
   const p=player; if(godMode) return; if(!p||p.dead||p.inv>0||p.dashT>0||p.leap||p.jump||(p.hook&&p.hook.phase==='pull')||state!=='fight') return;
   if(p.aegis){ p.aegis=false; p.inv=.5; hexFlash(p.pos.clone().addScaledVector(p.aim,2)); sparks(p.pos.clone().setY(2),0xb070ff,10,6); popText('AEGIS'); sfx('shield'); return; }

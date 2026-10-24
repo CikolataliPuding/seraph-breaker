@@ -238,11 +238,38 @@ const MS_COL={pink:0xff3aa8,amber:0xffb84a,red:0xff3a3a,blue:0x6ad8ff,yellow:0xf
 function stageSpot(T,r0,r1){ for(let k=0;k<24;k++){ const a=rand(0,Math.PI*2), r=rand(r0,r1), x=clamp(T.x+Math.cos(a)*r,-AX+1.6,AX-1.6), z=clamp(T.z+Math.sin(a)*r,-AZ+1.6,AZ-1.6); if(!inBlock(x,z,1.1)) return new V3(x,0,z); } return new V3(clamp(T.x,-AX+2,AX-2),0,clamp(T.z,-AZ+2,AZ-2)); }
 // the pilot is cornered: against the mat edge or a block (Mosher chains hurt more there)
 const cornered=()=>Math.abs(player.pos.x)>AX-2.2||Math.abs(player.pos.z)>AZ-2.2||!!inBlock(player.pos.x,player.pos.z,1.4);
-// amber cone on the floor that fills during a riff wind-up
+// cone on the floor that fills during a wind-up (amber: Shredder riff, red: Bass Brute headbang)
 const CONE_GEO=new THREE.CircleGeometry(1,24,Math.PI/2-.45,.9); // a .9 rad slice of the unit disc around local -z once laid flat
-function teleCone(e,dir,len,life){ const g=new THREE.Group(), mat=addMat(MS_COL.amber,.25), m=new THREE.Mesh(CONE_GEO,mat);
+const coneGeo=arc=>new THREE.CircleGeometry(1,24,Math.PI/2-arc/2,arc), CONE_BASS=coneGeo(ENEMY.bass.cone[1]);
+function teleCone(e,dir,len,life,col=MS_COL.amber,geo=CONE_GEO){ const g=new THREE.Group(), mat=addMat(col,.25), m=new THREE.Mesh(geo,mat);
   m.rotation.x=-Math.PI/2; g.add(m); g.position.set(e.pos.x,.06,e.pos.z); g.rotation.y=Math.atan2(dir.x,dir.z)+Math.PI;
-  addFx(g,life,(f,dt,k)=>{ mat.opacity=.15+.3*(1-k)+.12*Math.abs(Math.sin((1-k)*life*14)); m.scale.setScalar(len*(.35+.65*(1-k))); }); return g; }
+  const o=col===MS_COL.red?1.6:1; // the Bass Brute's red cone reads fainter on the dark mat, so it is drawn stronger
+  addFx(g,life,(f,dt,k)=>{ mat.opacity=(.15+.3*(1-k)+.12*Math.abs(Math.sin((1-k)*life*14)))*o; m.scale.setScalar(len*(.35+.65*(1-k))); }); return g; }
+/* the pilot inside a floor cone from e along dir (len, arc in rad): hurt, or a perfect dodge when the dash is running through it. The cone
+   flashes full size for a moment either way. */
+function coneHit(e,dir,len,arc,dmg,geo){ const g=new THREE.Group(), mat=addMat(MS_COL.red,.7), m=new THREE.Mesh(geo,mat); m.rotation.x=-Math.PI/2; m.scale.setScalar(len); g.add(m);
+  g.position.set(e.pos.x,.07,e.pos.z); g.rotation.y=Math.atan2(dir.x,dir.z)+Math.PI; addFx(g,.3,(f,dt,k)=>{ mat.opacity=.7*k; });
+  if(player.dead) return false; const dx=player.pos.x-e.pos.x, dz=player.pos.z-e.pos.z, d=Math.hypot(dx,dz);
+  if(d>len+.6) return false; const off=Math.abs(((Math.atan2(dx,dz)-Math.atan2(dir.x,dir.z))+Math.PI*3)%(Math.PI*2)-Math.PI);
+  if(d>1.2&&off>arc/2+Math.atan2(.6,d)) return false;
+  if(player.dashT>0){ player.inv=Math.max(player.inv,.35); perfectDodge(); return false; } hurt(dmg); return true; }
+/* Drummer sky drops: a red marker fills on the floor, the drop falls out of the sky onto it and lands on a beat. Markers live in roomGroup (they
+   go with the room) and are capped (STAGE.meteorMax) for low-end phones; the drop hurts only the pilot (amps and blocks are left alone). */
+const stageMeteors=[];
+function skyDrop(x,z,R,dmg,dur){ if(stageMeteors.filter(m=>!m.done).length>=STAGE.meteorMax[mobileMode?0:1]) return;
+  const g=new THREE.Group(), ring=new THREE.Mesh(G.ring,addMat(MS_COL.red,.85)), fill=new THREE.Mesh(G.disc,addMat(MS_COL.red,.22)), orb=new THREE.Mesh(G.orb,basic(MS_COL.yellow,false));
+  ring.rotation.x=fill.rotation.x=-Math.PI/2; ring.scale.setScalar(R); fill.position.y=-.01; orb.scale.setScalar(1.6); orb.add(new THREE.Mesh(G.orb,basic(0xffffff,false))); orb.children[0].scale.setScalar(.5);
+  g.add(ring,fill,orb); g.position.set(x,.07,z); roomGroup.add(g); stageMeteors.push({g,ring,fill,orb,x,z,R,dmg,t:0,dur,done:false}); }
+function updateSkyDrops(dt){
+  for(let i=stageMeteors.length-1;i>=0;i--){ const M=stageMeteors[i]; if(!M.g.parent){ stageMeteors.splice(i,1); continue; } M.t+=dt; const k=Math.min(1,M.t/M.dur);
+    if(!M.done){ M.fill.scale.setScalar(Math.max(.02,M.R*k)); M.ring.material.opacity=.5+.45*Math.abs(Math.sin(M.t*(6+k*20))); const fall=clamp((k-.55)/.45,0,1); M.orb.visible=fall>0; M.orb.position.y=16*(1-fall)+.4;
+      if(Math.random()<dt*20&&fall>0) sparks(new V3(M.x,M.orb.position.y+.6,M.z),0xffb84a,1,2);
+      if(k>=1){ M.done=true; M.orb.visible=false; M.fill.visible=false; crossBlast(new V3(M.x,.1,M.z),MS_COL.amber,.8); sparks(new V3(M.x,.4,M.z),MS_COL.yellow,8,7); shake=Math.max(shake,.12); sfx('boom');
+        if(!player.dead&&state==='fight'&&Math.hypot(player.pos.x-M.x,player.pos.z-M.z)<M.R+.4){ if(player.dashT>0){ player.inv=Math.max(player.inv,.35); perfectDodge(); } else hurt(M.dmg); } M.t=0; } }
+    else { M.ring.material.opacity=Math.max(0,.8-M.t*3); if(M.t>.3){ roomGroup.remove(M.g); [M.ring,M.fill].forEach(o=>o.material.dispose()); stageMeteors.splice(i,1); } } } }
+// thin floor line from pos toward (dx,dz), len long, on the shared unit plane (no geometry per shot: Pyro Tech fires often)
+function teleLine(pos,dx,dz,len,w,color,life){ const g=new THREE.Group(), mat=addMat(color,.3), pl=new THREE.Mesh(G.plane,mat); pl.rotation.x=-Math.PI/2; pl.scale.set(w,len,1); pl.position.z=len/2; g.add(pl);
+  g.position.set(pos.x,.05,pos.z); g.rotation.y=Math.atan2(dx,dz); addFx(g,life,(f,dt,k)=>{ mat.opacity=.18+.22*Math.abs(Math.sin((1-k)*life*9)); }); return g; }
 const MS_ATK={
   // Shredder riff: an amber sound-wave cone of shots toward you, on the beat
   riff:{beat:true,tele:.45,rec:.4,cd:[1.3,2],need:e=>e.see,start(e){ const s=9*eSpd(); e.aim=leadDir(e.pos.x,e.pos.z,s,new V3()); teleCone(e,e.aim,7,e.phT+.05); sfx('click'); },
@@ -254,6 +281,14 @@ const MS_ATK={
       for(const o of near){ const to=o.pos.clone().setY(2.2); bolt(from,to,0xffe08a); from=to; }
       if(!player.dead&&Math.hypot(player.pos.x-e.pos.x,player.pos.z-e.pos.z)<7.5){ bolt(from,player.pos.clone().setY(1.8),0xfff0c0); hurt(9); } else bolt(from,e.pos.clone().add(new V3(rand(-4,4),2,rand(-4,4))),0xffe08a); sfx('zap'); },
     after(e){ e.soloing=false; e.bangT=1; e.vulnT=1; }},
+  // Bass Brute headbang: plants, the red cone shows the reach for a short wind-up, then the hit lands on the beat (step out or dash through)
+  bang:{beat:true,tele:.55,rec:.75,cd:[1.8,2.6],start(e){ const T=tgt(); e.aim=new V3(T.x-e.pos.x,0,T.z-e.pos.z).normalize(); teleCone(e,e.aim,e.def.cone[0],e.phT+.05,MS_COL.red,CONE_BASS); sfx('click'); },
+    fire(e){ coneHit(e,e.aim,e.def.cone[0],e.def.cone[1],e.def.cone[2],CONE_BASS); e.bangT=.45; e.jz.pop.v=-6; shake=Math.max(shake,.18); sfx('heavy'); }},
+  // Pyro Tech fireworks: the lit rocket goes up in his hand (the tell), then a volley flies at you on the beat, trailing sparks; blocks stop it
+  rocket:{beat:true,tele:.55,rec:.45,cd:[1.5,2.3],need:e=>e.see,start(e){ e.flareT=e.phT+.1; const T=tgt(); teleLine(e.pos,T.x-e.pos.x,T.z-e.pos.z,Math.min(12,Math.hypot(T.x-e.pos.x,T.z-e.pos.z)),.35,0xff6a2a,e.phT); sfx('click'); },
+    // the first rocket of a volley flies at you, the next ones at where you are heading (led more each), so neither standing nor running straight is safe
+    fire(e){ const [sp,dmg,n]=e.def.rockets, s=sp*eSpd(), o=e.pos.clone().setY(1.9);
+      for(let i=0;i<n;i++){ const dd=leadDir(o.x,o.z,s,_ld,i/Math.max(1,n-1)); shoot('e',o,dd.clone(),s,dmg,0xff6a2a,{life:1.5,r:.5,fw:0xffb84a}); } e.jz.rec.v+=4; sfx('torch'); }},
   // Stage Diver brawl: a short wind-up, then a punch on the beat
   punch:{beat:true,tele:.3,rec:.45,cd:[.9,1.4],need:e=>Math.hypot(player.pos.x-e.pos.x,player.pos.z-e.pos.z)<2.9,
     fire(e){ e.jz.rec.v+=6; if(!player.dead&&Math.hypot(player.pos.x-e.pos.x,player.pos.z-e.pos.z)<2.6){ hurt(10); _tmp2.set(player.pos.x-e.pos.x,0,player.pos.z-e.pos.z).normalize(); player.kick.addScaledVector(_tmp2,6); } sfx('slash'); }},
@@ -264,7 +299,7 @@ const MS_AI={
   dancer(e,dt,to,d,pd,m){ const T=tgt(), [n,f]=e.def.band;
     if(!m.pad.userData.out){ m.pad.userData.out=1; m.g.remove(m.pad); stageProp(e,m.pad,0,0); m.pad.visible=false; }
     e.scarf=e.st==='dance'||e.st==='cue';
-    if(e.st==='land'){ steer(e,_sv.set(0,0,0),dt,6); e.stT-=dt; if(e.stT<=0){ e.st='dance'; e.cd=rand(2.2,3.2); dropToken(e); } faceAim(e,dt,to,8); return; }
+    if(e.st==='land'){ steer(e,_sv.set(0,0,0),dt,6); e.stT-=dt; if(e.stT<=0){ e.st='dance'; e.cd=rand(1.4,2.1); dropToken(e); } faceAim(e,dt,to,8); return; }
     // orbit at mid range, switching direction now and then
     e.orbT=(e.orbT||0)-dt; if(e.orbT<=0){ e.orbT=rand(1.5,2.6); e.orb=Math.random()<.5?-1:1; }
     const a=angOf(e.pos.x,e.pos.z,T)+(e.orb||1)*.7, R=(n+f)/2; steer(e,seek(e,clamp(T.x+Math.sin(a)*R,-AX+1.2,AX-1.2),clamp(T.z+Math.cos(a)*R,-AZ+1.2,AZ-1.2),e.speed,_sv),dt,4); faceAim(e,dt,to,6);
@@ -275,20 +310,23 @@ const MS_AI={
     if(e.hold||player.dead) return; e.cd-=dt*cdRate(e);
     if(e.cd<=0&&takeToken(e)){ e.dest=stageSpot(T,3.5,5.5); m.pad.position.set(e.dest.x,0,e.dest.z); m.pad.visible=true; e.st='cue'; e.stT=e.cueT=BEAT.until(.7,2); } },
   /* Drummer: never leaves the stool. The beat before every second downbeat the red ring shows the kick's reach, then the kick sends a shockwave
-     out to it (dash through it, or keep out). Cymbal hits on beat 3 throw a fan of 5. While he plays, the band is 15% faster (stageTick). */
+     out to it (dash through it, or keep out). On beat 4 of every bar he throws sticks into the sky: red markers fill around the mat (one
+     always where you are heading) and the drops land on them on the beat (skyDrop). While he plays, the band is 15% faster (stageTick). */
   drummer(e,dt,to,d,pd,m){ e.vel.set(0,0,0); e.yaw=lerpAngle(e.yaw,Math.atan2(to.x,to.z),Math.min(1,dt*1.2));
     if(!BEAT.hit||e.hold||player.dead) return; const b=BEAT.idx%8;
     if(b===7&&takeToken(e)){ e.kickArm=true; slamTele(e.pos,e.def.slam,BEAT.spb,.35); }
     else if(b===0&&e.kickArm){ e.kickArm=false; shockwave(e.pos,11,e.def.slam,MS_COL.red); e.kickT=.25; shake=Math.max(shake,.15); sfx('heavy'); dropToken(e); }
-    if(b%4===1&&canFire(e)) e.glint=.3;
-    if(b%4===2&&canFire(e)&&takeToken(e)){ m.muzzle.getWorldPosition(_tmp2); const o=_tmp2.clone().setY(1.8), s=9*eSpd(), dd=leadDir(o.x,o.z,s,_ld); fanShot(o,Math.atan2(dd.x,dd.z),2,.22,s,10,MS_COL.yellow,{life:2.6,r:.48}); e.cymT=.3; sfx('slash'); dropToken(e); } },
+    if(b===2) e.glint=.3;
+    if(b===3&&canFire(e)){ const [n,R,dmg]=e.def.meteors, T=tgt(), dur=BEAT.until(BEAT.spb*1.6,1), at=stageSpot({x:T.x+AIR.pv.x*.5,z:T.z+AIR.pv.z*.5},0,1.2);
+      skyDrop(at.x,at.z,R,dmg,dur); for(let i=1;i<n+(e.elite?1:0);i++){ const q=stageSpot({x:0,z:0},2,Math.max(AX,AZ)); skyDrop(q.x,q.z,R,dmg,dur); } e.cymT=.3; sfx('slash'); } },
   /* Shredder: keeps mid range and riffs; after two riffs he goes into a solo (ring + lightning), then headbangs for a second, open */
   shredder(e,dt,to,d,pd,m){ const [n,f]=e.def.band;
     if(e.bangT>0){ e.bangT-=dt; steer(e,_sv.set(0,0,0),dt,6); faceAim(e,dt,to,3); return; }
     attackCycle(e,dt,holdBand(e,dt,to,d,n,f),()=>e.riffs>=2&&d<9?MS_ATK.solo:canFire(e)&&d<f*1.3?MS_ATK.riff:null,2.5); faceAim(e,dt,to,e.ph==='pos'?6:2); },
   /* Bass Brute: big and slow, walks up to you. His low-frequency rings roll out on every second beat; inside them you are 35% slower and your
-     dash recharges slower. No shots of his own. */
-  bass(e,dt,to,d,pd,m){ const want=d>e.def.hold?chase(e,e.speed,_sv):_sv.set(0,0,0); steer(e,want,dt,2); faceAim(e,dt,to,3);
+     dash recharges slower. In reach he plants and headbangs: a wide red cone in front of him, landing on the beat (MS_ATK.bang). */
+  bass(e,dt,to,d,pd,m){ e.bangT=(e.bangT||0)-dt; const want=d>e.def.hold?chase(e,e.speed,_sv):_sv.set(0,0,0);
+    attackCycle(e,dt,want,()=>e.see&&pd<e.def.cone[0]+.3?MS_ATK.bang:null,2); if(e.ph==='pos') faceAim(e,dt,to,3);
     if(BEAT.hit&&BEAT.idx%2===0){ e.ripT=0; if(pd<e.def.aura+2) shake=Math.max(shake,.06); }
     e.ripT=(e.ripT||0)+dt; if(!player.dead&&pd<e.def.aura) player.slowT=Math.max(player.slowT||0,.25); },
   /* Roadie: runs to a spot near the action and sets an amp down (it lands on the beat), up to def.amps at a time; with them out he keeps away */
@@ -304,47 +342,41 @@ const MS_AI={
     steer(e,holdBand(e,dt,to,d,n,f),dt,3); faceAim(e,dt,to,4); },
   // amp: lives 10 s, a yellow sound pulse rolls out of it on its beat of every bar
   amp(e,dt,to,d,pd,m){ e.vel.set(0,0,0); e.life-=dt; if(e.life<=0){ killEnemy(e,true); return; }
-    if(BEAT.hit&&(BEAT.idx+e.beatOff)%4===0&&!player.dead&&!e.hold){ shockwave(e.pos,9,3.2,MS_COL.yellow); e.jz.pop.v=-4; } },
+    if(BEAT.hit&&(BEAT.idx+e.beatOff)%4===0&&!player.dead&&!e.hold){ shockwave(e.pos,9,e.def.pulse,MS_COL.yellow); e.jz.pop.v=-4; } },
   /* Mosher: packs of 6-10 run at you and shove on the beat: little damage, a strong push; cornered against the edge or a block, the chains hurt */
   mosher(e,dt,to,d,pd,m){ steer(e,chase(e,e.speed,_sv),dt,3); if(e.vel.lengthSq()>.3) e.yaw=lerpAngle(e.yaw,Math.atan2(e.vel.x,e.vel.z),Math.min(1,dt*8));
     e.cd-=dt; if(!BEAT.hit||e.cd>0||player.dead||e.hold||pd>e.r+1.3) return;
     _tmp2.set(player.pos.x-e.pos.x,0,player.pos.z-e.pos.z).normalize(); const c=cornered(); player.kick.addScaledVector(_tmp2,c?5:10); contactHurt(e,c?12:4);
     e.cd=BEAT.spb*2-.05; e.shove=.25; e.jz.pop.v=-4; sfx('hit'); },
-  /* Pyro Tech: plants up to two flame jets near you and keeps away. Each jet fires on its own beat of a two-bar loop: the floor glows red for two
-     beats first (the tell), then fire. Kill him and his jets go out. */
-  pyro(e,dt,to,d,pd,m){ const [n,f]=e.def.band, T=tgt();
-    if(e.st==='plant'){ steer(e,_sv.set(0,0,0),dt,6); e.stT-=dt; if(e.stT<=0){ const j=buildPyroJet(); stageProp(e,j.g,e.jg.x,e.jg.z); e.jets.push({j,x:e.jg.x,z:e.jg.z,off:(e.jets.length*4+((Math.random()*4)|0))%8,warn:0,fire:0,cd:0}); e.st=''; e.jg=null; e.cd=rand(2.5,3.5); groundRing(new V3(j.g.position.x,0,j.g.position.z),MS_COL.red,2,.4); } return; }
-    e.cd-=dt;
-    if(e.jets.length<e.def.jets&&e.cd<=0&&!e.hold){ e.spotT=(e.spotT||0)-dt; if(!e.jg||e.spotT<=0){ e.jg=stageSpot(T,2.5,5); e.spotT=2; } steer(e,seek(e,e.jg.x,e.jg.z,e.speed,_sv),dt,4);
-      // at the spot, or on the way too long: plant it where he stands
-      if(Math.hypot(e.jg.x-e.pos.x,e.jg.z-e.pos.z)<1.2||e.cd<-3){ e.jg=new V3(e.pos.x,0,e.pos.z); e.st='plant'; e.stT=.7; } }
-    else steer(e,holdBand(e,dt,to,d,n,f),dt,3);
-    faceAim(e,dt,to,5);
-    for(const J of e.jets){ J.cd-=dt; J.fire-=dt;
-      if(BEAT.hit&&!e.hold){ const b=(BEAT.idx-J.off+800)%8; if(b===0) J.warn=BEAT.spb*2; if(b===2){ J.warn=0; J.fire=1.1; e.flareT=.4; sfx('torch'); } }
-      J.warn-=dt; const w=J.warn>0, on=J.fire>0; J.j.warn.material.opacity=w?.2+.5*Math.abs(Math.sin(e.t*18)):.12; J.j.edge.material.opacity=w?.95:.5; J.j.flame.visible=on;
-      if(on){ J.j.fl.forEach((fl,i)=>fl.scale.set(1+Math.sin(e.t*30+i)*.1,1+Math.sin(e.t*25+i)*.15,1)); if(!player.dead&&J.cd<=0&&Math.hypot(player.pos.x-J.x,player.pos.z-J.z)<1.3){ J.cd=.5; hurt(14); } } } },
+  /* Pyro Tech: holds lit fireworks and keeps his range (backs off when you close in). The rocket goes up in his hand with a thin orange line
+     toward you (the tell), then a volley of rockets flies at you on the beat with a spark trail and pops on impact (MS_ATK.rocket). */
+  pyro(e,dt,to,d,pd,m){ const [n,f]=e.def.band;
+    attackCycle(e,dt,holdBand(e,dt,to,d,n,f),()=>canFire(e)&&d<f*1.4?MS_ATK.rocket:null,3); faceAim(e,dt,to,e.ph==='pos'?5:3); },
   /* Lighting tech: hangs back where he can see you and turns the follow spot on you. The circle follows slowly; while you stand in it (and he
-     sees you: blocks cut the light) every enemy shot at you is 25% faster and better aimed (spotLit). Fragile. */
+     sees you: blocks cut the light) it turns red and burns on every beat (stageTick; several spots do not stack) and every enemy shot at you
+     is 25% faster and better aimed (spotLit). Fragile. */
   spot(e,dt,to,d,pd,m){ const [n,f]=e.def.band, T=tgt();
     if(!m.spot.userData.out){ m.spot.userData.out=1; m.g.remove(m.spot); stageProp(e,m.spot,e.pos.x,e.pos.z); e.sp=new V3(e.pos.x,0,e.pos.z); }
     steer(e,holdBand(e,dt,to,d,n,f),dt,3); faceAim(e,dt,to,4);
     const dx=T.x-e.sp.x, dz=T.z-e.sp.z, l=Math.hypot(dx,dz), st=Math.min(l,(e.stun>0?0:2.8)*dt); if(l>.01){ e.sp.x+=dx/l*st; e.sp.z+=dz/l*st; }
-    m.spot.position.set(e.sp.x,0,e.sp.z); m.spot.scale.setScalar(e.def.spot);
-    const lit=!player.dead&&e.see&&Math.hypot(player.pos.x-e.sp.x,player.pos.z-e.sp.z)<e.def.spot; if(lit) spotNext=true; m.spotFill.material.opacity=lit?.42+.1*Math.sin(e.t*10):.22;
+    m.spot.position.set(e.sp.x,0,e.sp.z); m.spot.scale.setScalar(e.def.spot[0]);
+    const lit=!player.dead&&e.see&&Math.hypot(player.pos.x-e.sp.x,player.pos.z-e.sp.z)<e.def.spot[0]; if(lit) spotNext=true;
+    m.spotFill.material.color.setHex(lit?0xff7a3a:0xfff0c0); m.spotRing.material.color.setHex(lit?0xff4a2a:0xfff0c0); m.spotFill.material.opacity=lit?.45+.15*Math.sin(e.t*14):.22;
     m.lamp.rotation.y=Math.atan2(e.sp.x-e.pos.x,e.sp.z-e.pos.z)-e.byaw; },
-  /* Stage Diver: jumps in from beyond the mat with his arms out; the red ring shows the landing a second before, he lands on a beat and the
-     crush wave rolls out. Then a second dazed (open), then fists; every few seconds he dives at you again. */
+  /* Stage Diver: jumps in from beyond the mat with his arms out and keeps leaping at you: the red ring marks the landing (where you are
+     heading) for a short moment, he lands on a beat and the crush wave rolls out. A moment dazed (open), a short brawl with his fists, then
+     the next leap (def.leap seconds). Landing spots stay off blocks. */
   diver(e,dt,to,d,pd,m){ const T=tgt();
     if(!m.land.userData.out){ m.land.userData.out=1; m.g.remove(m.land); stageProp(e,m.land,0,0); m.land.visible=false; }
-    const leap=from=>{ const to2=new V3(clamp(T.x+AIR.pv.x*.4,-AX+2,AX-2),0,clamp(T.z+AIR.pv.z*.4,-AZ+2,AZ-2)); e.leap={from,to:to2,t:0,dur:BEAT.until(1,1)}; e.st='leap';
-      m.land.position.set(to2.x,0,to2.z); m.land.scale.setScalar(3.2); m.land.visible=true; sfx('click'); };
+    const leap=from=>{ let to2=new V3(clamp(T.x+AIR.pv.x*.4,-AX+2,AX-2),0,clamp(T.z+AIR.pv.z*.4,-AZ+2,AZ-2)); if(inBlock(to2.x,to2.z,1.2)) to2=stageSpot(to2,1,3);
+      e.leap={from,to:to2,t:0,dur:BEAT.until(.55,1)}; e.st='leap'; m.land.position.set(to2.x,0,to2.z); m.land.scale.setScalar(3.2); m.land.visible=true; sfx('click'); };
     if(e.st==='enter'){ const sx=Math.abs(e.pos.x)>AX-2.5?Math.sign(e.pos.x):0, sz=sx?0:-1; leap(new V3(e.pos.x+sx*4,0,e.pos.z+sz*4)); }
     if(e.st==='leap'){ const L=e.leap; L.t+=dt; const k=Math.min(1,L.t/L.dur); e.vel.set(0,0,0); e.pos.lerpVectors(L.from,L.to,k); e.dropY=Math.sin(Math.PI*k)*5+(1-k)*1.5; e.dropV=0;
       e.yaw=Math.atan2(L.to.x-L.from.x,L.to.z-L.from.z); m.landFill.scale.setScalar(Math.max(.05,k)); m.land.children[0].material.opacity=.5+.4*Math.abs(Math.sin(e.t*18));
-      if(k>=1){ e.dropY=0; m.land.visible=false; shockwave(e.pos,12,3.2,0xff4a2a); shake=Math.max(shake,.3); e.jz.pop.v=-9; sparks(e.pos.clone().setY(.4),0xc8c0d0,8,6); sfx('boom'); e.st='daze'; e.stT=1; e.vulnT=1; dropToken(e); } return; }
-    if(e.st==='daze'){ e.vel.multiplyScalar(.8); e.stT-=dt; if(Math.random()<dt*10) sparks(e.pos.clone().setY(3.4),0xffd36a,1,2); if(e.stT<=0){ e.st='brawl'; e.diveT=rand(6,8); } return; }
+      if(k>=1){ e.dropY=0; m.land.visible=false; shockwave(e.pos,12,3.2,0xff4a2a); shake=Math.max(shake,.3); e.jz.pop.v=-9; sparks(e.pos.clone().setY(.4),0xc8c0d0,8,6); sfx('boom'); e.st='daze'; e.stT=.6; e.vulnT=.6; dropToken(e); } return; }
+    if(e.st==='daze'){ e.vel.multiplyScalar(.8); e.stT-=dt; if(Math.random()<dt*10) sparks(e.pos.clone().setY(3.4),0xffd36a,1,2); if(e.stT<=0){ e.st='brawl'; e.diveT=rand(e.def.leap[0],e.def.leap[1]); } return; }
     e.diveT-=dt;
+    // the next leap waits for a free attack token (and for a punch to finish); it is tried again every frame
     if(e.diveT<=0&&e.ph==='pos'&&!e.hold&&!player.dead&&takeToken(e)){ leap(e.pos.clone()); return; }
     attackCycle(e,dt,d>2?chase(e,e.speed,_sv):_sv.set(0,0,0),()=>!player.dead&&pd<2.9?MS_ATK.punch:null,4); faceAim(e,dt,to,8); },
 };
@@ -360,10 +392,12 @@ const POSE={
     else { pose(m,-.9,-.4+Math.sin(e.t*22)*.15,-.9,-1.2); bang(m.head,.5); }
     m.arms[0].rotation.z=-.2; m.arms[1].rotation.z=.25; m.strings.material.opacity=e.soloing?.6+.4*Math.sin(e.t*60):.4+hit*.6; if(e.ph==='tele') m.torso.rotation.x-=teleK(e)*.25; },
   bass(e,dt,m){ pose(m,-.6,-.5+Math.sin(e.t*10)*.06,-1.2,-1); m.arms[0].rotation.z=-.15; bang(m.head,.25);
+    if(e.ph==='tele'){ const k=teleK(e); m.head.rotation.x=-.7*k; m.torso.rotation.x-=.35*k; } else if(e.bangT>0){ const k=e.bangT/.45; m.head.rotation.x=1.1*k; m.torso.rotation.x+=.5*k; }
     m.rip.children.forEach((r,i)=>{ const k=((e.ripT||0)/(BEAT.spb*2)+i/3)%1; r.scale.setScalar(.8+k*(e.def.aura-1)); r.material.opacity=(1-k)*.55; }); },
   roadie(e,dt,m){ if(e.st==='set'){ pose(m,-1.4,-1.4,-.8,-.8); m.hips.position.y-=.45; m.torso.rotation.x+=.5; } else pose(m,-2.9,-2.9,-.4,-.4); },
   mosher(e,dt,m){ const hit=beatK(), sh=Math.max(0,e.shove||0); e.shove=sh-dt; m.torso.rotation.z=Math.sin(e.t*7)*.15; pose(m,-1.2+hit*.6-sh*4,-1.2-hit*.6-sh*4,-1.3+sh*3,-1.3+sh*3); bang(m.head,.4); },
-  pyro(e,dt,m){ e.flareT=(e.flareT||0)-dt; const up=e.flareT>0; pose(m,-.2,up?-2.9:-1.8,0,up?0:-.6); m.flare.scale.setScalar(up?2:1); if(e.st==='plant'){ m.hips.position.y-=.4; m.torso.rotation.x+=.45; } },
+  pyro(e,dt,m){ e.flareT=(e.flareT||0)-dt; const up=e.flareT>0; pose(m,-.2,up?-2.9:-1.8,0,up?0:-.6); m.flare.scale.setScalar(up?1.6+Math.random()*.8:1);
+    if(up&&Math.random()<dt*25){ m.flare.getWorldPosition(_tmp2); sparks(_tmp2.clone(),0xffb84a,1,2); } },
   spot(e,dt,m){ pose(m,-1,-1.1,-.7,-.6); m.arms[1].rotation.z=.4; },
   diver(e,dt,m){ if(e.st==='leap'||e.st==='enter'){ pose(m,-1.6,-1.6,0,0); m.arms[0].rotation.z=-1.2; m.arms[1].rotation.z=1.2; m.torso.rotation.x=.5; m.legs[0].rotation.x=m.legs[1].rotation.x=.4; }
     else if(e.st==='daze'){ pose(m,-.3,-.3,-.2,-.2); m.head.rotation.z=Math.sin(e.t*6)*.25; }

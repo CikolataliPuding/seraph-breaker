@@ -65,9 +65,13 @@ function procOk(id){
 /* ================= ENEMY SCALING ================= */
 const growth=(g,ri)=>Math.pow(1+g,ri);
 /* armor (hp) and damage multipliers for room index ri (0-based) of arena a; boss rooms use the same curve divided by its room 10 value.
-   An arena with roomK (Main Stage) runs the curve roomK rooms per room, and wf (0..1, the wave inside the room) climbs within a room. */
-function enemyScale(a,ri,rule,wf){ const A=ARENAS[a], hm=rule&&rule.hpMul||1, dm=A.dmgMul||1, fin=ri>=A.rooms-1, x=A.roomK?(ri+(wf||0))*A.roomK:ri;
-  return {hp:A.hpMul*growth(SCALE.hp,x)*hm, dmg:dm*growth(SCALE.dmg,x),
+   An arena with roomK (Main Stage) runs the curve roomK rooms per room, and wf (0..1, the wave inside the room) climbs within a room.
+   mobCurve (Main Stage): the room mobs follow their own curve instead, [start, growth per room up to the knee, growth after it] for armor and
+   damage (ri + wf rooms in), so the stage climbs steadily from room 1; past the knee (the pilot hits the level cap there) it climbs slower.
+   The boss keeps the roomK curve. */
+const kneeCurve=(c,xr,knee)=>c[0]*Math.pow(c[1],Math.min(xr,knee))*Math.pow(c[2],Math.max(0,xr-knee));
+function enemyScale(a,ri,rule,wf){ const A=ARENAS[a], hm=rule&&rule.hpMul||1, dm=A.dmgMul||1, fin=ri>=A.rooms-1, x=A.roomK?(ri+(wf||0))*A.roomK:ri, mc=A.mobCurve, xr=ri+(wf||0);
+  return {hp:(mc?kneeCurve(mc.hp,xr,mc.knee):A.hpMul*growth(SCALE.hp,x))*hm, dmg:mc?kneeCurve(mc.dmg,xr,mc.knee):dm*growth(SCALE.dmg,x),
     boss:A.bossMul*growth(SCALE.hp,x)/growth(SCALE.hp,SCALE.bossRef)*hm*(fin?SCALE.finalHp:1), bossDmg:dm*growth(SCALE.dmg,x)/growth(SCALE.dmg,SCALE.bossRef)*(fin?SCALE.finalDmg:1)}; }
 // enemy budget for a room (sum of ENEMY cost); grows slowly next to the exponential armor curve
 function roomBudget(a,ri,elite){ const B=SCALE.budget; return (B.base+a*B.arena+(ri+1)*B.room)*(elite?B.elite:1); }

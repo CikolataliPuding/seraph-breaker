@@ -170,9 +170,12 @@ function stageWaves(dt){
   if(S.breath<=0){ S.breath=null; room.timer=null; S.w++; room.waveF=S.w/S.n; const list=spawnQ.shift(), enc=list.filter(t=>STAGE.band.includes(t.replace('*',''))).length>=STAGE.band.length;
     spawnWave(list,'gate'); toast(enc?'Encore':`Wave ${S.w+1}/${S.n}`,enc?'The whole band is on stage':''); sfx('door'); refreshControls(); }
 }
-// every frame in a Main Stage room: the drummer speeds the band up while he plays, the festival lights move
+/* every frame in a Main Stage room: the drummer speeds the band up while he plays, his sky drops fall, the festival lights move. A follow spot
+   (spotLit) burns on every beat once you have been inside it for spotGrace seconds; standing in several at once burns like one. */
 function stageTick(dt){
   if(!BEAT.force) AU.tempoK=enemies.some(e=>e.type==='drummer'&&!e.dead)?STAGE.drumTempo:1;
+  updateSkyDrops(dt);
+  if(player&&!player.dead){ player.spotIn=spotLit?(player.spotIn||0)+dt:0; if(BEAT.hit&&player.spotIn>=STAGE.spotGrace){ dotHurt(ENEMY.spot.spot[1]); sparks(player.pos.clone().setY(1),0xff7a3a,4,3); } }
   if(stageDecor&&stageDecor.g.parent) animateHighCoArena(stageDecor,playTime,0);
 }
 const fightTrack=()=>ARENAS[stage]&&ARENAS[stage].stage?'stage':'battle';
@@ -202,6 +205,8 @@ function startRoom(i,force){
   logRoomStart(type);
   $('fade').classList.remove('on');
   const tag=`Room ${i+1}/${sortie.N}`;
+  // Main Stage: no Sanctuary on the way, so the crew patches the pilot up backstage before the headliner (STAGE.bossRepair of max armor)
+  if(type==='boss'&&ARENAS[stage].stage){ player.hp=Math.min(player.maxHp,player.hp+player.maxHp*STAGE.bossRepair*player.st.heal); toast('Backstage repair',`+${Math.round(STAGE.bossRepair*player.st.heal*100)}% armor`); }
   if(type==='boss'){ snapBoss(); $('warnTxt').textContent=BOSSES[room.boss].warn; setState('warn'); stateT=2.2; $('warn').hidden=false; playTrack('boss'); sfx('beam'); refreshControls(); return; }
   setState('fight'); playTrack(fightTrack());
   if(type==='angel'){ spawnNpc('angel',new V3(0,0,-2)); openDoor(); toast('Sanctuary',tag); }

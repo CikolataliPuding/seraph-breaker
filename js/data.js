@@ -180,11 +180,13 @@ const XP_NEED={base:6,per:.35}, XP_BOSS=10;
 /* economy: target earnings for one full run of each arena without gold bonuses (first-clear diamonds come on top, once).
    The per-kill, boss and clear numbers below are tuned so a full run lands near the targets (check with DBG.sim()). */
 const ECON={
-  target:{gold:[1200,2000,3000,4000,4800],gems:[30,45,60,80,95]},
-  killGold:[.9,.8,.8,1,1.65],         // × ENEMY gold per arena (Main Stage: fewer, tougher kills in long wave rooms)
+  // Main Stage: Arena 4's gold and diamonds per minute (≈125 gold, ≈2.4 diamonds) over its ≈29 min run (15 rooms × par 95 s + High-Co)
+  target:{gold:[1200,2000,3000,4000,3600],gems:[30,45,60,80,70]},
+  killGold:[.9,.8,.8,1,1.07],         // × ENEMY gold per arena (Main Stage: fewer, tougher kills in long wave rooms)
   bossGold:[.55,.4,.26,.4,.5],        // × BOSSES gold per arena
-  bossGems:[.28,.25,.14,.22,1],       // × BOSSES gems per arena, paid on the kill (the Main Stage has one boss, so he pays the run's share)
-  clearGold:[6,9,12,15,45],           // per cleared combat/elite room (Main Stage rooms are long wave sets)
+  bossGems:[.28,.25,.14,.22,.75],     // × BOSSES gems per arena, paid on the kill (the Main Stage has one boss, so he pays the run's share)
+  clearGold:[6,9,12,15,35],           // per cleared combat/elite room (Main Stage rooms are long wave sets)
+  healChance:[.12,.12,.12,.12,.05],   // a kill drops a repair pickup (+14% armor); Main Stage rooms have 15-30 kills each, so it is rarer there
   gemChance:{small:.008,big:.03,elite:.2},
   firstClear:a=>40+30*a, repeatClear:a=>5+5*a,
   // farm check (tester.js farmMul): gold and diamonds when replaying an arena 0 / 1 / 2+ below your highest unlocked one
@@ -236,8 +238,11 @@ const ARENAS=[
    colorCss:'#b070ff'},
   /* Main Stage (High-Co's festival): unlocked by Arena 4's first clear, one notch above it. 15 wave rooms (STAGE) and High-Co after room 15
      (rooms counts the boss room, like the other arenas). roomK: the enemy curve runs roomK rooms per room (and per wave inside it, see
-     enemyScale), so the 15 long rooms climb like Arena 4's 50 short ones. par: seconds per room for the run score's speed bonus. */
-  {name:'Main Stage', rooms:16, roomsTxt:'15 ROOMS + BOSS', hpMul:2.2, dmgMul:1.6, bossMul:1.7, roomK:3.3, par:95, stage:true, mobs:['roadie','bass','spot','mosher','dancer','pyro','shredder','diver','drummer'], bosses:['highco'], rule:{beatSync:true}, trap:'spike', ruleTxt:'Beat sync: attacks lock to the music, a dash on the beat dodges twice as wide',
+     enemyScale), so the 15 long rooms climb like Arena 4's 50 short ones; that curve is now only High-Co's. mobCurve: the wave mobs' own armor and
+     damage curve, [start, growth per room up to knee, growth after] (balance.js kneeCurve): the knee is where the pilot hits the level cap, so the
+     mobs stop outgrowing him there. Tuned with the autopilot (DBG.stageCheck): an average pilot loses 15-25% armor per room early,
+     30-45% late. par: seconds per room for the run score's speed bonus. */
+  {name:'Main Stage', rooms:16, roomsTxt:'15 ROOMS + BOSS', hpMul:2.2, dmgMul:1.6, bossMul:1.7, roomK:3.3, mobCurve:{hp:[4,1.12,1.04],dmg:[3.4,1.075,1.07],knee:11}, par:95, stage:true, mobs:['roadie','bass','spot','mosher','dancer','pyro','shredder','diver','drummer'], bosses:['highco'], rule:{beatSync:true}, trap:'spike', ruleTxt:'Beat sync: attacks lock to the music, a dash on the beat dodges twice as wide',
    theme:{bg:0x120a1c,hemiS:0xf0d0e4,hemiG:0x1c1028,ground:0x2a2032,city:0x5a3e68,edge:0xff3aa8,rim:0xffb84a,win:0xffb84a,floor:0x4a4054,wall:0x1e1826,block:0x1e1826,water:0xff3aa8},
    colorCss:'#ff3aa8'},
 ];
@@ -273,18 +278,20 @@ const ENEMY={
   ophan:{name:'Ophan',tag:'move',mass:2,role:'charger',band:[6,10],hp:16,r:1.8,speed:11,sc:1,angel:true,cost:2.8,xp:3,gold:16,score:320,build:()=>buildOphan(1),init:e=>{ e.st='pause'; e.stT=rand(1,2); }},
   /* Main Stage cast (docs/main-stage.html, Main Stage only; behavior in enemy-ai.js). group 'band': the four musicians (Encore = all of them),
      the rest is stage crew and crowd. Every attack lands on a beat of the live music (BEAT in audio.js). still: never moves (no body lean).
-     seat: placed on an open spot instead of a gate (rooms.js seatSpot) · aura: Bass Brute slow radius · amps: amps a Roadie keeps out at once · jets: flame jets per Pyro Tech · spot: follow spot radius.
-     xp is half again a normal mob's: the Main Stage has no angels and one boss, so the pilot levels from the waves. */
-  bass:{name:'Bass Brute',group:'band',tag:'focus',mass:3,role:'tank',hold:4.5,aura:6.5,hp:18,r:1.5,speed:1.9,sc:1.45,cost:2.4,xp:3.9,gold:15,score:300,build:()=>buildBassist(),init:e=>{ e.cd=2; }},
-  dancer:{name:'Pulse Dancer',group:'band',tag:'move',mass:.6,role:'flanker',band:[4.5,6.5],hp:8,r:1.1,speed:5,sc:1.15,cost:1.8,xp:2.7,gold:11,score:220,build:()=>buildDancer(),init:e=>{ e.cd=rand(1,2); e.st='dance'; }},
-  shredder:{name:'Shredder',group:'band',tag:'move',mass:1.2,role:'kiter',band:[6,10],hp:11,r:1.15,speed:3.4,sc:1.2,cost:2.6,xp:3.9,gold:15,score:300,build:()=>buildShredder(),init:e=>{ e.cd=rand(1.2,2); e.riffs=0; }},
-  drummer:{name:'Drummer',group:'band',tag:'focus',mass:9,role:'artillery',slam:7.5,hp:18,r:1.9,speed:0,sc:1.1,still:true,seat:true,cost:3,xp:4.5,gold:18,score:340,build:()=>buildDrummer()},
-  roadie:{name:'Roadie',tag:'focus',mass:.9,role:'support',band:[8,12],amps:3,hp:6,r:1,speed:6,sc:1.1,cost:1.2,xp:1.65,gold:8,score:140,build:()=>buildHauler(),init:e=>{ e.cd=rand(.6,1.2); e.st='run'; }},
-  amp:{name:'Amp',mass:9,role:'static',hp:1,r:.9,speed:0,sc:1,still:true,cost:0,xp:0,gold:0,score:20,build:()=>buildAmp(),elite:false,init:e=>{ e.life=10; e.noLoot=true; e.beatOff=(Math.random()*4)|0; }},
-  mosher:{name:'Mosher',tag:'move',mass:.8,role:'rusher',hp:4,r:.95,speed:5.4,sc:1.05,cost:.45,xp:0.6,gold:3,score:60,build:()=>buildMosher(),elite:false,init:e=>{ e.cd=0; }},
-  pyro:{name:'Pyro Tech',tag:'move',mass:1,role:'denial',band:[8,11],jets:2,hp:7,r:1,speed:4.2,sc:1.1,cost:1.5,xp:2.25,gold:10,score:200,build:()=>buildPyro(),init:e=>{ e.jets=[]; e.cd=rand(.8,1.5); }},
-  spot:{name:'Lighting Tech',tag:'focus',mass:1,role:'support',band:[8,12],spot:2,hp:3,r:1,speed:3,sc:1.1,cost:1.2,xp:1.8,gold:9,score:160,build:()=>buildSpot()},
-  diver:{name:'Stage Diver',tag:'move',mass:1.3,role:'charger',hp:10,r:1.15,speed:4.8,sc:1.2,cost:2,xp:3,gold:12,score:240,build:()=>buildDiver(),init:e=>{ e.st='enter'; e.cd=rand(.6,1.2); }},
+     seat: placed on an open spot instead of a gate (rooms.js seatSpot) · aura: Bass Brute slow radius · cone: Bass Brute headbang [reach, arc in rad, damage]
+     amps: amps a Roadie keeps out at once · pulse: amp sound burst radius · rockets: Pyro Tech firework [speed, damage, per volley] · spot: follow spot [radius, burn per beat]
+     meteors: Drummer sky drops [markers per volley, radius, damage] · leap: Stage Diver [seconds between leaps min, max].
+     xp: about 0.9× a normal mob's (×1.48 for arena 5 on top), so the pilot hits the stage level cap (STAGE.lvCap) around rooms 12-13. */
+  bass:{name:'Bass Brute',group:'band',tag:'focus',mass:3,role:'tank',hold:4.5,aura:6.5,cone:[6.5,1,14],hp:18,r:1.5,speed:1.9,sc:1.45,cost:2.4,xp:2.34,gold:15,score:300,build:()=>buildBassist(),init:e=>{ e.cd=2; }},
+  dancer:{name:'Pulse Dancer',group:'band',tag:'move',mass:.6,role:'flanker',band:[4.5,6.5],hp:8,r:1.1,speed:6,sc:1.15,cost:1.8,xp:1.62,gold:11,score:220,build:()=>buildDancer(),init:e=>{ e.cd=rand(1,2); e.st='dance'; }},
+  shredder:{name:'Shredder',group:'band',tag:'move',mass:1.2,role:'kiter',band:[6,10],hp:11,r:1.15,speed:3.4,sc:1.2,cost:2.6,xp:2.34,gold:15,score:300,build:()=>buildShredder(),init:e=>{ e.cd=rand(1.2,2); e.riffs=0; }},
+  drummer:{name:'Drummer',group:'band',tag:'focus',mass:9,role:'artillery',slam:7.5,meteors:[3,1.7,16],hp:18,r:1.9,speed:0,sc:1.1,still:true,seat:true,cost:3,xp:2.7,gold:18,score:340,build:()=>buildDrummer()},
+  roadie:{name:'Roadie',tag:'focus',mass:.9,role:'support',band:[8,12],amps:3,hp:6,r:1,speed:6,sc:1.1,cost:1.2,xp:0.99,gold:8,score:140,build:()=>buildHauler(),init:e=>{ e.cd=rand(.6,1.2); e.st='run'; }},
+  amp:{name:'Amp',mass:9,role:'static',pulse:4.8,hp:1,r:.9,speed:0,sc:1,still:true,cost:0,xp:0,gold:0,score:20,build:()=>buildAmp(),elite:false,init:e=>{ e.life=10; e.noLoot=true; e.beatOff=(Math.random()*4)|0; }},
+  mosher:{name:'Mosher',tag:'move',mass:.8,role:'rusher',hp:4,r:.95,speed:5.4,sc:1.05,cost:.45,xp:0.36,gold:3,score:60,build:()=>buildMosher(),elite:false,init:e=>{ e.cd=0; }},
+  pyro:{name:'Pyro Tech',tag:'move',mass:1,role:'denial',band:[8,11],rockets:[12,11,2],hp:7,r:1,speed:4.2,sc:1.1,cost:1.5,xp:1.35,gold:10,score:200,build:()=>buildPyro(),init:e=>{ e.cd=rand(.8,1.5); }},
+  spot:{name:'Lighting Tech',tag:'focus',mass:1,role:'support',band:[8,12],spot:[2.4,6],hp:3,r:1,speed:3,sc:1.1,cost:1.2,xp:1.08,gold:9,score:160,build:()=>buildSpot()},
+  diver:{name:'Stage Diver',tag:'move',mass:1.3,role:'charger',leap:[1.4,2.2],hp:10,r:1.15,speed:4.8,sc:1.2,cost:2,xp:1.8,gold:12,score:240,build:()=>buildDiver(),init:e=>{ e.st='enter'; e.cd=rand(.6,1.2); }},
 };
 /* enemy AI by arena (index = arena). react: seconds an enemy must see you before it fires · lead: how much of your movement its aim and charges
    predict (0 = where you are, 1 = perfect intercept; arena 1 barely leads) · aggr: how often flankers go for your back and tanks push in · tokens: enemies that may attack at once
@@ -349,12 +356,19 @@ const ROOM_KINDS={
    elite from encore.elite). unlock: the first room each mob can show up in (band members one at a time, crew fills the budget). */
 const STAGE={
   waves:[2,2,3,3,3,3,4,4,4,4,4,5,5,5,5],
-  budget:{base:3,room:.3,wave:.5}, cap:[9,11], breather:[3,4],
+  budget:{base:4.2,room:.3,wave:.4}, cap:[9,11], breather:[3,4],
   band:['bass','dancer','shredder','drummer'], crew:['roadie','spot','pyro','diver'],
   unlock:{bass:1,roadie:1,spot:2,dancer:3,pyro:4,mosher:5,shredder:6,diver:7,drummer:9},
-  mosh:{from:5,every:3,size:[6,10],sizeM:[6,8]}, encore:{from:11,elite:13},
+  // encore.elite: the first room whose Encore has an elite band member (16 = none: the full band plus an elite at the level cap was the wall)
+  mosh:{from:5,every:3,size:[6,10],sizeM:[6,8]}, encore:{from:11,elite:16},
   // Ritim senkronu: the beat counts as hit when the dash lands within win seconds of it; the drummer raises the band's tempo by drumTempo while he lives
   beatWin:.11, drumTempo:1.15, ampMax:6,
+  // pilot level cap on the Main Stage (HUD: MAX LVL; xp past it is dropped, no more cards). With the xp above it is reached around rooms 12-13.
+  lvCap:30,
+  // armor repaired on entering High-Co's room (share of max armor, the tree's Repair applies): the stage has no Sanctuary rooms
+  bossRepair:.5,
+  // follow spot: seconds inside before the first burn · Drummer sky drop markers alive at once [phone, desktop]
+  spotGrace:.25, meteorMax:[6,10],
 };
 /* pacing inside every 10-room block (index = position in the block, 10 = boss): the kinds it can roll and a budget multiplier.
    Tension comes in waves: a breather after the boss, a first spike, the angel, a climb, a hard room and a teaching room before the next boss. */
@@ -403,10 +417,14 @@ const BOSSES={
     pool:[['beam','hcslam','scream','headbang','pole'],['sweep','scream','headbang','pole','headbang'],['sweep','hcslam','scream','headbang','pole','pillars','pillars']],
     /* forms: hp = share of the boss armor (hp above × the room curve), dmg = multiplier on every hit the pilot takes in his room, capped at hitCap
        (raw, before the room curve: 30 = the hardest existing boss hit, his own point-blank Metal Scream), breath = pause between attacks
-       (other bosses: 0.9 / 0.7 / 0.5 s), spd = walk speed multiplier, regen = draws power from the crowd (regen below), bar/col = HUD bar and effects */
-    forms:[{name:'White',hp:.28,dmg:1.3,breath:.42,spd:1.1,bar:'#ffb04a',col:0xffa040},
-           {name:'Black Angel',hp:.28,dmg:.7,breath:.8,spd:.9,regen:true,bar:'#a58cff',col:0xd9c9ff},
-           {name:'Red Rage',hp:.32,dmg:1.3,breath:.36,spd:1.2,regen:true,bar:'#ff2a3a',col:0xff2030}],
+       (other bosses: 0.9 / 0.7 / 0.5 s), spd = walk speed multiplier, regen = draws power from the crowd (regen below), bar/col = HUD bar and effects.
+       Fight length at the stage level cap (lv 30, max Core + tree, DBG.hcSim with regen): average pilot (≈64 dps on him) I 2:00 · II 2:00 · III 2:15,
+       skilled (≈110-150 dps) I 0:50-1:10 · II 0:50-1:15 · III 1:00-1:15. The music loops are sized on the average column.
+       dmg is set for that pilot (≈690 armor at the cap): a beam or a Metal Scream takes ≈10-13% armor, the encore band ≈6%; the threat is ≈6
+       minutes of it after 15 rooms (the stage curve and odds: DBG.stageCheck). */
+    forms:[{name:'White',hp:.28,dmg:.29,breath:.42,spd:1.1,bar:'#ffb04a',col:0xffa040},
+           {name:'Black Angel',hp:.23,dmg:.165,breath:.8,spd:.9,regen:true,bar:'#a58cff',col:0xd9c9ff},
+           {name:'Red Rage',hp:.25,dmg:.32,breath:.36,spd:1.2,regen:true,bar:'#ff2a3a',col:0xff2030}],
     hitCap:30,
     /* crowd regen (forms II and III): every cd s (by form) he raises his arms (tele s), the three crowd sections light up and send light streams to
        him for dur s. Each live stream heals rate × form armor per second. Hitting him while he channels cuts the streams: every cut × form armor

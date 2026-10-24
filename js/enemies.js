@@ -140,7 +140,7 @@ function killEnemy(e,byProc){
   dropGold(e.pos,g,'kill');
   if(Math.random()<(e.elite?gc.elite:def.cost>=2.5?gc.big:gc.small)*rw*sortie.farm) dropPick(e.pos,'gem',1);
   if(e.elite&&Math.random()<.25) dropItem(e.pos);
-  if(Math.random()<.12*rw) dropPick(e.pos,'heal',.14);
+  if(Math.random()<ECON.healChance[stage]*rw) dropPick(e.pos,'heal',.14);
   if(def.xp) gainXp(def.xp*mul*(1+sortie.a*.12)*rw);
 }
 function dropPick(pos,kind,v,src){
