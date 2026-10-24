@@ -83,6 +83,7 @@ function hitEnemy(e,d,pos,dot,noProc,flat){
   if(rs.headshot&&!dot&&e!==boss&&!e.elite&&Math.random()<Math.min(BAL.cap.headshot,.015*rs.headshot)){ d=e.hp+1; crit=true; sparks(pos,0xffffff,10,8); }
   if(sortie) sortie.dmgDealt=(sortie.dmgDealt||0)+Math.max(0,Math.min(d,e.hp));
   e.hp-=d;
+  if(e===boss&&e.streams) hcStreamHit(e,d); // High-Co: hitting him while he channels cuts the crowd streams
   if(e.model.breaks&&e!==boss&&e.hp>0) breakParts(e);
   if(!(player.od>0||player.lance>0)) player.sp=Math.min(100,player.sp+d*.55*player.st.sp);
   if(!dot||Math.random()<.12) flashModel(e);

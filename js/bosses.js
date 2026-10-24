@@ -51,6 +51,7 @@ function bossStartAttack(b){
   if(['summon','drones','sparks'].includes(a)&&enemies.length>5) a=pool.find(x=>!['summon','drones','sparks'].includes(x))||pool[0];
   if(a==='eyes'&&b.model.eyes&&!b.model.eyes.some(e=>e.alive)) a='walls';
   if(a==='burst'&&!b.model.muzzle) a='aimed';
+  if(b.def.forms&&hcDrainReady(b)) a='hcdrain'; // High-Co forms II/III: crowd regen when it is off cooldown
   b.atk=a; b.lastAtk=a; b.atkT=0; b.subT=0; b.grp=0; b.bn=0; b.slam=0; b.slam2=-1; b.waved=0; b.wallA=[rand(0,6),rand(0,6),rand(0,6)];
   if(a==='beam') b.beam={t:0,fire:false,dir:toDir(b),sweep:0,tele:1.1,dur:.9};
   if(a==='sweep'){ const d=toDir(b),s=Math.random()<.5?-1:1,ang=Math.atan2(d.x,d.z)-s*1.15; b.beam={t:0,fire:false,dir:new V3(Math.sin(ang),0,Math.cos(ang)),sweep:s*(b.phase===3?1.7:1.4),tele:.9,dur:1.6}; }
@@ -230,7 +231,7 @@ const HC_BEAM_GEO=new THREE.CylinderGeometry(1,1,60,20,1,true);
 function hcBeam(pos,color,r,life){ const m=new THREE.Mesh(HC_BEAM_GEO,addMat(color,.55)); m.position.set(pos.x,30,pos.z);
   addFx(m,life,(f,dt,k)=>{ m.material.opacity=.55*Math.min(1,k*2); const w=(.5+.5*k)*r; m.scale.set(w,1,w); },'mat'); }
 function highcoStartAttack(b,a){
-  b.hb=0; b.scr=0; b.poled=0;
+  b.hb=0; b.scr=0; b.poled=0; if(a==='hcdrain') hcStreamsStart(b);
   if(a==='hcslam'){ const T=tgt(); b.stomp={from:b.pos.clone(),to:new V3(clamp(T.x,-AX+3,AX-3),0,clamp(T.z,-AZ+3,AZ-3))}; slamTele(b.stomp.to,HC_SLAM_R,1.1,.6); }
   if(a==='pole'){ const T=tgt(); let x=0,z=0; for(let k=0;k<20;k++){ const an=rand(0,Math.PI*2), r=rand(1.5,4); x=clamp(T.x+Math.cos(an)*r,-AX+2.5,AX-2.5); z=clamp(T.z+Math.sin(an)*r,-AZ+2.5,AZ-2.5); if(!inBlock(x,z,1.5)) break; }
     b.poleAt=new V3(x,0,z); slamTele(b.poleAt,HC_POLE_R,.9,.2); }
@@ -254,9 +255,10 @@ function highcoTick(b,dt,ph){
     case 'pole': if(b.atkT>=.9&&!b.poled){ b.poled=1; hcPole(b,b.poleAt); } return b.atkT>1.2;
     case 'pillars':{ for(const q of b.pq) if(!q.done&&b.atkT>=q.t){ q.done=true; hcBeam(new V3(q.x,0,q.z),0xff2030,1.4,.5); shake=Math.max(shake,.25); } return b.atkT>b.pq[b.pq.length-1].t+.3; }
     // between forms: the old body's debris settles, then the next form's entrance starts
+    case 'hcdrain': return hcDrainTick(b,dt);
     case 'hcform':{ b.hp=0; if(b.atkT>=b.formWait){ b.atk='hcdescend'; b.atkT=0; b.model.g.visible=b.model.shadow.visible=true; hcEntrance(b); } return false; }
     // form II / III entrance: drops down the light column (immune until it lands, the bar fills on the way down)
-    case 'hcdescend':{ const D=HC_DESC[ph-1], k=Math.min(1,b.atkT/D); b.y=26*(1-k)*(1-k); if(b.immune) b.hp=Math.max(1,b.maxHp*k);
+    case 'hcdescend':{ const D=HC_DESC[ph-1], k=Math.min(1,b.atkT/D); b.y=26*(1-k)*(1-k); if(k<1) hcFeathers(b,dt); if(b.immune) b.hp=Math.max(1,b.maxHp*k);
       if(k>=1&&b.immune){ b.immune=false; b.hp=b.maxHp; b.y=0; hcLand(b); } return b.atkT>D+.3; }
   }
   return true;
@@ -321,6 +323,8 @@ const HC_DESC=[0,2.2,1.5]; // entrance descent time per form (form I parachutes 
    also drops all screen shake for reduced motion). HC_CAM: a short camera hold on a point with a zoom punch, read by main.js. */
 const REDUCED_MOTION=!!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches);
 const hcFeel=()=>REDUCED_MOTION?0:mobileMode?.55:1;
+// crowd and stage hype (animateHighCoArena reads a.hype; 2 = the final form's roar)
+function hcCrowd(lvl){ if(hcArena) hcArena.hype=Math.max(hcArena.hype||0,lvl); sfx(lvl>=2?'roar':'crowd'); }
 const hcShake=v=>{ shake=Math.max(shake,v*hcFeel()); };
 const HC_CAM={t:0,zoom:1,pos:new V3()};
 function hcCam(pos,zoom,t){ if(REDUCED_MOTION) return; HC_CAM.pos.set(pos.x,0,pos.z); HC_CAM.zoom=1+(zoom-1)*(mobileMode?.5:1); HC_CAM.t=t; }
@@ -338,14 +342,65 @@ function hcDrop(b,dt){
   const n=mobileMode?10:18; for(let i=0;i<n;i++){ const a=i/n*Math.PI*2; dustPuff(p.x+Math.cos(a)*3.2,p.z+Math.sin(a)*3.2,1.5); }
   const w=new THREE.Mesh(G.ring,addMat(0xfff0d0,.8)); w.rotation.x=-Math.PI/2; w.position.set(p.x,.1,p.z);
   addFx(w,.9,(f,dt,k)=>{ w.scale.setScalar(2+(1-k)*26); w.material.opacity=.8*k*k; });
-  hcCam(p,1.4,.9); if(typeof hcCrowd==='function') hcCrowd(1);
+  hcCam(p,1.4,.9); hcCrowd(1);
 }
-function hcEntrance(b){ const c=b.def.forms[b.phase-1].col; hcBeam(b.pos,c,2.4,HC_DESC[b.phase-1]+.4); }
-function hcLand(b){ const c=b.def.forms[b.phase-1].col; groundRing(b.pos,c,10,1); crossBlast(b.pos.clone(),c,1.2); hcShake(.7); b.jz.pop.v=-8; }
-function hcStreamsEnd(b){ b.streams=null; }
+/* forms II and III come down a light column. II, the black angel: a wide pale column with a white core, black feathers drifting down,
+   the camera holds on him. III, rage: eight red pillars ring the mat first, then a red column; shorter and harder. */
+function hcEntrance(b){ const ph=b.phase, c=b.def.forms[ph-1].col, D=HC_DESC[ph-1], p=b.pos;
+  hcBeam(p,c,ph===3?2.8:3.4,D+.5); hcBeam(p,0xffffff,1.1,D+.3); hcCam(p,1.3,D+.4); hcShake(.35); sfx('beam');
+  if(ph===3) for(let i=0;i<8;i++){ const a=i/8*Math.PI*2, q=new V3(clamp(p.x+Math.cos(a)*7,-AX+1,AX-1),0,clamp(p.z+Math.sin(a)*7,-AZ+1,AZ-1)); hcBeam(q,c,.9,D*.8); groundRing(q,c,2.4,D*.8); }
+  hcCrowd(ph===3?2:1); }
+function hcLand(b){ const ph=b.phase, c=b.def.forms[ph-1].col, p=b.pos;
+  groundRing(p,c,16,1.1); groundRing(p,0xffffff,8,.7); crossBlast(p.clone(),c,1.4); hitstop(90,true); hcShake(ph===3?1.2:1); buzz(180); sfx('bigboom'); b.jz.pop.v=-9;
+  const n=mobileMode?8:14; for(let i=0;i<n;i++){ const a=i/n*Math.PI*2; dustPuff(p.x+Math.cos(a)*3,p.z+Math.sin(a)*3,1.3); }
+  hcCam(p,1.4,.8); hcCrowd(ph===3?2:1); }
+// falling feathers during the black angel's descent
+function hcFeathers(b,dt){ if(Math.random()<dt*(mobileMode?8:18)) sparks(new V3(b.pos.x+rand(-3,3),b.y+rand(2,8),b.pos.z+rand(-3,3)),b.phase===3?0x9a1424:0x16121c,1,2); }
+
+/* ---- crowd regen (forms II and III, numbers in BOSSES.highco.regen) ----
+   'hcdrain': arms up, the three crowd sections behind the front barrier light up (tele), then each sends a light stream to him and every
+   live stream heals him. Counterplay: hit him while he channels. Every regen.cut × form armor of damage breaks one stream (a big hit can break
+   several at once); with all three broken the channel ends and he staggers (b.vuln: +60% damage taken). Healing stops at regen.cap × form
+   armor per form, never runs while he is immune, and every live stream goes away when the form dies. HC_REGEN_ON: debug toggle. */
+let HC_REGEN_ON=true;
+const HC_STREAM_GEO=new THREE.CylinderGeometry(1,1,1,8,1,true);
+const hcRegenLeft=b=>b.def.regen.cap*b.maxHp-b.regenUsed;
+function hcDrainReady(b){ const f=b.def.forms[b.phase-1]; return f.regen&&HC_REGEN_ON&&!b.immune&&b.drainCd<=0&&hcRegenLeft(b)>b.maxHp*.02&&b.hp<b.maxHp*.92; }
+function hcStreamsStart(b){
+  const R=b.def.regen, c=b.def.forms[b.phase-1].col; b.drainCd=R.cd[b.phase-1]; b.drainHit=0; b.streams=[];
+  for(let i=0;i<R.streams;i++){ const x=(i-(R.streams-1)/2)*AX*2/R.streams, src=new V3(x,1.6,AZ+2.6);
+    const mat=addMat(c,.2), line=new THREE.Mesh(HC_STREAM_GEO,mat), glowM=addMat(c,.5), glow=new THREE.Mesh(G.plane,glowM);
+    glow.rotation.x=-Math.PI/2; glow.position.set(x,.06,AZ+2.4); glow.scale.set(AX*2/R.streams-.6,3.4,1);
+    const orbs=[0,1,2].map(()=>{ const o=new THREE.Mesh(G.orb,mat); roomGroup.add(o); return o; });
+    roomGroup.add(line,glow); b.streams.push({src,line,glow,orbs,mat,glowM,alive:true}); groundRing(new V3(x,0,AZ-.5),c,3,.8); }
+  hcCrowd(1);
+}
+function hcStreamsEnd(b,cutFx){ if(!b.streams) return;
+  for(const s of b.streams){ if(cutFx&&s.alive) sparks(s.src.clone().setZ(AZ-.5),0xffffff,6,6); roomGroup.remove(s.line,s.glow,...s.orbs); s.mat.dispose(); s.glowM.dispose(); }
+  b.streams=null; $('bossBar').classList.remove('regen'); }
+// damage to him while he channels breaks streams (enemies.js hitEnemy)
+function hcStreamHit(b,d){
+  if(b.atk!=='hcdrain'||!b.streams||b.atkT<b.def.regen.tele) return; const need=b.def.regen.cut*b.maxHp; b.drainHit+=d;
+  while(b.drainHit>=need){ const s=b.streams.find(x=>x.alive); if(!s) break; b.drainHit-=need; s.alive=false; s.line.visible=false; s.orbs.forEach(o=>o.visible=false); s.glowM.opacity=.08;
+    s.line.getWorldPosition(_tmp2); sparks(_tmp2.clone().setY(1.6),0xffffff,10,8); crossBlast(new V3(s.src.x,0,AZ-.5),b.def.forms[b.phase-1].col,.6); sfx('zap'); popText('STREAM CUT'); }
+  if(!b.streams.some(x=>x.alive)){ hcStreamsEnd(b,false); b.vuln=b.def.regen.stagger; hitstop(80,true); hcShake(.6); popText('CHANNEL BROKEN'); sparks(bossCore(b),0x5fe0ff,14,8); }
+}
+function hcDrainTick(b,dt){
+  const R=b.def.regen; if(!b.streams) return true;
+  const on=b.atkT>=R.tele, core=bossCore(b).setY(b.y+4.2); let live=0;
+  b.streams.forEach((s,i)=>{ if(!s.alive) return; live++;
+    const len=s.src.distanceTo(core); s.line.position.lerpVectors(s.src,core,.5); s.line.lookAt(core); s.line.rotateX(Math.PI/2);
+    const w=on?.22+.06*Math.sin(b.t*20+i):.06; s.line.scale.set(w,len,w); s.mat.opacity=on?.55+.2*Math.sin(b.t*14+i):.15+.15*Math.abs(Math.sin(b.t*18));
+    s.glowM.opacity=(on?.45:.25)+.2*Math.abs(Math.sin(b.t*(on?8:16)+i));
+    s.orbs.forEach((o,k)=>{ o.visible=on; const u=(b.t*.9+k/3)%1; o.position.lerpVectors(s.src,core,u); o.scale.setScalar(1.2-u*.5); }); });
+  if(on&&live&&!b.immune){ const heal=Math.min(R.rate*b.maxHp*dt*live,hcRegenLeft(b),b.maxHp-b.hp); if(heal>0){ b.hp+=heal; b.regenUsed+=heal; } $('bossBar').classList.add('regen'); }
+  if(b.atkT>=R.tele+R.dur||hcRegenLeft(b)<=0){ hcStreamsEnd(b,true); return true; }
+  return false;
+}
 function highcoAnim(b,m,dt){
   if(stepMech(m,b,b.vel.length(),dt,b.sc)&&!b.y){ b.byaw=b.yaw; footfall(b,m,b.sc,.12); } mechLean(m,b.jz,dt,b.vel.x*.5,b.vel.z*.5,b.yaw,b.yaw);
   const a=b.atk, t=b.atkT; let jaw=.12+Math.sin(b.t*3)*.04, lag=0, flap=2;
+  if(!b.immune&&b.drainCd>0) b.drainCd-=dt;
   // form I burns: embers come off the white outfit, more while he attacks
   if(b.phase===1&&b.landed&&Math.random()<dt*(mobileMode?5:12)*(a==='idle'?1:2)) sparks(new V3(b.pos.x+rand(-.9,.9),b.y+rand(2,5.5),b.pos.z+rand(-.9,.9)),Math.random()<.5?0xff7a2a:0xffc040,1,3);
   m.head.rotation.x=0;
@@ -359,6 +414,7 @@ function highcoAnim(b,m,dt){
   else if(a==='headbang'){ let s=0; for(const x of [.5,1.1,1.7]){ s=Math.max(s,hcBump(t,x)); lag=Math.max(lag,hcBump(t-.12,x)); }
     m.head.rotation.x=s*.8-.15; m.torso.rotation.x=.1+s*.3; m.hips.position.y-=s*.12; jaw=.3+.2*s; m.arms[0].rotation.set(-.3,0,.4+s*.3); m.arms[1].rotation.set(-.3,0,-.4-s*.3); flap=4; }
   else if(a==='pole'){ const k=Math.min(1,t*3); m.arms[0].rotation.set(-2.8*k,0,.2); jaw=.4*k; m.head.rotation.x=-.2*k; }
+  else if(a==='hcdrain'){ const k=Math.min(1,t*2.5), on=t>=b.def.regen.tele; m.arms[0].rotation.set(-2.2*k,0,1.1*k); m.arms[1].rotation.set(-2.2*k,0,-1.1*k); m.head.rotation.x=-.35*k; m.torso.rotation.x=-.12*k; jaw=on?.35:.15; flap=on?7:4; }
   else if(a==='pillars'){ const k=Math.min(1,t*3); m.arms[0].rotation.set(-2.9*k,0,.3); m.arms[1].rotation.set(-2.9*k,0,-.3); m.head.rotation.x=-.4*k; jaw=.45*k; }
   m.jaw.rotation.x=jaw; m.mouth.scale.y=1+jaw*2.5;
   m.hair.forEach((p,i)=>{ p.rotation.x=p.userData.rx-(a==='headbang'?lag*1.3-.3:0)*.9+Math.sin(b.t*2+i)*.04; p.rotation.z=p.userData.rz+Math.sin(b.t*1.6+i)*.05; });

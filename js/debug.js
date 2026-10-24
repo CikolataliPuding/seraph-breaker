@@ -39,6 +39,7 @@ const DBG={
     for(const e of enemies.slice()) if(!e.dead&&e!==boss){ e.noLoot=true; killEnemy(e,true); } S.n=W.length; S.w=n-1; S.breath=null; room.timer=null; room.waveF=S.w/S.n; spawnQ=W.slice(n); spawnWave(W[n-1],'gate'); refreshControls(); return true; },
   // High-Co: jump to form n (its entrance plays) · set the current form's armor to a share f (0..1)
   hcForm(n){ if(!boss||!boss.formN||boss.dead) return false; n=clamp(n|0,1,3); while(boss.formN<n) highcoFormDown(boss); return boss.formN; },
+  hcRegen(on=!HC_REGEN_ON){ HC_REGEN_ON=!!on; toast(on?'High-Co regen on':'High-Co regen off'); return HC_REGEN_ON; },
   hcHp(f){ if(!boss||!boss.formN||boss.dead||boss.immune) return false; boss.hp=Math.max(1,boss.maxHp*clamp(+f,0,1)); return Math.round(boss.hp); },
   bpm(n=0){ BEAT.force=Math.max(0,+n||0); if(!BEAT.force) AU.tempoK=1; toast(BEAT.force?`BPM ${BEAT.force}`:'BPM: music'); return BEAT.force; },
   stageCurve(print=true){ const a=ARENAS.findIndex(A=>A.stage), rows=[]; for(let ri=0;ri<STAGE.waves.length;ri++){ const W=composeStage(ri,false), sc=enemyScale(a,ri,null,0), sc1=enemyScale(a,ri,null,(W.length-1)/W.length);
