@@ -233,16 +233,18 @@ function weaponUpdate(dt,fireIn){
   const p=player,m=p.model;
   const wp=P.weapon==='sig'?P.unit:P.weapon;
   const rateM=p.st.rate*(p.od>0?.4:1)*(p.rs.storm?.9:1)*(mobileMode?1-.15*Math.min(1,p.still/1.2):1), dmg=p.st.dmg*(p.od>0?1.3*p.st.spPow:1);
-  p.fireCd-=dt;
+  // shot timers carry the frame overshoot into the next shot (fireCd+=interval), so the fire rate does not depend on the frame rate;
+  // not firing drops the backlog, so holding fire after a pause never bursts
+  p.fireCd-=dt; if(!fireIn&&p.fireCd<0) p.fireCd=0;
   m.muzzle.getWorldPosition(_mz); const mz=_mz.clone(); const dir=shotDir(mz); const base=Math.atan2(dir.x,dir.z);
   const col=unit.shot;
   const fired=(kick,size=1)=>{ p.jz.rec.v+=kick; muzzleFlash(mz,col,size); };
   if(wp!=='rail') chargeOrb.visible=false;
   switch(wp){
-    case 'azure': if(fireIn&&p.fireCd<=0){ p.fireCd=.1*rateM; const a=base+rand(-.025,.025); pshot(mz,new V3(Math.sin(a),0,Math.cos(a)),36,1*dmg,col,{life:.9,pierce:p.od>0}); sparks(mz,col,1,3); fired(1.6,.7); sfx('shot'); } break;
-    case 'crimson': if(fireIn&&p.fireCd<=0){ p.fireCd=.32*rateM; for(let i=-2;i<=2;i++){ const a=base+i*.1+rand(-.025,.025); shoot('p',mz,new V3(Math.sin(a),0,Math.cos(a)),rand(28,33),1.05*dmg,col,{geo:G.pel,life:.5,pierce:p.rs.pierce>0,bounce:p.rs.ricochet||0,wall:p.rs.wall||0}); }
+    case 'azure': if(fireIn&&p.fireCd<=0){ p.fireCd=Math.max(0,p.fireCd+.1*rateM); const a=base+rand(-.025,.025); pshot(mz,new V3(Math.sin(a),0,Math.cos(a)),36,1*dmg,col,{life:.9,pierce:p.od>0}); sparks(mz,col,1,3); fired(1.6,.7); sfx('shot'); } break;
+    case 'crimson': if(fireIn&&p.fireCd<=0){ p.fireCd=Math.max(0,p.fireCd+.32*rateM); for(let i=-2;i<=2;i++){ const a=base+i*.1+rand(-.025,.025); shoot('p',mz,new V3(Math.sin(a),0,Math.cos(a)),rand(28,33),1.05*dmg,col,{geo:G.pel,life:.5,pierce:p.rs.pierce>0,bounce:p.rs.ricochet||0,wall:p.rs.wall||0}); }
       if(p.rs.twin||p.rs.diag||p.rs.rear||p.rs.side||p.rs.storm) pshot(mz,dir,30,1.6*dmg,col,{geo:G.pel,life:.55}); shake=Math.max(shake,.08); fired(5,1.4); sfx('heavy'); } break;
-    case 'verdant': if(fireIn&&p.fireCd<=0){ p.fireCd=.42*rateM; pshot(mz,dir,27,3.8*dmg,col,{geo:G.pBig,life:1.2,r:.8,pierce:true}); shake=Math.max(shake,.1); fired(3.5,1.2); p.kick.addScaledVector(dir,-4.5); sfx('heavy'); } break;
+    case 'verdant': if(fireIn&&p.fireCd<=0){ p.fireCd=Math.max(0,p.fireCd+.42*rateM); pshot(mz,dir,27,3.8*dmg,col,{geo:G.pBig,life:1.2,r:.8,pierce:true}); shake=Math.max(shake,.1); fired(3.5,1.2); p.kick.addScaledVector(dir,-4.5); sfx('heavy'); } break;
     case 'rail':
       // phone: charges while standing and releases on its own at full charge
       if(mobileMode&&fireIn&&p.charge>=1) fireIn=false;
@@ -262,14 +264,14 @@ function weaponUpdate(dt,fireIn){
         sfx('torch'); }
       break;
     case 'arc':
-      if(fireIn&&p.fireCd<=0){ p.fireCd=.42*rateM; const hit=new Set(); let cur=nearestFoe(p.pos,12,{x:dir.x,z:dir.z,c:.45})||nearestFoe(p.pos,6); let from=mz.clone();
+      if(fireIn&&p.fireCd<=0){ p.fireCd=Math.max(0,p.fireCd+.42*rateM); const hit=new Set(); let cur=nearestFoe(p.pos,12,{x:dir.x,z:dir.z,c:.45})||nearestFoe(p.pos,6); let from=mz.clone();
         if(!cur) bolt(from,from.clone().addScaledVector(dir,6),col);
         fired(1.2,.6);
         for(let j=0;j<4+(p.rs.twin||0)&&cur;j++){ hit.add(cur); const to=cur.pos.clone().setY(2); bolt(from,to,j?0xbfe8ff:col); hitEnemy(cur,4.5*dmg,to); from=to; cur=nearestFoe(cur.pos,6,null,hit); }
         sfx('zap'); }
       break;
     case 'blade':
-      if(fireIn&&p.fireCd<=0){ p.fireCd=.36*rateM; p.lunge=.11; p.slashSide*=-1;
+      if(fireIn&&p.fireCd<=0){ p.fireCd=Math.max(0,p.fireCd+.36*rateM); p.lunge=.11; p.slashSide*=-1;
         const g=new THREE.Group(); const s=new THREE.Mesh(G.slash,addMat(col,.9)); s.rotation.x=-Math.PI/2; s.scale.x=p.slashSide; g.add(s); g.position.set(p.pos.x,1.8,p.pos.z); g.rotation.y=base;
         addFx(g,.18,(f,dt,k)=>{ if(player) g.position.set(player.pos.x,1.8,player.pos.z); s.material.opacity=k; s.scale.y=1+(1-k)*.25; });
         const reach=3.8+(p.rs.twin?.6:0);
@@ -278,10 +280,10 @@ function weaponUpdate(dt,fireIn){
         sfx('slash'); shake=Math.max(shake,.1); p.jz.rec.v-=3; }
       break;
     case 'swarm':
-      if(fireIn&&p.fireCd<=0){ p.fireCd=.5*rateM; const n=1+(p.rs.twin||0); for(let i=-n;i<=n;i+=2){ const a=base+i*.5; const st=p.pos.clone().setY(2.8).add(new V3(Math.cos(p.yaw)*i*.6,0,-Math.sin(p.yaw)*i*.6)); const t=nearestFoe(p.pos,18,{x:dir.x,z:dir.z,c:.2})||nearestFoe(p.pos,18); shoot('p',st,new V3(Math.sin(a),0,Math.cos(a)),15,3.4*dmg,0xffd060,{geo:G.mis,life:2.2,seek:t,turn:7}); } p.jz.rec.v+=1; sfx('shot'); }
+      if(fireIn&&p.fireCd<=0){ p.fireCd=Math.max(0,p.fireCd+.5*rateM); const n=1+(p.rs.twin||0); for(let i=-n;i<=n;i+=2){ const a=base+i*.5; const st=p.pos.clone().setY(2.8).add(new V3(Math.cos(p.yaw)*i*.6,0,-Math.sin(p.yaw)*i*.6)); const t=nearestFoe(p.pos,18,{x:dir.x,z:dir.z,c:.2})||nearestFoe(p.pos,18); shoot('p',st,new V3(Math.sin(a),0,Math.cos(a)),15,3.4*dmg,0xffd060,{geo:G.mis,life:2.2,seek:t,turn:7}); } p.jz.rec.v+=1; sfx('shot'); }
       break;
     case 'grav':
-      if(fireIn&&p.fireCd<=0){ p.fireCd=1.8*rateM; shoot('p',mz,dir,10,6*dmg,0xb070ff,{geo:G.gorb,life:.85,r:.6,grav:true}); fired(4,1.3); p.kick.addScaledVector(dir,-3); sfx('heavy'); }
+      if(fireIn&&p.fireCd<=0){ p.fireCd=Math.max(0,p.fireCd+1.8*rateM); shoot('p',mz,dir,10,6*dmg,0xb070ff,{geo:G.gorb,life:.85,r:.6,grav:true}); fired(4,1.3); p.kick.addScaledVector(dir,-3); sfx('heavy'); }
       break;
   }
   p.prevFire=fireIn;
