@@ -10,7 +10,7 @@ function spawnBoss(kind){
   if(m.eyes) m.eyes.forEach(e=>{ e.hp=hp*.012; e.alive=true; });
   if(form==='highco'){ boss.poles=[]; boss.chute=buildHighCoChute(); boss.chuteT=0; roomGroup.add(boss.chute.g); }
   scene.add(m.g,m.shadow); enemies.push(boss);
-  $('bossName').textContent=def.name.toUpperCase(); $('bossPh').textContent='PHASE I'; $('bossImg').src=PORTRAIT[kind]||''; $('bossBar').firstElementChild.style.background=''; $('bossBar').classList.remove('regen');
+  $('bossName').textContent=def.name.toLocaleUpperCase(LANG); $('bossPh').textContent=t('PHASE {0}','I'); $('bossImg').src=PORTRAIT[kind]||''; $('bossBar').firstElementChild.style.background=''; $('bossBar').classList.remove('regen');
   if(form==='highco') highcoInit(boss);
 }
 const toDir=b=>{ const T=tgt(); return new V3(T.x-b.pos.x,0,T.z-b.pos.z).normalize(); };
@@ -18,7 +18,7 @@ const bossCore=b=>new V3(b.pos.x,b.y+(b.def.coreY!=null?b.def.coreY:b.form==='co
 // damage that lands near a rotor or an eye also hurts that part
 function bossPartHit(b,pos,d){
   if(b.rotors){ let best=null,bd=2.8; for(const r of b.rotors){ if(!r.alive) continue; r.m.getWorldPosition(_tmp2); const dd=Math.hypot(_tmp2.x-pos.x,_tmp2.z-pos.z); if(dd<bd){ bd=dd; best=r; } }
-    if(best){ best.hp-=d; if(best.hp<=0){ best.alive=false; best.m.visible=false; best.m.getWorldPosition(_tmp2); crossBlast(_tmp2.clone(),0xff6a1a,.9); b.spdK*=.78; popText('ROTOR DOWN'); hitstop(60,true); } } }
+    if(best){ best.hp-=d; if(best.hp<=0){ best.alive=false; best.m.visible=false; best.m.getWorldPosition(_tmp2); crossBlast(_tmp2.clone(),0xff6a1a,.9); b.spdK*=.78; popText(t('ROTOR DOWN')); hitstop(60,true); } } }
   if(b.model.eyes){ let best=null,bd=1.6; for(const e of b.model.eyes){ if(!e.alive) continue; e.w.getWorldPosition(_tmp2); const dd=Math.hypot(_tmp2.x-pos.x,_tmp2.z-pos.z); if(dd<bd){ bd=dd; best=e; } }
     if(best){ best.hp-=d; if(best.hp<=0){ best.alive=false; best.p.visible=false; best.w.material=toon(0x2a2232); best.w.getWorldPosition(_tmp2); sparks(_tmp2,0xff2a3a,8,6); sfx('hit'); } } }
 }
@@ -146,7 +146,7 @@ function updateBoss(dt){
   const pd=Math.hypot(player.pos.x-b.pos.x,player.pos.z-b.pos.z);
   // High-Co has no thresholds: his phase is the form, changed by highcoFormDown when a form's armor runs out
   const newPh=def.forms?b.phase:b.hp<b.maxHp*.33?3:b.hp<b.maxHp*.66?2:1;
-  if(newPh!==b.phase&&b.atk!=='enter'){ b.phase=newPh; $('bossPh').textContent='PHASE '+['I','II','III'][newPh-1]; groundRing(b.pos,0xff2236,14,1); shake=.6; hitstop(85,true); b.jz.pop.v=-8; if(def.barrier) b.barrier=3; b.atk='idle'; b.atkT=.7; b.beam=null; b.jumpY=0; b.reflectT=0; b.vuln=0; hideBeams(); clearEnemyShots(); if(f==='highco') highcoPhase(b,newPh); }
+  if(newPh!==b.phase&&b.atk!=='enter'){ b.phase=newPh; $('bossPh').textContent=t('PHASE {0}',['I','II','III'][newPh-1]); groundRing(b.pos,0xff2236,14,1); shake=.6; hitstop(85,true); b.jz.pop.v=-8; if(def.barrier) b.barrier=3; b.atk='idle'; b.atkT=.7; b.beam=null; b.jumpY=0; b.reflectT=0; b.vuln=0; hideBeams(); clearEnemyShots(); if(f==='highco') highcoPhase(b,newPh); }
   b.vuln=Math.max(0,b.vuln-dt);
   // High-Co's parachute drop is slow and lands during the cinematic (hcDrop); he starts once the cinematic is over
   if(b.atk==='enter'&&def.forms){ hcDrop(b,dt); b.atkT-=dt; if(b.landed&&b.atkT<=0){ b.atk='idle'; b.atkT=1.2; } }
@@ -210,7 +210,7 @@ function startCine(){
   const kind=room.boss, def=BOSSES[kind];
   spawnBoss(kind);
   $('cineImg').src=PORTRAIT[kind]||''; $('cineName').textContent=def.name; $('cineClass').textContent=def.cls; $('cineEpi').textContent=def.epi;
-  $('cineThreat').textContent='THREAT '+'■'.repeat(def.threat)+'□'.repeat(5-def.threat)+` · ROOM ${sortie.ri+1}/${sortie.N}`;
+  $('cineThreat').textContent=t('THREAT')+' '+'■'.repeat(def.threat)+'□'.repeat(5-def.threat)+' · '+t('ROOM {0}/{1}',sortie.ri+1,sortie.N);
   const c=$('cine'); c.hidden=false; requestAnimationFrame(()=>c.classList.add('on'));
   setState('cine'); stateT=5; refreshControls();
 }
@@ -245,7 +245,7 @@ function highcoTick(b,dt,ph){
     // jumps onto you: shockwave out to the red ring, and a short stun if you were still close when he landed
     case 'hcslam':{ const S=b.stomp, k=Math.min(1,b.atkT/1.1); b.pos.lerpVectors(S.from,S.to,k); b.jumpY=Math.sin(Math.PI*k)*6;
       if(k>=1&&!S.done){ S.done=1; b.jumpY=0; shockwave(b.pos,12,HC_SLAM_R,0xffd36a); groundRing(b.pos,0xffd36a,HC_SLAM_R*.55,.8); shake=.8; b.jz.pop.v=-9; hitstop(60,true);
-        if(!player.dead&&player.dashT<=0&&player.inv<=0&&Math.hypot(player.pos.x-b.pos.x,player.pos.z-b.pos.z)<HC_SLAM_R*.55){ player.stunT=HC_STUN; popText('STUNNED'); } }
+        if(!player.dead&&player.dashT<=0&&player.inv<=0&&Math.hypot(player.pos.x-b.pos.x,player.pos.z-b.pos.z)<HC_SLAM_R*.55){ player.stunT=HC_STUN; popText(t('STUNNED')); } }
       return b.atkT>1.7; }
     // mic to the mouth (1 s wind-up, rings pulse out), then one scream over the whole room
     case 'scream':{ if(b.atkT<1){ if(b.subT<=0){ b.subT=.25; groundRing(b.pos,HC_COL[ph-1],3+b.atkT*5,.3); } return false; }
@@ -271,7 +271,7 @@ function hcScream(b){
   shake=Math.max(shake,.8); buzz(140); sfx('beam');
   if(!player||player.dead) return;
   const dx=player.pos.x-b.pos.x, dz=player.pos.z-b.pos.z, d=Math.hypot(dx,dz)||1;
-  for(let t=b.r;t<d;t+=.4){ const o=inBlock(b.pos.x+dx/d*t,b.pos.z+dz/d*t,0,'block'); if(o){ sparks(new V3((o.x0+o.x1)/2,2.4,(o.z0+o.z1)/2),c,10,6); popText('COVERED'); return; } }
+  for(let q=b.r;q<d;q+=.4){ const o=inBlock(b.pos.x+dx/d*q,b.pos.z+dz/d*q,0,'block'); if(o){ sparks(new V3((o.x0+o.x1)/2,2.4,(o.z0+o.z1)/2),c,10,6); popText(t('COVERED')); return; } }
   hurt(Math.round(HC_SCREAM[0]-(HC_SCREAM[0]-HC_SCREAM[1])*clamp(d/30,0,1)));
 }
 function hcHeadbang(b,ph){
@@ -297,8 +297,8 @@ function highcoInit(b){
   b.drainCd=0; b.regenUsed=0; b.streams=null; hcHud(b); hcMusic(0);
 }
 function hcHud(b){ const f=b.def.forms[b.phase-1];
-  $('bossName').textContent='HIGH-CO · '+f.name.toUpperCase();
-  $('bossPh').innerHTML='FORM '+['I','II','III'][b.phase-1]+' '+b.def.forms.map((x,i)=>`<i class="hcpip${i<b.phase-1?' done':i===b.phase-1?' on':''}" style="--c:${x.bar}"></i>`).join('');
+  $('bossName').textContent='HIGH-CO · '+f.name.toLocaleUpperCase(LANG);
+  $('bossPh').innerHTML=t('FORM {0}',['I','II','III'][b.phase-1])+' '+b.def.forms.map((x,i)=>`<i class="hcpip${i<b.phase-1?' done':i===b.phase-1?' on':''}" style="--c:${x.bar}"></i>`).join('');
   $('bossBar').firstElementChild.style.background=f.bar; }
 function highcoClearAttacks(b){
   for(let i=blasts.length-1;i>=0;i--) if(blasts[i].boss){ scene.remove(blasts[i].ring); blasts.splice(i,1); }
@@ -318,7 +318,7 @@ function highcoFormDown(b){
   // With a form track in the slot, the new track is started so its downbeat falls on the landing; otherwise the live band's next downbeat.
   const T=(b.def.tracks||[])[n-1], file=!!(T&&T.src&&T.bpm>0), land=file?HC_DESC[n-1]+.9:BEAT.until(HC_DESC[n-1]+.7,4); hcMusic(n-1,land);
   b.atk='hcform'; b.atkT=0; b.formWait=clamp(land-HC_DESC[n-1],.6,2.2); b.y=26; b.vel.set(0,0,0);
-  hcHud(b); popText(n===2?'ENCORE':'SAKİN OLMAM LAZIM');
+  hcHud(b); popText(n===2?t('ENCORE'):'SAKİN OLMAM LAZIM');
 }
 const HC_DESC=[0,2.2,1.5]; // entrance descent time per form (form I parachutes in during the cinematic)
 /* game feel: hcShake / hcCam scale with the device (phones get less, prefers-reduced-motion gets no shake and no camera moves; main.js
@@ -384,8 +384,8 @@ function hcStreamsEnd(b,cutFx){ if(!b.streams) return;
 function hcStreamHit(b,d){
   if(b.atk!=='hcdrain'||!b.streams||b.atkT<b.def.regen.tele) return; const need=b.def.regen.cut*b.maxHp; b.drainHit+=d;
   while(b.drainHit>=need){ const s=b.streams.find(x=>x.alive); if(!s) break; b.drainHit-=need; s.alive=false; s.line.visible=false; s.orbs.forEach(o=>o.visible=false); s.glowM.opacity=.08;
-    s.line.getWorldPosition(_tmp2); sparks(_tmp2.clone().setY(1.6),0xffffff,10,8); crossBlast(new V3(s.src.x,0,AZ-.5),b.def.forms[b.phase-1].col,.6); sfx('zap'); popText('STREAM CUT'); }
-  if(!b.streams.some(x=>x.alive)){ hcStreamsEnd(b,false); b.vuln=b.def.regen.stagger; hitstop(80,true); hcShake(.6); popText('CHANNEL BROKEN'); sparks(bossCore(b),0x5fe0ff,14,8); }
+    s.line.getWorldPosition(_tmp2); sparks(_tmp2.clone().setY(1.6),0xffffff,10,8); crossBlast(new V3(s.src.x,0,AZ-.5),b.def.forms[b.phase-1].col,.6); sfx('zap'); popText(t('STREAM CUT')); }
+  if(!b.streams.some(x=>x.alive)){ hcStreamsEnd(b,false); b.vuln=b.def.regen.stagger; hitstop(80,true); hcShake(.6); popText(t('CHANNEL BROKEN')); sparks(bossCore(b),0x5fe0ff,14,8); }
 }
 function hcDrainTick(b,dt){
   const R=b.def.regen; if(!b.streams) return true;

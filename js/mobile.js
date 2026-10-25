@@ -114,7 +114,7 @@ let hexFlashT=0; const _hf=new V3();
 function hexFlash(from){ const p=player; _hf.set(from.x-p.pos.x,0,from.z-p.pos.z); if(_hf.lengthSq()<1e-4) _hf.copy(p.aim); _hf.normalize(); shieldG.position.copy(p.pos).addScaledVector(_hf,1.4).setY(1.9); shieldG.lookAt(_tmp.copy(shieldG.position).add(_hf)); shieldG.visible=true; hexFlashT=.18; }
 // the ring pops on every block and shatters when the last charge is used
 function hexBurst(pos,size,life){ const m=new THREE.Mesh(barRing.geometry,addMat(0xffc070,.9)); m.rotation.x=-Math.PI/2; m.rotation.z=barRing.rotation.z; m.position.set(pos.x,.14,pos.z); addFx(m,life,(f,dt,k)=>{ m.scale.setScalar(size*(1+(1-k)*.8)); m.material.opacity=k*.9; }); }
-function barrierBreak(){ const p=player; hexBurst(p.pos,1.6,.5); sparks(p.pos.clone().setY(1.2),0xffa04a,12,7); popText('BARRIER DOWN'); if(p.rs.hexnova) hexNova(); }
+function barrierBreak(){ const p=player; hexBurst(p.pos,1.6,.5); sparks(p.pos.clone().setY(1.2),0xffa04a,12,7); popText(t('BARRIER DOWN')); if(p.rs.hexnova) hexNova(); }
 
 /* ================= AUTO GADGETS ================= */
 function autoGadgets(){

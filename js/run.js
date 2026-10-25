@@ -2,7 +2,7 @@
 /* ================= ARENA RUNS ================= */
 const RUN_KEY='seraph-breaker-run-v1';
 // '30 ROOMS', or the arena's own label ('15 ROOMS + BOSS' on the Main Stage)
-const roomsLabel=A=>A.roomsTxt||A.rooms+' ROOMS';
+const roomsLabel=A=>A.roomsTxt||t('{0} ROOMS',A.rooms);
 // room n (1-based): from the run plan when there is one, else the PACING slot (boss, angel, elite or combat)
 const arenaRoomType=n=>{ const p=sortie&&sortie.plan&&sortie.plan[n-1]; if(p) return p.type; const c=PACING[((n-1)%10)+1]; return c.boss?'boss':c.angel?'angel':c.elite?'elite':'combat'; };
 // 'all' (Arena 4) is every boss and corrupted variant except an arena's own headliner (stageOnly: High-Co belongs to the Main Stage)
@@ -45,12 +45,12 @@ function launchArena(a,saved,retry){
   const A=ARENAS[a], N=A.rooms;
   sortie={a,N,tester:!!(DEBUG||saved&&saved.tester),farm:farmMul(a),seed:saved&&Number.isFinite(+saved.seed)?saved.seed|0:(Math.random()*2e9)|0,ri:saved?clamp(saved.ri|0,0,N-1):0,xp:0,lv:1,pendingLv:0,gold:0,gems:0,start:performance.now(),rerolls:1,curses:[],items:[],lastBoss:'',mods:saved?(saved.mods||[]).filter(m=>MODS[m]):(A.mixed?rollMods():[]),rule:{},dmgTaken:0,log:[]};
   choiceQ.length=0; makePlayer();
-  $('uName').innerHTML=''; const nm=document.createElement('span'); nm.textContent=P.pilot||'Pilot'; const sm=document.createElement('small'); sm.textContent=' · '+unit.name; const lv=document.createElement('em'); lv.id='lvTxt'; lv.textContent='LV 1'; $('uName').append(nm,sm,lv);
+  $('uName').innerHTML=''; const nm=document.createElement('span'); nm.textContent=P.pilot||t('Pilot'); const sm=document.createElement('small'); sm.textContent=' · '+unit.name; const lv=document.createElement('em'); lv.id='lvTxt'; lv.textContent='LV 1'; $('uName').append(nm,sm,lv);
   buildRule(); score=0; kills=0; playTime=0;
   if(saved) restoreRun(saved);
   sortie.plan=arenaPlan(a,sortie.seed,saved&&!saved.seed?sortie.lastBoss:'');
   buildRoom(roomHalfX(),ROOM_Z,SANCTUM,true); player.pos.set(0,0,AZ-1.5); camTarget.copy(player.pos);
-  $('cardNum').textContent=`ARENA 0${a+1} · `+(retry?`RETRY BOSS · ROOM ${sortie.ri+1}/${N}`:saved?`CONTINUE · ROOM ${sortie.ri+1}/${N}`:roomsLabel(A)); $('cardT').textContent=A.name;
+  $('cardNum').textContent=t('ARENA {0}','0'+(a+1))+' · '+(retry?t('RETRY BOSS · ROOM {0}/{1}',sortie.ri+1,N):saved?t('CONTINUE · ROOM {0}/{1}',sortie.ri+1,N):roomsLabel(A)); $('cardT').textContent=A.name;
   $('cardS').textContent=[A.ruleTxt,...sortie.mods.map(m=>MODS[m].name)].join(' · ');
   // the pilot's inner voice, only the first time you enter an arena
   const vo=!saved&&!retry&&!P.lore.arenas[a]&&STORY.voice[a]; $('cardV').hidden=!vo; if(vo){ $('cardV').textContent=`“${vo}”`; P.lore.arenas[a]=true; persist(); }

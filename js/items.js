@@ -29,9 +29,9 @@ function itemSwap(id){
   if(sortie.items.includes(id)) return;
   if(sortie.items.length<ITEM_SLOTS){ addItem(id); return; }
   const n=ITEMS[id], card=(x,act,tag)=>({icon:ITEMS[x].icon,name:ITEMS[x].name,desc:ITEMS[x].d,rarity:ITEMS[x].rarity,tag,act});
-  const opts=sortie.items.map(x=>card(x,()=>{ removeItem(x); addItem(id); },'Drop this one'));
-  opts.push({icon:'rear',name:'Leave '+n.name,desc:'Keep your four items. The new one is scrapped.',tag:'Discard new',color:'#a79fae',act:()=>{ sparks(player.pos.clone().setY(2),0xa79fae,6,4); }});
-  openChoice({eyebrow:'Item slots full',title:`${n.name} found`,note:`${n.d} Pick an item to drop for it.`,options:opts});
+  const opts=sortie.items.map(x=>card(x,()=>{ removeItem(x); addItem(id); },t('Drop this one')));
+  opts.push({icon:'rear',name:t('Leave {0}',n.name),desc:t('Keep your four items. The new one is scrapped.'),tag:t('Discard new'),color:'#a79fae',act:()=>{ sparks(player.pos.clone().setY(2),0xa79fae,6,4); }});
+  openChoice({eyebrow:t('Item slots full'),title:t('{0} found',n.name),note:n.d+' '+t('Pick an item to drop for it.'),options:opts});
 }
 // room hooks (called from rooms.js and main.js)
 function onRoomStart(){ const p=player; if(!p) return; p.aegis=p.aegisN>0; if(p.reactor) p.sp=Math.min(100,p.sp+30*p.reactor); }

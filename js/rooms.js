@@ -97,7 +97,7 @@ function fizzleRoom(){
   for(let i=blasts.length-1;i>=0;i--){ const b=blasts[i]; if(!b.hurtP) continue; scene.remove(b.ring); blasts.splice(i,1); }
   for(let i=bullets.length-1;i>=0;i--){ const b=bullets[i]; if(b.from!=='e') continue; sparks(b.m.position,0xa79fae,1,3); killBullet(i); }
 }
-function openDoor(){ if(!door||door.open) return; door.open=true; door.bar.material.color.setHex(0x5fe0ff); door.bar.material.opacity=.25; door.arrow.visible=true; sfx('door'); toast('Room clear','Door open'); }
+function openDoor(){ if(!door||door.open) return; door.open=true; door.bar.material.color.setHex(0x5fe0ff); door.bar.material.opacity=.25; door.arrow.visible=true; sfx('door'); toast(t('Room clear'),t('Door open')); }
 // spawns keep SPAWN_MIN from the pilot (ambush: AMBUSH_MIN behind or beside); with no such spot in 60 tries the farthest one tried is used
 const SPAWN_MIN=8, AMBUSH_MIN=6;
 function freeSpot(minFromEntry=6){ let best=null,bd=-1;
@@ -172,10 +172,10 @@ function stageWaves(dt){
   const S=room.stage, alive=enemies.filter(e=>!e.dead&&!e.minion).length; if(alive) return;
   const fizzle=()=>{ for(const e of enemies.slice()) if(!e.dead&&e!==boss){ e.noLoot=true; killEnemy(e,true); } };
   if(!spawnQ.length){ fizzle(); return; }
-  if(S.breath==null){ fizzle(); S.breath=rand(STAGE.breather[0],STAGE.breather[1]); room.timer={name:'NEXT WAVE',t:S.breath,max:S.breath}; refreshControls(); toast('Wave clear',`Wave ${S.w+2}/${S.n} next`); }
+  if(S.breath==null){ fizzle(); S.breath=rand(STAGE.breather[0],STAGE.breather[1]); room.timer={name:t('NEXT WAVE'),t:S.breath,max:S.breath}; refreshControls(); toast(t('Wave clear'),t('Wave {0}/{1} next',S.w+2,S.n)); }
   S.breath-=dt; room.timer.t=S.breath;
   if(S.breath<=0){ S.breath=null; room.timer=null; S.w++; room.waveF=S.w/S.n; const list=spawnQ.shift(), enc=list.filter(t=>STAGE.band.includes(t.replace('*',''))).length>=STAGE.band.length;
-    spawnWave(list,'gate'); toast(enc?'Encore':`Wave ${S.w+1}/${S.n}`,enc?'The whole band is on stage':''); sfx('door'); refreshControls(); }
+    spawnWave(list,'gate'); toast(enc?t('Encore'):t('Wave {0}/{1}',S.w+1,S.n),enc?t('The whole band is on stage'):''); sfx('door'); refreshControls(); }
 }
 /* every frame in a Main Stage room: the drummer speeds the band up while he plays, his sky drops fall, the festival lights move. A follow spot
    (spotLit) burns on every beat once you have been inside it for spotGrace seconds; standing in several at once burns like one. */
@@ -195,10 +195,10 @@ function startCombat(spec,tag){
   if(spec.kind==='ambush'){ room.ambushT=.7; room.ambush=waves[0]; spawnQ=[]; }
   else if(spec.kind==='reinforce'){ buildGates(); spawnWave(waves[0]); spawnQ=waves.slice(1); room.waveMode='gate'; room.waveT=9; }
   else { spawnWave(waves[0]); spawnQ=waves.slice(1); }
-  if(spec.kind==='survive'){ room.timer={name:'SURVIVE',t:K.time,max:K.time}; room.spawnT=1.5; }
-  if(spec.kind==='hunt'){ room.timer={name:'HUNT',t:K.time,max:K.time}; }
+  if(spec.kind==='survive'){ room.timer={name:t('SURVIVE'),t:K.time,max:K.time}; room.spawnT=1.5; }
+  if(spec.kind==='hunt'){ room.timer={name:t('HUNT'),t:K.time,max:K.time}; }
   if(spec.kind==='dark') room.dark=true;
-  toast(spec.type==='elite'?'Elite room':K.name,spec.kind==='normal'||spec.kind==='teach'?tag:`${tag} · ${K.sub}`);
+  toast(spec.type==='elite'?t('Elite room'):K.name,spec.kind==='normal'||spec.kind==='teach'?tag:`${tag} · ${K.sub}`);
 }
 function startRoom(i,force){
   sortie.ri=i; const plan=sortie.plan&&sortie.plan[i], spec=force&&force.type?{type:force.type,kind:force.kind||(force.type==='combat'||force.type==='elite'?'normal':force.type),k:1,teach:force.teach}:plan||{type:arenaRoomType(i+1),kind:'normal',k:1};
@@ -211,12 +211,12 @@ function startRoom(i,force){
   if(typeof onRoomStart==='function') onRoomStart();
   logRoomStart(type);
   $('fade').classList.remove('on');
-  const tag=`Room ${i+1}/${sortie.N}`;
+  const tag=t('Room {0}/{1}',i+1,sortie.N);
   // Main Stage: no Sanctuary on the way, so the crew patches the pilot up backstage before the headliner (STAGE.bossRepair of max armor)
-  if(type==='boss'&&ARENAS[stage].stage){ player.hp=Math.min(player.maxHp,player.hp+player.maxHp*STAGE.bossRepair*player.st.heal); toast('Backstage repair',`+${Math.round(STAGE.bossRepair*player.st.heal*100)}% armor`); }
+  if(type==='boss'&&ARENAS[stage].stage){ player.hp=Math.min(player.maxHp,player.hp+player.maxHp*STAGE.bossRepair*player.st.heal); toast(t('Backstage repair'),t('+{0}% armor',Math.round(STAGE.bossRepair*player.st.heal*100))); }
   if(type==='boss'){ snapBoss(); $('warnTxt').textContent=BOSSES[room.boss].warn; setState('warn'); stateT=2.2; $('warn').hidden=false; playTrack('boss'); sfx('beam'); refreshControls(); return; }
   setState('fight'); playTrack(fightTrack());
-  if(type==='angel'){ spawnNpc('angel',new V3(0,0,-2)); openDoor(); toast('Sanctuary',tag); }
+  if(type==='angel'){ spawnNpc('angel',new V3(0,0,-2)); openDoor(); toast(t('Sanctuary'),tag); }
   else startCombat(spec,tag);
   refreshControls();
 }
