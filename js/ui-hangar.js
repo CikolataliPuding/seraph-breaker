@@ -6,9 +6,16 @@ function openView(v){
   view=v;
   ['home','map','armory','skills','frames','system'].forEach(x=>$('v-'+x).hidden=x!==v);
   document.querySelectorAll('.bnav button').forEach(b=>{ if(b.dataset.v===(v==='map'?'home':v)) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current'); });
-  if(v==='home'||v==='frames'){ $(v==='home'?'slotHome':'slotFrames').appendChild($('pvWrap')); pv.w=0; }
+  placePreview();
   renderMenu();
 }
+// the mech preview: a full-screen hangar behind the panels on a wide desktop screen, else the card in Home / Frames
+function placePreview(){ const wide=hangarWide();
+  if(wide!==HANGAR.wide){ HANGAR.wide=wide; HANGAR.g.visible=wide; document.body.classList.toggle('hangar',wide);
+    pv.scene.background=wide?new THREE.Color(0x0e0a13):null; pv.scene.fog=wide?new THREE.Fog(0x0e0a13,24,62):null; pv.r.setPixelRatio(Math.min(devicePixelRatio,wide?1.5:2)); pv.w=0; }
+  const slot=wide?$('hangarBg'):view==='home'?$('slotHome'):view==='frames'?$('slotFrames'):null;
+  if(slot&&$('pvWrap').parentNode!==slot){ slot.appendChild($('pvWrap')); pv.w=0; } }
+addEventListener('resize',()=>{ if(!$('menu').hidden) placePreview(); });
 function renderMenu(){
   document.documentElement.style.setProperty('--unit',unitCss());
   $('wGold').textContent=P.gold.toLocaleString(); $('wGems').textContent=P.gems.toLocaleString();
@@ -18,7 +25,7 @@ function renderMenu(){
 function renderHome(){
   const a=openSel(P.selArena), A=ARENAS[a];
   $('hEye').textContent=`ARENA 0${a+1} · ${roomsLabel(A)}`+((P.bestRoom[a]||0)>=A.rooms?' · CLEARED':'');
-  $('hStage').textContent=A.name;
+  $('hStage').textContent=A.name; hangarTheme(a);
   const pips=$('hPips'); pips.innerHTML=''; ARENAS.forEach((x,i)=>{ const p=document.createElement('i'); if((P.bestRoom[i]||0)>=x.rooms) p.className='f'; else if(arenaOpen(i)) p.className='c'; pips.appendChild(p); });
   const hb=$('hBosses'); hb.innerHTML=''; arenaBossPool(a).slice(0,3).forEach(k=>{ const img=document.createElement('img'); img.src=PORTRAIT[k]||''; img.alt=BOSSES[k].name; img.title=BOSSES[k].name; hb.appendChild(img); }); const bl=document.createElement('span'); bl.textContent='BOSSES'; hb.appendChild(bl);
   $('pvUnit').textContent=UNITS[P.unit].name; $('pvSp').textContent='SP · '+SPECIALS[P.unit].name;
