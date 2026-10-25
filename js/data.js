@@ -364,7 +364,7 @@ const BOSS_TEACH={
    seconds. Gauntlet: few enemies (budget × k), many traps. Dark: you only see what is within light units (light.m on phones). */
 const ROOM_KINDS={
   normal:{name:'Hostiles'},
-  ambush:{name:'Ambush',sub:'From the sides and behind',minRoom:2},
+  ambush:{name:'Ambush',sub:'Out of the exit',minRoom:2},
   reinforce:{name:'Reinforcements',sub:'Waves through the gates',minRoom:3,waves:3},
   survive:{name:'Survive',sub:'Hold out',minRoom:8,time:20,reward:.4,cap:[5,6,7,7,7]},
   hunt:{name:'Hunt',sub:'The elite runs. Catch it.',minRoom:7,time:16},

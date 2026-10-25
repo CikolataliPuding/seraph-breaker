@@ -86,7 +86,7 @@ const DICT_TR={
   'Gold':'Altın', 'Special recharge':'Özel dolumu', 'Special power':'Özel gücü', 'Pickup reach':'Toplama menzili', 'Gadget speed':'Aparat hızı',
   // in a room: HUD, room messages, pop-ups (main.js, rooms.js, player.js, bosses.js, enemies.js, mobile.js)
   'Overheat':'Aşırı ısınma', 'Barrier':'Bariyer', 'READY':'HAZIR', 'MAX LVL':'MAKS LV',
-  'Ambush!':'Pusu!', 'Reinforcements':'Takviye', 'Second wave':'İkinci dalga', 'Survived':'Dayandın', 'Room clear':'Oda temiz', 'Caught':'Yakalandı', 'Escaped':'Kaçtı', 'The elite got away':'Elit kaçtı',
+  'Ambush!':'Pusu!', 'Out of the exit':'Çıkış kapısından', 'Reinforcements':'Takviye', 'Second wave':'İkinci dalga', 'Survived':'Dayandın', 'Room clear':'Oda temiz', 'Caught':'Yakalandı', 'Escaped':'Kaçtı', 'The elite got away':'Elit kaçtı',
   'Door open':'Kapı açık', 'NEXT WAVE':'SONRAKİ DALGA', 'Wave clear':'Dalga temiz', 'Wave {0}/{1} next':'Sıradaki dalga {0}/{1}', 'Encore':'Bis', 'Wave {0}/{1}':'Dalga {0}/{1}',
   'The whole band is on stage':'Bütün grup sahnede', 'SURVIVE':'DAYAN', 'HUNT':'AV', 'Elite room':'Elit oda', 'Room {0}/{1}':'Oda {0}/{1}', 'Backstage repair':'Kulis tamiri', '+{0}% armor':'+%{0} zırh',
   'PERFECT':'KUSURSUZ', 'ON BEAT · PERFECT':'RİTİMDE · KUSURSUZ', 'AEGIS':'AEGIS', 'DODGE':'KAÇINDIN', 'EXTRA LIFE':'EKSTRA CAN', 'Out of bounds':'Alan dışı', 'Get back on the mat':'Zemine geri dön',
@@ -208,7 +208,7 @@ const DICT_TR={
   'THE HEADLINER IS DROPPING IN':'MANŞET İSİM İNİYOR',
   'Corrupted':'Bozulmuş', 'CORRUPTED SIGNAL':'BOZULMUŞ SİNYAL', 'The void got inside it. Same frame, new tricks, more armor.':'Boşluk içine sızdı. Aynı gövde, yeni numaralar, daha fazla zırh.',
   // room kinds and elite affixes (ROOM_KINDS, AFFIX)
-  'Hostiles':'Düşmanlar', 'Ambush':'Pusu', 'From the sides and behind':'Yanlardan ve arkadan', 'Waves through the gates':'Kapılardan dalgalar', 'Survive':'Dayan', 'Hold out':'Direnmeye devam',
+  'Hostiles':'Düşmanlar', 'Ambush':'Pusu', 'Waves through the gates':'Kapılardan dalgalar', 'Survive':'Dayan', 'Hold out':'Direnmeye devam',
   'Hunt':'Av', 'The elite runs. Catch it.':'Elit kaçıyor. Yakala.', 'Trap gauntlet':'Tuzak koridoru', 'Few enemies, many traps':'Az düşman, çok tuzak', 'Dark room':'Karanlık oda',
   'Stay close to the light':'Işığa yakın dur', 'Live set':'Canlı set',
   'Swift':'Çevik', 'Moves 40% faster and attacks more often.':'%40 daha hızlı hareket eder ve daha sık saldırır.', 'Shielded':'Kalkanlı', 'A barrier soaks most damage until it breaks, then comes back.':'Bir bariyer kırılana kadar hasarın çoğunu emer, sonra geri gelir.',
