@@ -53,7 +53,7 @@ function applyAffixes(e,list){
 function elitePlate(e){
   const cv=document.createElement('canvas'); cv.width=320; cv.height=80; const g=cv.getContext('2d'); g.textAlign='center'; g.lineJoin='round';
   const line=(txt,y,font,col)=>{ g.font=font; g.lineWidth=6; g.strokeStyle='#0a0610'; g.strokeText(txt,160,y); g.fillStyle=col; g.fillText(txt,160,y); };
-  line(((e.corrupt?t('CORRUPTED')+' ':'')+(e.hunt?t('HUNTED'):t('ELITE'))+' '+e.def.name).toLocaleUpperCase(LANG),30,'700 26px "Barlow Condensed",Arial,sans-serif',e.corrupt?'#d8a0ff':'#ffc83a');
+  line(((e.corrupt?t('CORRUPTED')+' ':'')+(e.hunt?t('HUNTED'):t('ELITE'))).toLocaleUpperCase(LANG)+' '+e.def.name.toUpperCase(),30,'700 26px "Barlow Condensed",Arial,sans-serif',e.corrupt?'#d8a0ff':'#ffc83a');
   if(e.affix.length) line(e.affix.map(k=>AFFIX[k].name).join(' · '),66,'600 24px "Barlow Condensed",Arial,sans-serif','#ffffff');
   const tex=new THREE.CanvasTexture(cv), sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthTest:false,depthWrite:false}));
   sp.scale.set(mobileMode?6.4:5.6,mobileMode?1.6:1.4,1); sp.renderOrder=20; sp.userData.h=(e.fly?4.3:3)*e.sc/(e.def.sc||1)+.4; return sp;
