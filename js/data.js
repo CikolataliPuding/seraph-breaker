@@ -487,3 +487,5 @@ const ROOMS=[
   ['...........','...........','..~~~.~~~..','...........','...........','...#...#...','....#.#....','.....#.....','...........','...........','..~~~.~~~..','...........','...........','...........','...........'],
 ];
 const SANCTUM=['...........','...........','..#.....#..','...........','...........','...........','...........','...........','...........','...........','...........','...........','..#.....#..','...........','...........'];
+// the data tables in the active language (i18n.js); the story is plain lines
+if(LANG!=='en'){ [UNITS,SPECIALS,WEAPONS,GADGETS,COSMETICS_SOON,TREE,CORE,RARITY,RSK,ITEMS,CURSES,ARENAS,MODS,ENEMY,COMPS,BOSSES,ROOM_KINDS,AFFIX].forEach(o=>langData(o)); langData(STORY,true); }

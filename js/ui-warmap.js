@@ -112,7 +112,10 @@ function renderFrames(){
   [0,1].forEach(i=>{ const g=P.gadgets[i]; item(g||'hook','Gadget '+(i+1),g?GADGETS[g].name:'Empty slot',()=>openView('armory')); });
 }
 function renderSystem(){ $('buildTxt').textContent='Build '+BUILD+'.'; renderTester(); renderStageCode(); $('volM').value=Math.round(P.music*100); $('volMo').textContent=Math.round(P.music*100); $('volS').value=Math.round(P.sfx*100); $('volSo').textContent=Math.round(P.sfx*100);
-  document.querySelectorAll('#ctrlSeg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.c===P.ctrl)); document.querySelectorAll('#shSeg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.s===P.mshield)); $('autoG').checked=P.autoGadget; }
+  document.querySelectorAll('#ctrlSeg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.c===P.ctrl)); document.querySelectorAll('#shSeg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.s===P.mshield)); document.querySelectorAll('#langSeg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.l===LANG)); $('autoG').checked=P.autoGadget; }
+// language buttons in their own language; a change reloads the page (i18n.js)
+$('langSeg').innerHTML=Object.keys(LANGS).map(k=>`<button data-l="${k}" lang="${k}">${LANGS[k]}</button>`).join('');
+document.querySelectorAll('#langSeg button').forEach(b=>b.onclick=()=>{ if(b.dataset.l===LANG) return; sfx('click'); langSet(b.dataset.l); });
 document.querySelectorAll('#ctrlSeg button').forEach(b=>b.onclick=()=>{ P.ctrl=b.dataset.c; sfx('click'); persist(); setMode(); renderSystem(); });
 document.querySelectorAll('#shSeg button').forEach(b=>b.onclick=()=>{ P.mshield=b.dataset.s; sfx('click'); persist(); renderSystem(); refreshControls(); });
 $('autoG').onchange=e=>{ P.autoGadget=e.target.checked; persist(); };
