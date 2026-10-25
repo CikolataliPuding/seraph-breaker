@@ -8,8 +8,9 @@ pv.scene=new THREE.Scene(); stdLights(pv.scene);
 pv.cam=new THREE.PerspectiveCamera(30,1,.1,200);
 (()=>{ const ped=new THREE.Mesh(new THREE.CylinderGeometry(1.7,1.9,.25,6),toon(0x2a2232)); ped.position.y=-.125; pv.scene.add(ped); const ring=new THREE.Mesh(new THREE.RingGeometry(1.85,1.95,6),addMat(0xff6a1a,.9)); ring.rotation.x=-Math.PI/2; ring.position.y=.01; pv.scene.add(ring); })();
 pv.ped=new THREE.Group(); pv.scene.add(pv.ped);
-// desktop hangar: on a wide screen the preview fills the screen behind the menu panels, with a hangar bay around the pad (ui-hangar.js placePreview)
-const HANGAR={wide:false,g:new THREE.Group(),accent:[]};
+// hangar: the preview fills the screen behind the menu with a hangar bay around the pad (ui-hangar.js placePreview).
+// wide desktop: nav rail + side panel; phones and narrow windows: the single column over it, the mech framed in focus (Home's free slot)
+const HANGAR={on:false,wide:false,g:new THREE.Group(),accent:[],focus:null};
 const hangarWide=()=>!mobileMode&&innerWidth>=1000&&innerHeight>=600;
 (()=>{ const H=HANGAR.g, dark=toon(0x1a1422), mid=toon(0x2a2232);
   const fl=new THREE.Mesh(new THREE.PlaneGeometry(90,90),toon(0x151019)); fl.rotation.x=-Math.PI/2; fl.position.y=-.27; H.add(fl);
@@ -32,7 +33,8 @@ function renderPreview(t){
   if(pv.mech) pv.mech.hips.position.y=1.6-Math.abs(Math.sin(t*2))*.03;
   // wide hangar: the mech stands in the free column between the nav rail (96 px) and the panel (~480 px), the camera drifts slowly
   if(HANGAR.wide){ pv.ped.rotation.y=-.45+Math.sin(t*.35)*.55; pv.cam.setViewOffset(w,h,w/2-(96+w-480)/2,0,w,h); pv.cam.position.set(Math.sin(t*.07)*2.6,4.2,21); pv.cam.lookAt(0,2.6,0); }
-  else { pv.ped.rotation.y=t*.5; if(pv.cam.view) pv.cam.clearViewOffset(); const far=pv.cam.aspect<1?14:11.5; pv.cam.position.set(0,2.8,far); pv.cam.lookAt(0,1.55,0); }
+  // single column: the camera backs off until the pad and mech fill the focus box, and shifts the view onto it
+  else { const f=HANGAR.focus||{x:w/2,y:h*.36,h:h*.36}, d=clamp(6.4*h/(.47*f.h),12,50); pv.ped.rotation.y=t*.4; pv.cam.setViewOffset(w,h,w/2-f.x,h/2-f.y,w,h); pv.cam.position.set(0,2.4+d*.1,d); pv.cam.lookAt(0,1.75,0); }
   pv.r.render(pv.scene,pv.cam);
 }
 const PORTRAIT={};

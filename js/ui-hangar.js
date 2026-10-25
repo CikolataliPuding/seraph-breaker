@@ -9,18 +9,22 @@ function openView(v){
   placePreview();
   renderMenu();
 }
-// the mech preview: a full-screen hangar behind the panels on a wide desktop screen, else the card in Home / Frames
+// the mech preview: a full-screen hangar behind the menu, laid out wide (nav rail + side panel) or as the single column
 function placePreview(){ const wide=hangarWide();
-  if(wide!==HANGAR.wide){ HANGAR.wide=wide; HANGAR.g.visible=wide; document.body.classList.toggle('hangar',wide);
-    pv.scene.background=wide?new THREE.Color(0x0e0a13):null; pv.scene.fog=wide?new THREE.Fog(0x0e0a13,24,62):null; pv.r.setPixelRatio(Math.min(devicePixelRatio,wide?1.5:2)); pv.w=0; }
-  const slot=wide?$('hangarBg'):view==='home'?$('slotHome'):view==='frames'?$('slotFrames'):null;
-  if(slot&&$('pvWrap').parentNode!==slot){ slot.appendChild($('pvWrap')); pv.w=0; } }
+  if(!HANGAR.on||wide!==HANGAR.wide){ HANGAR.on=true; HANGAR.wide=wide; HANGAR.g.visible=true; document.body.classList.toggle('hangar',wide); document.body.classList.toggle('hangarTall',!wide);
+    pv.scene.background=new THREE.Color(0x0e0a13); pv.scene.fog=new THREE.Fog(0x0e0a13,24,70); pv.r.setPixelRatio(Math.min(devicePixelRatio,wide?1.5:mobileMode?1.25:1.5)); pv.w=0; }
+  if($('pvWrap').parentNode!==$('hangarBg')){ $('hangarBg').appendChild($('pvWrap')); pv.w=0; }
+  hangarFocus(); }
+// single column: frame the mech in Home's or Frames' free slot (the list views cover it with a panel); the frame tag sits at the slot's top
+function hangarFocus(){ if(HANGAR.wide) return; const s=view==='home'?$('slotHome'):view==='frames'?$('slotFrames'):null, r=s&&s.getBoundingClientRect();
+  HANGAR.focus=r&&r.height>60?{x:r.left+r.width/2,y:r.top+r.height/2,h:r.height}:{x:innerWidth/2,y:innerHeight*.36,h:innerHeight*.36};
+  $('hangarBg').style.setProperty('--tagY',(r&&r.height>60?r.top+6:96)+'px'); }
 addEventListener('resize',()=>{ if(!$('menu').hidden) placePreview(); });
 function renderMenu(){
   document.documentElement.style.setProperty('--unit',unitCss());
   $('wGold').textContent=P.gold.toLocaleString(); $('wGems').textContent=P.gems.toLocaleString();
   $('whoName').textContent=P.pilot||'[CALLSIGN]'; $('avatar').textContent=String(P.arenas).padStart(2,'0'); $('betaBadge').hidden=!P.beta;
-  if(view==='home') renderHome(); if(view==='map') renderMap(); if(view==='armory') renderArmory(); if(view==='skills') renderTree($('treeHangar')); if(view==='frames') renderFrames(); if(view==='system') renderSystem();
+  if(view==='home'){ renderHome(); hangarFocus(); } if(view==='map') renderMap(); if(view==='armory') renderArmory(); if(view==='skills') renderTree($('treeHangar')); if(view==='frames') renderFrames(); if(view==='system') renderSystem();
 }
 function renderHome(){
   const a=openSel(P.selArena), A=ARENAS[a];

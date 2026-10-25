@@ -147,6 +147,17 @@ body.hangar .bnav .hexBtn{margin-top:0;height:88px}
 body.hangar .views{grid-column:3;grid-row:2;margin:0 24px 24px 0;background:rgba(18,13,24,.84);border:1px solid var(--line);backdrop-filter:blur(6px)}
 body.hangar #slotHome,body.hangar #slotFrames{display:none}
 body.hangar #v-home .bigGo{margin-top:auto}
+/* single-column hangar (body.hangarTall: phones and narrow windows): the hangar fills the screen, Home stays see-through
+   with shades at the top and bottom, the list views get a dark panel over it */
+body.hangarTall #hangarBg{display:block;position:absolute;inset:0;z-index:0}
+body.hangarTall #hangarBg .pvWrap{position:absolute;inset:0}
+body.hangarTall #hangarBg .pvTag{left:max(16px,calc(50% - 264px));top:var(--tagY,96px)}
+body.hangarTall #menu{background:#0e0a13}
+body.hangarTall .shell{position:relative;z-index:1;box-shadow:none;background:linear-gradient(rgba(14,10,19,.7),rgba(14,10,19,0) 22%,rgba(14,10,19,0) 52%,rgba(14,10,19,.82) 76%,rgba(14,10,19,.92))}
+body.hangarTall .view:not(#v-home):not(#v-frames){background:rgba(18,13,24,.86)}
+body.hangarTall #v-frames{background:linear-gradient(rgba(18,13,24,0) 260px,rgba(18,13,24,.9) 330px)}
+body.hangarTall #slotFrames{height:230px;flex:none}
+body.hangarTall .bnav{background:rgba(18,13,24,.92)}
 .bigGo{height:64px;font-size:30px;letter-spacing:.18em;flex:none}
 .best{text-align:center;font-family:var(--f-data);font-size:11px;color:var(--dim);letter-spacing:.12em}
 .tabsTitle{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
