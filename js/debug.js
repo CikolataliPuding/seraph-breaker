@@ -93,7 +93,7 @@ function renderRunLog(){
       `power dps ×${pw.dps.toFixed(2)} ehp ×${pw.ehp.toFixed(2)} · enemy hp ×${sc.hp.toFixed(2)} dmg ×${sc.dmg.toFixed(2)} · lv ${sortie.lv}`:'no room running'; }
   const sm=$('dbgSum'); if(sm) sm.textContent=summarizeLog(RUNLOG.rooms).map(A=>`arena ${A.arena}: no-damage ${Math.round(A.noDamageShare*100)}% of ${A.combatRooms} combat rooms · avg ${A.avgDmgPerCombat} dmg · ${A.avgRoomTime}s/room · ${A.goldPerMin} gold/min`).join('\n')||'';
   const t=$('dbgRows'); if(!t) return;
-  t.textContent=RUNLOG.rooms.slice(-8).map(r=>`${String(r.room).padStart(2)} ${r.type.padEnd(6)} ${String(r.time).padStart(5)}s -${String(r.dmgTaken).padStart(4)} +${String(r.dmgDealt).padStart(5)} k${String(r.kills).padStart(2)} g${String(sumObj(r.gold)).padStart(4)} d${sumObj(r.gems)} P${r.power.total} E${r.enemy.hp}/${r.enemy.dmg}`).join('\n')||'(no rooms yet)';
+  t.textContent=RUNLOG.rooms.slice(-8).map(r=>`${String(r.room).padStart(2)} ${r.type.padEnd(6)} ${String(r.time).padStart(5)}s -${String(r.dmgTaken).padStart(4)} +${String(r.dmgDealt).padStart(5)} k${String(r.kills).padStart(2)} g${String(sumObj(r.gold)).padStart(4)} d${sumObj(r.gems)} P${r.power?r.power.total:'-'} E${r.enemy?r.enemy.hp:'-'}/${r.enemy.dmg}`).join('\n')||'(no rooms yet)';
 }
 // copy the log: clipboard first, a selectable textarea as fallback
 function exportRunLog(text){
@@ -235,7 +235,8 @@ function botTick(dt){
   if(!(door&&door.open)){ if(p.pos.x>AX-2.2) add(-1,0,1.5); if(p.pos.x<-AX+2.2) add(1,0,1.5); if(p.pos.z>AZ-2.2) add(0,-1,1.5); if(p.pos.z<-AZ+2.2) add(0,1,1.5); }
   const l=mv.length(); if(l>1) mv.divideScalar(l); else if(l<.15) mv.set(0,0,0);
   if(dashDir) tryDash(dashDir);
-  if(p.sp>=100&&enemies.length>=3) trySpecial();
+  // the special: on a crowd of 3+, or whenever a boss is up (a boss alone would never see it)
+  if(p.sp>=100&&(enemies.length>=3||boss&&!boss.dead)) trySpecial();
 }
 // walk to a point around blocks (A* on the nav grid, replanned twice a second)
 function botGo(x,z,add){ const p=player; BOT.pT=(BOT.pT||0)-1/30;
@@ -251,7 +252,7 @@ async function measureRun(o={}){
   const a=o.arena||0, saveP=JSON.stringify(P), meta=typeof o.meta==='object'?o.meta:SIM_META[o.meta||'mid'];
   P.skills=JSON.parse(JSON.stringify(meta.skills)); P.core=Object.assign({armor:0,dmg:0,regen:0},meta.core); P.unit=o.unit||'azure'; P.weapon='sig'; P.gadgets=['',''];
   if(o.best!=null) P.arenas=Math.max(P.arenas,o.best+1);
-  RUNLOG.rooms.length=0; DBG.immortal=true; BOT.on=true; P.testerSave=true; DBG.turbo=o.turbo||8; DBG.noRender=!o.render;
+  RUNLOG.rooms.length=0; DBG.immortal=true; BOT.on=true; P.testerSave=true; DBG.turbo=o.turbo||16; DBG.noRender=!o.render;
   launchArena(a); flagRun(); const rooms=o.rooms||ARENAS[a].rooms, t0=performance.now();
   await new Promise(res=>{ const iv=setInterval(()=>{ if(state==='card'||state==='warn') stateT=0; if(state==='cine') endCine();
     if(state==='result'||RUNLOG.rooms.length>=rooms||performance.now()-t0>(o.maxMs||600000)){ clearInterval(iv); res(); } },50); });
@@ -261,13 +262,13 @@ async function measureRun(o={}){
 /* ================= MAIN STAGE DIFFICULTY ================= */
 /* Main Stage difficulty check (the Part 4 table of the balance PR). Profiles model a pilot by how often and how late the autopilot reacts to
    telegraphs (BOT.skill, BOT.react) and how it picks cards: average {skill:.7,react:.3, random cards}, skilled {skill:.92,react:.18, best card}.
-   The game is stepped by hand (1/30 s ticks, no rendering). Max Core + tree by default. Measure at a desktop size (1280x800: tall phone rooms
+   The game is stepped by hand (1/60 s ticks like a 60 Hz screen, no rendering). Max Core + tree by default. Measure at a desktop size (1280x800: tall phone rooms
    throw the autopilot off) and reload the page every ~8 runs: after that the autopilot starts to lose whole rooms (its state drifts). */
 const STAGE_PRO={avg:{skill:.7,react:.3},pro:{skill:.92,react:.18,smart:true}};
-function stepGame(sec){ paused=false; DBG.noRender=true; let t=performance.now(); for(let i=0;i<sec*30;i++){ t+=33.3;
+function stepGame(sec){ paused=false; DBG.noRender=true; let t=performance.now(); for(let i=0;i<sec*60;i++){ t+=16.7;
     if(state==='card'||state==='warn') stateT=0; if(state==='cine') endCine(); if(state==='choice') botPick();
     // an error in a tick is kept (DBG.tickErr, with its stack) instead of ending the measurement
-    try{ tick(1/30,t); }catch(e){ if(!DBG.tickErr) DBG.tickErr=e.stack; } }
+    try{ tick(1/60,t); }catch(e){ if(!DBG.tickErr) DBG.tickErr=e.stack; } }
   DBG.noRender=false; }
 // a level-up card for the autopilot: at random, or (smart) the one with the biggest power gain
 function botPick(){ if(state!=='choice'||!chCfg) return; if(spin) spin.left=0; ignoreClickUntil=0; const O=chCfg.options; let best=(Math.random()*O.length)|0;

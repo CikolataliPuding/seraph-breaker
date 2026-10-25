@@ -35,9 +35,9 @@ function roomUpdate(dt,edt){
 function frame(now){
   requestAnimationFrame(frame);
   const raw=clamp((now-last)/1000,0,.033); last=now;
-  // debug fast-forward (DBG.turbo): several fixed simulation steps per drawn frame, for measurement runs in a headless browser
+  // debug fast-forward (DBG.turbo): several fixed 1/60 s steps per drawn frame (a 60 Hz screen), for measurement runs in a headless browser
   const n=typeof DBG!=='undefined'&&DBG.turbo>1?DBG.turbo:1;
-  for(let i=0;i<n;i++) tick(n>1?1/30:raw,now+i*33);
+  for(let i=0;i<n;i++) tick(n>1?1/60:raw,now+i*16.7);
   // the hangar covers the whole screen in the menu: the game scene behind it is not drawn
   if(!(typeof DBG!=='undefined'&&DBG.noRender)&&!(state==='menu'&&HANGAR.on&&!$('menu').hidden)) renderer.render(scene,cam);
 }
