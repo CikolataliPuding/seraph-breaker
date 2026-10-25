@@ -57,7 +57,7 @@ function audioInit(){
 // ?mute=1 silences music and sound effects for this page load (local test sessions), without touching the saved volumes
 AU.qmute=new URLSearchParams(location.search).get('mute')==='1';
 function setVolumes(){ if(!AU.ctx)return; AU.music.gain.value=AU.muted||AU.qmute?0:P.music*.9; AU.sfx.gain.value=AU.qmute?0:P.sfx; }
-function playTrack(name){ if(name!=='boss') hcMusicStop(); AU.want=name; if(!AU.ctx||AU.mus.name===name) return; AU.mus={name,t:TRACKS[name],bar:0,step:0,next:AU.ctx.currentTime+.06}; AU.beatQ.length=0; }
+function playTrack(name){ if(name!=='boss'&&!(name==='stage'&&stageFile())) hcMusicStop(); AU.want=name; if(name==='stage') stageMusic(); if(!AU.ctx||AU.mus.name===name) return; AU.mus={name,t:TRACKS[name],bar:0,step:0,next:AU.ctx.currentTime+.06}; AU.beatQ.length=0; }
 function noiseSrc(t,dur){ const s=AU.ctx.createBufferSource(); s.buffer=AU.noise; s.start(t,Math.random()*.5,dur+.05); return s; }
 function env(t,peak,att,dec){ const g=AU.ctx.createGain(); g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(peak,t+att); g.gain.exponentialRampToValueAtTime(.0008,t+att+dec); return g; }
 function gtrNote(t,n,len,mute){
@@ -114,37 +114,53 @@ BEAT.until=(minT=0,every=1)=>{ let t=(1-BEAT.ph)*BEAT.spb, i=BEAT.idx+1; for(let
 // how close (seconds) the nearest beat is
 BEAT.dist=()=>Math.min(BEAT.ph,1-BEAT.ph)*BEAT.spb;
 /* ================= HIGH-CO FORM TRACKS ================= */
-/* High-Co has one track per form: BOSSES.highco.tracks in data.js. To add them, drop the files in assets/audio/ (e.g. assets/audio/highco-1.mp3,
-   highco-2.mp3, highco-3.mp3) and fill each slot: src (the path), bpm (the track's tempo) and offset (seconds from the file start to the first
-   downbeat). An empty src keeps the live synthesized boss music and its BPM, and no file is requested.
-   A file plays through an <audio> element routed into AU.music, so the music volume, the Music on/off button and ?mute=1 apply. hcMusic(slot,
-   landIn) crossfades from what is playing (the live band or the previous form's file) and, given landIn seconds, starts the file so a bar's
-   downbeat falls exactly then (the next form's landing). While a file with a bpm plays, the beat clock (BEAT) follows the file's own position,
-   so Main Stage beat sync and High-Co's attack timing follow that track; a hidden tab or a suspended context cannot drift it. */
-const HC_FADE=1.2;
+/* Music files: High-Co has one track per form (BOSSES.highco.tracks), the Main Stage rooms one looping part (STAGE.music), both in data.js.
+   The files sit in assets/audio/ (git ignores it) and are only requested when the game runs on this computer (MUSIC_LOCAL): the published
+   game never asks for them and keeps the live synthesized music. Each slot: src (the path), bpm (the track's tempo), offset (seconds from the
+   file start to the first downbeat), start (where it starts; 0 = offset) and end (where it loops back to start; 0 = the whole file loops).
+   An empty src keeps the live synthesized music and its BPM, and no file is requested.
+   A file is fetched once a session (the compressed bytes are kept), decoded when it plays and played by Web Audio into AU.music, so the music
+   volume, the Music on/off button and ?mute=1 apply, the loop part is sample-exact and the local server needs no range support. extPlay
+   crossfades from what is playing (the live band or the previous file) and, given landIn seconds, starts the file a bar earlier so a downbeat
+   falls exactly then (the next form's landing). While a file with a bpm plays, the beat clock (BEAT) follows the file's own position, so Main
+   Stage beat sync and High-Co's attack timing follow that track. */
+const HC_FADE=1.2, MUSIC_LOCAL=/^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname), MUSIC_BYTES=new Map();
 function hcMusic(slot,landIn){
   AU.hcWant=slot; if(!AU.ctx) return; // no audio yet (no input so far): audioInit plays it
-  const T=(BOSSES.highco.tracks||[])[slot]||{}, src=String(T.src||''), now=AU.ctx.currentTime, old=AU.ext;
-  if(old&&old.src===src&&src) return;
+  extPlay((BOSSES.highco.tracks||[])[slot]||{},landIn,1); }
+// a music file slot (src bpm offset start end) at gain vol: crossfades from what is playing; a missing file falls back to the live music
+function extPlay(T,landIn,vol){
+  const src=MUSIC_LOCAL?String(T.src||''):'', now=AU.ctx.currentTime, old=AU.ext;
+  if(old&&old.src===src&&src){ extVol(vol); return; }
   if(old){ extFade(old); AU.ext=null; }
   if(!src){ AU.live.gain.setTargetAtTime(1,now,HC_FADE/3); return; }
-  const el=new Audio(); el.preload='auto'; el.loop=true; el.src=src;
-  let node; try{ node=AU.ctx.createMediaElementSource(el); }catch(e){ AU.live.gain.setTargetAtTime(1,now,.3); return; }
-  const g=AU.ctx.createGain(); g.gain.value=0; node.connect(g); g.connect(AU.music);
-  const x={el,src,g,node,bpm:+T.bpm||0,offset:+T.offset||0,ok:false,base:0,last:-1}; AU.ext=x;
-  // a missing or broken file falls back to the live band
-  el.addEventListener('error',()=>{ if(AU.ext===x){ AU.ext=null; AU.live.gain.setTargetAtTime(1,AU.ctx.currentTime,.3); } extFade(x); },{once:true});
-  el.addEventListener('loadedmetadata',()=>{ if(x.bpm>0&&landIn>0){ const bar=240/x.bpm; let s=x.offset+bar-(landIn%bar); while(s>=el.duration-1&&s>bar) s-=bar; try{ el.currentTime=Math.max(0,s); }catch(e){} } },{once:true});
-  el.addEventListener('playing',()=>{ if(AU.ext!==x) return; x.ok=true; const t=AU.ctx.currentTime; g.gain.setTargetAtTime(1,t,HC_FADE/3); AU.live.gain.setTargetAtTime(0,t,HC_FADE/3); },{once:true});
-  const p=el.play(); if(p&&p.catch) p.catch(()=>{}); // blocked until the first input: unlock() retries
+  const g=AU.ctx.createGain(); g.gain.value=0; g.connect(AU.music);
+  const off=+T.offset||0, x={src,g,node:null,bpm:+T.bpm||0,offset:off,start:+T.start||off,end:+T.end||0,vol,on:false,t0:0,ls:0,le:0,base:0,last:-1,asked:now}; AU.ext=x;
+  if(!MUSIC_BYTES.has(src)) MUSIC_BYTES.set(src,fetch(src).then(r=>{ if(!r.ok) throw new Error(r.status); return r.arrayBuffer(); }));
+  MUSIC_BYTES.get(src).then(b=>AU.ctx.decodeAudioData(b.slice(0))).then(buf=>{ if(AU.ext!==x) return; const n=AU.ctx.createBufferSource(), t=AU.ctx.currentTime;
+    x.ls=x.end>x.start?x.start:0; x.le=x.end>x.start?Math.min(x.end,buf.duration):buf.duration;
+    // from start, or (with a bpm and landIn) a bar earlier so a downbeat falls exactly landIn seconds after the call (decoding time included)
+    let s=x.start; if(x.bpm>0&&landIn>0){ const bar=240/x.bpm, left=Math.max(0,landIn-(t-x.asked)); s=x.start+bar-(left%bar); while(s>=x.le-.5&&s>bar) s-=bar; }
+    s=clamp(s,0,buf.duration-.05); n.buffer=buf; n.loop=true; n.loopStart=x.ls; n.loopEnd=x.le; n.connect(g); n.start(t,s); x.node=n; x.t0=t-s; x.on=true;
+    g.gain.setTargetAtTime(x.vol,t,HC_FADE/3); AU.live.gain.setTargetAtTime(0,t,HC_FADE/3); })
+  // a missing or broken file falls back to the live music (and is not asked for again this session)
+  .catch(()=>{ if(AU.ext===x){ AU.ext=null; AU.live.gain.setTargetAtTime(1,AU.ctx.currentTime,.3); } });
 }
-function extFade(x){ if(!AU.ctx) return; x.g.gain.setTargetAtTime(0,AU.ctx.currentTime,HC_FADE/3); setTimeout(()=>{ try{ x.el.pause(); x.el.removeAttribute('src'); x.el.load(); x.g.disconnect(); }catch(e){} },HC_FADE*1000+300); }
+// where the playing file is (seconds): straight on from where it started, then around the loop part
+function extPos(X){ const p=AU.ctx.currentTime-X.t0; return p<X.le?p:X.ls+(p-X.ls)%(X.le-X.ls); }
+function extFade(x){ if(!AU.ctx) return; x.g.gain.setTargetAtTime(0,AU.ctx.currentTime,HC_FADE/3); setTimeout(()=>{ try{ if(x.node) x.node.stop(); x.g.disconnect(); }catch(e){} },HC_FADE*1000+300); }
+// the playing file's gain (the Main Stage rooms get louder room by room)
+function extVol(v){ const X=AU.ext; if(!X||!AU.ctx) return; X.vol=v; if(X.on) X.g.gain.setTargetAtTime(v,AU.ctx.currentTime,.8); }
+// Main Stage rooms: the looping part from STAGE.music, from vol[0] in the first room to vol[1] in the last room before the boss
+const stageFile=()=>MUSIC_LOCAL&&!!(STAGE.music&&STAGE.music.src);
+function stageMusic(){ if(!stageFile()||!AU.ctx) return; const M=STAGE.music, last=sortie?Math.max(1,sortie.N-2):1, k=sortie?clamp(sortie.ri/last,0,1):0;
+  extPlay(M,0,M.vol[0]+(M.vol[1]-M.vol[0])*k); }
 function hcMusicStop(){ AU.hcWant=-1; if(!AU.ctx) return; if(AU.ext){ extFade(AU.ext); AU.ext=null; } AU.live.gain.setTargetAtTime(1,AU.ctx.currentTime,.15); }
-// beat clock from the playing form track: absolute beats since the track's offset; a loop back keeps idx counting up in whole bars
+// beat clock from the playing file: absolute beats since the track's offset; a loop back keeps idx counting up in whole bars
 function extBeat(){
-  const X=AU.ext; if(!X||!X.ok||!(X.bpm>0)||X.el.paused) return false;
+  const X=AU.ext; if(!X||!X.on||!(X.bpm>0)||AU.ctx.state!=='running') return false;
   BEAT.bpm=X.bpm; BEAT.spb=60/X.bpm; BEAT.hit=false; BEAT.src='file';
-  const pos=Math.max(0,(X.el.currentTime-X.offset)/BEAT.spb), i=Math.floor(pos);
+  const pos=Math.max(0,(extPos(X)-X.offset)/BEAT.spb), i=Math.floor(pos);
   if(i<X.last) X.base+=Math.ceil((X.last+1)/4)*4;
   if(i!==X.last){ X.last=i; BEAT.idx=X.base+i; BEAT.hit=true; }
   BEAT.ph=clamp(pos-i,0,.999); return true;
@@ -187,5 +203,5 @@ function sfx(kind){
     case 'lvup': [523,659,784,1046].forEach((f,i)=>{ const o=ctx.createOscillator(); o.type='square'; o.frequency.value=f; const g=env(t+i*.07,.07,.003,.16); o.connect(g); g.connect(AU.sfx); o.start(t+i*.07); o.stop(t+i*.07+.2); }); break;
   }
 }
-const unlock=()=>{ audioInit(); const X=AU.ext; if(X&&X.el.paused){ const p=X.el.play(); if(p&&p.catch) p.catch(()=>{}); } };
+const unlock=()=>{ audioInit(); };
 addEventListener('pointerdown',unlock); addEventListener('keydown',unlock);
