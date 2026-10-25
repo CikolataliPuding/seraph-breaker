@@ -80,26 +80,26 @@ const WEAPON_DEAD={sig:{verdant:['ricochet','pierce']},
   arc:['diag','side','rear','pierce','ricochet','wall'], swarm:['diag','side','rear','pierce','ricochet','wall'], grav:['twin','diag','side','rear','pierce','ricochet','wall']};
 // cosmetics shop (gold, looks only, never power): only these coming-soon teasers for now
 const COSMETICS_SOON=[{n:'Frame paint',t:'Character',ic:'armor'},{n:'Shot colors',t:'Character',ic:'twin'},{n:'Special effects',t:'Character',ic:'storm'},{n:'Arena themes',t:'Arena',ic:'i_halo'}];
-// skill tree ranks cost diamonds (the Core and cosmetics take gold)
+// skill tree ranks cost diamonds (the Core and cosmetics take gold); the whole tree is ~520, sized so it fills late in a ~2.5 h campaign
 const TREE=[
   {branch:'Offense',c:'#ff6a1a',nodes:[
-    {id:'dmg',name:'Overclocked rounds',max:3,cost:[10,15,25],d:'+10% damage per rank'},
-    {id:'rate',name:'Faster cycling',max:2,cost:[15,25],d:'+8% fire rate per rank'},
-    {id:'crit',name:'Weak-point optics',max:3,cost:[15,25,40],d:'+7% chance to deal double damage'},
-    {id:'sp',name:'Sync amplifier',max:2,cost:[20,40],d:'Special recharges 25% faster per rank'},
-    {id:'exec',name:'Executioner',max:1,cost:[75],d:'+30% damage to bosses'}]},
+    {id:'dmg',name:'Overclocked rounds',max:3,cost:[6,9,15],d:'+10% damage per rank'},
+    {id:'rate',name:'Faster cycling',max:2,cost:[9,15],d:'+8% fire rate per rank'},
+    {id:'crit',name:'Weak-point optics',max:3,cost:[9,15,24],d:'+7% chance to deal double damage'},
+    {id:'sp',name:'Sync amplifier',max:2,cost:[12,24],d:'Special recharges 25% faster per rank'},
+    {id:'exec',name:'Executioner',max:1,cost:[45],d:'+30% damage to bosses'}]},
   {branch:'Defense',c:'#5fe0ff',nodes:[
-    {id:'hp',name:'Reinforced plating',max:3,cost:[10,15,25],d:'+15 max armor per rank'},
-    {id:'repair',name:'Field repair',max:2,cost:[15,25],d:'+40% healing from pickups and angels'},
-    {id:'hex',name:'Hex efficiency',max:2,cost:[15,30],d:'-20% barrier power drain'},
-    {id:'plate',name:'Ablative core',max:2,cost:[25,45],d:'-8% damage taken per rank'},
-    {id:'second',name:'Second wind',max:1,cost:[90],d:'Once per level, survive a fatal hit with 30% armor'}]},
+    {id:'hp',name:'Reinforced plating',max:3,cost:[6,9,15],d:'+15 max armor per rank'},
+    {id:'repair',name:'Field repair',max:2,cost:[9,15],d:'+40% healing from pickups and angels'},
+    {id:'hex',name:'Hex efficiency',max:2,cost:[9,18],d:'-20% barrier power drain'},
+    {id:'plate',name:'Ablative core',max:2,cost:[15,27],d:'-8% damage taken per rank'},
+    {id:'second',name:'Second wind',max:1,cost:[54],d:'Once per level, survive a fatal hit with 30% armor'}]},
   {branch:'Mobility',c:'#7dff9a',nodes:[
-    {id:'spd',name:'Servo tuning',max:2,cost:[10,20],d:'+6% move speed per rank'},
-    {id:'regen',name:'Cell recharge',max:3,cost:[10,20,35],d:'+15% power regeneration'},
-    {id:'dashcd',name:'Thruster vents',max:2,cost:[15,30],d:'-15% dash cooldown'},
-    {id:'magnet',name:'Salvage magnet',max:2,cost:[15,25],d:'+60% pickup reach, +10% gold'},
-    {id:'gadget',name:'Quick deploy',max:2,cost:[30,55],d:'-12% gadget cooldowns'}]},
+    {id:'spd',name:'Servo tuning',max:2,cost:[6,12],d:'+6% move speed per rank'},
+    {id:'regen',name:'Cell recharge',max:3,cost:[6,12,21],d:'+15% power regeneration'},
+    {id:'dashcd',name:'Thruster vents',max:2,cost:[9,18],d:'-15% dash cooldown'},
+    {id:'magnet',name:'Salvage magnet',max:2,cost:[9,15],d:'+60% pickup reach, +10% gold'},
+    {id:'gadget',name:'Quick deploy',max:2,cost:[18,33],d:'-12% gadget cooldowns'}]},
 ];
 /* core stats: the gold sink next to the diamond-priced skill tree. Cost grows ×1.45 per level, 30 levels each. */
 const CORE={
@@ -186,8 +186,10 @@ const BAL={
 };
 /* enemy scaling inside an arena: armor and damage grow exponentially with the room index (on top of the arena's hpMul / dmgMul),
    the room budget (how many enemies) grows slowly. Bosses use the same curve, normalized so the room 10 boss keeps its listed armor and damage;
-   the arena's final boss gets finalHp / finalDmg on top. mob: extra armor for every room mob (not bosses), so enemies live long enough to attack. */
-const SCALE={mob:1.5,hp:.063,dmg:.042,bossRef:9,finalHp:1.5,finalDmg:1.25,budget:{base:4.6,arena:1.1,room:.07,elite:.55}};
+   the arena's final boss gets finalHp / finalDmg on top. mob: extra armor for every room mob (not bosses), so enemies live long enough to attack.
+   bossDmgK: every boss hits harder by this much. A tougher start and a gentler climb (mob 2.2, hp .058, dmg .04) keep the late rooms from
+   running away, and a full campaign (all arenas + Main Stage) takes a strong pilot about 2.5 h (measured with the autopilot campaign). */
+const SCALE={mob:2.2,hp:.058,dmg:.04,bossDmgK:1.4,bossRef:9,finalHp:1.5,finalDmg:1.25,budget:{base:4.6,arena:1.1,room:.07,elite:.55}};
 // pilot xp per level: base + per × level (about one level every 1-2 rooms)
 const XP_NEED={base:6,per:.35}, XP_BOSS=10;
 /* economy: target earnings for one full run of each arena without gold bonuses (first-clear diamonds come on top, once).
