@@ -10,7 +10,7 @@ function spawnBoss(kind){
   if(m.eyes) m.eyes.forEach(e=>{ e.hp=hp*.012; e.alive=true; });
   if(form==='highco'){ boss.poles=[]; boss.chute=buildHighCoChute(); boss.chuteT=0; roomGroup.add(boss.chute.g); }
   scene.add(m.g,m.shadow); enemies.push(boss);
-  $('bossName').textContent=def.name.toLocaleUpperCase(LANG); $('bossPh').textContent=t('PHASE {0}','I'); $('bossImg').src=PORTRAIT[kind]||''; $('bossBar').firstElementChild.style.background=''; $('bossBar').classList.remove('regen');
+  $('bossName').textContent=def.name.toUpperCase(); $('bossPh').textContent=t('PHASE {0}','I'); $('bossImg').src=PORTRAIT[kind]||''; $('bossBar').firstElementChild.style.background=''; $('bossBar').classList.remove('regen');
   if(form==='highco') highcoInit(boss);
 }
 const toDir=b=>{ const T=tgt(); return new V3(T.x-b.pos.x,0,T.z-b.pos.z).normalize(); };
@@ -297,7 +297,7 @@ function highcoInit(b){
   b.drainCd=0; b.regenUsed=0; b.streams=null; hcHud(b); hcMusic(0);
 }
 function hcHud(b){ const f=b.def.forms[b.phase-1];
-  $('bossName').textContent='HIGH-CO · '+f.name.toLocaleUpperCase(LANG);
+  $('bossName').textContent='HIGH-CO · '+f.name.toUpperCase();
   $('bossPh').innerHTML=t('FORM {0}',['I','II','III'][b.phase-1])+' '+b.def.forms.map((x,i)=>`<i class="hcpip${i<b.phase-1?' done':i===b.phase-1?' on':''}" style="--c:${x.bar}"></i>`).join('');
   $('bossBar').firstElementChild.style.background=f.bar; }
 function highcoClearAttacks(b){
