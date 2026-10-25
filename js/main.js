@@ -191,4 +191,5 @@ applyTheme(0);
 makePortraits();
 rebuildPreview();
 openView('home');
+if(!P.lore.intro) storyShow();
 requestAnimationFrame(frame);
