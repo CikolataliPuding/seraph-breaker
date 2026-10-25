@@ -5,7 +5,8 @@ const SAVE_KEY='seraph-breaker-save-v2';
 // v5: the Main Stage (a 5th arena): bestRoom gets a 5th slot, and a save that already cleared Arena 4 opens it.
 // stageCode: the Main Stage beta access code (tester.js). Older saves get '' and can enter it in System.
 // v6: frames are bought with diamonds (units: owned frames, Azure free). Saves from before v6 are beta saves and keep every frame.
-const DEF_P={v:6,beta:false,testerCode:'',testerSave:false,testerTools:false,stageCode:'',rev:0,pilot:'',unit:'azure',units:{azure:true},c1:null,c2:null,gold:0,gems:0,skills:{},owned:{},weapon:'sig',gadgets:['',''],music:.55,sfx:.7,best:0,clears:0,progress:0,ctrl:'auto',autoGadget:false,mshield:'auto',arenas:1,bestRoom:[0,0,0,0,0],selArena:0,core:{armor:0,dmg:0,regen:0}};
+// v7: paint colors are bought with gold (paints: owned colors). Saves from before v7 keep the colors their frame wears.
+const DEF_P={v:7,beta:false,testerCode:'',testerSave:false,testerTools:false,stageCode:'',rev:0,pilot:'',unit:'azure',units:{azure:true},paints:[],c1:null,c2:null,gold:0,gems:0,skills:{},owned:{},weapon:'sig',gadgets:['',''],music:.55,sfx:.7,best:0,clears:0,progress:0,ctrl:'auto',autoGadget:false,mshield:'auto',arenas:1,bestRoom:[0,0,0,0,0],selArena:0,core:{armor:0,dmg:0,regen:0}};
 const freshP = () => JSON.parse(JSON.stringify(DEF_P));
 function normP(d){
   const p=freshP();
@@ -14,6 +15,8 @@ function normP(d){
   if(d&&typeof d==='object'&&(+d.v||0)<6) for(const k in UNITS) p.units[k]=true;
   p.units.azure=true;
   if(!UNITS[p.unit]||!p.units[p.unit]) p.unit='azure';
+  p.paints=Array.isArray(p.paints)?p.paints.map(Number).filter(Number.isFinite):[];
+  if(d&&typeof d==='object'&&(+d.v||0)<7) [p.c1,p.c2].forEach(c=>{ if(c!=null&&!p.paints.includes(+c)) p.paints.push(+c); });
   if(typeof p.skills!=='object'||!p.skills) p.skills={};
   if(typeof p.owned!=='object'||!p.owned) p.owned={};
   if(!WEAPONS[p.weapon]||(p.weapon!=='sig'&&!p.owned[p.weapon])) p.weapon='sig';

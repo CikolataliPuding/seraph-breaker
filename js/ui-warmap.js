@@ -97,8 +97,14 @@ function renderFrames(){
     bt.innerHTML=`<span class="n">${x.name}</span><span class="r">${x.role}</span><span class="r">SP · ${SPECIALS[x.key].name}</span>`+(own?'':`<span class="r price"><span class="cur gem"><i></i>${x.price}</span> ${armed===key?'· tap again to buy':P.gems<x.price?`· need ${x.price-P.gems} more`:'· buy'}</span>`);
     bt.onclick=()=>{ if(!own){ if(P.gems<x.price) return; if(armed!==key){ armed=key; sfx('click'); renderFrames(); return; } armed=null; P.gems-=x.price; P.units[x.key]=true; sfx('gem'); }
       P.unit=x.key; P.c1=null; P.c2=null; sfx('click'); rebuildPreview(); renderMenu(); persist(); }; fr.appendChild(bt); });
-  const sw=(el,list,cur,key)=>{ el.innerHTML=''; list.forEach((col,i)=>{ const bt=document.createElement('button'); bt.id=key+'_'+i; bt.style.setProperty('--c',CSS(col)); bt.setAttribute('aria-label','Paint '+CSS(col)); bt.setAttribute('aria-pressed',col===cur); bt.onclick=()=>{ P[key]=col; sfx('click'); rebuildPreview(); renderMenu(); persist(); }; el.appendChild(bt); }); };
+  // paint: the frame's own two colors are free, any other costs PAINT_PRICE gold once (tap to arm, tap again to buy) and then works in both slots
+  const ownPaint=col=>col===u.c1||col===u.c2||P.paints.includes(col);
+  const sw=(el,list,cur,key)=>{ el.innerHTML=''; list.forEach((col,i)=>{ const bt=document.createElement('button'), own=ownPaint(col), arm=armed==='p'+key+i; bt.id=key+'_'+i; bt.style.setProperty('--c',CSS(col));
+    if(!own) bt.classList.add('lock'); if(arm) bt.classList.add('arm'); bt.setAttribute('aria-label','Paint '+CSS(col)+(own?'':` · ${PAINT_PRICE} gold`)); bt.setAttribute('aria-pressed',col===cur);
+    bt.onclick=()=>{ if(!own){ if(!arm){ armed='p'+key+i; sfx('click'); renderFrames(); return; } if(P.gold<PAINT_PRICE){ renderFrames(); return; } armed=null; P.gold-=PAINT_PRICE; P.paints.push(col); sfx('coin'); }
+      P[key]=col; sfx('click'); rebuildPreview(); renderMenu(); persist(); }; el.appendChild(bt); }); };
   sw($('sw1'),PAINT1,c.c1,'c1'); sw($('sw2'),PAINT2,c.c2,'c2');
+  const pa=typeof armed==='string'&&armed[0]==='p'; $('paintNote').textContent=!pa?`Your frame's own colors are free. A new color costs ${PAINT_PRICE} gold, once, and works in both slots.`:P.gold<PAINT_PRICE?`Need ${(PAINT_PRICE-P.gold).toLocaleString()} more gold for this color.`:`Tap the color again to buy it for ${PAINT_PRICE} gold.`;
   const lo=$('loadout'); lo.innerHTML='';
   const item=(icon,label,name,go)=>{ const bt=document.createElement('button'); bt.className='lo'; bt.innerHTML=`${svg(icon)}<span><small>${label}</small><b></b></span>`; bt.querySelector('b').textContent=name; bt.onclick=go; lo.appendChild(bt); };
   const w=P.weapon; item(w,'Weapon',w==='sig'?{azure:'Rapid rifle',crimson:'Scatter cannon',verdant:'Pierce lance'}[P.unit]:WEAPONS[w].name,()=>openView('armory'));
