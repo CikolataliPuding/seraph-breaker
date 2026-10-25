@@ -46,7 +46,7 @@ function runScore(win){ const rooms=win?sortie.N:sortie.ri+(room&&room.cleared?1
   const speed=Math.round(Math.max(0,rooms*par-playTime)*RUN_SCORE.speed), dmg=taken*RUN_SCORE.dmg;
   return {rooms,taken,speed,dmg,total:Math.max(0,rooms*RUN_SCORE.room+speed-dmg)}; }
 function togglePause(){ if(!playing()||state==='cine'||state==='choice') return; paused=!paused; $('pause').hidden=!paused; resetTouch(); hideRsPop(); for(const k in keys)keys[k]=false; mouseDown=rightDown=false; if(paused){ renderPauseBuild(); persist(); } }
-function toMenu(view){ bossSnap=null; persist(); hideOverlays(); clearWorld(); setState('menu'); paused=false; refreshControls(); applyTheme(0); playTrack('menu'); openView(view||'home'); $('menu').hidden=false; }
+function toMenu(view){ bossSnap=null; $('hubris').style.opacity=0; $('hubTxt').hidden=true; persist(); hideOverlays(); clearWorld(); setState('menu'); paused=false; refreshControls(); applyTheme(0); playTrack('menu'); openView(view||'home'); $('menu').hidden=false; }
 $('resumeBtn').onclick=togglePause;
 // Save & exit keeps the run at the last cleared room; Abandon ends it (loot already picked up is kept)
 $('quitBtn').onclick=()=>toMenu('home');

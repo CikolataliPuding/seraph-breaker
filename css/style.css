@@ -69,6 +69,9 @@ input{-webkit-user-select:text;user-select:text}
 #toast small{display:block;font-family:var(--f-data);font-size:13px;letter-spacing:.24em;color:var(--signal);font-weight:600}
 #toast.on{opacity:1;transform:translate(-50%,-6px)}
 #vign{position:fixed;inset:0;pointer-events:none;z-index:4;opacity:0;transition:opacity .25s;box-shadow:inset 0 0 120px 30px rgba(232,36,60,.7)}
+/* hubris: dark red at the screen edges as the power gets to the pilot (player.js hubrisTick) */
+#hubris{position:fixed;inset:0;pointer-events:none;z-index:3;opacity:0;transition:opacity 1.2s;background:radial-gradient(ellipse at 50% 50%,transparent 58%,rgba(120,8,24,.55) 88%,rgba(60,0,10,.85))}
+#hubTxt{position:absolute;right:8px;top:8px;font:600 11px var(--f-data);letter-spacing:.2em;color:#ff4a5a;text-shadow:0 1px 4px #000}
 #chronoTint{position:fixed;inset:0;pointer-events:none;z-index:4;opacity:0;transition:opacity .3s;background:radial-gradient(circle,transparent 40%,rgba(95,224,255,.25));mix-blend-mode:screen}
 #fade{position:fixed;inset:0;z-index:9;background:#050306;opacity:0;pointer-events:none;transition:opacity .22s}
 #fade.on{opacity:1}

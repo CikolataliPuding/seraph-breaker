@@ -39,7 +39,7 @@ function buildMech(c1,c2,c3,eye,scale=1,frame=''){
     legs.push(leg); shins.push(shin);
   });
   g.scale.setScalar(scale);
-  return {g,hips,torso,head,arms,legs,shins,muzzle,rifle,mats:[M1,M2,M3],shadow:blob(.9*scale)};
+  return {g,hips,torso,head,arms,legs,shins,muzzle,rifle,mats:[M1,M2,M3],eyeM:ME,shadow:blob(.9*scale)};
 }
 const STRIDE=.5;
 function animMech(m,walk,amt){
