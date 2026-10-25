@@ -20,6 +20,13 @@ function hangarFocus(){ if(HANGAR.wide) return; const s=view==='home'?$('slotHom
   HANGAR.focus=r&&r.height>60?{x:r.left+r.width/2,y:r.top+r.height/2,h:r.height}:{x:innerWidth/2,y:innerHeight*.36,h:innerHeight*.36};
   $('hangarBg').style.setProperty('--tagY',(r&&r.height>60?r.top+6:96)+'px'); }
 addEventListener('resize',()=>{ if(!$('menu').hidden) placePreview(); });
+// menu cards tilt toward a mouse pointer (CSS: --rx/--ry, the gloss at --mx/--my); touch screens keep them flat
+const TILT='.stageCard,.card,.frame,.node,.arena,.coreRow,.lo';
+if(matchMedia('(hover:hover) and (pointer:fine)').matches){ let cur=null; const flat=c=>['--rx','--ry','--mx','--my'].forEach(k=>c.style.removeProperty(k));
+  $('menu').addEventListener('pointermove',e=>{ const c=e.target.closest&&e.target.closest(TILT); if(cur&&cur!==c) flat(cur); cur=c; if(!c) return;
+    const r=c.getBoundingClientRect(), x=(e.clientX-r.left)/r.width, y=(e.clientY-r.top)/r.height;
+    c.style.setProperty('--ry',((x-.5)*9).toFixed(2)+'deg'); c.style.setProperty('--rx',((.5-y)*9).toFixed(2)+'deg'); c.style.setProperty('--mx',Math.round(x*100)+'%'); c.style.setProperty('--my',Math.round(y*100)+'%'); });
+  $('menu').addEventListener('pointerleave',()=>{ if(cur) flat(cur); cur=null; }); }
 function renderMenu(){
   document.documentElement.style.setProperty('--unit',unitCss());
   $('wGold').textContent=P.gold.toLocaleString(); $('wGems').textContent=P.gems.toLocaleString();
