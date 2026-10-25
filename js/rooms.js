@@ -15,6 +15,8 @@ function clearRoom(){
   if(npc){ scene.remove(npc.m.g); npc=null; }
 }
 function buildRoom(hx,hz,grid,withDoor){
+  // desktop rooms are 2 columns wider than the 11-column layouts: an open lane on each side, blocks keep their size
+  if(grid&&!mobileMode&&grid[0].length===11) grid=grid.map(r=>'.'+r+'.');
   clearRoom(); AX=hx; AZ=hz;
   const t=ARENAS[stage].theme;
   tileTex.repeat.set(hx,hz);
@@ -96,9 +98,12 @@ function fizzleRoom(){
   for(let i=bullets.length-1;i>=0;i--){ const b=bullets[i]; if(b.from!=='e') continue; sparks(b.m.position,0xa79fae,1,3); killBullet(i); }
 }
 function openDoor(){ if(!door||door.open) return; door.open=true; door.bar.material.color.setHex(0x5fe0ff); door.bar.material.opacity=.25; door.arrow.visible=true; sfx('door'); toast('Room clear','Door open'); }
-function freeSpot(minFromEntry=6){
-  for(let i=0;i<60;i++){ const x=rand(-AX+1.5,AX-1.5), z=rand(-AZ+1.5,AZ-3.5); if(inBlock(x,z,1)) continue; if(Math.hypot(x,z-(AZ-1.5))<minFromEntry) continue; if(player&&Math.hypot(x-player.pos.x,z-player.pos.z)<5) continue; return new V3(x,0,z); }
-  return new V3(rand(-3,3),0,-AZ+2.5);
+// spawns keep SPAWN_MIN from the pilot (ambush: AMBUSH_MIN behind or beside); with no such spot in 60 tries the farthest one tried is used
+const SPAWN_MIN=8, AMBUSH_MIN=6;
+function freeSpot(minFromEntry=6){ let best=null,bd=-1;
+  for(let i=0;i<60;i++){ const x=rand(-AX+1.5,AX-1.5), z=rand(-AZ+1.5,AZ-3.5); if(inBlock(x,z,1)) continue; if(Math.hypot(x,z-(AZ-1.5))<minFromEntry) continue;
+    const d=player?Math.hypot(x-player.pos.x,z-player.pos.z):99; if(d>=SPAWN_MIN) return new V3(x,0,z); if(d>bd){ bd=d; best=new V3(x,0,z); } }
+  return best||new V3(rand(-3,3),0,-AZ+2.5);
 }
 // mobs unlock in the arena's list order as the run goes on (3 at first, one more every 4 rooms)
 function arenaPool(a=sortie.a,ri=sortie.ri){ const A=ARENAS[a], ok=A.mobs.filter(t=>ENEMY[t]); return ok.slice(0,Math.min(ok.length,3+Math.floor(ri/4))); }
@@ -126,15 +131,17 @@ function composeRoom(spec,a=sortie.a,ri=sortie.ri,rule=sortie.rule,cap=mobileMod
 }
 // spawn points: drop-in anywhere (away from you), ambush (behind you and on your flanks), or through a reinforcement gate
 function ambushSpot(i){ const p=player.pos; for(let k=0;k<30;k++){ const side=(i+k)%3; let x,z;
-    if(side===0){ x=clamp(p.x+rand(-5,5),-AX+1.5,AX-1.5); z=clamp(p.z+rand(3.5,6),-AZ+1.5,AZ-1.2); }
+    if(side===0){ x=clamp(p.x+rand(-5,5),-AX+1.5,AX-1.5); z=clamp(p.z+rand(AMBUSH_MIN,AMBUSH_MIN+2.5),-AZ+1.5,AZ-1.2); }
     else { x=(side===1?-1:1)*(AX-rand(1.3,2.5)); z=clamp(p.z+rand(-4,3),-AZ+1.5,AZ-1.5); }
-    if(!inBlock(x,z,1)&&Math.hypot(x-p.x,z-p.z)>3.2) return new V3(x,0,z); } return freeSpot(); }
+    if(!inBlock(x,z,1)&&Math.hypot(x-p.x,z-p.z)>=AMBUSH_MIN) return new V3(x,0,z); } return freeSpot(); }
 function gateSpot(g){ const G_=room.gates[g%room.gates.length]; for(let k=0;k<20;k++){ const x=clamp(G_.x+rand(-1.5,1.5)*(G_.side?0:1)+(G_.side?-G_.side*rand(.4,1.4):0),-AX+1,AX-1), z=clamp(G_.z+rand(-1.5,1.5)*(G_.side?1:0)+(G_.side?0:rand(.5,1.5)),-AZ+1,AZ-1); if(!inBlock(x,z,1)) return new V3(x,0,z); } return freeSpot(); }
 // a seat for an enemy that never moves (the Main Stage drummer): the far half of the mat, clear of blocks all around, away from you
 function seatSpot(){ for(let k=0;k<60;k++){ const x=rand(-AX+3,AX-3), z=rand(-AZ+3,-1); if(inBlock(x,z,2.6)||player&&Math.hypot(x-player.pos.x,z-player.pos.z)<7) continue; return new V3(x,0,z); } return freeSpot(); }
 function spawnWave(list,mode){ list.forEach((t,i)=>{ const tag=t.slice(-1), elite=tag==='*'||tag==='!', k=elite?t.slice(0,-1):t;
   const pos=ENEMY[k]&&ENEMY[k].seat?seatSpot():mode==='ambush'?ambushSpot(i):mode==='gate'?gateSpot(i):freeSpot(), e=spawnEnemy(k,pos,elite,{noDrop:mode==='gate'&&!ENEMY[k].seat,hunt:tag==='!'});
-  if(e&&mode==='gate'){ e.wake=.25; groundRing(pos,0xff5a3a,2,.4); } }); }
+  if(e&&mode==='gate'){ e.wake=.25; groundRing(pos,0xff5a3a,2,.4); }
+  // an ambush flashes a red ring where each one lands and gives you a beat before it acts
+  if(e&&mode==='ambush'){ e.wake=Math.max(e.wake,.8); groundRing(pos,0xff5a3a,2.2,.6); } }); }
 // reinforcement gates on the mat edge: the top one (by the door) and one on each side
 function buildGates(){ room.gates=[{x:0,z:-AZ+1.2,side:0},{x:-AX+1.2,z:-3,side:-1},{x:AX-1.2,z:-3,side:1}];
   room.gates.forEach(g=>{ const m=new THREE.Mesh(box(g.side?.3:3.4,.1,g.side?3.4:.3),basic(0xff5a3a,false)); m.position.set(g.side?g.side*AX:0,.07,g.side?g.z:-AZ+.2); roomGroup.add(m);
