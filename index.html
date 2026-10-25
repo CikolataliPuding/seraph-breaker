@@ -55,8 +55,8 @@
     <div class="tbar">
       <div class="avatar" id="avatar">01</div>
       <div class="who"><span>PILOT <em class="badge" id="betaBadge" hidden>BETA TESTER</em></span><b id="whoName">[CALLSIGN]</b></div>
-      <div class="chip cur gold" title="Gold: from every kill, spent on skills"><i></i><span id="wGold">0</span></div>
-      <div class="chip cur gem" title="Diamonds: from bosses and first clears, spent in the armory"><i></i><span id="wGems">0</span></div>
+      <div class="chip cur gold" title="Gold: from every kill, spent on the Core and cosmetics"><i></i><span id="wGold">0</span></div>
+      <div class="chip cur gem" title="Diamonds: from bosses and first clears, spent on the skill tree, the armory and new frames"><i></i><span id="wGems">0</span></div>
     </div>
     <div class="views">
       <section class="view" id="v-home">
@@ -87,10 +87,13 @@
         <p class="note">Weapons replace your frame's signature gun. Gadgets add moves of their own: equip two.</p>
         <h3>Weapons</h3><div class="grid" id="gridW"></div>
         <h3>Gadgets</h3><div class="grid" id="gridG"></div>
+        <h3>Cosmetics <span class="cur gold"><i></i><span id="aGold">0</span></span></h3>
+        <p class="note">Gold buys looks only, never power. Paint, shot colors and arena themes are on the way.</p>
+        <div class="grid" id="gridC"></div>
       </section>
       <section class="view" id="v-skills" hidden>
-        <div class="tabsTitle"><b>Upgrades</b><span class="cur gold"><i></i><span id="sGold">0</span></span></div>
-        <p class="note">Permanent upgrades for every frame. Core stats never cap out early; the tree nodes open one after another.</p>
+        <div class="tabsTitle"><b>Upgrades</b><span><span class="cur gold"><i></i><span id="sGold">0</span></span> <span class="cur gem"><i></i><span id="sGems">0</span></span></span></div>
+        <p class="note">Permanent upgrades for every frame. Core levels cost gold and never cap out early; tree nodes cost diamonds and open one after another.</p>
         <h3>Core</h3><div class="core" id="coreHangar"></div>
         <h3>Skill tree</h3>
         <div id="treeHangar"></div>
@@ -99,7 +102,7 @@
         <div class="tabsTitle"><b>Frames</b></div>
         <div id="slotFrames"></div>
         <label class="fld"><span>Pilot callsign</span><input id="pilotIn" maxlength="14" autocomplete="off" spellcheck="false" placeholder="Enter callsign"></label>
-        <div class="fld"><span>Frame · sets your special move</span><div class="frames" id="frames"></div></div>
+        <div class="fld"><span>Frame · sets your special move · new frames cost diamonds</span><div class="frames" id="frames"></div></div>
         <div class="fld"><span>Primary paint</span><div class="sw" id="sw1"></div></div>
         <div class="fld"><span>Accent paint</span><div class="sw" id="sw2"></div></div>
         <div class="fld"><span>Loadout</span><div class="loadout" id="loadout"></div></div>
