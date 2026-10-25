@@ -86,7 +86,7 @@ const DICT_TR={
   'Gold':'Altın', 'Special recharge':'Özel dolumu', 'Special power':'Özel gücü', 'Pickup reach':'Toplama menzili', 'Gadget speed':'Aparat hızı',
   // in a room: HUD, room messages, pop-ups (main.js, rooms.js, player.js, bosses.js, enemies.js, mobile.js)
   'Overheat':'Aşırı ısınma', 'Barrier':'Bariyer', 'READY':'HAZIR', 'MAX LVL':'MAKS LV',
-  'Ambush!':'Pusu!', 'Reinforcements':'Takviye', 'Second wave':'İkinci dalga', 'Survived':'Dayandın', 'Room clear':'Oda temiz', 'Caught':'Yakalandı', 'Escaped':'Kaçtı', 'The elite got away':'Elit kaçtı',
+  'Ambush!':'Pusu!', 'Out of the exit':'Çıkış kapısından', 'Reinforcements':'Takviye', 'Second wave':'İkinci dalga', 'Survived':'Dayandın', 'Room clear':'Oda temiz', 'Caught':'Yakalandı', 'Escaped':'Kaçtı', 'The elite got away':'Elit kaçtı',
   'Door open':'Kapı açık', 'NEXT WAVE':'SONRAKİ DALGA', 'Wave clear':'Dalga temiz', 'Wave {0}/{1} next':'Sıradaki dalga {0}/{1}', 'Encore':'Bis', 'Wave {0}/{1}':'Dalga {0}/{1}',
   'The whole band is on stage':'Bütün grup sahnede', 'SURVIVE':'DAYAN', 'HUNT':'AV', 'Elite room':'Elit oda', 'Room {0}/{1}':'Oda {0}/{1}', 'Backstage repair':'Kulis tamiri', '+{0}% armor':'+%{0} zırh',
   'PERFECT':'KUSURSUZ', 'ON BEAT · PERFECT':'RİTİMDE · KUSURSUZ', 'AEGIS':'AEGIS', 'DODGE':'KAÇINDIN', 'EXTRA LIFE':'EKSTRA CAN', 'Out of bounds':'Alan dışı', 'Get back on the mat':'Zemine geri dön',
