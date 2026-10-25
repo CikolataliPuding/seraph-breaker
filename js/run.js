@@ -45,7 +45,7 @@ function launchArena(a,saved,retry){
   const A=ARENAS[a], N=A.rooms;
   sortie={a,N,tester:!!(DEBUG||saved&&saved.tester),farm:farmMul(a),seed:saved&&Number.isFinite(+saved.seed)?saved.seed|0:(Math.random()*2e9)|0,ri:saved?clamp(saved.ri|0,0,N-1):0,xp:0,lv:1,pendingLv:0,gold:0,gems:0,start:performance.now(),rerolls:1,curses:[],items:[],lastBoss:'',mods:saved?(saved.mods||[]).filter(m=>MODS[m]):(A.mixed?rollMods():[]),rule:{},dmgTaken:0,log:[]};
   choiceQ.length=0; makePlayer();
-  $('uName').innerHTML=''; const nm=document.createElement('span'); nm.textContent=P.pilot||t('Pilot'); const sm=document.createElement('small'); sm.textContent=' · '+unit.name; const lv=document.createElement('em'); lv.id='lvTxt'; lv.textContent='LV 1'; $('uName').append(nm,sm,lv);
+  $('uName').innerHTML=''; const nm=document.createElement('span'); nm.textContent=P.pilot||t('Pilot'); const sm=document.createElement('small'); sm.textContent=' · '+unit.name; sm.lang='en'; const lv=document.createElement('em'); lv.id='lvTxt'; lv.textContent='LV 1'; $('uName').append(nm,sm,lv);
   buildRule(); score=0; kills=0; playTime=0;
   if(saved) restoreRun(saved);
   sortie.plan=arenaPlan(a,sortie.seed,saved&&!saved.seed?sortie.lastBoss:'');

@@ -461,10 +461,12 @@ const BOSSES={
        the live synthesized boss music and its BPM. */
     tracks:[{src:'',bpm:0,offset:0},{src:'',bpm:0,offset:0},{src:'',bpm:0,offset:0}]},
 };
-/* corrupted variants: any boss + purple tint, crystal spikes and a few attacks borrowed from another boss. Arena 4 draws from all of them. */
+/* corrupted variants: any boss + purple tint, crystal spikes and a few attacks borrowed from another boss. Arena 4 draws from all of them.
+   The bosses are put in the active language first (i18n.js) so the variants are built from translated lines; boss names stay English. */
+if(LANG!=='en') langData(BOSSES);
 const CORRUPT_DONOR={colossus:['shards','beam'],prism:['missiles','slam'],seraph:['walls','bombline'],hive:['mines','spiral'],arachne:['bombline','ring'],throne:['spiral','missiles'],archon:['slam','shards']};
 for(const k of Object.keys(CORRUPT_DONOR)){ const b=BOSSES[k], dn=CORRUPT_DONOR[k];
-  BOSSES['x_'+k]=Object.assign({},b,{name:'Corrupted '+b.name.replace(/^The /,''),cls:b.cls+' · Corrupted',epi:'The void got inside it. Same frame, new tricks, more armor.',threat:Math.min(5,b.threat+1),warn:'CORRUPTED SIGNAL · '+b.warn,hp:Math.round(b.hp*1.35),form:k,corrupt:true,gold:Math.round(b.gold*1.3),gems:Math.round(b.gems*1.3),
+  BOSSES['x_'+k]=Object.assign({},b,{name:'Corrupted '+b.name.replace(/^The /,''),cls:b.cls+' · '+t('Corrupted'),epi:t('The void got inside it. Same frame, new tricks, more armor.'),threat:Math.min(5,b.threat+1),warn:t('CORRUPTED SIGNAL')+' · '+b.warn,hp:Math.round(b.hp*1.35),form:k,corrupt:true,gold:Math.round(b.gold*1.3),gems:Math.round(b.gems*1.3),
     pool:b.pool.map((p,i)=>p.concat(dn.slice(0,i===0?1:2)))}); }
 /* hand-built room layouts: 11 columns × 15 rows of cells (22 × 30 units on desktop, 20 × 30 on phones). Row 0 is the door side, the last row the entry.
    # block (stops movement and most shots) · ~ trap (walkable; a run of ~ is one trap: a saw rail, spike tiles or light pillars by arena, see TRAPS)
@@ -487,5 +489,6 @@ const ROOMS=[
   ['...........','...........','..~~~.~~~..','...........','...........','...#...#...','....#.#....','.....#.....','...........','...........','..~~~.~~~..','...........','...........','...........','...........'],
 ];
 const SANCTUM=['...........','...........','..#.....#..','...........','...........','...........','...........','...........','...........','...........','...........','...........','..#.....#..','...........','...........'];
-// the data tables in the active language (i18n.js); the story is plain lines
-if(LANG!=='en'){ [UNITS,SPECIALS,WEAPONS,GADGETS,COSMETICS_SOON,TREE,CORE,RARITY,RSK,ITEMS,CURSES,ARENAS,MODS,ENEMY,COMPS,BOSSES,ROOM_KINDS,AFFIX].forEach(o=>langData(o)); langData(STORY,true); }
+// the data tables in the active language (i18n.js); the story is plain lines. BOSSES went before the corrupted variants;
+// ENEMY stays out: enemy names stay English and its tag / role strings are ids. COMPS names are never shown.
+if(LANG!=='en'){ [UNITS,SPECIALS,WEAPONS,GADGETS,COSMETICS_SOON,TREE,CORE,RARITY,RSK,ITEMS,CURSES,ARENAS,MODS,ROOM_KINDS,AFFIX].forEach(o=>langData(o)); langData(STORY,true); }
