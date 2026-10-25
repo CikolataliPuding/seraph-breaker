@@ -12,6 +12,8 @@ const SPECIALS = {
 };
 const PAINT1=[0x2f62d8,0xd5352a,0x6b3fb8,0x3aa048,0xe8e8ee,0x3a3d48,0xd9a520,0xf07a1a,0x1e1c24,0xe0508a];
 const PAINT2=[0xeeeef4,0xf2a51e,0x5fd04a,0x3ad0ff,0xd5352a,0xff7ad0,0x24202c,0xffd36a];
+// repaint: a color outside the frame's own two costs gold once (gold is the cosmetics currency) and then works in both slots
+const PAINT_PRICE=400;
 const IC={
   sig:'M3 14h12l3-2h3v3h-3l-2 2H8l-1 3H5l1-3H3z', rail:'M2 12h15M17 8l5 4-5 4M6 8v8M10 8v8',
   torch:'M12 3c2 4 6 6 6 11a6 6 0 0 1-12 0c0-3 2-5 3-7 1 2 2 3 3 3 0-3-1-5 0-7z', arc:'M13 2L4 14h7l-1 8 9-12h-7z',
