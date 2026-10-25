@@ -38,7 +38,8 @@ function frame(now){
   // debug fast-forward (DBG.turbo): several fixed simulation steps per drawn frame, for measurement runs in a headless browser
   const n=typeof DBG!=='undefined'&&DBG.turbo>1?DBG.turbo:1;
   for(let i=0;i<n;i++) tick(n>1?1/30:raw,now+i*33);
-  if(!(typeof DBG!=='undefined'&&DBG.noRender)) renderer.render(scene,cam);
+  // the wide hangar covers the whole screen in the menu: the game scene behind it is not drawn
+  if(!(typeof DBG!=='undefined'&&DBG.noRender)&&!(state==='menu'&&HANGAR.wide&&!$('menu').hidden)) renderer.render(scene,cam);
 }
 function tick(dt,now){
   if(BOT.on) botTick(dt);
@@ -48,7 +49,7 @@ function tick(dt,now){
   if(dt>0&&hitstopT>0){ hitstopT-=dt; dt=0; }
   if(dt>0&&slowT>0) slowT=Math.max(0,slowT-dt);
   const t=now/1000;
-  if(state==='menu'){ camTarget.set(Math.sin(t*.12)*6,0,Math.cos(t*.12)*6); if(!$('menu').hidden&&(view==='home'||view==='frames')) renderPreview(t); }
+  if(state==='menu'){ camTarget.set(Math.sin(t*.12)*6,0,Math.cos(t*.12)*6); if(!$('menu').hidden&&(view==='home'||view==='frames'||HANGAR.wide)) renderPreview(t); }
   chrono=Math.max(0,chrono-dt); const eTS=(chrono>0?.3:1)*(slowT>0?.25:1), edt=dt*eTS;
   $('chronoTint').style.opacity=chrono>0||slowT>0?1:0;
   if(toastT>0){ toastT-=dt||.016; if(toastT<=0) $('toast').classList.remove('on'); }
