@@ -7,7 +7,12 @@ const lvCap=a=>ARENAS[a]&&ARENAS[a].stage?STAGE.lvCap:0, atCap=()=>{ const c=lvC
 function gainXp(v){ if(!sortie) return; if(atCap()){ sortie.xp=0; return; } sortie.xp+=v;
   while(sortie.xp>=xpNeed()){ sortie.xp-=xpNeed(); sortie.lv++; sortie.pendingLv++; if(atCap()){ sortie.xp=0; break; } } }
 // a skill is offered while it can rank up; projectile and orbit skills stop at the hard cap (evolutions are trimmed instead, see pshot/buildOrbit)
-const skillOk=(id,rs=player.rs)=>{ const s=RSK[id]; if((rs[id]||0)>=s.max||(s.req&&!s.req(rs))) return false;
+// a card that does nothing with the equipped weapon (data.js WEAPON_DEAD); Crimson's Diagonal / Side / Rear fan out from its Twin / Storm slug
+function deadCard(id,rs){ const w=P.weapon||'sig', d=WEAPON_DEAD[w]||[], list=w==='sig'?d[P.unit]||[]:d; if(list.includes(id)) return true;
+  return w==='sig'&&P.unit==='crimson'&&['diag','side','rear'].includes(id)&&!(rs.twin||rs.storm); }
+// ...it is still offered as an evolution parent when that evolution works with the weapon and its other parent is owned
+const evoParent=(id,rs)=>Object.keys(RSK).some(e=>{ const v=RSK[e].evo; return v&&v.includes(id)&&!deadCard(e,rs)&&v.every(x=>x===id||rs[x]); });
+const skillOk=(id,rs=player.rs)=>{ const s=RSK[id]; if((rs[id]||0)>=s.max||(s.req&&!s.req(rs))||deadCard(id,rs)&&!evoParent(id,rs)) return false;
   if(s.rarity!=='legendary'&&(s.proj&&extraProj(rs)+s.proj>BAL.cap.proj||s.orb&&orbCount(rs)+s.orb>BAL.cap.orbit)) return false; return true; };
 // Lucky Coin pushes every roll one tier up
 function rarityWeights(l=player.luck||0){ return l?{common:Math.max(20,60-15*l),rare:28+5*l,epic:10+6*l,legendary:2+4*l}:{common:60,rare:28,epic:10,legendary:2}; }
@@ -36,7 +41,7 @@ function runIcons(){ return buildEntries().map((en,i)=>{ const s=document.create
   const n=en.kind==='skill'?player.rs[en.id]:0; if(n>1){ const b=document.createElement('b'); b.textContent=n; s.appendChild(b); } return s; }); }
 function renderRunSkills(){ const bar=$('rsBar'); bar.innerHTML=''; bar.append(...runIcons()); }
 // roulette card for a run skill: rank pips and a value preview for stat skills ("Damage +18% → +36%")
-function skillCard(id,extra){ const s=RSK[id], rk=player.rs[id]||0; return {id,icon:s.icon,name:s.name,desc:s.d+(extra||''),rarity:s.rarity,tag:`${RARITY[s.rarity].n} · `+(rk?`Rank ${rk+1}/${s.max}`:'New'),pips:{rank:rk,max:s.max},pv:bonusPreview(s.bonus)}; }
+function skillCard(id,extra){ const s=RSK[id], rk=player.rs[id]||0; return {id,icon:s.icon,name:s.name,desc:s.d+(extra||'')+(deadCard(id,player.rs)?' No effect with this weapon: it counts toward its evolution.':''),rarity:s.rarity,tag:`${RARITY[s.rarity].n} · `+(rk?`Rank ${rk+1}/${s.max}`:'New'),pips:{rank:rk,max:s.max},pv:bonusPreview(s.bonus)}; }
 
 /* ================= ORBITS + WINGMAN ================= */
 function buildOrbit(){
