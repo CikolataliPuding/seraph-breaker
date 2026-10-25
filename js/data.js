@@ -72,6 +72,12 @@ const GADGETS={
   drone: {name:'Combat Drone',price:150,cd:20,tag:'Support',d:'Deploy a drone that orbits you and fires at enemies for 12 s.'},
   chrono:{name:'Chrono Field',price:300,cd:25,tag:'Time',d:'Slow every enemy and enemy shot to a crawl for 4 s.'},
 };
+// run skills that do nothing with a weapon are not offered with it (measured: x1.00 DPS). sig = the frame's own gun, listed by frame.
+// Torch hits are damage over time, which never crit or proc; Rail, Singularity, Blade and Arc fire no projectiles.
+const WEAPON_DEAD={sig:{verdant:['ricochet','pierce']},
+  torch:['sig','crit','twin','diag','side','rear','pierce','ricochet','wall','poison','arc','meteor','freeze','headshot','storm'],
+  blade:['diag','side','rear','pierce','ricochet','wall'], rail:['twin','diag','side','rear','pierce','ricochet','wall'],
+  arc:['diag','side','rear','pierce','ricochet','wall'], swarm:['diag','side','rear','pierce','ricochet','wall'], grav:['twin','diag','side','rear','pierce','ricochet','wall']};
 // cosmetics shop (gold, looks only, never power): only these coming-soon teasers for now
 const COSMETICS_SOON=[{n:'Frame paint',t:'Character',ic:'armor'},{n:'Shot colors',t:'Character',ic:'twin'},{n:'Special effects',t:'Character',ic:'storm'},{n:'Arena themes',t:'Arena',ic:'i_halo'}];
 // skill tree ranks cost diamonds (the Core and cosmetics take gold)
