@@ -27,6 +27,8 @@ Bir dosyada en üst seviyede tanımlanan her şey (fonksiyonlar, `const`/`let`) 
 | Dosya | Ne var |
 |---|---|
 | `js/core.js` | Her yerde kullanılan küçük yardımcılar (`$`, `rand`, `clamp`, `isTouch`, `mobileMode` ...) |
+| `js/lang-tr.js` | Türkçe metinler: İngilizce metin → Türkçe karşılığı (`DICT_TR`). Sadece veri. |
+| `js/i18n.js` | Dil desteği. `t('English text', ...)` aktif dildeki metni verir, karşılık yoksa İngilizce kalır. Veri tablolarını (`langData`, `data.js`'in sonunda) ve statik HTML'i (`langDom`) yükleme anında çevirir. Dil `seraph-breaker-lang` anahtarında; System'den değişince sayfa yenilenir. Eksik çeviriler: konsolda `[...LANG_MISS]`. |
 | `js/data.js` | **Oyun verisi.** Birimler (`UNITS`), silahlar (`WEAPONS`), aletler (`GADGETS`), yetenek ağacı (`TREE`), Core statlar (`CORE`), arenalar (`ARENAS`, `MODS`), düşmanlar (`ENEMY`), koşu yetenekleri (`RSK`, `RARITY`), şeytan lanetleri (`CURSES`), eşyalar (`ITEMS`), bosslar (`BOSSES` + corrupted varyantlar), oda düzenleri (`ROOMS`), ikonlar (`IC`). Katkıların çoğu buradan başlar. |
 | `js/balance.js` | Denge sistemi: stat kovaları (aynı stattaki bonuslar toplanır, kovalar çarpılır), soft/hard cap'ler, proc limitleri, düşman ölçek eğrisi (`enemyScale`), oyuncu güç tahmini (`powerEstimate`), ekonomi yardımcıları. Sayılar `data.js` içindeki `BAL`, `SCALE`, `XP_NEED`, `ECON`'da. |
 | `js/save.js` | Kayıt (localStorage). Yeni alanlar `DEF_P`'ye varsayılanla eklenir, eski kayıtlar `normP` ile açılır. |
@@ -80,6 +82,8 @@ Kolay başlangıç fikirleri:
 - **Yeni eşya:** `ITEMS` listesine `{name, d, rarity, icon, shape, color, bonus}` ekle. Stat dışı bayraklar için `add` ve `rem` kullan; birbirinin tersi olmalı ki eşya takas edilebilsin.
 - **Yeni düşman:** `ENEMY` listesine ekle (`role`, `tag`, `mass`, gerekiyorsa `band`), `js/enemy-ai.js` içindeki `AI` ve `ANIM` tablolarına birer fonksiyon yaz (hazır yardımcılar: `holdBand`, `chase`, `seek`, `attackCycle`), bir arenanın `mobs` listesine ve istersen `COMPS` şablonlarına koy.
 - **Yeni oda tipi ya da tempo:** `ROOM_KINDS` ve `PACING` (`js/data.js`); başlangıcı `startCombat` (`js/rooms.js`), oda içindeki akışı `roomKinds` (`js/main.js`).
+- **Oyuna metin eklemek:** Kod içinde yazılan metin `t('English text')` ile yazılır. Sayılar metnin içine değil yer tutucuya girer: `t('Best room {0}/{1}', best, rooms)`. Türkçesini `js/lang-tr.js`'e ekle. `data.js` tablolarındaki `name`, `d`, `tag` gibi alanlar ve `index.html`'deki statik metinler kendiliğinden çevrilir; sadece sözlüğe satır eklemek yeter.
+- **Yeni dil:** `js/lang-tr.js` gibi bir `js/lang-xx.js` aç, `index.html`'de `i18n.js`'ten önce yükle, `js/i18n.js` içindeki `LANGS` ve `DICT`'e birer satır ekle. Fontların o alfabeyi desteklediğini kontrol et.
 
 ## İyi bir PR için
 
