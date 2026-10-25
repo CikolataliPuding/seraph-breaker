@@ -41,6 +41,7 @@ const extraProj=rs=>{ let n=0; for(const id in rs){ const s=RSK[id]; if(s&&s.pro
 const orbCount=rs=>{ let n=0; for(const id in rs){ const s=RSK[id]; if(s&&s.orb) n+=s.orb*Math.min(rs[id],s.max); } return n; };
 // labels and effective values for the value preview on skill cards and the build panel
 const BUCKET_TXT={dmg:'Damage',rate:'Fire rate',hp:'Max armor',hpFlat:'Max armor',regen:'Power regen',spd:'Move speed',crit:'Crit chance',dodge:'Dodge',gold:'Gold',sp:'Special recharge',spPow:'Special power',taken:'Damage taken',magnet:'Pickup reach',gcd:'Gadget speed',en:'Power'};
+if(LANG!=='en') langData(BUCKET_TXT,true); // stat names in the active language (i18n.js)
 function bucketVal(k,b){ const C=BAL.cap, pc=v=>Math.round(v*100)+'%', sg=v=>(v>=0?'+':'-')+pc(Math.abs(v));
   if(k==='hpFlat') return '+'+Math.round(b.hpFlat); if(k==='en') return '+'+Math.round(b.en);
   if(k==='crit'){ const m=player?metaStats(P,P.unit).crit:0; return pc(Math.min(C.crit,m+b.crit)); }

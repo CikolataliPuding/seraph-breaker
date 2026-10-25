@@ -47,7 +47,7 @@ function dashAim(dir){ const p=player, mv=dir&&dir.isVector3&&dir.lengthSq()>.01
 function perfectDodge(){
   const p=player; if(!p||p.perfect) return; p.perfect=true;
   slowmo(.4); if(!(p.od>0||p.lance>0)) p.sp=Math.min(100,p.sp+15); sfx('perfect'); buzz(25);
-  groundRing(p.pos,0xffffff,3.2,.45); groundRing(p.pos,unit.shot,2,.3); popText(p.beatDash?'ON BEAT · PERFECT':'PERFECT');
+  groundRing(p.pos,0xffffff,3.2,.45); groundRing(p.pos,unit.shot,2,.3); popText(t(p.beatDash?'ON BEAT · PERFECT':'PERFECT'));
 }
 // the HUD beat pip flashes when a dash lands on the beat
 function beatFlash(){ const el=$('beatPip'); if(!el) return; el.classList.remove('dash'); void el.offsetWidth; el.classList.add('dash'); }
@@ -101,8 +101,8 @@ function dotHurt(d){
 }
 function hurt(d){
   const p=player; if(godMode) return; if(!p||p.dead||p.inv>0||p.dashT>0||p.leap||p.jump||(p.hook&&p.hook.phase==='pull')||state!=='fight') return;
-  if(p.aegis){ p.aegis=false; p.inv=.5; hexFlash(p.pos.clone().addScaledVector(p.aim,2)); sparks(p.pos.clone().setY(2),0xb070ff,10,6); popText('AEGIS'); sfx('shield'); return; }
-  if(p.st.dodge&&Math.random()<p.st.dodge){ p.inv=.3; sparks(p.pos.clone().setY(2),0xffffff,6,5); popText('DODGE'); return; }
+  if(p.aegis){ p.aegis=false; p.inv=.5; hexFlash(p.pos.clone().addScaledVector(p.aim,2)); sparks(p.pos.clone().setY(2),0xb070ff,10,6); popText(t('AEGIS')); sfx('shield'); return; }
+  if(p.st.dodge&&Math.random()<p.st.dodge){ p.inv=.3; sparks(p.pos.clone().setY(2),0xffffff,6,5); popText(t('DODGE')); return; }
   // every enemy hit and hazard goes through here: the room's damage curve applies once
   if(boss&&boss.formN) d=hcDmg(d); // High-Co's form damage (bosses.js)
   d*=roomDmgScale()*p.st.armor*(p.lance>0?.5:1); if(sortie) sortie.dmgTaken=(sortie.dmgTaken||0)+Math.min(d,Math.max(0,p.hp));
@@ -115,7 +115,7 @@ function zeroHp(){
   const p=player; if(godMode){ p.hp=1; return; }
   // debug measurement runs: the pilot is refilled and the room counts a death
   if(DBG.immortal){ p.hp=p.maxHp; p.inv=1; if(RUNLOG.cur) RUNLOG.cur.deaths++; return; }
-  if(p.lives>0){ p.lives--; p.hp=p.maxHp*.5; p.inv=2; crossBlast(p.pos.clone(),0xffd36a,1.3); clearEnemyShots(p.pos,10); popText('EXTRA LIFE'); return; }
+  if(p.lives>0){ p.lives--; p.hp=p.maxHp*.5; p.inv=2; crossBlast(p.pos.clone(),0xffd36a,1.3); clearEnemyShots(p.pos,10); popText(t('EXTRA LIFE')); return; }
   if(p.st.second&&!p.secondUsed){ p.secondUsed=true; p.hp=p.maxHp*.3; p.inv=1.6; crossBlast(p.pos.clone(),0x7dff9a,1); clearEnemyShots(p.pos,8); return; }
   p.hp=0; p.dead=true; p.stunT=0; p.slowT=0; dashArrow.visible=barRing.visible=false; crossBlast(p.pos.clone(),unit.shot,1.6); hitstop(120,true); shatter(p.model,p.pos,0,0,{max:14,spd:1.2}); scene.remove(p.model.g,p.model.shadow); setState('dying'); stateT=1.8; shieldG.visible=false; pBeamO.visible=pBeamC.visible=false; chargeOrb.visible=false; buzz(300);
 }
@@ -185,7 +185,7 @@ function updatePlayer(dt,canAct){
   const outside=Math.abs(p.pos.x)>AX||Math.abs(p.pos.z)>AZ, atDoor=door&&door.open&&Math.abs(p.pos.x)<1.6&&p.pos.z<0;
   if(outside&&!atDoor&&air===0&&canAct){
     p.hp-=OUT_DPS*p.st.armor*dt; if(sortie) sortie.dmgTaken=(sortie.dmgTaken||0)+OUT_DPS*p.st.armor*dt; if(room) room.hurt=true;
-    if(!p.outWarn){ p.outWarn=true; toast('Out of bounds','Get back on the mat'); sfx('hurt'); buzz(60); }
+    if(!p.outWarn){ p.outWarn=true; toast(t('Out of bounds'),t('Get back on the mat')); sfx('hurt'); buzz(60); }
     $('vign').style.opacity=.85; if(Math.random()<dt*10) sparks(p.pos.clone().setY(.4),0xe8243c,1,4);
     if(hazardMat) hazardMat.opacity=.18+Math.sin(performance.now()/90)*.08;
     if(p.hp<=0) zeroHp();

@@ -1,21 +1,23 @@
 // Seraph Breaker · main.js: Main loop (frame) and boot. Always loaded last.
 /* ================= MAIN LOOP ================= */
 let last=performance.now(),hudT=0;
+// HUD words, translated once (i18n.js): the HUD redraws every 60 ms
+const HUD_TXT={heat:t('Overheat'),bar:t('Barrier'),pow:t('Power'),ready:t('READY'),lr:t('LEVEL READY'),max:t('MAX LVL')};
 const _sunOff=new V3(-6,32,3);
 /* combat room kinds while the room runs: ambush drop, waves (next one when the room thins out, or through the gates on a timer),
    Survive (endless spawns until the timer ends; the leftovers fizzle), Hunt (the elite escapes when the timer ends) */
 function roomKinds(dt){
-  if(room.ambush){ room.ambushT-=dt; if(room.ambushT<=0){ spawnWave(room.ambush,'ambush'); room.ambush=null; toast('Ambush!'); sfx('door'); } return; }
+  if(room.ambush){ room.ambushT-=dt; if(room.ambushT<=0){ spawnWave(room.ambush,'ambush'); room.ambush=null; toast(t('Ambush!')); sfx('door'); } return; }
   if(room.stage){ stageWaves(dt); return; }
   const alive=enemies.filter(e=>!e.dead&&!e.minion).length;
-  if(spawnQ.length){ room.waveT=(room.waveT==null?99:room.waveT)-dt; if(!alive||room.waveMode==='gate'&&(alive<=2||room.waveT<=0)){ spawnWave(spawnQ.shift(),room.waveMode); room.waveT=9; toast(room.waveMode==='gate'?'Reinforcements':'Second wave'); } }
+  if(spawnQ.length){ room.waveT=(room.waveT==null?99:room.waveT)-dt; if(!alive||room.waveMode==='gate'&&(alive<=2||room.waveT<=0)){ spawnWave(spawnQ.shift(),room.waveMode); room.waveT=9; toast(t(room.waveMode==='gate'?'Reinforcements':'Second wave')); } }
   const T=room.timer; if(!T||room.cleared) return; T.t-=dt;
   if(room.kind==='survive'){ const K=ROOM_KINDS.survive, cap=K.cap[clamp(sortie.a,0,K.cap.length-1)]-(mobileMode?1:0); room.spawnT-=dt;
     if(T.t>1.5&&room.spawnT<=0&&alive<cap){ room.spawnT=rand(1,1.6); const pool=arenaPool(), e=spawnEnemy(pickOne(pool),freeSpot()); if(e) e.rw=K.reward; }
-    if(T.t<=0){ room.timer=null; for(const e of enemies.slice()){ if(e.dead||e===boss) continue; e.noLoot=true; killEnemy(e,true); } spawnQ=[]; toast('Survived','Room clear'); refreshControls(); } }
+    if(T.t<=0){ room.timer=null; for(const e of enemies.slice()){ if(e.dead||e===boss) continue; e.noLoot=true; killEnemy(e,true); } spawnQ=[]; toast(t('Survived'),t('Room clear')); refreshControls(); } }
   if(room.kind==='hunt'){ const h=enemies.find(e=>e.hunt&&!e.dead);
-    if(!h){ room.timer=null; toast('Caught'); refreshControls(); }
-    else if(T.t<=0){ room.timer=null; crossBlast(h.pos.clone(),0xb070ff,.8); h.dead=true; dropToken(h); if(h.plate) dropPlate(h); scene.remove(h.model.g,h.model.shadow); enemies.splice(enemies.indexOf(h),1); toast('Escaped','The elite got away'); refreshControls(); } }
+    if(!h){ room.timer=null; toast(t('Caught')); refreshControls(); }
+    else if(T.t<=0){ room.timer=null; crossBlast(h.pos.clone(),0xb070ff,.8); h.dead=true; dropToken(h); if(h.plate) dropPlate(h); scene.remove(h.model.g,h.model.shadow); enemies.splice(enemies.indexOf(h),1); toast(t('Escaped'),t('The elite got away')); refreshControls(); } }
 }
 function roomUpdate(dt,edt){
   if(room.type!=='boss'&&room.type!=='angel') roomKinds(dt);
@@ -153,14 +155,14 @@ function tick(dt,now){
   sun.position.copy(camTarget).add(_sunOff); sun.target.position.copy(camTarget);
   hudT-=dt; if(player&&sortie&&hudT<=0){ hudT=.06; const p=player;
     $('hpBar').firstElementChild.style.width=(Math.max(0,p.hp)/p.maxHp*100)+'%'; $('hpTxt').textContent=Math.ceil(Math.max(0,p.hp))+'/'+p.maxHp;
-    $('enBar').firstElementChild.style.width=Math.max(0,p.en/p.enMax*100)+'%'; $('enBar').classList.toggle('hot',p.overheat>0); $('enLbl').textContent=p.overheat>0?'Overheat':mobileMode?'Barrier':'Power'; $('enTxt').textContent=Math.max(0,Math.floor(p.en));
-    const spv=p.od>0?p.od/5*100:p.lance>0?p.lance/2.4*100:p.sp; $('spBar').firstElementChild.style.width=spv+'%'; $('spBar').classList.toggle('ready',p.sp>=100); $('spLbl').textContent=SPECIALS[P.unit].name; $('spTxt').textContent=p.sp>=100?'READY':Math.floor(p.sp)+'%';
+    $('enBar').firstElementChild.style.width=Math.max(0,p.en/p.enMax*100)+'%'; $('enBar').classList.toggle('hot',p.overheat>0); $('enLbl').textContent=p.overheat>0?HUD_TXT.heat:mobileMode?HUD_TXT.bar:HUD_TXT.pow; $('enTxt').textContent=Math.max(0,Math.floor(p.en));
+    const spv=p.od>0?p.od/5*100:p.lance>0?p.lance/2.4*100:p.sp; $('spBar').firstElementChild.style.width=spv+'%'; $('spBar').classList.toggle('ready',p.sp>=100); $('spLbl').textContent=SPECIALS[P.unit].name; $('spTxt').textContent=p.sp>=100?HUD_TXT.ready:Math.floor(p.sp)+'%';
     $('roomTxt').textContent=String(sortie.ri+1).padStart(2,'0'); $('roomN').textContent='/'+sortie.N;
     // Main Stage: wave counter and the beat pip (it flashes on every beat of the live music)
     const ws=room&&room.stage; $('waveRow').hidden=!ws; if(ws) $('waveTxt').textContent=`${Math.min(ws.w+1,ws.n)}/${ws.n}`;
     const bp=$('beatPip'), bs=!!sortie.rule.beatSync; bp.hidden=!bs; if(bs) bp.classList.toggle('on',BEAT.ph<.25);
-    $('arTxt').textContent=ARENAS[sortie.a].name.toUpperCase(); $('goldTxt').textContent=P.gold.toLocaleString(); $('gemTxt').textContent=P.gems;
-    const cap=atCap(); $('xpFill').style.width=(cap?100:sortie.xp/xpNeed()*100)+'%'; const lr=$('lvReady'), pl=sortie.pendingLv; lr.hidden=!pl; if(pl) lr.textContent=pl>1?`LEVEL READY ×${pl}`:'LEVEL READY'; const lv=$('lvTxt'); if(lv) lv.textContent=cap?'MAX LVL':'LV '+sortie.lv;
+    $('arTxt').textContent=ARENAS[sortie.a].name.toLocaleUpperCase(LANG); $('goldTxt').textContent=P.gold.toLocaleString(); $('gemTxt').textContent=P.gems;
+    const cap=atCap(); $('xpFill').style.width=(cap?100:sortie.xp/xpNeed()*100)+'%'; const lr=$('lvReady'), pl=sortie.pendingLv; lr.hidden=!pl; if(pl) lr.textContent=pl>1?HUD_TXT.lr+' ×'+pl:HUD_TXT.lr; const lv=$('lvTxt'); if(lv) lv.textContent=cap?HUD_TXT.max:'LV '+sortie.lv;
     if(boss) $('bossBar').firstElementChild.style.width=Math.max(0,boss.hp/boss.maxHp*100)+'%';
     else if(room&&room.timer){ const T=room.timer; $('bossName').textContent=T.name; $('bossPh').textContent=Math.ceil(Math.max(0,T.t))+' s'; $('bossBar').firstElementChild.style.width=Math.max(0,T.t/T.max*100)+'%'; }
     const spReady=p.sp>=100&&!busy(); $('abQ').classList.toggle('ready',spReady); $('abQ').style.setProperty('--cd',1-p.sp/100); $('tSP').classList.toggle('ready',spReady); $('tSP').style.setProperty('--cd',1-p.sp/100);

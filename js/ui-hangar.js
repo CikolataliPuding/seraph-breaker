@@ -31,8 +31,8 @@ if(matchMedia('(hover:hover) and (pointer:fine)').matches){ let cur=null; const 
 const STORYUI={i:0};
 function storyShow(){ STORYUI.i=0; $('story').hidden=false; storyCard(); }
 function storyCard(){ if(STORYUI.i>=STORY.intro.length){ $('story').hidden=true; P.lore.intro=true; persist(); return; }
-  $('stNum').textContent=`${STORYUI.i+1} / ${STORY.intro.length}`; $('stTxt').textContent=STORY.intro[STORYUI.i]; $('stNext').textContent=STORYUI.i===STORY.intro.length-1?'Fight ▸':'Next ▸';
-  const t=$('stTxt'); t.classList.remove('in'); void t.offsetWidth; t.classList.add('in'); }
+  $('stNum').textContent=`${STORYUI.i+1} / ${STORY.intro.length}`; $('stTxt').textContent=STORY.intro[STORYUI.i]; $('stNext').textContent=STORYUI.i===STORY.intro.length-1?t('Fight ▸'):t('Next ▸');
+  const tx=$('stTxt'); tx.classList.remove('in'); void tx.offsetWidth; tx.classList.add('in'); }
 $('stNext').onclick=e=>{ e.stopPropagation(); sfx('click'); STORYUI.i++; storyCard(); };
 $('stSkip').onclick=e=>{ e.stopPropagation(); sfx('click'); STORYUI.i=STORY.intro.length; storyCard(); };
 $('story').addEventListener('pointerdown',e=>{ if(e.target.closest('button')) return; STORYUI.i++; storyCard(); });
@@ -41,7 +41,7 @@ $('storyBtn').onclick=()=>{ sfx('click'); storyShow(); };
 function renderMenu(){
   document.documentElement.style.setProperty('--unit',unitCss());
   $('wGold').textContent=P.gold.toLocaleString(); $('wGems').textContent=P.gems.toLocaleString();
-  $('whoName').textContent=P.pilot||'[CALLSIGN]'; $('avatar').textContent=String(P.arenas).padStart(2,'0'); $('betaBadge').hidden=!P.beta;
+  $('whoName').textContent=P.pilot||t('[CALLSIGN]'); $('avatar').textContent=String(P.arenas).padStart(2,'0'); $('betaBadge').hidden=!P.beta;
   if(view==='home'){ renderHome(); hangarFocus(); } if(view==='map') renderMap(); if(view==='armory') renderArmory(); if(view==='skills') renderTree($('treeHangar')); if(view==='frames') renderFrames(); if(view==='system') renderSystem();
 }
 // holo map (wide hangar, right panel): a route from Arena 1 (bottom) to the Main Stage (top); a node picks the arena, the hangar lights follow
@@ -50,23 +50,23 @@ function renderHolo(sel){ const box=$('holoNodes'); if(!box) return; box.innerHT
   $('holoPath').setAttribute('points',pts); $('holoGlow').setAttribute('points',pts);
   ARENAS.forEach((A,i)=>{ const [x,y]=HOLO[i]||[50,50], open=arenaOpen(i), best=P.bestRoom[i]||0, done=best>=A.rooms, b=document.createElement('button');
     b.className='hn'+(x>50?' r':'')+(i===sel?' sel':'')+(open?'':' lock')+(done?' done':''); b.style.left=x+'%'; b.style.top=y+'%'; b.style.setProperty('--c',CSS(A.theme.edge)); b.disabled=!open;
-    const st=!open?(A.stage?'Locked · beta':'Locked'):done?'Cleared':best?`Best room ${best}/${A.rooms}`:`${A.rooms} rooms`;
-    b.setAttribute('aria-label',`Arena ${i+1}: ${A.name}, ${st}`);
+    const st=!open?t(A.stage?'Locked · beta':'Locked'):done?t('Cleared'):best?t('Best room {0}/{1}',best,A.rooms):t('{0} rooms',A.rooms);
+    b.setAttribute('aria-label',t('Arena {0}: {1}, {2}',i+1,A.name,st));
     b.innerHTML=`<span class="hd">${String(i+1).padStart(2,'0')}</span><span class="tx"><b></b><small></small></span>`; b.querySelector('b').textContent=A.name; b.querySelector('small').textContent=st;
     b.onclick=()=>{ if(!open||i===sel) return; P.selArena=i; sfx('click'); persist(); renderMenu(); }; box.appendChild(b); }); }
 function renderHome(){
   const a=openSel(P.selArena), A=ARENAS[a];
-  $('hEye').textContent=`ARENA 0${a+1} · ${roomsLabel(A)}`+((P.bestRoom[a]||0)>=A.rooms?' · CLEARED':'');
+  $('hEye').textContent=t('ARENA {0}','0'+(a+1))+' · '+roomsLabel(A)+((P.bestRoom[a]||0)>=A.rooms?' · '+t('CLEARED'):'');
   $('hStage').textContent=A.name; hangarTheme(a); renderHolo(a);
   const pips=$('hPips'); pips.innerHTML=''; ARENAS.forEach((x,i)=>{ const p=document.createElement('i'); if((P.bestRoom[i]||0)>=x.rooms) p.className='f'; else if(arenaOpen(i)) p.className='c'; pips.appendChild(p); });
-  const hb=$('hBosses'); hb.innerHTML=''; arenaBossPool(a).slice(0,3).forEach(k=>{ const img=document.createElement('img'); img.src=PORTRAIT[k]||''; img.alt=BOSSES[k].name; img.title=BOSSES[k].name; hb.appendChild(img); }); const bl=document.createElement('span'); bl.textContent='BOSSES'; hb.appendChild(bl);
+  const hb=$('hBosses'); hb.innerHTML=''; arenaBossPool(a).slice(0,3).forEach(k=>{ const img=document.createElement('img'); img.src=PORTRAIT[k]||''; img.alt=BOSSES[k].name; img.title=BOSSES[k].name; hb.appendChild(img); }); const bl=document.createElement('span'); bl.textContent=t('BOSSES'); hb.appendChild(bl);
   $('pvUnit').textContent=UNITS[P.unit].name; $('pvSp').textContent=`SP · ${SPECIALS[P.unit].name} · ${SPECIALS[P.unit].cd} s`;
-  const run=loadRun(), cb=$('contBtn'); cb.hidden=!run; if(run) cb.textContent=`Continue · ${ARENAS[run.a].name} · room ${run.ri+1}/${ARENAS[run.a].rooms}`;
+  const run=loadRun(), cb=$('contBtn'); cb.hidden=!run; if(run) cb.textContent=t('Continue · {0} · room {1}/{2}',ARENAS[run.a].name,run.ri+1,ARENAS[run.a].rooms);
   // personal record: the furthest arena you reached and your best room there
   let ra=-1; P.bestRoom.forEach((r,i)=>{ if(r>0&&i<ARENAS.length) ra=i; });
-  $('bestTxt').textContent=(ra<0?'Record: no runs yet':`Record: Arena ${ra+1} · Room ${P.bestRoom[ra]}/${ARENAS[ra].rooms}`)+` · ${openArenaCount()}/${ARENAS.length} arenas open`;
+  $('bestTxt').textContent=(ra<0?t('Record: no runs yet'):t('Record: Arena {0} · Room {1}/{2}',ra+1,P.bestRoom[ra],ARENAS[ra].rooms))+' · '+t('{0}/{1} arenas open',openArenaCount(),ARENAS.length);
 }
 $('sortieBtn').onclick=()=>{ sfx('click'); openView('map'); };
 $('contBtn').onclick=()=>{ const r=loadRun(); if(r){ sfx('click'); launchArena(r.a,r); } else renderHome(); };
 $('mapBack').onclick=()=>openView('home');
-$('launchBtn').onclick=()=>{ const a=openSel(P.selArena); if(!arenaOpen(a)) return; if(loadRun()&&!$('launchBtn').dataset.arm){ $('launchBtn').dataset.arm='1'; $('launchBtn').textContent='Start over? Your saved run ends'; return; } delete $('launchBtn').dataset.arm; clearRun(); launchArena(a); };
+$('launchBtn').onclick=()=>{ const a=openSel(P.selArena); if(!arenaOpen(a)) return; if(loadRun()&&!$('launchBtn').dataset.arm){ $('launchBtn').dataset.arm='1'; $('launchBtn').textContent=t('Start over? Your saved run ends'); return; } delete $('launchBtn').dataset.arm; clearRun(); launchArena(a); };
