@@ -117,28 +117,32 @@ BEAT.dist=()=>Math.min(BEAT.ph,1-BEAT.ph)*BEAT.spb;
 /* Music files: High-Co has one track per form (BOSSES.highco.tracks), the Main Stage rooms one looping part (STAGE.music), both in data.js.
    The files sit in assets/audio/ (git ignores it) and are only requested when the game runs on this computer (MUSIC_LOCAL): the published
    game never asks for them and keeps the live synthesized music. Each slot: src (the path), bpm (the track's tempo), offset (seconds from the
-   file start to the first downbeat), start (where it starts; 0 = offset) and end (where it loops back to start; 0 = the whole file loops).
+   file start to the first downbeat), start (where it starts; 0 = offset) and end (where it loops back to start; 0 = the end of the file).
    An empty src keeps the live synthesized music and its BPM, and no file is requested.
-   A file is fetched once a session (the compressed bytes are kept), decoded when it plays and played by Web Audio into AU.music, so the music
+   A file is fetched once a session (the compressed bytes are kept), decoded when it plays (one decoded file at a time, shared by slots that use
+   the same file) and played by Web Audio into AU.music, so the music
    volume, the Music on/off button and ?mute=1 apply, the loop part is sample-exact and the local server needs no range support. extPlay
    crossfades from what is playing (the live band or the previous file) and, given landIn seconds, starts the file a bar earlier so a downbeat
    falls exactly then (the next form's landing). While a file with a bpm plays, the beat clock (BEAT) follows the file's own position, so Main
    Stage beat sync and High-Co's attack timing follow that track. */
-const HC_FADE=1.2, MUSIC_LOCAL=/^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname), MUSIC_BYTES=new Map();
+// MUSIC_BYTES: the compressed files (kept); MUSIC_DEC: the decoded current file, shared when two slots play it (a long song decodes to ~20 MB a minute)
+const HC_FADE=1.2, MUSIC_LOCAL=/^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname), MUSIC_BYTES=new Map(), MUSIC_DEC={src:'',p:null};
 function hcMusic(slot,landIn){
   AU.hcWant=slot; if(!AU.ctx) return; // no audio yet (no input so far): audioInit plays it
   extPlay((BOSSES.highco.tracks||[])[slot]||{},landIn,1); }
-// a music file slot (src bpm offset start end) at gain vol: crossfades from what is playing; a missing file falls back to the live music
+// a music file slot (src bpm offset start end) at gain vol: crossfades from what is playing; a missing file falls back to the live music.
+// The same slot again only sets the gain; the same file with another start or end (the stage loop, then High-Co's first form) plays anew.
 function extPlay(T,landIn,vol){
-  const src=MUSIC_LOCAL?String(T.src||''):'', now=AU.ctx.currentTime, old=AU.ext;
-  if(old&&old.src===src&&src){ extVol(vol); return; }
+  const src=MUSIC_LOCAL?String(T.src||''):'', key=src+'|'+(+T.start||0)+'|'+(+T.end||0), now=AU.ctx.currentTime, old=AU.ext;
+  if(old&&old.key===key&&src){ extVol(vol); return; }
   if(old){ extFade(old); AU.ext=null; }
   if(!src){ AU.live.gain.setTargetAtTime(1,now,HC_FADE/3); return; }
   const g=AU.ctx.createGain(); g.gain.value=0; g.connect(AU.music);
-  const off=+T.offset||0, x={src,g,node:null,bpm:+T.bpm||0,offset:off,start:+T.start||off,end:+T.end||0,vol,on:false,t0:0,ls:0,le:0,base:0,last:-1,asked:now}; AU.ext=x;
+  const off=+T.offset||0, x={src,key,g,node:null,bpm:+T.bpm||0,offset:off,start:+T.start||off,end:+T.end||0,vol,on:false,t0:0,ls:0,le:0,base:0,last:-1,asked:now}; AU.ext=x;
   if(!MUSIC_BYTES.has(src)) MUSIC_BYTES.set(src,fetch(src).then(r=>{ if(!r.ok) throw new Error(r.status); return r.arrayBuffer(); }));
-  MUSIC_BYTES.get(src).then(b=>AU.ctx.decodeAudioData(b.slice(0))).then(buf=>{ if(AU.ext!==x) return; const n=AU.ctx.createBufferSource(), t=AU.ctx.currentTime;
-    x.ls=x.end>x.start?x.start:0; x.le=x.end>x.start?Math.min(x.end,buf.duration):buf.duration;
+  if(MUSIC_DEC.src!==src){ MUSIC_DEC.src=src; MUSIC_DEC.p=MUSIC_BYTES.get(src).then(b=>AU.ctx.decodeAudioData(b.slice(0))); MUSIC_DEC.p.catch(()=>{ if(MUSIC_DEC.src===src) MUSIC_DEC.src=''; }); }
+  MUSIC_DEC.p.then(buf=>{ if(AU.ext!==x) return; const n=AU.ctx.createBufferSource(), t=AU.ctx.currentTime;
+    x.ls=Math.min(x.start,buf.duration-.5); x.le=x.end>x.start?Math.min(x.end,buf.duration):buf.duration;
     // from start, or (with a bpm and landIn) a bar earlier so a downbeat falls exactly landIn seconds after the call (decoding time included)
     let s=x.start; if(x.bpm>0&&landIn>0){ const bar=240/x.bpm, left=Math.max(0,landIn-(t-x.asked)); s=x.start+bar-(left%bar); while(s>=x.le-.5&&s>bar) s-=bar; }
     s=clamp(s,0,buf.duration-.05); n.buffer=buf; n.loop=true; n.loopStart=x.ls; n.loopEnd=x.le; n.connect(g); n.start(t,s); x.node=n; x.t0=t-s; x.on=true;

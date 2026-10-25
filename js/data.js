@@ -396,7 +396,9 @@ const STAGE={
   spotGrace:.25, meteorMax:[6,10],
   // room music (audio.js stageMusic): one part of a song loops through the wave rooms and gets louder room by room, vol [first room, last room
   // before the boss] on top of the music volume. Same fields as High-Co's tracks (src, bpm, offset, start, end); local only, empty src = synth.
-  music:{src:'',bpm:0,offset:0,start:0,end:0,vol:[.45,1]},
+  // owner's setup (2026-10-25): loop.mp3 0:49-2:44 loops through the wave rooms, full volume in the last room before High-Co. bpm 0: the beat
+  // clock keeps the synth tempo until the track's real bpm and first downbeat are filled in (an automatic guess was not reliable)
+  music:{src:'assets/audio/loop.mp3',bpm:0,offset:0,start:49,end:164,vol:[.45,1]},
 };
 /* pacing inside every 10-room block (index = position in the block, 10 = boss): the kinds it can roll and a budget multiplier.
    Tension comes in waves: a breather after the boss, a first spike, the angel, a climb, a hard room and a teaching room before the next boss. */
@@ -467,8 +469,8 @@ const BOSSES={
     /* music (audio.js hcMusic): one track per form. The files live in assets/audio/, which git ignores: they are only played when the game runs
        on localhost (MUSIC_LOCAL), the published game keeps the live synthesized music. Fill src (e.g. 'assets/audio/highco-1.mp3'), bpm (the track's
        tempo: the beat clock and his attack timing follow it), offset (seconds from the file start to the first downbeat), start (where the form's
-       music starts, e.g. the drop; 0 = offset) and end (seconds where it loops back to start; 0 = the whole file loops). Empty src = synth. */
-    tracks:[{src:'',bpm:0,offset:0,start:0,end:0},{src:'',bpm:0,offset:0,start:0,end:0},{src:'',bpm:0,offset:0,start:0,end:0}]},
+       music starts, e.g. the drop; 0 = offset) and end (seconds where it loops back to start; 0 = the end of the file). Empty src = synth. */
+    tracks:[{src:'assets/audio/loop.mp3',bpm:0,offset:0,start:164,end:0},{src:'assets/audio/faz2.mp4',bpm:0,offset:0,start:5,end:0},{src:'assets/audio/faz3.mp4',bpm:0,offset:0,start:8,end:0}]},
 };
 /* corrupted variants: any boss + purple tint, crystal spikes and a few attacks borrowed from another boss. Arena 4 draws from all of them.
    The bosses are put in the active language first (i18n.js) so the variants are built from translated lines; boss names stay English. */
