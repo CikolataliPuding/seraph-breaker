@@ -11,6 +11,19 @@ function makePlayer(){
   odRing.material.color.setHex(0xffe14a); pBeamO.material.color.setHex(unit.shot);
   buildOrbit(); renderRunSkills();
 }
+/* hubris (the story): the stronger the pilot grows in a run, the more the power gets to him. 0..1 from the arena and the run level.
+   It reddens the mech's eyes and armor and darkens the screen edges; past HUBRIS.loose control starts to slip: the aim drifts,
+   the frame trembles now and then (phones buzz). Reduced motion keeps the tremor off, the drift stays. */
+const HUBRIS={base:[0,.12,.24,.36,.48],lv:40,loose:.35}, _hubRed=new THREE.Color(0xff1a2a);
+const reduceMotion=matchMedia('(prefers-reduced-motion: reduce)');
+function hubris(){ return sortie?clamp((HUBRIS.base[sortie.a]||0)+.5*Math.min(1,(sortie.lv-1)/HUBRIS.lv),0,1):0; }
+function hubrisTick(p,dt){ const h=hubris(), k=Math.max(0,(h-HUBRIS.loose)/(1-HUBRIS.loose));
+  // the armor glow is set every frame (a hit flash clears emissive), the rest only when hubris moves
+  const m=p.model; if(!(p.flash>0)) m.mats.slice(0,2).forEach(M=>M.emissive&&M.emissive.setRGB(h*.5,0,h*.06));
+  if(Math.abs(h-(p.hubH==null?-1:p.hubH))>.005){ p.hubH=h; if(m.eyeM){ if(!m.eye0) m.eye0=m.eyeM.color.clone(); m.eyeM.color.copy(m.eye0).lerp(_hubRed,Math.min(1,h*1.4)); }
+    $('hubris').style.opacity=(h*.6).toFixed(2); $('hubTxt').hidden=h<.15; $('hubTxt').textContent=`HUBRIS ${Math.round(h*100)}%`; }
+  p.hubT=(p.hubT||0)+dt; p.aimDrift=k?k*(.08*Math.sin(p.hubT*1.7)+.05*Math.sin(p.hubT*4.3+1)):0;
+  if(k&&!reduceMotion.matches){ p.hubPulse=(p.hubPulse==null?rand(3,6):p.hubPulse)-dt; if(p.hubPulse<=0){ p.hubPulse=rand(2.5,6)/(.6+k); shake=Math.max(shake,.08+.2*k); buzz(Math.round(20+40*k)); } } }
 function busy(){ const p=player; return p.leap||p.jump||(p.hook&&p.hook.phase==='pull')||p.lance>0; }
 // desktop: dash costs power and has a cooldown. Phone: 2 charges that recharge, no power cost.
 // direction: desktop = held keys, else the mouse aim. Phone = flick, else the stick, else the last way you moved; never the auto-aim,
@@ -107,11 +120,14 @@ function zeroHp(){
   p.hp=0; p.dead=true; p.stunT=0; p.slowT=0; dashArrow.visible=barRing.visible=false; crossBlast(p.pos.clone(),unit.shot,1.6); hitstop(120,true); shatter(p.model,p.pos,0,0,{max:14,spd:1.2}); scene.remove(p.model.g,p.model.shadow); setState('dying'); stateT=1.8; shieldG.visible=false; pBeamO.visible=pBeamC.visible=false; chargeOrb.visible=false; buzz(300);
 }
 const _tmp=new V3(),_tmp2=new V3(),_mz=new V3();
-function shotDir(mz){ const p=player; if(p.aimOk&&!mobileMode){ _tmp2.set(aimPt.x-mz.x,0,aimPt.z-mz.z); if(_tmp2.lengthSq()>2.2) return _tmp2.normalize().clone(); } return p.aim.clone(); }
+function shotDir(mz){ const p=player; let d=p.aim.clone(); if(p.aimOk&&!mobileMode){ _tmp2.set(aimPt.x-mz.x,0,aimPt.z-mz.z); if(_tmp2.lengthSq()>2.2) d=_tmp2.normalize().clone(); }
+  // hubris: the aim drifts a little while control slips
+  if(p.aimDrift){ const c=Math.cos(p.aimDrift), s=Math.sin(p.aimDrift), x=d.x*c+d.z*s; d.z=d.z*c-d.x*s; d.x=x; } return d; }
 function updatePlayer(dt,canAct){
   const p=player; if(p.dead) return;
   p.inv=Math.max(0,p.inv-dt); p.dashCd=Math.max(0,p.dashCd-dt); p.gcd[0]=Math.max(0,p.gcd[0]-dt); p.gcd[1]=Math.max(0,p.gcd[1]-dt);
   p.overheat=Math.max(0,p.overheat-dt); p.regenDelay=Math.max(0,p.regenDelay-dt);
+  if(state==='fight') hubrisTick(p,dt);
   // the special recharges on its frame's cooldown (SPECIALS cd, faster with Sync), and only once the special has ended
   if(state==='fight'&&!(p.od>0||p.lance>0||p.leap)) p.sp=Math.min(100,p.sp+100/SPECIALS[P.unit].cd*dt*p.st.sp);
   if(p.echoQ){ p.echoQ.t-=dt; if(p.echoQ.t<=0){ const s=p.echoQ.slot; p.echoQ=null; p.echoing=true; p.gcd[s]=0; useGadget(s); p.echoing=false; } }
