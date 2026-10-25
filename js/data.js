@@ -187,9 +187,9 @@ const BAL={
 /* enemy scaling inside an arena: armor and damage grow exponentially with the room index (on top of the arena's hpMul / dmgMul),
    the room budget (how many enemies) grows slowly. Bosses use the same curve, normalized so the room 10 boss keeps its listed armor and damage;
    the arena's final boss gets finalHp / finalDmg on top. mob: extra armor for every room mob (not bosses), so enemies live long enough to attack.
-   bossDmgK: every boss hits harder by this much. A tougher start and a gentler climb (mob 1.7, hp .05, dmg .035) keep the late rooms from
-   running away: the sim's pressure at the end of Arena 4 drops from 1.92 to 1.25, and a full campaign takes a strong pilot about 2.5 h. */
-const SCALE={mob:1.7,hp:.05,dmg:.035,bossDmgK:1.2,bossRef:9,finalHp:1.5,finalDmg:1.25,budget:{base:4.6,arena:1.1,room:.07,elite:.55}};
+   bossDmgK: every boss hits harder by this much. A tougher start and a gentler climb (mob 2.2, hp .058, dmg .04) keep the late rooms from
+   running away, and a full campaign (all arenas + Main Stage) takes a strong pilot about 2.5 h (measured with the autopilot campaign). */
+const SCALE={mob:2.2,hp:.058,dmg:.04,bossDmgK:1.4,bossRef:9,finalHp:1.5,finalDmg:1.25,budget:{base:4.6,arena:1.1,room:.07,elite:.55}};
 // pilot xp per level: base + per × level (about one level every 1-2 rooms)
 const XP_NEED={base:6,per:.35}, XP_BOSS=10;
 /* economy: target earnings for one full run of each arena without gold bonuses (first-clear diamonds come on top, once).
