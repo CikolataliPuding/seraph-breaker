@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@700;800&family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
-<link rel="stylesheet" href="css/style.css?v=16">
+<link rel="stylesheet" href="css/style.css?v=17">
 </head>
 <body>
 <canvas id="gl"></canvas>
@@ -54,8 +54,8 @@
     <div class="tbar">
       <div class="avatar" id="avatar">01</div>
       <div class="who"><span>PILOT <em class="badge" id="betaBadge" hidden>BETA TESTER</em></span><b id="whoName">[CALLSIGN]</b></div>
-      <div class="chip cur gold" title="Gold: from every kill, spent on skills"><i></i><span id="wGold">0</span></div>
-      <div class="chip cur gem" title="Diamonds: from bosses and first clears, spent in the armory"><i></i><span id="wGems">0</span></div>
+      <div class="chip cur gold" title="Gold: from every kill, spent on the Core and cosmetics"><i></i><span id="wGold">0</span></div>
+      <div class="chip cur gem" title="Diamonds: from bosses and first clears, spent on the skill tree, the armory and new frames"><i></i><span id="wGems">0</span></div>
     </div>
     <div class="views">
       <section class="view" id="v-home">
@@ -86,10 +86,13 @@
         <p class="note">Weapons replace your frame's signature gun. Gadgets add moves of their own: equip two.</p>
         <h3>Weapons</h3><div class="grid" id="gridW"></div>
         <h3>Gadgets</h3><div class="grid" id="gridG"></div>
+        <h3>Cosmetics <span class="cur gold"><i></i><span id="aGold">0</span></span></h3>
+        <p class="note">Gold buys looks only, never power. Paint, shot colors and arena themes are on the way.</p>
+        <div class="grid" id="gridC"></div>
       </section>
       <section class="view" id="v-skills" hidden>
-        <div class="tabsTitle"><b>Upgrades</b><span class="cur gold"><i></i><span id="sGold">0</span></span></div>
-        <p class="note">Permanent upgrades for every frame. Core stats never cap out early; the tree nodes open one after another.</p>
+        <div class="tabsTitle"><b>Upgrades</b><span><span class="cur gold"><i></i><span id="sGold">0</span></span> <span class="cur gem"><i></i><span id="sGems">0</span></span></span></div>
+        <p class="note">Permanent upgrades for every frame. Core levels cost gold and never cap out early; tree nodes cost diamonds and open one after another.</p>
         <h3>Core</h3><div class="core" id="coreHangar"></div>
         <h3>Skill tree</h3>
         <div id="treeHangar"></div>
@@ -98,7 +101,7 @@
         <div class="tabsTitle"><b>Frames</b></div>
         <div id="slotFrames"></div>
         <label class="fld"><span>Pilot callsign</span><input id="pilotIn" maxlength="14" autocomplete="off" spellcheck="false" placeholder="Enter callsign"></label>
-        <div class="fld"><span>Frame · sets your special move</span><div class="frames" id="frames"></div></div>
+        <div class="fld"><span>Frame · sets your special move · new frames cost diamonds</span><div class="frames" id="frames"></div></div>
         <div class="fld"><span>Primary paint</span><div class="sw" id="sw1"></div></div>
         <div class="fld"><span>Accent paint</span><div class="sw" id="sw2"></div></div>
         <div class="fld"><span>Loadout</span><div class="loadout" id="loadout"></div></div>
@@ -191,35 +194,35 @@
 <div id="xhair" hidden><i class="rg"></i><i class="t u"></i><i class="t d"></i><i class="t l"></i><i class="t r"></i><i class="hm"></i></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="js/core.js?v=16"></script>
-<script src="js/data.js?v=16"></script>
-<script src="js/save.js?v=16"></script>
-<script src="js/tester.js?v=16"></script>
-<script src="js/balance.js?v=16"></script>
-<script src="js/audio.js?v=16"></script>
-<script src="js/renderer.js?v=16"></script>
-<script src="js/models.js?v=16"></script>
-<script src="js/preview.js?v=16"></script>
-<script src="js/input.js?v=16"></script>
-<script src="js/mobile.js?v=16"></script>
-<script src="js/state.js?v=16"></script>
-<script src="js/fx.js?v=16"></script>
-<script src="js/juice.js?v=16"></script>
-<script src="js/rooms.js?v=16"></script>
-<script src="js/nav.js?v=16"></script>
-<script src="js/traps.js?v=16"></script>
-<script src="js/bullets.js?v=16"></script>
-<script src="js/enemies.js?v=16"></script>
-<script src="js/skills.js?v=16"></script>
-<script src="js/items.js?v=16"></script>
-<script src="js/player.js?v=16"></script>
-<script src="js/enemy-ai.js?v=16"></script>
-<script src="js/bosses.js?v=16"></script>
-<script src="js/run.js?v=16"></script>
-<script src="js/flow.js?v=16"></script>
-<script src="js/ui-hangar.js?v=16"></script>
-<script src="js/ui-warmap.js?v=16"></script>
-<script src="js/debug.js?v=16"></script>
-<script src="js/main.js?v=16"></script>
+<script src="js/core.js?v=17"></script>
+<script src="js/data.js?v=17"></script>
+<script src="js/save.js?v=17"></script>
+<script src="js/tester.js?v=17"></script>
+<script src="js/balance.js?v=17"></script>
+<script src="js/audio.js?v=17"></script>
+<script src="js/renderer.js?v=17"></script>
+<script src="js/models.js?v=17"></script>
+<script src="js/preview.js?v=17"></script>
+<script src="js/input.js?v=17"></script>
+<script src="js/mobile.js?v=17"></script>
+<script src="js/state.js?v=17"></script>
+<script src="js/fx.js?v=17"></script>
+<script src="js/juice.js?v=17"></script>
+<script src="js/rooms.js?v=17"></script>
+<script src="js/nav.js?v=17"></script>
+<script src="js/traps.js?v=17"></script>
+<script src="js/bullets.js?v=17"></script>
+<script src="js/enemies.js?v=17"></script>
+<script src="js/skills.js?v=17"></script>
+<script src="js/items.js?v=17"></script>
+<script src="js/player.js?v=17"></script>
+<script src="js/enemy-ai.js?v=17"></script>
+<script src="js/bosses.js?v=17"></script>
+<script src="js/run.js?v=17"></script>
+<script src="js/flow.js?v=17"></script>
+<script src="js/ui-hangar.js?v=17"></script>
+<script src="js/ui-warmap.js?v=17"></script>
+<script src="js/debug.js?v=17"></script>
+<script src="js/main.js?v=17"></script>
 </body>
 </html>

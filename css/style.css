@@ -135,6 +135,7 @@ body.mob .desk{display:none} body:not(.mob) .tonly{display:none}
 .best{text-align:center;font-family:var(--f-data);font-size:11px;color:var(--dim);letter-spacing:.12em}
 .tabsTitle{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
 .tabsTitle b{font-family:var(--f-display);font-weight:800;font-size:30px}
+.tabsTitle .cur+.cur{margin-left:12px}
 .fld{display:grid;gap:6px}
 .fld>span{font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim);font-weight:600}
 #pilotIn{appearance:none;border:1px solid var(--line);background:rgba(12,9,16,.7);color:var(--paper);font-family:var(--f-data);font-size:18px;padding:10px 12px;text-transform:uppercase;letter-spacing:.12em;border-radius:0;width:100%;box-sizing:border-box}
@@ -145,6 +146,8 @@ body.mob .desk{display:none} body:not(.mob) .tonly{display:none}
 .frame .n{font-size:19px;font-weight:700;letter-spacing:.06em;color:var(--c)}
 .frame .r{font-family:var(--f-data);font-size:11px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .frame[aria-pressed="true"]{border-color:var(--c);background:color-mix(in srgb,var(--c) 16%,rgba(23,18,29,.95))}
+.frame.lock .n{opacity:.55}
+.frame .price{display:flex;flex-wrap:wrap;align-items:center;gap:2px 6px;white-space:normal;color:var(--paper)}
 .frame:focus-visible,.sw button:focus-visible,.node:focus-visible{outline:2px solid var(--signal);outline-offset:1px}
 .sw{display:flex;flex-wrap:wrap;gap:6px}
 .sw button{appearance:none;cursor:pointer;width:32px;height:32px;border:2px solid rgba(255,255,255,.18);background:var(--c);clip-path:polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%)}
@@ -161,6 +164,10 @@ body.mob .desk{display:none} body:not(.mob) .tonly{display:none}
 button.card{appearance:none;cursor:pointer;font:inherit;color:inherit}
 button.card:hover,button.card:focus-visible{border-color:var(--c,var(--signal));outline:none;background:rgba(40,30,48,.95)}
 .card.eq{border-color:var(--signal);background:color-mix(in srgb,var(--signal) 10%,rgba(23,18,29,.95))}
+/* cosmetics teasers: silhouette cards until the shop opens */
+.card.soon{opacity:.62;filter:grayscale(.7)}
+.card.soon .ic{background:rgba(255,255,255,.06);color:var(--dim)}
+.soonTag{font-family:var(--f-label);font-size:12px;letter-spacing:.24em;text-transform:uppercase;color:var(--gold);border:1px dashed currentColor;padding:2px 8px}
 .card .top{display:flex;gap:10px;align-items:center}
 .card .ic{width:40px;height:40px;flex:none;display:grid;place-items:center;background:color-mix(in srgb,var(--c,var(--signal)) 15%,transparent);color:var(--c,var(--signal));clip-path:polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%)}
 .card .ic svg{width:22px;height:22px}

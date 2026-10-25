@@ -57,6 +57,10 @@ function renderArmory(){
       grid.appendChild(c);
     }); };
   mk($('gridW'),WEAPONS,'w'); mk($('gridG'),GADGETS,'g');
+  // cosmetics shop: gold, looks only; teasers until the shop opens
+  $('aGold').textContent=P.gold.toLocaleString(); const gc=$('gridC'); gc.innerHTML='';
+  COSMETICS_SOON.forEach(x=>{ const c=document.createElement('div'); c.className='card soon'; c.innerHTML=`<div class="top"><div class="ic">${svg(x.ic)}</div><div><div class="n"></div><div class="tag"></div></div></div><div class="ft"><span class="soonTag">Coming soon</span></div>`;
+    c.querySelector('.n').textContent=x.n; c.querySelector('.tag').textContent=x.t; gc.appendChild(c); });
 }
 function renderCore(){
   const el=$('coreHangar'); el.innerHTML='';
@@ -71,15 +75,15 @@ function renderCore(){
 }
 function renderTree(container){
   renderCore();
-  $('sGold').textContent=P.gold.toLocaleString(); container.innerHTML=''; const wrap=document.createElement('div'); wrap.className='tree';
+  $('sGold').textContent=P.gold.toLocaleString(); $('sGems').textContent=P.gems.toLocaleString(); container.innerHTML=''; const wrap=document.createElement('div'); wrap.className='tree';
   TREE.forEach(br=>{ const col=document.createElement('div'); col.className='branch'; col.style.setProperty('--c',br.c); const h=document.createElement('h3'); h.textContent=br.branch; col.appendChild(h);
     br.nodes.forEach((n,i)=>{ const rk=P.skills[n.id]||0, unlocked=i===0||(P.skills[br.nodes[i-1].id]||0)>0, max=rk>=n.max, cost=max?0:n.cost[rk];
-      const b=document.createElement('button'); b.className='node'+(rk>0?' on':'')+(unlocked?'':' lock')+(max?' max':'')+(!max&&P.gold<cost?' poor':''); b.id='sk_'+n.id;
+      const b=document.createElement('button'); b.className='node'+(rk>0?' on':'')+(unlocked?'':' lock')+(max?' max':'')+(!max&&P.gems<cost?' poor':''); b.id='sk_'+n.id;
       b.innerHTML=`<span class="t"><b></b><span class="npips">${Array.from({length:n.max},(_,j)=>`<i class="${j<rk?'f':''}"></i>`).join('')}</span></span><small></small><span class="cost"></span>`;
       b.querySelector('b').textContent=n.name; b.querySelector('small').textContent=n.d;
-      b.querySelector('.cost').innerHTML=max?'MAXED':!unlocked?'<span class="tag">Locked</span>':`<span class="cur gold"><i></i>${cost.toLocaleString()}</span>`;
+      b.querySelector('.cost').innerHTML=max?'MAXED':!unlocked?'<span class="tag">Locked</span>':`<span class="cur gem"><i></i>${cost.toLocaleString()}</span>`;
       if(!unlocked||max) b.disabled=true;
-      b.onclick=()=>{ if(!unlocked||max||P.gold<cost) return; P.gold-=cost; P.skills[n.id]=rk+1; sfx('gem'); persist(); renderMenu(); };
+      b.onclick=()=>{ if(!unlocked||max||P.gems<cost) return; P.gems-=cost; P.skills[n.id]=rk+1; sfx('gem'); persist(); renderMenu(); };
       col.appendChild(b); });
     wrap.appendChild(col); });
   container.appendChild(wrap);
@@ -89,8 +93,10 @@ function renderFrames(){
   $('pilotIn').value=P.pilot; $('pvUnit').textContent=u.name; $('pvSp').textContent='SP · '+SPECIALS[P.unit].name;
   const fr=$('frames'); fr.innerHTML='';
   Object.values(UNITS).forEach(x=>{ const bt=document.createElement('button'); bt.className='frame'; bt.id='fr_'+x.key; bt.style.setProperty('--c',CSS(x.key==='verdant'?x.c2:x.c1)); bt.setAttribute('aria-pressed',x.key===P.unit);
-    bt.innerHTML=`<span class="n">${x.name}</span><span class="r">${x.role}</span><span class="r">SP · ${SPECIALS[x.key].name}</span>`;
-    bt.onclick=()=>{ P.unit=x.key; P.c1=null; P.c2=null; sfx('click'); rebuildPreview(); renderMenu(); persist(); }; fr.appendChild(bt); });
+    const own=!!P.units[x.key], key='u'+x.key; if(!own) bt.classList.add('lock');
+    bt.innerHTML=`<span class="n">${x.name}</span><span class="r">${x.role}</span><span class="r">SP · ${SPECIALS[x.key].name}</span>`+(own?'':`<span class="r price"><span class="cur gem"><i></i>${x.price}</span> ${armed===key?'· tap again to buy':P.gems<x.price?`· need ${x.price-P.gems} more`:'· buy'}</span>`);
+    bt.onclick=()=>{ if(!own){ if(P.gems<x.price) return; if(armed!==key){ armed=key; sfx('click'); renderFrames(); return; } armed=null; P.gems-=x.price; P.units[x.key]=true; sfx('gem'); }
+      P.unit=x.key; P.c1=null; P.c2=null; sfx('click'); rebuildPreview(); renderMenu(); persist(); }; fr.appendChild(bt); });
   const sw=(el,list,cur,key)=>{ el.innerHTML=''; list.forEach((col,i)=>{ const bt=document.createElement('button'); bt.id=key+'_'+i; bt.style.setProperty('--c',CSS(col)); bt.setAttribute('aria-label','Paint '+CSS(col)); bt.setAttribute('aria-pressed',col===cur); bt.onclick=()=>{ P[key]=col; sfx('click'); rebuildPreview(); renderMenu(); persist(); }; el.appendChild(bt); }); };
   sw($('sw1'),PAINT1,c.c1,'c1'); sw($('sw2'),PAINT2,c.c2,'c2');
   const lo=$('loadout'); lo.innerHTML='';

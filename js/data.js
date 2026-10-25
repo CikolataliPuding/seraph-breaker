@@ -1,9 +1,9 @@
 // Seraph Breaker · data.js: Game data: units, weapons, gadgets, skill tree, run skills, stages, bosses and room layouts. Most content changes start here.
 /* ================= DATA ================= */
 const UNITS = {
-  azure:  {key:'azure',  name:'Azure',  role:'Type-00 · Rapid rifle', c1:0x2f62d8, c2:0xeeeef4, c3:0x1d2233, eye:0x6ad8ff, shot:0x7fe0ff, hp:100, speed:8.6},
-  crimson:{key:'crimson',name:'Crimson',role:'Type-02 · Scatter cannon', c1:0xd5352a, c2:0xf2a51e, c3:0x2a1b20, eye:0x9effa0, shot:0xffa060, hp:90, speed:10.4},
-  verdant:{key:'verdant',name:'Verdant',role:'Type-01 · Pierce lance', c1:0x6b3fb8, c2:0x5fd04a, c3:0x1d1a26, eye:0xfff070, shot:0xb8ff5a, hp:140, speed:7.6},
+  azure:  {key:'azure',  name:'Azure',  role:'Type-00 · Rapid rifle', c1:0x2f62d8, c2:0xeeeef4, c3:0x1d2233, eye:0x6ad8ff, shot:0x7fe0ff, hp:100, speed:8.6, price:0},
+  crimson:{key:'crimson',name:'Crimson',role:'Type-02 · Scatter cannon', c1:0xd5352a, c2:0xf2a51e, c3:0x2a1b20, eye:0x9effa0, shot:0xffa060, hp:90, speed:10.4, price:500},
+  verdant:{key:'verdant',name:'Verdant',role:'Type-01 · Pierce lance', c1:0x6b3fb8, c2:0x5fd04a, c3:0x1d1a26, eye:0xfff070, shot:0xb8ff5a, hp:140, speed:7.6, price:500},
 };
 const SPECIALS = {
   azure:{name:'Overdrive',d:'5 s of 2.5× fire rate, +30% damage and +20% speed.'},
@@ -50,6 +50,7 @@ const IC={
   i_scope:'M12 2v6M12 16v6M2 12h6M16 12h6M5 12a7 7 0 1 0 14 0a7 7 0 1 0-14 0', i_aegis:'M12 2l9 4-2 11-7 5-7-5-2-11zM12 7v10M7 10h10', i_cool:'M12 3c3 4 6 7 6 11a6 6 0 0 1-12 0c0-4 3-7 6-11zM9 14h6M12 11v6',
 };
 const svg = k => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="${IC[k]}"/></svg>`;
+// armory prices are diamonds
 const WEAPONS={
   sig:  {name:'Signature',price:0,tag:'Frame weapon',d:'Your frame\'s built-in gun: rapid rifle, scatter cannon or pierce lance.'},
   torch:{name:'Plasma Torch',price:90,tag:'Stream · short range',d:'A cone of plasma that burns everything in front of you.'},
@@ -68,27 +69,30 @@ const GADGETS={
   drone: {name:'Combat Drone',price:150,cd:20,tag:'Support',d:'Deploy a drone that orbits you and fires at enemies for 12 s.'},
   chrono:{name:'Chrono Field',price:300,cd:25,tag:'Time',d:'Slow every enemy and enemy shot to a crawl for 4 s.'},
 };
+// cosmetics shop (gold, looks only, never power): only these coming-soon teasers for now
+const COSMETICS_SOON=[{n:'Frame paint',t:'Character',ic:'armor'},{n:'Shot colors',t:'Character',ic:'twin'},{n:'Special effects',t:'Character',ic:'storm'},{n:'Arena themes',t:'Arena',ic:'i_halo'}];
+// skill tree ranks cost diamonds (the Core and cosmetics take gold)
 const TREE=[
   {branch:'Offense',c:'#ff6a1a',nodes:[
-    {id:'dmg',name:'Overclocked rounds',max:3,cost:[150,300,500],d:'+10% damage per rank'},
-    {id:'rate',name:'Faster cycling',max:2,cost:[250,500],d:'+8% fire rate per rank'},
-    {id:'crit',name:'Weak-point optics',max:3,cost:[300,500,800],d:'+7% chance to deal double damage'},
-    {id:'sp',name:'Sync amplifier',max:2,cost:[400,800],d:'+25% special charge rate'},
-    {id:'exec',name:'Executioner',max:1,cost:[1500],d:'+30% damage to bosses'}]},
+    {id:'dmg',name:'Overclocked rounds',max:3,cost:[10,15,25],d:'+10% damage per rank'},
+    {id:'rate',name:'Faster cycling',max:2,cost:[15,25],d:'+8% fire rate per rank'},
+    {id:'crit',name:'Weak-point optics',max:3,cost:[15,25,40],d:'+7% chance to deal double damage'},
+    {id:'sp',name:'Sync amplifier',max:2,cost:[20,40],d:'+25% special charge rate'},
+    {id:'exec',name:'Executioner',max:1,cost:[75],d:'+30% damage to bosses'}]},
   {branch:'Defense',c:'#5fe0ff',nodes:[
-    {id:'hp',name:'Reinforced plating',max:3,cost:[150,300,500],d:'+15 max armor per rank'},
-    {id:'repair',name:'Field repair',max:2,cost:[250,500],d:'+40% healing from pickups and angels'},
-    {id:'hex',name:'Hex efficiency',max:2,cost:[300,600],d:'-20% barrier power drain'},
-    {id:'plate',name:'Ablative core',max:2,cost:[500,900],d:'-8% damage taken per rank'},
-    {id:'second',name:'Second wind',max:1,cost:[1800],d:'Once per level, survive a fatal hit with 30% armor'}]},
+    {id:'hp',name:'Reinforced plating',max:3,cost:[10,15,25],d:'+15 max armor per rank'},
+    {id:'repair',name:'Field repair',max:2,cost:[15,25],d:'+40% healing from pickups and angels'},
+    {id:'hex',name:'Hex efficiency',max:2,cost:[15,30],d:'-20% barrier power drain'},
+    {id:'plate',name:'Ablative core',max:2,cost:[25,45],d:'-8% damage taken per rank'},
+    {id:'second',name:'Second wind',max:1,cost:[90],d:'Once per level, survive a fatal hit with 30% armor'}]},
   {branch:'Mobility',c:'#7dff9a',nodes:[
-    {id:'spd',name:'Servo tuning',max:2,cost:[150,350],d:'+6% move speed per rank'},
-    {id:'regen',name:'Cell recharge',max:3,cost:[200,400,650],d:'+15% power regeneration'},
-    {id:'dashcd',name:'Thruster vents',max:2,cost:[300,600],d:'-15% dash cooldown'},
-    {id:'magnet',name:'Salvage magnet',max:2,cost:[250,500],d:'+60% pickup reach, +10% gold'},
-    {id:'gadget',name:'Quick deploy',max:2,cost:[600,1100],d:'-12% gadget cooldowns'}]},
+    {id:'spd',name:'Servo tuning',max:2,cost:[10,20],d:'+6% move speed per rank'},
+    {id:'regen',name:'Cell recharge',max:3,cost:[10,20,35],d:'+15% power regeneration'},
+    {id:'dashcd',name:'Thruster vents',max:2,cost:[15,30],d:'-15% dash cooldown'},
+    {id:'magnet',name:'Salvage magnet',max:2,cost:[15,25],d:'+60% pickup reach, +10% gold'},
+    {id:'gadget',name:'Quick deploy',max:2,cost:[30,55],d:'-12% gadget cooldowns'}]},
 ];
-/* core stats: endless gold sink next to the skill tree. Cost grows ×1.45 per level, 30 levels each. */
+/* core stats: the gold sink next to the diamond-priced skill tree. Cost grows ×1.45 per level, 30 levels each. */
 const CORE={
   armor:{name:'Armor',d:'+20 max armor per level',icon:'armor',per:20,unit:''},
   dmg:{name:'Damage',d:'+4% damage per level',icon:'atk',per:4,unit:'%'},
@@ -182,8 +186,8 @@ const XP_NEED={base:6,per:.35}, XP_BOSS=10;
 const ECON={
   // Main Stage: Arena 4's gold and diamonds per minute (≈125 gold, ≈2.4 diamonds) over its ≈29 min run (15 rooms × par 95 s + High-Co)
   target:{gold:[1200,2000,3000,4000,3600],gems:[30,45,60,80,70]},
-  killGold:[.9,.8,.8,1,1.07],         // × ENEMY gold per arena (Main Stage: fewer, tougher kills in long wave rooms)
-  bossGold:[.55,.4,.26,.4,.5],        // × BOSSES gold per arena
+  killGold:[.81,.72,.72,.9,.96],      // × ENEMY gold per arena (Main Stage: fewer, tougher kills in long wave rooms); ×0.9 in the gold/diamond split
+  bossGold:[.5,.36,.23,.36,.45],      // × BOSSES gold per arena (×0.9 as above)
   bossGems:[.28,.25,.14,.22,.75],     // × BOSSES gems per arena, paid on the kill (the Main Stage has one boss, so he pays the run's share)
   clearGold:[6,9,12,15,35],           // per cleared combat/elite room (Main Stage rooms are long wave sets)
   healChance:[.12,.12,.12,.12,.05],   // a kill drops a repair pickup (+14% armor); Main Stage rooms have 15-30 kills each, so it is rarer there
