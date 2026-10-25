@@ -21,7 +21,7 @@ function hubrisTick(p,dt){ const h=hubris(), k=Math.max(0,(h-HUBRIS.loose)/(1-HU
   // the armor glow is set every frame (a hit flash clears emissive), the rest only when hubris moves
   const m=p.model; if(!(p.flash>0)) m.mats.slice(0,2).forEach(M=>M.emissive&&M.emissive.setRGB(h*.5,0,h*.06));
   if(Math.abs(h-(p.hubH==null?-1:p.hubH))>.005){ p.hubH=h; if(m.eyeM){ if(!m.eye0) m.eye0=m.eyeM.color.clone(); m.eyeM.color.copy(m.eye0).lerp(_hubRed,Math.min(1,h*1.4)); }
-    $('hubris').style.opacity=(h*.6).toFixed(2); $('hubTxt').hidden=h<.15; $('hubTxt').textContent=`HUBRIS ${Math.round(h*100)}%`; }
+    $('hubris').style.opacity=(h*.6).toFixed(2); $('hubRow').hidden=$('hubBar').hidden=h<.03; $('hubTxt').textContent=`${Math.round(h*100)}%`; $('hubBar').firstElementChild.style.width=(h*100).toFixed(1)+'%'; $('hubBar').classList.toggle('loose',h>=HUBRIS.loose); }
   p.hubT=(p.hubT||0)+dt; p.aimDrift=k?k*(.08*Math.sin(p.hubT*1.7)+.05*Math.sin(p.hubT*4.3+1)):0;
   if(k&&!reduceMotion.matches){ p.hubPulse=(p.hubPulse==null?rand(3,6):p.hubPulse)-dt; if(p.hubPulse<=0){ p.hubPulse=rand(2.5,6)/(.6+k); shake=Math.max(shake,.08+.2*k); buzz(Math.round(20+40*k)); } } }
 function busy(){ const p=player; return p.leap||p.jump||(p.hook&&p.hook.phase==='pull')||p.lance>0; }

@@ -44,13 +44,15 @@ function renderMenu(){
   $('whoName').textContent=P.pilot||'[CALLSIGN]'; $('avatar').textContent=String(P.arenas).padStart(2,'0'); $('betaBadge').hidden=!P.beta;
   if(view==='home'){ renderHome(); hangarFocus(); } if(view==='map') renderMap(); if(view==='armory') renderArmory(); if(view==='skills') renderTree($('treeHangar')); if(view==='frames') renderFrames(); if(view==='system') renderSystem();
 }
-// holo map (wide hangar, right panel): the arenas as nodes on a tilted holo disc; a node picks the arena, the hangar lights follow
-const HOLO=[[50,84],[22,60],[47,40],[78,57],[52,14]];
-function renderHolo(sel){ const box=$('holoNodes'); if(!box) return; box.innerHTML=''; $('holoPath').setAttribute('points',HOLO.slice(0,ARENAS.length).map(p=>p.join(',')).join(' '));
-  ARENAS.forEach((A,i)=>{ const [x,y]=HOLO[i]||[50,50], open=arenaOpen(i), done=(P.bestRoom[i]||0)>=A.rooms, b=document.createElement('button');
-    b.className='hn'+(i===sel?' sel':'')+(open?'':' lock')+(done?' done':''); b.style.left=x+'%'; b.style.top=y+'%'; b.style.setProperty('--c',CSS(A.theme.edge)); b.disabled=!open;
-    b.setAttribute('aria-label',`Arena ${i+1}: ${A.name}${open?'':' (locked)'}${done?' (cleared)':''}`);
-    b.innerHTML=`<span class="hd"></span><b>${String(i+1).padStart(2,'0')}</b><small></small>`; b.querySelector('small').textContent=A.name;
+// holo map (wide hangar, right panel): a route from Arena 1 (bottom) to the Main Stage (top); a node picks the arena, the hangar lights follow
+const HOLO=[[18,86],[70,68],[22,50],[72,32],[26,13]];
+function renderHolo(sel){ const box=$('holoNodes'); if(!box) return; box.innerHTML=''; const pts=HOLO.slice(0,ARENAS.length).map(p=>p.join(',')).join(' ');
+  $('holoPath').setAttribute('points',pts); $('holoGlow').setAttribute('points',pts);
+  ARENAS.forEach((A,i)=>{ const [x,y]=HOLO[i]||[50,50], open=arenaOpen(i), best=P.bestRoom[i]||0, done=best>=A.rooms, b=document.createElement('button');
+    b.className='hn'+(x>50?' r':'')+(i===sel?' sel':'')+(open?'':' lock')+(done?' done':''); b.style.left=x+'%'; b.style.top=y+'%'; b.style.setProperty('--c',CSS(A.theme.edge)); b.disabled=!open;
+    const st=!open?(A.stage?'Locked · beta':'Locked'):done?'Cleared':best?`Best room ${best}/${A.rooms}`:`${A.rooms} rooms`;
+    b.setAttribute('aria-label',`Arena ${i+1}: ${A.name}, ${st}`);
+    b.innerHTML=`<span class="hd">${String(i+1).padStart(2,'0')}</span><span class="tx"><b></b><small></small></span>`; b.querySelector('b').textContent=A.name; b.querySelector('small').textContent=st;
     b.onclick=()=>{ if(!open||i===sel) return; P.selArena=i; sfx('click'); persist(); renderMenu(); }; box.appendChild(b); }); }
 function renderHome(){
   const a=openSel(P.selArena), A=ARENAS[a];
