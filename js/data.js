@@ -2,13 +2,14 @@
 /* ================= DATA ================= */
 const UNITS = {
   azure:  {key:'azure',  name:'Azure',  role:'Type-00 · Rapid rifle', c1:0x2f62d8, c2:0xeeeef4, c3:0x1d2233, eye:0x6ad8ff, shot:0x7fe0ff, hp:100, speed:8.6, price:0},
-  crimson:{key:'crimson',name:'Crimson',role:'Type-02 · Scatter cannon', c1:0xd5352a, c2:0xf2a51e, c3:0x2a1b20, eye:0x9effa0, shot:0xffa060, hp:90, speed:10.4, price:500},
+  crimson:{key:'crimson',name:'Crimson',role:'Type-02 · Scatter cannon', c1:0xd5352a, c2:0xf2a51e, c3:0x2a1b20, eye:0x9effa0, shot:0xffa060, hp:100, speed:10.4, price:500},
   verdant:{key:'verdant',name:'Verdant',role:'Type-01 · Pierce lance', c1:0x6b3fb8, c2:0x5fd04a, c3:0x1d1a26, eye:0xfff070, shot:0xb8ff5a, hp:140, speed:7.6, price:500},
 };
+// specials recharge on a fixed cooldown (cd, seconds, counted from the moment the special ends), not from damage dealt
 const SPECIALS = {
-  azure:{name:'Overdrive',d:'5 s of 2.5× fire rate, +30% damage and +20% speed.'},
-  crimson:{name:'Crimson Nova',d:'Leap to the target and detonate on landing. Invulnerable in the air.'},
-  verdant:{name:'Judgement Lance',d:'Channel a huge beam for 2.4 s. It burns through enemies and erases shots.'},
+  azure:{name:'Overdrive',cd:25,d:'5 s of 2.5× fire rate, +30% damage and +20% speed.'},
+  crimson:{name:'Crimson Nova',cd:10,d:'Leap to the target and detonate on landing. Invulnerable in the air.'},
+  verdant:{name:'Judgement Lance',cd:28,d:'Channel a huge beam for 2.4 s. It burns through enemies and erases shots.'},
 };
 const PAINT1=[0x2f62d8,0xd5352a,0x6b3fb8,0x3aa048,0xe8e8ee,0x3a3d48,0xd9a520,0xf07a1a,0x1e1c24,0xe0508a];
 const PAINT2=[0xeeeef4,0xf2a51e,0x5fd04a,0x3ad0ff,0xd5352a,0xff7ad0,0x24202c,0xffd36a];
@@ -79,7 +80,7 @@ const TREE=[
     {id:'dmg',name:'Overclocked rounds',max:3,cost:[10,15,25],d:'+10% damage per rank'},
     {id:'rate',name:'Faster cycling',max:2,cost:[15,25],d:'+8% fire rate per rank'},
     {id:'crit',name:'Weak-point optics',max:3,cost:[15,25,40],d:'+7% chance to deal double damage'},
-    {id:'sp',name:'Sync amplifier',max:2,cost:[20,40],d:'+25% special charge rate'},
+    {id:'sp',name:'Sync amplifier',max:2,cost:[20,40],d:'Special recharges 25% faster per rank'},
     {id:'exec',name:'Executioner',max:1,cost:[75],d:'+30% damage to bosses'}]},
   {branch:'Defense',c:'#5fe0ff',nodes:[
     {id:'hp',name:'Reinforced plating',max:3,cost:[10,15,25],d:'+15 max armor per rank'},
@@ -104,7 +105,7 @@ const CORE_MAX=30, coreCost=lv=>Math.round(100*Math.pow(1.45,lv)/5)*5;
 /* run skills: picked on level-up (skill roulette), from angels and devils. They last for the whole arena run.
    rarity: common (pure stats) · rare (projectile modifiers, on-kill triggers) · epic (orbits, mechanic-specific) · legendary (evolutions).
    bonus:{stat:value} is added per rank to that stat's bucket (see BAL and balance.js): bonuses add inside a bucket, buckets multiply.
-   Bucket stats: dmg, rate (fire rate), hp (% max armor), hpFlat, regen, spd, crit, dodge, gold, sp (special charge), spPow, taken (+% damage taken), magnet, gcd (gadget cooldown), en (power).
+   Bucket stats: dmg, rate (fire rate), hp (% max armor), hpFlat, regen, spd, crit, dodge, gold, sp (special recharge speed), spPow, taken (+% damage taken), magnet, gcd (gadget cooldown), en (power).
    apply(p,rank) is only for side effects (orbits, lives). proj / orb = extra projectiles / orbiting hitters per rank (hard capped).
    req(rs) gates a skill (evolutions need both parents maxed). Most combat effects read player.rs[id]
    directly (bullets.js, enemies.js, player.js), so a new skill is: an entry here, an IC icon, and a few lines where it acts. */
@@ -120,7 +121,7 @@ const RSK={
   crit:{name:'Crit Lens',d:'+7% critical chance.',rarity:'common',max:4,icon:'crit',bonus:{crit:.07}},
   dodge:{name:'Dodge',d:'6% chance to ignore a hit.',rarity:'common',max:3,icon:'dodge',bonus:{dodge:.06}},
   goldrush:{name:'Gold Rush',d:'+25% gold.',rarity:'common',max:3,icon:'goldrush',bonus:{gold:.25}},
-  sync:{name:'Sync Surge',d:'+20% special charge.',rarity:'common',max:3,icon:'sync',bonus:{sp:.2}},
+  sync:{name:'Sync Surge',d:'Special recharges 20% faster.',rarity:'common',max:3,icon:'sync',bonus:{sp:.2}},
   // rare: projectile modifiers and on-kill triggers
   twin:{name:'Twin Shot',d:'+1 parallel projectile. Each shot deals 75% (60% at rank 2).',rarity:'rare',max:2,icon:'twin',proj:1},
   diag:{name:'Diagonal Fire',d:'+2 projectiles at 40°.',rarity:'rare',max:1,icon:'diag',proj:2},
@@ -211,7 +212,7 @@ const ITEMS={
   thorn:{name:'Thorn Plating',d:'Enemies that ram you take 3x the damage back.',rarity:'rare',icon:'i_thorn',shape:'oct',color:0xd5352a,add:p=>{p.thorn=(p.thorn||0)+1;},rem:p=>{p.thorn--;}},
   halof:{name:'Halo Fragment',d:'Repair 5% armor after every cleared room.',rarity:'rare',icon:'i_halo',shape:'torus',color:0xffd36a,add:p=>{p.haloFrag=(p.haloFrag||0)+1;},rem:p=>{p.haloFrag--;}},
   overclock:{name:'Overclock Chip',d:'+15% fire rate, but you take 10% more damage.',rarity:'rare',icon:'i_chip',shape:'box',color:0x7dff9a,bonus:{rate:.15,taken:.1}},
-  reactor:{name:'Sync Reactor',d:'Start every room with +30% special charge.',rarity:'rare',icon:'i_reactor',shape:'sphere',color:0xffe14a,add:p=>{p.reactor=(p.reactor||0)+1;},rem:p=>{p.reactor--;}},
+  reactor:{name:'Sync Reactor',d:'Start every room with your special 30% recharged.',rarity:'rare',icon:'i_reactor',shape:'sphere',color:0xffe14a,add:p=>{p.reactor=(p.reactor||0)+1;},rem:p=>{p.reactor--;}},
   scope:{name:'Target Scope',d:'+6% crit chance and crits hit 2.5x.',rarity:'rare',icon:'i_scope',shape:'cone',color:0xe8e8ee,bonus:{crit:.06},add:p=>{p.critMul=2.5;},rem:p=>{p.critMul=2;}},
   lucky:{name:'Lucky Coin',d:'Skill roulette rolls one rarity tier higher more often.',rarity:'epic',icon:'i_coin',shape:'cyl',color:0xffc83a,add:p=>{p.luck++;},rem:p=>{p.luck--;}},
   aegis:{name:'Aegis Shard',d:'The first hit you take in each room is blocked.',rarity:'epic',icon:'i_aegis',shape:'oct',color:0xb070ff,add:p=>{ p.aegisN=(p.aegisN||0)+1; p.aegis=true; },rem:p=>{ p.aegisN--; p.aegis=p.aegisN>0&&p.aegis; }},

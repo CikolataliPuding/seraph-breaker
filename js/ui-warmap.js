@@ -90,7 +90,7 @@ function renderTree(container){
 }
 function renderFrames(){
   const u=UNITS[P.unit],c=paint();
-  $('pilotIn').value=P.pilot; $('pvUnit').textContent=u.name; $('pvSp').textContent='SP · '+SPECIALS[P.unit].name;
+  $('pilotIn').value=P.pilot; $('pvUnit').textContent=u.name; $('pvSp').textContent=`SP · ${SPECIALS[P.unit].name} · ${SPECIALS[P.unit].cd} s`;
   const fr=$('frames'); fr.innerHTML='';
   Object.values(UNITS).forEach(x=>{ const bt=document.createElement('button'); bt.className='frame'; bt.id='fr_'+x.key; bt.style.setProperty('--c',CSS(x.key==='verdant'?x.c2:x.c1)); bt.setAttribute('aria-pressed',x.key===P.unit);
     const own=!!P.units[x.key], key='u'+x.key; if(!own) bt.classList.add('lock');

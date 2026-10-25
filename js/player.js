@@ -112,6 +112,8 @@ function updatePlayer(dt,canAct){
   const p=player; if(p.dead) return;
   p.inv=Math.max(0,p.inv-dt); p.dashCd=Math.max(0,p.dashCd-dt); p.gcd[0]=Math.max(0,p.gcd[0]-dt); p.gcd[1]=Math.max(0,p.gcd[1]-dt);
   p.overheat=Math.max(0,p.overheat-dt); p.regenDelay=Math.max(0,p.regenDelay-dt);
+  // the special recharges on its frame's cooldown (SPECIALS cd, faster with Sync), and only once the special has ended
+  if(state==='fight'&&!(p.od>0||p.lance>0||p.leap)) p.sp=Math.min(100,p.sp+100/SPECIALS[P.unit].cd*dt*p.st.sp);
   if(p.echoQ){ p.echoQ.t-=dt; if(p.echoQ.t<=0){ const s=p.echoQ.slot; p.echoQ=null; p.echoing=true; p.gcd[s]=0; useGadget(s); p.echoing=false; } }
   if(p.flash>0){p.flash-=dt;if(p.flash<=0)unflash(p);}
   let touchFire=false; p.aimOk=false;
@@ -139,7 +141,7 @@ function updatePlayer(dt,canAct){
   const m=p.model; let air=0;
   if(p.od>0) p.od-=dt;
   if(p.leap){ const L=p.leap; L.t+=dt; const k=Math.min(1,L.t/L.dur); p.pos.lerpVectors(L.from,L.to,k); air=Math.sin(Math.PI*k)*4.5; p.vel.set(0,0,0);
-    if(k>=1){ p.leap=null; pushOut(p.pos,.7); p.jz.sq.v=-7; hitstop(70,true); aoe(p.pos,7,45*p.st.dmg*p.st.spPow,.8,2.5); crossBlast(p.pos.clone(),0xff4a2a,2); shockwave(p.pos,22,9,0xffa040,true); clearEnemyShots(p.pos,5); buzz(120); } }
+    if(k>=1){ p.leap=null; pushOut(p.pos,.7); p.jz.sq.v=-7; hitstop(70,true); aoe(p.pos,7,35*p.st.dmg*p.st.spPow,.8,2.5); crossBlast(p.pos.clone(),0xff4a2a,2); shockwave(p.pos,22,9,0xffa040,true); clearEnemyShots(p.pos,5); buzz(120); } }
   else if(p.jump){ const J=p.jump; J.t+=dt; const k=Math.min(1,J.t/J.dur); p.pos.lerpVectors(J.from,J.to,k); air=Math.sin(Math.PI*k)*3.5; p.vel.set(0,0,0);
     if(k>=1){ p.jump=null; pushOut(p.pos,.7); p.jz.sq.v=-5; aoe(p.pos,4.2,14*p.st.dmg,.6,1.5); groundRing(p.pos,0xffa040,5,.5); sparks(p.pos.clone().setY(.5),0xffa040,10,6); shake=.3; sfx('boom'); } }
   else if(p.hook&&p.hook.phase==='pull'){ const h=p.hook; const dest=h.target&&!h.target.dead?h.target.pos.clone().addScaledVector(h.dir,-(h.target.r+1)):h.end;
@@ -242,8 +244,9 @@ function weaponUpdate(dt,fireIn){
   if(wp!=='rail') chargeOrb.visible=false;
   switch(wp){
     case 'azure': if(fireIn&&p.fireCd<=0){ p.fireCd=Math.max(0,p.fireCd+.1*rateM); const a=base+rand(-.025,.025); pshot(mz,new V3(Math.sin(a),0,Math.cos(a)),36,1*dmg,col,{life:.9,pierce:p.od>0}); sparks(mz,col,1,3); fired(1.6,.7); sfx('shot'); } break;
-    case 'crimson': if(fireIn&&p.fireCd<=0){ p.fireCd=Math.max(0,p.fireCd+.32*rateM); for(let i=-2;i<=2;i++){ const a=base+i*.1+rand(-.025,.025); shoot('p',mz,new V3(Math.sin(a),0,Math.cos(a)),rand(28,33),1.05*dmg,col,{geo:G.pel,life:.5,pierce:p.rs.pierce>0,bounce:p.rs.ricochet||0,wall:p.rs.wall||0}); }
-      if(p.rs.twin||p.rs.diag||p.rs.rear||p.rs.side||p.rs.storm) pshot(mz,dir,30,1.6*dmg,col,{geo:G.pel,life:.55}); shake=Math.max(shake,.08); fired(5,1.4); sfx('heavy'); } break;
+    case 'crimson': if(fireIn&&p.fireCd<=0){ p.fireCd=Math.max(0,p.fireCd+.6*rateM); for(let i=-2;i<=2;i++){ const mid=i===0; const a=base+i*.1+rand(-.025,.025); shoot('p',mz,new V3(Math.sin(a),0,Math.cos(a)),rand(28,33),1.05*dmg,col,{geo:G.pel,life:.3,pierce:mid&&p.rs.pierce>0,bounce:mid?(p.rs.ricochet||0):0,wall:mid?(p.rs.wall||0):0}); }
+      // Pierce / Ricochet / Wall Bounce ride the centre pellet only; Twin and Storm add a straight slug (Diagonal, Side, Rear fan out from it)
+      if(p.rs.twin||p.rs.storm) pshot(mz,dir,30,1.6*dmg,col,{geo:G.pel,life:.3}); shake=Math.max(shake,.08); fired(5,1.4); sfx('heavy'); } break;
     case 'verdant': if(fireIn&&p.fireCd<=0){ p.fireCd=Math.max(0,p.fireCd+.42*rateM); pshot(mz,dir,27,3.8*dmg,col,{geo:G.pBig,life:1.2,r:.8,pierce:true}); shake=Math.max(shake,.1); fired(3.5,1.2); p.kick.addScaledVector(dir,-4.5); sfx('heavy'); } break;
     case 'rail':
       // phone: charges while standing and releases on its own at full charge
