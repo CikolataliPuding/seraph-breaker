@@ -33,10 +33,18 @@ function renderMenu(){
   $('whoName').textContent=P.pilot||'[CALLSIGN]'; $('avatar').textContent=String(P.arenas).padStart(2,'0'); $('betaBadge').hidden=!P.beta;
   if(view==='home'){ renderHome(); hangarFocus(); } if(view==='map') renderMap(); if(view==='armory') renderArmory(); if(view==='skills') renderTree($('treeHangar')); if(view==='frames') renderFrames(); if(view==='system') renderSystem();
 }
+// holo map (wide hangar, right panel): the arenas as nodes on a tilted holo disc; a node picks the arena, the hangar lights follow
+const HOLO=[[50,84],[22,60],[47,40],[78,57],[52,14]];
+function renderHolo(sel){ const box=$('holoNodes'); if(!box) return; box.innerHTML=''; $('holoPath').setAttribute('points',HOLO.slice(0,ARENAS.length).map(p=>p.join(',')).join(' '));
+  ARENAS.forEach((A,i)=>{ const [x,y]=HOLO[i]||[50,50], open=arenaOpen(i), done=(P.bestRoom[i]||0)>=A.rooms, b=document.createElement('button');
+    b.className='hn'+(i===sel?' sel':'')+(open?'':' lock')+(done?' done':''); b.style.left=x+'%'; b.style.top=y+'%'; b.style.setProperty('--c',CSS(A.theme.edge)); b.disabled=!open;
+    b.setAttribute('aria-label',`Arena ${i+1}: ${A.name}${open?'':' (locked)'}${done?' (cleared)':''}`);
+    b.innerHTML=`<span class="hd"></span><b>${String(i+1).padStart(2,'0')}</b><small></small>`; b.querySelector('small').textContent=A.name;
+    b.onclick=()=>{ if(!open||i===sel) return; P.selArena=i; sfx('click'); persist(); renderMenu(); }; box.appendChild(b); }); }
 function renderHome(){
   const a=openSel(P.selArena), A=ARENAS[a];
   $('hEye').textContent=`ARENA 0${a+1} · ${roomsLabel(A)}`+((P.bestRoom[a]||0)>=A.rooms?' · CLEARED':'');
-  $('hStage').textContent=A.name; hangarTheme(a);
+  $('hStage').textContent=A.name; hangarTheme(a); renderHolo(a);
   const pips=$('hPips'); pips.innerHTML=''; ARENAS.forEach((x,i)=>{ const p=document.createElement('i'); if((P.bestRoom[i]||0)>=x.rooms) p.className='f'; else if(arenaOpen(i)) p.className='c'; pips.appendChild(p); });
   const hb=$('hBosses'); hb.innerHTML=''; arenaBossPool(a).slice(0,3).forEach(k=>{ const img=document.createElement('img'); img.src=PORTRAIT[k]||''; img.alt=BOSSES[k].name; img.title=BOSSES[k].name; hb.appendChild(img); }); const bl=document.createElement('span'); bl.textContent='BOSSES'; hb.appendChild(bl);
   $('pvUnit').textContent=UNITS[P.unit].name; $('pvSp').textContent=`SP · ${SPECIALS[P.unit].name} · ${SPECIALS[P.unit].cd} s`;

@@ -147,6 +147,26 @@ body.hangar .bnav .hexBtn{margin-top:0;height:88px}
 body.hangar .views{grid-column:3;grid-row:2;margin:0 24px 24px 0;background:rgba(18,13,24,.84);border:1px solid var(--line);backdrop-filter:blur(6px)}
 body.hangar #slotHome,body.hangar #slotFrames{display:none}
 body.hangar #v-home .bigGo{margin-top:auto}
+/* holo map (wide hangar only): a tilted holographic disc with the arenas as nodes on a path; the nodes stand up to face you */
+.holo{display:none}
+body.hangar .holo{display:block;position:relative;height:220px;perspective:760px;flex:none}
+.holo .disc{position:absolute;inset:6px 18px;transform:rotateX(56deg);transform-style:preserve-3d;border-radius:50%;
+  background:radial-gradient(circle,rgba(95,224,255,.2),rgba(95,224,255,.06) 52%,transparent 70%),repeating-radial-gradient(circle,rgba(95,224,255,.2) 0 1px,transparent 1px 20px);
+  box-shadow:inset 0 0 40px rgba(95,224,255,.18),0 0 26px rgba(95,224,255,.1);animation:holoGlow 4s ease-in-out infinite}
+@keyframes holoGlow{50%{box-shadow:inset 0 0 52px rgba(95,224,255,.28),0 0 34px rgba(95,224,255,.16)}}
+.holo .hpath{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.holo .hpath polyline{fill:none;stroke:rgba(95,224,255,.55);stroke-width:.8;stroke-dasharray:2 2;vector-effect:non-scaling-stroke}
+.hn{appearance:none;position:absolute;transform:translate(-50%,-80%) rotateX(-56deg);transform-origin:50% 100%;display:grid;justify-items:center;gap:1px;background:none;border:0;color:var(--paper);cursor:pointer;padding:0}
+.hn .hd{width:18px;height:18px;background:var(--c);clip-path:polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%);box-shadow:0 0 12px var(--c);opacity:.85}
+.hn b{font:600 11px var(--f-data);letter-spacing:.14em;text-shadow:0 0 6px #000}
+.hn small{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);white-space:nowrap;text-shadow:0 0 6px #000}
+.hn.sel .hd{width:24px;height:24px;opacity:1;animation:hnPulse 1.4s ease-in-out infinite} .hn.sel small{color:var(--paper)}
+@keyframes hnPulse{50%{box-shadow:0 0 22px var(--c),0 0 4px #fff}}
+.hn.done b::after{content:" ✓";color:var(--heal)}
+.hn.lock{cursor:default;opacity:.38;filter:grayscale(.8)}
+.hn:not(.lock):hover .hd,.hn:focus-visible .hd{opacity:1;transform:scale(1.15)}
+.hn:focus-visible{outline:none} .hn:focus-visible b{outline:2px solid var(--signal);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){ .holo .disc,.hn.sel .hd{animation:none} }
 /* single-column hangar (body.hangarTall: phones and narrow windows): the hangar fills the screen, Home stays see-through
    with shades at the top and bottom, the list views get a dark panel over it */
 body.hangarTall #hangarBg{display:block;position:absolute;inset:0;z-index:0}
