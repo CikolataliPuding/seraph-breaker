@@ -39,7 +39,7 @@ function renderHome(){
   $('hStage').textContent=A.name; hangarTheme(a);
   const pips=$('hPips'); pips.innerHTML=''; ARENAS.forEach((x,i)=>{ const p=document.createElement('i'); if((P.bestRoom[i]||0)>=x.rooms) p.className='f'; else if(arenaOpen(i)) p.className='c'; pips.appendChild(p); });
   const hb=$('hBosses'); hb.innerHTML=''; arenaBossPool(a).slice(0,3).forEach(k=>{ const img=document.createElement('img'); img.src=PORTRAIT[k]||''; img.alt=BOSSES[k].name; img.title=BOSSES[k].name; hb.appendChild(img); }); const bl=document.createElement('span'); bl.textContent='BOSSES'; hb.appendChild(bl);
-  $('pvUnit').textContent=UNITS[P.unit].name; $('pvSp').textContent='SP · '+SPECIALS[P.unit].name;
+  $('pvUnit').textContent=UNITS[P.unit].name; $('pvSp').textContent=`SP · ${SPECIALS[P.unit].name} · ${SPECIALS[P.unit].cd} s`;
   const run=loadRun(), cb=$('contBtn'); cb.hidden=!run; if(run) cb.textContent=`Continue · ${ARENAS[run.a].name} · room ${run.ri+1}/${ARENAS[run.a].rooms}`;
   // personal record: the furthest arena you reached and your best room there
   let ra=-1; P.bestRoom.forEach((r,i)=>{ if(r>0&&i<ARENAS.length) ra=i; });

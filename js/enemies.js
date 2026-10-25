@@ -85,7 +85,6 @@ function hitEnemy(e,d,pos,dot,noProc,flat){
   e.hp-=d;
   if(e===boss&&e.streams) hcStreamHit(e,d); // High-Co: hitting him while he channels cuts the crowd streams
   if(e.model.breaks&&e!==boss&&e.hp>0) breakParts(e);
-  if(!(player.od>0||player.lance>0)) player.sp=Math.min(100,player.sp+d*.55*player.st.sp);
   if(!dot||Math.random()<.12) flashModel(e);
   if(!dot){ xhHit(); const amt=clamp(d/e.maxHp*1.5,.12,1); hitReact(e,pos,crit?Math.max(amt,.5):amt);
     if(crit) hitstop(45); else if(d>=e.maxHp*.35&&e!==boss) hitstop(55); else if(e===boss&&d>=6) hitstop(40);
@@ -120,7 +119,6 @@ function killEnemy(e,byProc){
   if(sortie.rule.volatile){ const o=rand(0,1); for(let i=0;i<6;i++){ const a=(i+o)/6*Math.PI*2; shoot('e',e.pos.clone().setY(1.6),new V3(Math.sin(a),0,Math.cos(a)),4*eSpd(),8,0xb070ff,{life:3,r:.42}); } }
   const mul=e.elite?3:1, def=e.def||ENEMY.drone;
   score+=(def.score*(1+stage*.5)*mul)|0; kills++;
-  if(!(player.od>0||player.lance>0)) player.sp=Math.min(100,player.sp+5*player.st.sp);
   const rs=player.rs;
   if(rs.vamp) player.hp=Math.min(player.maxHp,player.hp+player.maxHp*(.02*rs.vamp+(rs.blood?.04:0)));
   // Death Nova and Shard Burst: a share of the dying enemy's max armor, capped, no damage multipliers, no further chains
