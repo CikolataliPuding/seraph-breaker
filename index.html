@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Seraph Breaker</title>
+<title>Autocrat</title>
 <link rel="icon" href="data:,">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -53,6 +53,7 @@
   <div id="hangarBg" aria-hidden="true"></div>
   <div class="shell">
     <div class="tbar">
+      <div class="brand" aria-hidden="true">AUTOCRAT</div>
       <div class="avatar" id="avatar">01</div>
       <div class="who"><span>PILOT <em class="badge" id="betaBadge" hidden>BETA TESTER</em></span><b id="whoName">[CALLSIGN]</b></div>
       <div class="chip cur gold" title="Gold: from every kill, spent on the Core and cosmetics"><i></i><span id="wGold">0</span></div>
@@ -125,7 +126,7 @@
             <label class="chk" id="testerToolsL" hidden><input type="checkbox" id="testerTools"> Tester tools in game (reloads the page)</label></div>
           <div class="fld"><span>Main Stage access code</span><div class="row tester"><input id="stageIn" maxlength="48" autocomplete="off" spellcheck="false" placeholder="Access code"><button class="btn ghost" id="stageBtn">Unlock</button></div>
             <p class="note" id="stageNote">The Main Stage is in beta. Enter the access code to open it.</p></div>
-          <div class="row"><button class="btn ghost" id="fsBtn">Fullscreen</button><button class="btn ghost" id="resetBtn">Reset my progress</button></div>
+          <div class="row"><button class="btn ghost" id="fsBtn">Fullscreen</button><button class="btn ghost" id="resetBtn">Reset my progress</button><button class="btn ghost" id="storyBtn">Replay story</button></div>
         </div>
       </section>
     </div>
@@ -139,7 +140,8 @@
   </div>
 </div>
 
-<div class="ov" id="card" hidden><div class="c"><div class="num" id="cardNum">ARENA 01 · 30 ROOMS</div><div class="t" id="cardT">First Contact</div><div class="s" id="cardS">Outer City</div></div></div>
+<div class="ov" id="card" hidden><div class="c"><div class="num" id="cardNum">ARENA 01 · 30 ROOMS</div><div class="t" id="cardT">First Contact</div><div class="s" id="cardS">Outer City</div><div class="v" id="cardV" hidden></div></div></div>
+<div class="ov" id="story" hidden><div class="stBox"><div class="stNum" id="stNum">1 / 5</div><p class="stTxt" id="stTxt"></p><div class="stRow"><button class="btn ghost sm" id="stSkip">Skip ▸▸</button><button class="btn sm" id="stNext">Next ▸</button></div></div></div>
 <div class="ov" id="warn" hidden><div class="w"><div><b>WARNING</b><span id="warnTxt">HIGH-ENERGY SIGNAL APPROACHING</span></div></div></div>
 <div id="cine" hidden>
   <div class="lb top"></div><div class="lb bot"></div>

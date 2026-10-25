@@ -262,6 +262,17 @@ button.card:hover,button.card:focus-visible{border-color:var(--c,var(--signal));
 #card .num{font-family:var(--f-data);color:var(--signal);letter-spacing:.24em;font-size:14px}
 #card .t{font-family:var(--f-display);font-weight:800;font-size:clamp(42px,8vw,96px);line-height:.95;transform:scaleX(.82);transform-origin:left}
 #card .s{font-size:18px;letter-spacing:.3em;text-transform:uppercase;color:var(--dim)}
+/* the intro story (ui-hangar.js storyShow) and the inner voice line on the arena title card */
+#story{z-index:40;background:radial-gradient(ellipse at 50% 45%,rgba(30,20,42,.96),rgba(6,4,8,.98));cursor:pointer}
+.stBox{width:min(640px,100%);display:grid;gap:18px;padding:0 8px}
+.stNum{font-family:var(--f-data);font-size:13px;letter-spacing:.24em;color:var(--signal)}
+.stTxt{margin:0;font-family:var(--f-display);font-weight:700;font-size:clamp(22px,4vw,34px);line-height:1.2;color:var(--paper);min-height:3.6em}
+.stTxt.in{animation:stIn .5s ease both} @keyframes stIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.stRow{display:flex;gap:10px;justify-content:flex-end}
+#card .v{font-family:var(--f-display);font-style:italic;font-size:clamp(16px,2.4vw,22px);color:var(--paper);opacity:.85;max-width:640px}
+body.mob .brand{display:none}
+.brand{font-family:var(--f-display);font-weight:800;letter-spacing:.32em;font-size:14px;color:var(--unit);opacity:.9;margin-right:4px}
+@media (prefers-reduced-motion:reduce){ .stTxt.in{animation:none} }
 @keyframes cardIn{0%{opacity:0;transform:translateY(6px)}12%{opacity:1;transform:none}82%{opacity:1}100%{opacity:0}}
 #warn{pointer-events:none;background:rgba(232,36,60,.12)}
 #warn .w{display:grid;gap:4px;text-align:center;padding:18px 26px;background:repeating-linear-gradient(-45deg,rgba(232,36,60,.9) 0 18px,rgba(12,9,16,.9) 18px 36px);animation:blink .45s steps(2) infinite;max-width:100%}

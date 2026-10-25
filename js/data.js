@@ -6,6 +6,16 @@ const UNITS = {
   verdant:{key:'verdant',name:'Verdant',role:'Type-01 · Pierce lance', c1:0x6b3fb8, c2:0x5fd04a, c3:0x1d1a26, eye:0xfff070, shot:0xb8ff5a, hp:140, speed:7.6, price:500},
 };
 // specials recharge on a fixed cooldown (cd, seconds, counted from the moment the special ends), not from damage dealt
+// the story (Autocrat): an intro shown once on the first boot (System > Replay story), and the pilot's inner voice on each arena's
+// title card the first time you enter it. A bullied nobody fights for his kind; the stronger he gets, the more he wants the throne.
+const STORY={intro:[
+  'The far future. Robot-humans, humans, and minds that think beyond both share one world.',
+  'Among my own kind I am the one who fails at everything. They say it to my face. They say it behind my back.',
+  'Alone, I sometimes think: if I were perfect, if I were strong, I would rule them all better than anyone ever has.',
+  'Then the sky opened. Machines. Angels. Things that are not us. And still nobody believes in me.',
+  'Fine. At least I will be useful. For my kind.'],
+  voice:['Nobody expects anything from me. Good. Then nobody sees me fail.','They are cheering. For me. I could get used to this.',
+    'Angels kneel when they break. I like the sound of it.','Who am I fighting for again? It does not matter. I am winning.','They chant his name. Not mine. Not yet.']};
 const SPECIALS = {
   azure:{name:'Overdrive',cd:25,d:'5 s of 2.5× fire rate, +30% damage and +20% speed.'},
   crimson:{name:'Crimson Nova',cd:10,d:'Leap to the target and detonate on landing. Invulnerable in the air.'},

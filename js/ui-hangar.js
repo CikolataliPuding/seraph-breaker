@@ -27,6 +27,17 @@ if(matchMedia('(hover:hover) and (pointer:fine)').matches){ let cur=null; const 
     const r=c.getBoundingClientRect(), x=(e.clientX-r.left)/r.width, y=(e.clientY-r.top)/r.height;
     c.style.setProperty('--ry',((x-.5)*9).toFixed(2)+'deg'); c.style.setProperty('--rx',((.5-y)*9).toFixed(2)+'deg'); c.style.setProperty('--mx',Math.round(x*100)+'%'); c.style.setProperty('--my',Math.round(y*100)+'%'); });
   $('menu').addEventListener('pointerleave',()=>{ if(cur) flat(cur); cur=null; }); }
+// the intro story: cards with Next / Skip (any key or tap goes on), shown once on the first boot; System > Replay story shows it again
+const STORYUI={i:0};
+function storyShow(){ STORYUI.i=0; $('story').hidden=false; storyCard(); }
+function storyCard(){ if(STORYUI.i>=STORY.intro.length){ $('story').hidden=true; P.lore.intro=true; persist(); return; }
+  $('stNum').textContent=`${STORYUI.i+1} / ${STORY.intro.length}`; $('stTxt').textContent=STORY.intro[STORYUI.i]; $('stNext').textContent=STORYUI.i===STORY.intro.length-1?'Fight ▸':'Next ▸';
+  const t=$('stTxt'); t.classList.remove('in'); void t.offsetWidth; t.classList.add('in'); }
+$('stNext').onclick=e=>{ e.stopPropagation(); sfx('click'); STORYUI.i++; storyCard(); };
+$('stSkip').onclick=e=>{ e.stopPropagation(); sfx('click'); STORYUI.i=STORY.intro.length; storyCard(); };
+$('story').addEventListener('pointerdown',e=>{ if(e.target.closest('button')) return; STORYUI.i++; storyCard(); });
+addEventListener('keydown',e=>{ if($('story').hidden||e.repeat) return; e.preventDefault(); if(e.code==='Escape'){ STORYUI.i=STORY.intro.length; } else STORYUI.i++; storyCard(); });
+$('storyBtn').onclick=()=>{ sfx('click'); storyShow(); };
 function renderMenu(){
   document.documentElement.style.setProperty('--unit',unitCss());
   $('wGold').textContent=P.gold.toLocaleString(); $('wGems').textContent=P.gems.toLocaleString();

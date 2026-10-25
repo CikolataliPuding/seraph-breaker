@@ -52,6 +52,8 @@ function launchArena(a,saved,retry){
   buildRoom(roomHalfX(),ROOM_Z,SANCTUM,true); player.pos.set(0,0,AZ-1.5); camTarget.copy(player.pos);
   $('cardNum').textContent=`ARENA 0${a+1} · `+(retry?`RETRY BOSS · ROOM ${sortie.ri+1}/${N}`:saved?`CONTINUE · ROOM ${sortie.ri+1}/${N}`:roomsLabel(A)); $('cardT').textContent=A.name;
   $('cardS').textContent=[A.ruleTxt,...sortie.mods.map(m=>MODS[m].name)].join(' · ');
+  // the pilot's inner voice, only the first time you enter an arena
+  const vo=!saved&&!retry&&!P.lore.arenas[a]&&STORY.voice[a]; $('cardV').hidden=!vo; if(vo){ $('cardV').textContent=`“${vo}”`; P.lore.arenas[a]=true; persist(); }
   const c=$('card'); c.hidden=false; const inner=c.firstElementChild; inner.style.animation='none'; void inner.offsetWidth; inner.style.animation='';
   setState('card',true); stateT=2; refreshControls(); playTrack(fightTrack());
 }
