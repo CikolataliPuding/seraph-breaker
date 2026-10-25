@@ -10,7 +10,7 @@ const LANG_MISS=new Set(); // English texts the active language has no entry for
 function t(s,...a){ let r=s; if(LANG!=='en'){ const d=DICT[LANG][s]; if(d) r=d; else LANG_MISS.add(s); } return a.length?r.replace(/\{(\d)\}/g,(m,i)=>a[i]!==undefined?a[i]:m):r; }
 function langSet(k){ try{ localStorage.setItem(LANG_KEY,k); }catch(e){} location.reload(); }
 // data tables: every string under a text key at any depth; all=true takes every string (plain lists of lines, like STORY)
-const LANG_KEYS=new Set(['name','d','role','tag','n','t','branch','cls','epi','warn','roomsTxt','ruleTxt','cost','sub']);
+const LANG_KEYS=new Set(['name','d','role','tag','n','t','branch','cls','epi','warn','roomsTxt','ruleTxt','cost','sub','passive']);
 function langData(o,all){ for(const k in o){ const v=o[k];
   if(typeof v==='string'){ if(all||LANG_KEYS.has(k)) o[k]=t(v); }
   else if(v&&(Array.isArray(v)||Object.getPrototypeOf(v)===Object.prototype)) langData(v,all); } }

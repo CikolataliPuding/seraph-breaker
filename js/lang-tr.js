@@ -206,6 +206,7 @@ const DICT_TR={
   'HOSTILE WAR MACHINE INBOUND':'DÜŞMAN SAVAŞ MAKİNESİ GELİYOR', 'HIGH-ENERGY SIGNAL APPROACHING':'YÜKSEK ENERJİ SİNYALİ YAKLAŞIYOR', 'HIGH-ENERGY SIGNAL DESCENDING':'YÜKSEK ENERJİ SİNYALİ İNİYOR',
   'ROTOR NOISE OVERHEAD':'TEPEDE ROTOR SESİ', 'SEISMIC SIGNATURE CLOSING':'SİSMİK İZ YAKLAŞIYOR', 'THE THRONE IS WATCHING':'TAHT İZLİYOR', 'JUDGEMENT DESCENDS':'YARGI İNİYOR',
   'THE HEADLINER IS DROPPING IN':'MANŞET İSİM İNİYOR',
+  'Stage fatigue: the harder you hit him, the less of it lands.':'Sahne yorgunluğu: ona ne kadar sert vurursan, o kadar azı işler.', 'Fatigue':'Yorgunluk',
   'Corrupted':'Bozulmuş', 'CORRUPTED SIGNAL':'BOZULMUŞ SİNYAL', 'The void got inside it. Same frame, new tricks, more armor.':'Boşluk içine sızdı. Aynı gövde, yeni numaralar, daha fazla zırh.',
   // room kinds and elite affixes (ROOM_KINDS, AFFIX)
   'Hostiles':'Düşmanlar', 'Ambush':'Pusu', 'Waves through the gates':'Kapılardan dalgalar', 'Survive':'Dayan', 'Hold out':'Direnmeye devam',

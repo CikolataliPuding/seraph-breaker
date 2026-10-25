@@ -81,6 +81,8 @@ function hitEnemy(e,d,pos,dot,noProc,flat){
   if(e.esh&&e.esh.hp>0){ const ab=d*.75; e.esh.hp-=ab; d-=ab; e.esh.m.scale.setScalar(1.12); if(e.esh.hp<=0){ e.esh.cd=6; e.esh.m.visible=false; sparks(e.pos.clone().setY(1.6),0x5fe0ff,10,6); sfx('shield'); } }
   // Headshot: small chance to instantly destroy a normal enemy
   if(rs.headshot&&!dot&&e!==boss&&!e.elite&&Math.random()<Math.min(BAL.cap.headshot,.015*rs.headshot)){ d=e.hp+1; crit=true; sparks(pos,0xffffff,10,8); }
+  // High-Co's stage fatigue: the damage counts toward his average first, then the share past the knee is lost (bosses.js hcFatigue)
+  if(e===boss&&e.def.fatigue){ const F=e.def.fatigue; e.fatE=(e.fatT?e.fatE*Math.exp(-(playTime-e.fatT)/F.tau):0)+d; e.fatT=playTime; d*=1-hcFatigue(e); }
   if(sortie) sortie.dmgDealt=(sortie.dmgDealt||0)+Math.max(0,Math.min(d,e.hp));
   e.hp-=d;
   if(e===boss&&e.streams) hcStreamHit(e,d); // High-Co: hitting him while he channels cuts the crowd streams

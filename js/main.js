@@ -2,7 +2,7 @@
 /* ================= MAIN LOOP ================= */
 let last=performance.now(),hudT=0;
 // HUD words, translated once (i18n.js): the HUD redraws every 60 ms
-const HUD_TXT={heat:t('Overheat'),bar:t('Barrier'),pow:t('Power'),ready:t('READY'),lr:t('LEVEL READY'),max:t('MAX LVL')};
+const HUD_TXT={heat:t('Overheat'),bar:t('Barrier'),pow:t('Power'),ready:t('READY'),lr:t('LEVEL READY'),max:t('MAX LVL'),fat:t('Fatigue')};
 const _sunOff=new V3(-6,32,3);
 /* combat room kinds while the room runs: ambush drop, waves (next one when the room thins out, or through the gates on a timer),
    Survive (endless spawns until the timer ends; the leftovers fizzle), Hunt (the elite escapes when the timer ends) */
@@ -163,6 +163,7 @@ function tick(dt,now){
     const bp=$('beatPip'), bs=!!sortie.rule.beatSync; bp.hidden=!bs; if(bs) bp.classList.toggle('on',BEAT.ph<.25);
     $('arTxt').textContent=ARENAS[sortie.a].name.toLocaleUpperCase(LANG); $('goldTxt').textContent=P.gold.toLocaleString(); $('gemTxt').textContent=P.gems;
     const cap=atCap(); $('xpFill').style.width=(cap?100:sortie.xp/xpNeed()*100)+'%'; const lr=$('lvReady'), pl=sortie.pendingLv; lr.hidden=!pl; if(pl) lr.textContent=pl>1?HUD_TXT.lr+' ×'+pl:HUD_TXT.lr; const lv=$('lvTxt'); if(lv) lv.textContent=cap?HUD_TXT.max:'LV '+sortie.lv;
+    { const fr=boss&&boss.def.fatigue?hcFatigue(boss):0, fe=$('bossFat'); fe.hidden=fr<.05; if(fr>=.05) fe.textContent=HUD_TXT.fat+' −'+Math.round(fr*100)+'%'; }
     if(boss) $('bossBar').firstElementChild.style.width=Math.max(0,boss.hp/boss.maxHp*100)+'%';
     else if(room&&room.timer){ const T=room.timer; $('bossName').textContent=T.name; $('bossPh').textContent=Math.ceil(Math.max(0,T.t))+' s'; $('bossBar').firstElementChild.style.width=Math.max(0,T.t/T.max*100)+'%'; }
     const spReady=p.sp>=100&&!busy(); $('abQ').classList.toggle('ready',spReady); $('abQ').style.setProperty('--cd',1-p.sp/100); $('tSP').classList.toggle('ready',spReady); $('tSP').style.setProperty('--cd',1-p.sp/100);

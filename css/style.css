@@ -320,6 +320,9 @@ body.mob .brand{display:none}
 .cineTxt{display:grid;gap:6px;min-width:0;text-shadow:0 2px 12px #000}
 .cineName{font-family:var(--f-display);font-weight:800;font-size:clamp(34px,7vw,84px);line-height:.95;transform:scaleX(.84);transform-origin:left}
 .cineEpi{font-size:clamp(15px,2.2vw,20px);color:#e2dbe6;max-width:46ch;line-height:1.25}
+/* a boss passive (High-Co's stage fatigue) under the intro, and its live share next to the boss name */
+.cinePas{margin-top:8px;font:600 13px var(--f-data);letter-spacing:.08em;color:#ff8a5a;max-width:52ch}
+#bossFat{margin:0 10px 0 auto;font:600 11px var(--f-data);letter-spacing:.1em;color:#ff8a5a;font-style:normal}
 .threat{font-family:var(--f-data);font-size:13px;letter-spacing:.2em;color:var(--alert)}
 #cineSkip{position:absolute;right:max(16px,env(safe-area-inset-right,0px));top:calc(13vh + 14px);pointer-events:auto}
 #result{background:rgba(8,5,10,.9)}
