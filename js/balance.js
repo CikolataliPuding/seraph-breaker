@@ -72,7 +72,7 @@ const growth=(g,ri)=>Math.pow(1+g,ri);
 const kneeCurve=(c,xr,knee)=>c[0]*Math.pow(c[1],Math.min(xr,knee))*Math.pow(c[2],Math.max(0,xr-knee));
 function enemyScale(a,ri,rule,wf){ const A=ARENAS[a], hm=rule&&rule.hpMul||1, dm=A.dmgMul||1, fin=ri>=A.rooms-1, x=A.roomK?(ri+(wf||0))*A.roomK:ri, mc=A.mobCurve, xr=ri+(wf||0);
   return {hp:(mc?kneeCurve(mc.hp,xr,mc.knee):A.hpMul*growth(SCALE.hp,x))*hm, dmg:mc?kneeCurve(mc.dmg,xr,mc.knee):dm*growth(SCALE.dmg,x),
-    boss:A.bossMul*growth(SCALE.hp,x)/growth(SCALE.hp,SCALE.bossRef)*hm*(fin?SCALE.finalHp:1), bossDmg:dm*growth(SCALE.dmg,x)/growth(SCALE.dmg,SCALE.bossRef)*(fin?SCALE.finalDmg:1)}; }
+    boss:A.bossMul*growth(SCALE.hp,x)/growth(SCALE.hp,SCALE.bossRef)*hm*(fin?SCALE.finalHp:1), bossDmg:dm*growth(SCALE.dmg,x)/growth(SCALE.dmg,SCALE.bossRef)*(fin?SCALE.finalDmg:1)*SCALE.bossDmgK}; }
 // enemy budget for a room (sum of ENEMY cost); grows slowly next to the exponential armor curve
 function roomBudget(a,ri,elite){ const B=SCALE.budget; return (B.base+a*B.arena+(ri+1)*B.room)*(elite?B.elite:1); }
 const xpNeedAt=lv=>XP_NEED.base+Math.floor(lv*XP_NEED.per*10)/10;
