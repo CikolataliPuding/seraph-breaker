@@ -454,6 +454,11 @@ const BOSSES={
            {name:'Black Angel',hp:.23,dmg:.165,breath:.8,spd:.9,regen:true,bar:'#a58cff',col:0xd9c9ff},
            {name:'Red Rage',hp:.25,dmg:.32,breath:.36,spd:1.2,regen:true,bar:'#ff2a3a',col:0xff2030}],
     hitCap:30,
+    /* stage fatigue (bosses.js hcFatigue, applied in enemies.js hitEnemy): your damage on him is averaged over tau s; per second past knee, cut of
+       the excess is lost: Q, burns, procs and crits included. An average pilot (≈64 dps above) stays under the knee; the harder a build hits, the
+       larger the share it loses (it tends to cut). The HUD shows the share lost next to his name. */
+    fatigue:{knee:70,cut:.6,tau:3},
+    passive:'Stage fatigue: the harder you hit him, the less of it lands.',
     /* crowd regen (forms II and III): every cd s (by form) he raises his arms (tele s), the three crowd sections light up and send light streams to
        him for dur s. Each live stream heals rate × form armor per second. Hitting him while he channels cuts the streams: every cut × form armor
        of damage breaks one (a big hit can break several), and with all three cut he staggers (stagger s, takes +60%). He never heals past

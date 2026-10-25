@@ -209,7 +209,7 @@ function bossDeath(){
 function startCine(){
   const kind=room.boss, def=BOSSES[kind];
   spawnBoss(kind);
-  $('cineImg').src=PORTRAIT[kind]||''; $('cineName').textContent=def.name; $('cineClass').textContent=def.cls; $('cineEpi').textContent=def.epi;
+  $('cineImg').src=PORTRAIT[kind]||''; $('cineName').textContent=def.name; $('cineClass').textContent=def.cls; $('cineEpi').textContent=def.epi; $('cinePas').hidden=!def.passive; $('cinePas').textContent=def.passive||'';
   $('cineThreat').textContent=t('THREAT')+' '+'■'.repeat(def.threat)+'□'.repeat(5-def.threat)+' · '+t('ROOM {0}/{1}',sortie.ri+1,sortie.N);
   const c=$('cine'); c.hidden=false; requestAnimationFrame(()=>c.classList.add('on'));
   setState('cine'); stateT=5; refreshControls();
@@ -225,6 +225,8 @@ function endCine(){
 let hcArena=null; // concert stage of the current High-Co room (built in buildBossRoom)
 const HC_COL=[0x5a8aff,0xd8d4ff,0xff2030]; // wave/ring colour per phase
 const HC_SLAM_R=6, HC_STUN=.6, HC_SCREAM=[30,8], HC_POLE_R=3.6, HC_POLE_DMG=9, HC_POLE_LIFE=6;
+// stage fatigue (BOSSES.highco.fatigue): the share of the pilot's damage he shrugs off right now, from the damage averaged over tau s
+function hcFatigue(b){ const F=b.def.fatigue; if(!F||!b.fatT) return 0; const dps=b.fatE*Math.exp(-(playTime-b.fatT)/F.tau)/F.tau; return dps>F.knee?F.cut*(dps-F.knee)/dps:0; }
 const hcBump=(t,x,w=.3)=>Math.max(0,1-Math.abs(t-x)/w);
 // vertical light column: telegraph and impact flash
 // one shared unit column (pillars fire up to 8 in a row): scaled to the radius, only the per-beam material is freed when it ends
