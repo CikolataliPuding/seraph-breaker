@@ -71,7 +71,6 @@ input{-webkit-user-select:text;user-select:text}
 #vign{position:fixed;inset:0;pointer-events:none;z-index:4;opacity:0;transition:opacity .25s;box-shadow:inset 0 0 120px 30px rgba(232,36,60,.7)}
 /* hubris: dark red at the screen edges as the power gets to the pilot (player.js hubrisTick) */
 #hubris{position:fixed;inset:0;pointer-events:none;z-index:3;opacity:0;transition:opacity 1.2s;background:radial-gradient(ellipse at 50% 50%,transparent 58%,rgba(120,8,24,.55) 88%,rgba(60,0,10,.85))}
-#hubTxt{position:absolute;right:8px;top:8px;font:600 11px var(--f-data);letter-spacing:.2em;color:#ff4a5a;text-shadow:0 1px 4px #000}
 #chronoTint{position:fixed;inset:0;pointer-events:none;z-index:4;opacity:0;transition:opacity .3s;background:radial-gradient(circle,transparent 40%,rgba(95,224,255,.25));mix-blend-mode:screen}
 #fade{position:fixed;inset:0;z-index:9;background:#050306;opacity:0;pointer-events:none;transition:opacity .22s}
 #fade.on{opacity:1}
@@ -150,26 +149,33 @@ body.hangar .bnav .hexBtn{margin-top:0;height:88px}
 body.hangar .views{grid-column:3;grid-row:2;margin:0 24px 24px 0;background:rgba(18,13,24,.84);border:1px solid var(--line);backdrop-filter:blur(6px)}
 body.hangar #slotHome,body.hangar #slotFrames{display:none}
 body.hangar #v-home .bigGo{margin-top:auto}
-/* holo map (wide hangar only): a tilted holographic disc with the arenas as nodes on a path; the nodes stand up to face you */
+/* holo map (wide hangar, ui-hangar.js renderHolo): a route from Arena 1 at the bottom to the Main Stage at the top over a holo grid;
+   upright nodes with the arena's name and state, the selected one lit in its arena's color */
 .holo{display:none}
-body.hangar .holo{display:block;position:relative;height:220px;perspective:760px;flex:none}
-.holo .disc{position:absolute;inset:6px 18px;transform:rotateX(56deg);transform-style:preserve-3d;border-radius:50%;
-  background:radial-gradient(circle,rgba(95,224,255,.2),rgba(95,224,255,.06) 52%,transparent 70%),repeating-radial-gradient(circle,rgba(95,224,255,.2) 0 1px,transparent 1px 20px);
-  box-shadow:inset 0 0 40px rgba(95,224,255,.18),0 0 26px rgba(95,224,255,.1);animation:holoGlow 4s ease-in-out infinite}
-@keyframes holoGlow{50%{box-shadow:inset 0 0 52px rgba(95,224,255,.28),0 0 34px rgba(95,224,255,.16)}}
-.holo .hpath{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
-.holo .hpath polyline{fill:none;stroke:rgba(95,224,255,.55);stroke-width:.8;stroke-dasharray:2 2;vector-effect:non-scaling-stroke}
-.hn{appearance:none;position:absolute;transform:translate(-50%,-80%) rotateX(-56deg);transform-origin:50% 100%;display:grid;justify-items:center;gap:1px;background:none;border:0;color:var(--paper);cursor:pointer;padding:0}
-.hn .hd{width:18px;height:18px;background:var(--c);clip-path:polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%);box-shadow:0 0 12px var(--c);opacity:.85}
-.hn b{font:600 11px var(--f-data);letter-spacing:.14em;text-shadow:0 0 6px #000}
-.hn small{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);white-space:nowrap;text-shadow:0 0 6px #000}
-.hn.sel .hd{width:24px;height:24px;opacity:1;animation:hnPulse 1.4s ease-in-out infinite} .hn.sel small{color:var(--paper)}
-@keyframes hnPulse{50%{box-shadow:0 0 22px var(--c),0 0 4px #fff}}
-.hn.done b::after{content:" ✓";color:var(--heal)}
-.hn.lock{cursor:default;opacity:.38;filter:grayscale(.8)}
-.hn:not(.lock):hover .hd,.hn:focus-visible .hd{opacity:1;transform:scale(1.15)}
-.hn:focus-visible{outline:none} .hn:focus-visible b{outline:2px solid var(--signal);outline-offset:2px}
-@media (prefers-reduced-motion:reduce){ .holo .disc,.hn.sel .hd{animation:none} }
+body.hangar .holo{display:block;position:relative;flex:1 1 auto;min-height:300px;margin:2px 0;border:1px solid rgba(95,224,255,.18);overflow:hidden;
+  background:radial-gradient(ellipse at 50% 50%,rgba(95,224,255,.10),transparent 70%),linear-gradient(rgba(95,224,255,.07) 1px,transparent 1px) 0 0/100% 26px,linear-gradient(90deg,rgba(95,224,255,.07) 1px,transparent 1px) 0 0/26px 100%,rgba(8,12,20,.55)}
+body.hangar .holo::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(transparent 0,rgba(95,224,255,.07) 50%,transparent 100%) 0 0/100% 40%;background-repeat:no-repeat;animation:holoScan 5s linear infinite}
+@keyframes holoScan{from{background-position:0 -40%}to{background-position:0 140%}}
+.holo .hpath{position:absolute;inset:0;width:100%;height:100%}
+.holo .hpath polyline{fill:none;vector-effect:non-scaling-stroke}
+#holoGlow{stroke:rgba(95,224,255,.18);stroke-width:7} #holoPath{stroke:rgba(95,224,255,.7);stroke-width:1.5;stroke-dasharray:6 5}
+.hn{appearance:none;position:absolute;transform:translate(-22px,-50%);display:flex;align-items:center;gap:10px;background:none;border:0;padding:0;color:var(--paper);cursor:pointer;text-align:left}
+.hn.r{flex-direction:row-reverse;transform:translate(calc(-100% + 22px),-50%);text-align:right}
+.hn .hd{width:44px;height:44px;flex:none;display:grid;place-items:center;font:700 14px var(--f-data);color:var(--ink);background:var(--c);clip-path:polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%);filter:drop-shadow(0 0 8px var(--c))}
+.hn .tx{display:grid;gap:1px;padding:4px 8px;background:rgba(10,8,16,.72);border:1px solid rgba(95,224,255,.22)}
+.hn .tx b{font-family:var(--f-display);font-weight:800;font-size:17px;line-height:1.05;white-space:nowrap}
+.hn .tx small{font:11px var(--f-data);letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+.hn.sel .hd{width:52px;height:52px;animation:hnPulse 1.4s ease-in-out infinite} .hn.sel .tx{border-color:var(--c)} .hn.sel .tx small{color:var(--c)}
+@keyframes hnPulse{50%{filter:drop-shadow(0 0 18px var(--c))}}
+.hn.done .tx small::after{content:" ✓";color:var(--heal)}
+.hn.lock{cursor:default} .hn.lock .hd{background:#3a3346;color:var(--dim);filter:none} .hn.lock .tx{opacity:.55}
+.hn:not(.lock):hover .tx,.hn:focus-visible .tx{border-color:var(--c)} .hn:focus-visible{outline:none} .hn:focus-visible .hd{outline:2px solid var(--signal)}
+@media (prefers-reduced-motion:reduce){ body.hangar .holo::after,.hn.sel .hd{animation:none} }
+/* hubris bar under the special bar (player.js hubrisTick): fills with the run's hubris, throbs once control starts to slip */
+.hubL span,.hubL b{color:#ff4a5a}
+#hubBar i{background:linear-gradient(90deg,#6a0c1c,#ff2a3a)}
+#hubBar.loose{animation:hubThrob 1.1s ease-in-out infinite} @keyframes hubThrob{50%{box-shadow:0 0 12px rgba(255,42,58,.85)}}
+@media (prefers-reduced-motion:reduce){ #hubBar.loose{animation:none;box-shadow:0 0 8px rgba(255,42,58,.7)} }
 /* single-column hangar (body.hangarTall: phones and narrow windows): the hangar fills the screen, Home stays see-through
    with shades at the top and bottom, the list views get a dark panel over it */
 body.hangarTall #hangarBg{display:block;position:absolute;inset:0;z-index:0}
