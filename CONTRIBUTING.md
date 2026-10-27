@@ -6,6 +6,15 @@ Pull Request (PR) olarak gelir ve proje sahibi (@selameddin00) onayladıktan son
 Onaylanan değişiklikler birkaç dakika içinde https://selameddin00.github.io/seraph-breaker/
 adresinde yayına çıkar.
 
+## Katkı şartları
+
+Autocrat açık kaynak değildir; kaynağı görünür bir lisansla ([LICENSE](LICENSE)) yayınlanır ve proje sahibinin ticari oyunudur. Katkılar memnuniyetle karşılanır, ama şu şartlarla:
+
+- Pull request (ya da issue'ya eklediğin kod veya varlık) göndererek, onu göndermeye **hakkın olduğunu** onaylarsın: kendi yazdığın ya da kullanma hakkın olan kod, görsel ve ses. Telifli içerik ekleme.
+- Katkının oyunda ve oyundan ayrı olarak kullanılması, değiştirilmesi, yayınlanması ve ticari olarak satılması için proje sahibine **süresiz, dünya çapında, geri alınamaz, ücretsiz ve devredilebilir** bir kullanım hakkı vermiş olursun (LICENSE, madde 4).
+- Fork'unu sadece bu depoya PR hazırlamak için kullanabilirsin; fork'u başka yerde yayınlamak ya da oynatmak lisansa aykırıdır.
+- PR şablonundaki "katkı şartlarını kabul ediyorum" kutusunu işaretle.
+
 ## Adım adım
 
 1. Sağ üstteki **Fork** butonuyla repoyu kendi hesabına kopyala.
