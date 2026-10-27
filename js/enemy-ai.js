@@ -15,7 +15,9 @@ function lobShell(from,to,dur,color,onLand,marker){ const g=new THREE.Group(), m
 // contact damage, with Thorn Plating paying it back
 function contactHurt(e,d){ const before=player.hp; hurt(d); if(player.thorn&&player.hp<before&&!e.dead) hitEnemy(e,d*3*player.st.dmg,e.pos.clone().setY(2),false,true); }
 // Spark explosion: hurts you only when it detonates on its own; it always hurts other enemies (chain reactions are queued and capped)
-function sparkBoom(e){ if(e.boomed) return; e.boomed=true; queueBlast(e.pos.x,e.pos.z,{t:.02,rad:2.6,dmg:10*ARENAS[stage].hpMul,hurtP:16,color:0xffa040,size:.8,skip:e,flat:true}); killEnemy(e,true); }
+function sparkBoom(e){ if(e.boomed) return; e.boomed=true;
+  if(e.tier>1) for(let i=0;i<4;i++){ const a=Math.PI/4+i*Math.PI/2; shoot('e',e.pos.clone().setY(.8),new V3(Math.sin(a),0,Math.cos(a)),6*eSpd(),6,0xff5a2a,{life:1.2,r:.4}); } // T2+: 4 diagonal shards
+  queueBlast(e.pos.x,e.pos.z,{t:.02,rad:2.6,dmg:10*ARENAS[stage].hpMul,hurtP:16,color:0xffa040,size:.8,skip:e,flat:true}); killEnemy(e,true); }
 /* enemy mines (Crawler, Siege Arachne) */
 function dropEMine(x,z,arm=.8){ if(emines.length>=14||room&&room.cleared) return; x=clamp(x,-AX+.6,AX-.6); z=clamp(z,-AZ+.6,AZ-.6);
   const g=new THREE.Group(); part(new THREE.CylinderGeometry(.4,.45,.16,8),toon(0x2a2632),g,0,.08,0,.05); const l=new THREE.Mesh(new THREE.SphereGeometry(.12,8,6),basic(0xff3a2a,false)); l.position.y=.2; g.add(l);
@@ -118,6 +120,17 @@ function edgeLen(x,z,dx,dz){ const tx=dx>1e-3?(AX-1-x)/dx:dx<-1e-3?(-AX+1-x)/dx:
 // a free spot near (x,z) r away at angle a (falls back on other angles); not in a block, inside the room, at least minP from you
 function spotNear(x,z,r,a,minP){ for(let k=0;k<14;k++){ const aa=a+(k?rand(-Math.PI,Math.PI):0), px=clamp(x+Math.sin(aa)*r,-AX+1.5,AX-1.5), pz=clamp(z+Math.cos(aa)*r,-AZ+1.5,AZ-1.5);
     if(!inBlock(px,pz,.6)&&(!player||Math.hypot(px-player.pos.x,pz-player.pos.z)>=minP)) return {x:px,z:pz}; } return null; }
+/* tier endings (TIER in data.js, the mob doc): Seraph T2 charges a second time on a new .45 s lane, T3 also fans 5 slow feathers where each charge
+   ends (a gold ring marks that spot with the lane); Ophan T2 rolls a second time on a new .5 s lane, T3 fires an 8-ring at every stop */
+function seraphEnd(e,m,hit){ if(e.tier>=3) fanShot(e.pos.clone().setY(1.6),e.yaw,2,.3,3.2*eSpd(),8,0xffc040,{life:3,r:.42});
+  if(e.tier>1&&!e.again&&!player.dead){ e.again=true; e.ph='tele'; e.phT=e.phMax=.45; e.locked=false; e.lock=null; e.vel.multiplyScalar(.2); return; }
+  e.again=false; m.core.scale.setScalar(1); if(hit){ e.vel.multiplyScalar(-.3); e.ph='rec'; e.phT=1.1; } else { e.ph='rec'; e.phT=e.mini?.6:.9; } }
+function ophanStop(e){ e.vel.set(0,0,0); e.jz.pop.v=-4;
+  if(e.tier>=3) for(let i=0;i<8;i++){ const a=i/8*Math.PI*2; shoot('e',e.pos.clone().setY(1.2),new V3(Math.sin(a),0,Math.cos(a)),2.8*eSpd(),9,0xffc040,{life:4,r:.45}); }
+  if(e.tier>1&&!e.again&&!player.dead){ e.again=true; const ld=leadDir(e.pos.x,e.pos.z,e.speed,new V3()), len=Math.max(3,lineLen(e.pos.x,e.pos.z,ld.x,ld.z,30,e.r*.6)-.5);
+    e.roll={x:ld.x,z:ld.z,len,done:0}; e.st='tele'; e.stT=.5; e.yaw=Math.atan2(ld.x,ld.z); teleStrip(e.pos,ld.x,ld.z,len,e.r*2,0xffd36a,.5);
+    if(e.tier>=3) groundRing(new V3(e.pos.x+ld.x*len,0,e.pos.z+ld.z*len),0xffd36a,1.2,.6); return; }
+  e.again=false; e.st='pause'; e.stT=e.tier>=3?1.5:1.2; dropToken(e); }
 const ATK={
   // Sentry salvo: + or x by turns, one shot down each of 4 lines drawn on the floor (to a block or the edge) .8 s before
   salvo:{tele:.8,rec:.4,cd:[2.6,3.4],start(e){ e.salvoA=e.pat?Math.PI/4:0; for(let i=0;i<4;i++){ const a=e.salvoA+i*Math.PI/2, dx=Math.sin(a), dz=Math.cos(a); teleStrip(e.pos,dx,dz,Math.max(1,lineLen(e.pos.x,e.pos.z,dx,dz,17,.2)),.35,0xff3a2a,.8,true); } sfx('click'); },
@@ -185,11 +198,11 @@ const AI={
   seraph(e,dt,to,d,pd,m){ const mini=e.mini, lockAt=mini?.18:.25, cs=22;
     if(e.ph==='charge'){ e.phT-=dt;
       if(Math.random()<.5){ const tr=new THREE.Mesh(G.spark,basic(0xffd36a,true)); tr.position.copy(e.pos).setY(2); tr.scale.setScalar(3); addFx(tr,.3,(f,dt,k)=>{tr.scale.setScalar(k*3);}); }
-      if((pd<e.r+.5&&!player.dead)||(decoy&&d<e.r+.5)){ if(pd<e.r+.5) contactHurt(e,14); e.vel.multiplyScalar(-.3); e.ph='rec'; e.phT=1.1; }
-      else if(e.phT<=0){ e.ph='rec'; e.phT=mini?.6:.9; m.core.scale.setScalar(1); } return; }
+      if((pd<e.r+.5&&!player.dead)||(decoy&&d<e.r+.5)){ if(pd<e.r+.5) contactHurt(e,14); seraphEnd(e,m,true); }
+      else if(e.phT<=0) seraphEnd(e,m,false); return; }
     if(e.ph==='tele'){ steer(e,_sv.set(0,0,0),dt,5); e.phT-=dt;
       if(e.phT>lockAt||!e.lock){ e.lock=leadDir(e.pos.x,e.pos.z,cs,e.lock||new V3(),AIL().lead); e.yaw=lerpAngle(e.yaw,Math.atan2(e.lock.x,e.lock.z),Math.min(1,dt*10)); }
-      if(e.phT<=lockAt&&!e.locked){ e.locked=true; teleStrip(e.pos,e.lock.x,e.lock.z,cs*.55,e.r*1.4,0xffd36a,lockAt+.3); }
+      if(e.phT<=lockAt&&!e.locked){ e.locked=true; teleStrip(e.pos,e.lock.x,e.lock.z,cs*.55,e.r*1.4,0xffd36a,lockAt+.3); if(e.tier>=3) groundRing(new V3(e.pos.x+e.lock.x*cs*.55,0,e.pos.z+e.lock.z*cs*.55),0xffd36a,1,lockAt+.3); }
       m.core.scale.setScalar(1.4+Math.sin(e.t*50)*.4);
       if(e.phT<=0){ e.ph='charge'; e.phT=.55; e.vel.copy(e.lock).multiplyScalar(cs); e.jz.pop.v=4; } return; }
     if(e.ph==='rec'){ steer(e,_sv.set(0,0,0),dt,2); e.phT-=dt; if(e.phT<=0){ e.ph='pos'; e.cd=rand(1.5,2.6); dropToken(e); } faceAim(e,dt,to,3); return; }
@@ -201,10 +214,10 @@ const AI={
     else if(e.st==='roll'){ const r=e.roll; e.vel.set(r.x,0,r.z).multiplyScalar(e.speed); r.done+=e.speed*dt*(e.slow>0?.55:1);
       e.dropT-=dt; if(e.dropT<=0){ e.dropT=.24; for(const s of [-1,1]) shoot('e',e.pos.clone().setY(1.2),new V3(-r.z*s,0,r.x*s),2.4*eSpd(),9,0xffc040,{life:4,r:.45}); }
       if(pd<e.r+.6&&!player.dead&&!r.hit){ r.hit=true; contactHurt(e,16); }
-      if(r.done>=r.len){ e.st='pause'; e.stT=1.2; e.vel.set(0,0,0); e.jz.pop.v=-4; dropToken(e); } }
+      if(r.done>=r.len) ophanStop(e); }
     else { e.vel.multiplyScalar(Math.pow(.02,dt)); // paused: turning, open to fire
       if(e.stT<=0&&!player.dead&&!e.hold){ if(takeToken(e)){ const ld=leadDir(e.pos.x,e.pos.z,e.speed,new V3()), len=Math.max(3,lineLen(e.pos.x,e.pos.z,ld.x,ld.z,30,e.r*.6)-.5);
-          e.roll={x:ld.x,z:ld.z,len,done:0}; e.st='tele'; e.stT=.85; e.yaw=Math.atan2(ld.x,ld.z); teleStrip(e.pos,ld.x,ld.z,len,e.r*2,0xffd36a,.85); } else e.stT=.3; } } },
+          e.roll={x:ld.x,z:ld.z,len,done:0}; e.st='tele'; e.stT=.85; e.yaw=Math.atan2(ld.x,ld.z); teleStrip(e.pos,ld.x,ld.z,len,e.r*2,0xffd36a,.85); if(e.tier>=3) groundRing(new V3(e.pos.x+ld.x*len,0,e.pos.z+ld.z*len),0xffd36a,1.2,.9); } else e.stT=.3; } } },
   /* flanker: commits to one orbit direction for 2-3 s and works around to your side and back (more often in later arenas),
      fires a burst when it gets there, then ducks behind the nearest block. It never mirrors your strafing. */
   crawler(e,dt,to,d,pd,m){ const L=AIL(), T=tgt(), [n,f]=e.def.band, R=(n+f)/2, a=angOf(e.pos.x,e.pos.z,T), back=Math.atan2(-player.aim.x,-player.aim.z);
@@ -231,7 +244,9 @@ const AI={
       if(s.t<=0){ e.ring.visible=false; e.shell=null; dropToken(e); crossBlast(new V3(s.x,0,s.z),0xff5a2a,.9); if(player&&!player.dead&&Math.hypot(player.pos.x-s.x,player.pos.z-s.z)<2.3) hurt(18); } }
     else { e.cd-=dt*cdRate(e)*(AIR.still>.9?1.9:1);
       if(e.cd<=0&&!player.dead&&!e.hold&&takeToken(e)){ e.cd=rand(2.6,3.4); const T=leadPoint(e.pos.x,e.pos.z,Math.max(1,d/1.2),AIL().lead*.5,_lp,2.5); e.shell={x:T.x,z:T.z,t:1.2}; e.ring.position.set(T.x,.06,T.z); e.ring.scale.setScalar(1.75); e.ring.visible=true; e.jz.rec.v+=6; sfx('heavy');
-        m.mouth.getWorldPosition(_tmp2); lobShell(_tmp2.clone(),new V3(T.x,0,T.z),1.2,0x3a3346); } } },
+        m.mouth.getWorldPosition(_tmp2); lobShell(_tmp2.clone(),new V3(T.x,0,T.z),1.2,0x3a3346);
+        if(e.tier>1){ const px=-(T.z-e.pos.z), pz=T.x-e.pos.x, pl=Math.hypot(px,pz)||1; [-1,1].forEach((s,k)=>{ const x=clamp(T.x+px/pl*3.2*s,-AX+1,AX-1), z=clamp(T.z+pz/pl*3.2*s,-AZ+1,AZ-1);
+          lobShell(_tmp2.clone(),new V3(x,0,z),1.5+.3*k,0x3a3346,()=>{ crossBlast(new V3(x,0,z),0xff5a2a,.9); if(player&&!player.dead&&Math.hypot(player.pos.x-x,player.pos.z-z)<2.3) hurt(18); },true); }); } } } },
   censer(e,dt,to,d,pd,m){ const [n,f]=e.def.band; attackCycle(e,dt,holdBand(e,dt,to,d,n,f,{noLos:true}),()=>ATK.orbs,1.5); faceAim(e,dt,to,3); },
   /* sniper: looks for an open lane at long range, then a red laser tracks you (leading you in later arenas), locks and fires.
      A block in the way cuts the laser; if it stays cut the shot is called off. */
@@ -244,7 +259,7 @@ const AI={
     e.blocked=len<d-1.2?(e.blocked||0)+dt:0;
     const Ll=len/1.05; m.laser.visible=true; m.laser.scale.set(e.st==='lock'?2.2:1,Ll/7,e.st==='lock'?2.2:1); m.laser.position.y=-.8-Ll/2; m.laser.material.opacity=e.st==='lock'?(Math.sin(e.t*50)>0?1:.4):.55;
     if(e.blocked>.45){ e.st='move'; e.stT=rand(1,1.6); m.laser.visible=false; dropToken(e); }
-    else if(e.stT<=0){ m.muzzle.getWorldPosition(_tmp2); shoot('e',_tmp2.clone().setY(1.6),new V3(fx,0,fz),34*eSpd(),22,0xff3a3a,{life:1.2,r:.42,scale:.9}); e.jz.rec.v+=7; sparks(_tmp2,0xff3a3a,5,6); sfx('heavy'); e.st='move'; e.stT=rand(1.6,2.6); m.laser.visible=false; dropToken(e); } },
+    else if(e.stT<=0){ m.muzzle.getWorldPosition(_tmp2); shoot('e',_tmp2.clone().setY(1.6),new V3(fx,0,fz),34*eSpd(),22,0xff3a3a,{life:1.2,r:.42,scale:.9}); e.jz.rec.v+=7; sparks(_tmp2,0xff3a3a,5,6); sfx('heavy'); if(e.tier>1&&!e.again){ e.again=true; e.st='aim'; e.stT=.85; return; } e.again=false; e.st='move'; e.stT=rand(1.6,2.6); m.laser.visible=false; dropToken(e); } }, // T2: a second shot after a fresh .5 s track and .35 s lock
   /* charger (machine): walks its band, then lowers the plow (.9 s); the last .3 s lock a red lane to the wall (14 units at most) with a ring at its
      end, and it rams along it, ramping from 8 to 17. A block or wall at the end stuns it 1.4 s (+60% damage); a miss stops it 1 s. It cannot turn. */
   ram(e,dt,to,d,pd,m){ e.stT-=dt;
@@ -368,13 +383,15 @@ const AI={
     const want=seek(e,clamp(gx,-AX+1.5,AX-1.5),clamp(gz,-AZ+1.5,AZ-1.5),e.speed,_sv); if(pd<6) want.addScaledVector(to,-e.speed*.8);
     steer(e,want,dt,2.5);
     const R=4.6; for(const o of enemies){ if(o===e||o.dead||o===boss) continue; if(Math.hypot(o.pos.x-e.pos.x,o.pos.z-e.pos.z)<R){ o.hp=Math.min(o.maxHp,o.hp+o.maxHp*.06*dt); if(Math.random()<dt*2) sparks(o.pos.clone().setY(2),0x7dff9a,1,2); } }
+    // T2: an ally inside the aura under 30% armor gets a 3 s shield right away (8 s cooldown), a green ring first
+    if(e.tier>1){ e.rescueT=(e.rescueT||0)-dt; if(e.rescueT<=0) for(const o of enemies){ if(o===e||o.dead||o===boss||o.hp>o.maxHp*.3||Math.hypot(o.pos.x-e.pos.x,o.pos.z-e.pos.z)>=R) continue; o.shieldT=3; groundRing(o.pos,0x7dff9a,1.6,.6); sfx('shield'); e.rescueT=8; break; } }
     e.cd-=dt; if(e.cd<=0){ e.cd=4.5; let k=0; for(const o of enemies){ if(o===e||o.dead||o===boss) continue; if(Math.hypot(o.pos.x-e.pos.x,o.pos.z-e.pos.z)<R){ o.shieldT=3; k++; } } if(k){ groundRing(e.pos,0x7dff9a,R,.6); sfx('shield'); } }
     e.yaw=lerpAngle(e.yaw,Math.atan2(-to.x,-to.z),Math.min(1,dt*3)); },
   /* rusher: rolls in along the flow field and speeds up as it goes; the fuse (0.55 s) only starts when it is close and can see you */
   spark(e,dt,to,d,pd,m){
     if(e.bounceT>0) e.bounceT-=dt; // just bounced off a wall: let it fly for a moment
     else if(e.st!=='blink'){ e.rush=Math.min(1,(e.rush||0)+dt/1.5); steer(e,chase(e,e.speed*(.5+.8*e.rush),_sv),dt,1.6+e.rush*2.4);
-      if(pd<2.5&&!player.dead&&losClear(e.pos.x,e.pos.z,player.pos.x,player.pos.z)){ e.st='blink'; e.stT=e.def.fuse; m.warn.visible=true; sfx('click'); } }
+      if(pd<2.5&&!player.dead&&losClear(e.pos.x,e.pos.z,player.pos.x,player.pos.z)){ e.st='blink'; e.stT=e.fuseShort?.45:e.def.fuse; m.warn.visible=true; sfx('click'); } }
     if(e.st==='blink'){ if(!(e.bounceT>0)) steer(e,_sv.copy(to).multiplyScalar(e.speed*.3),dt,3); e.stT-=dt; if(e.stT<=0){ sparkBoom(e); return; } }
     e.yaw=0; },
 };

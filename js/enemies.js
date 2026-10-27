@@ -123,6 +123,8 @@ function killEnemy(e,byProc){
   if(e===boss&&e.formN&&e.formN<e.formHp.length){ if(!e.immune) highcoFormDown(e); return; }
   e.dead=true; dropToken(e);
   if(e===boss){ bossDeath(); return; }
+  // Spark T3 shot down: two small Sparks (1 armor, .45 s fuse, no split) stand still .5 s where it was
+  if(e.type==='spark'&&e.tier>=3&&!e.boomed&&!e.noLoot) for(const s of [-1,1]){ const c=spawnEnemy('spark',new V3(clamp(e.pos.x+s*.9,-AX+1,AX-1),0,clamp(e.pos.z,-AZ+1,AZ-1)),false,{noDrop:true,force:true}); if(c){ c.hp=c.maxHp=1; c.fuseShort=true; c.wake=.5; c.model.g.scale.multiplyScalar(.6); c.r*=.6; c.gen=1; } }
   if(e.type==='spark'&&!e.boomed){ e.boomed=true; queueBlast(e.pos.x,e.pos.z,{t:.12,rad:2.6,dmg:10*ARENAS[stage].hpMul,color:0xffa040,size:.8,skip:e,flat:true}); }
   if(e.ring) e.ring.visible=false;
   // Main Stage floor props (dance pad, follow spot, landing ring, flame jets) go with their owner
