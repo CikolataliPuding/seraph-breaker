@@ -248,7 +248,7 @@ const CURSES={
 
 /* arenas: one run each, a flat sequence of short rooms. hpMul/dmgMul/bossMul multiply the room curve (SCALE below). The room schedule follows PACING
    (see roomSpec in run.js): every 10-room block ends with a boss. mobs unlock in list order as the run goes on (3 at first, one more every 4 rooms,
-   soft = rooms the first unlock waits on top; blockTypes = only that many unlocked types are active in each 10-room block, a window that moves on); bosses are drawn from the pool, never twice in a row, and planned ahead so the rooms before a boss can
+   soft = rooms the first unlock waits on top; blockTypes = only that many unlocked types are active in each 10-room block, a window that moves on; pin = types always in it once unlocked); bosses are drawn from the pool, never twice in a row, and planned ahead so the rooms before a boss can
    teach it (firstBoss: the first block's boss). The arenas follow the story (patch.md 31): the pilot first fights what is far from his own form
    (angels invade the Low City), and his own kind, the machines, in Fallen Sky (with one corrupted angel boss, x_archon: patch.md 31). phase =
    the story beat shown beside the name. */
@@ -262,7 +262,7 @@ const ARENAS=[
   {name:"Heaven's Gate", phase:'Ascent', rooms:50, hpMul:1.6, dmgMul:1.3, bossMul:1.5, mobs:['seraph','cherub','warden','beacon','aureole','censer','dominion','emissary','ophan','cantor','herald'], bosses:['seraph','throne','archon'], rule:{elitePairs:true,hazards:.4}, trap:'pillar', ruleTxt:'Elites come in pairs',
    theme:{bg:0x2b1a26,hemiS:0xfff0d0,hemiG:0x3a2638,ground:0x7a6670,city:0xe2c8d8,edge:0xffd36a,rim:0xffb060,win:0xfff0b0,floor:0xd8c6cc,wall:0x8a7480,block:0xf0e8f2,water:0xffd36a},
    colorCss:'#ffd36a'},
-  {name:'Fallen Sky', phase:'Hubris', rooms:50, hpMul:1.9, dmgMul:1.45, bossMul:1.8, mixed:true, mobs:['drone','lancer','warden','spark','ram','crawler','hopper','heavy','coil','sentry','censer','howitzer','borer','bulwark','mender','cherub'], blockTypes:10, bosses:['colossus','hive','arachne','x_archon'], rule:{hazards:.45,corruptElites:true}, trap:'mix', ruleTxt:'Both factions, corrupted elites, 2 random modifiers',
+  {name:'Fallen Sky', phase:'Hubris', rooms:50, hpMul:1.9, dmgMul:1.45, bossMul:1.8, mixed:true, mobs:['drone','lancer','warden','spark','ram','censer','crawler','hopper','heavy','coil','cherub','sentry','howitzer','borer','bulwark','mender'], blockTypes:10, pin:['warden','censer','cherub'], bosses:['colossus','hive','arachne','x_archon'], rule:{hazards:.45,corruptElites:true}, trap:'mix', ruleTxt:'Both factions, corrupted elites, 2 random modifiers',
    theme:{bg:0x170e22,hemiS:0xe0c8ff,hemiG:0x22123a,ground:0x4a3a64,city:0xb8a0e0,edge:0xb070ff,rim:0xff4ad0,win:0xd8a0ff,floor:0x9a8ab8,wall:0x2e2244,block:0x5a3a8a,water:0xb070ff},
    colorCss:'#b070ff'},
   /* Main Stage (High-Co's festival): unlocked by Arena 4's first clear, one notch above it. 15 wave rooms (STAGE) and High-Co after room 15
