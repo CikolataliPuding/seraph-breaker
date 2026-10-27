@@ -111,13 +111,14 @@ const TREE=[
     {id:'magnet',name:'Salvage magnet',max:2,cost:[9,15],d:'+60% pickup reach, +10% gold'},
     {id:'gadget',name:'Quick deploy',max:2,cost:[18,33],d:'-12% gadget cooldowns'}]},
 ];
-/* core stats: the gold sink next to the diamond-priced skill tree. Cost grows ×1.45 per level, 30 levels each. */
+/* core stats: the gold sink next to the diamond-priced skill tree. 20 levels each, cost ×1.18 per level: the full Core (3 × 20) is ~44k gold,
+   about one campaign's gold plus a few replays (patch.md 27). */
 const CORE={
   armor:{name:'Armor',d:'+20 max armor per level',icon:'armor',per:20,unit:''},
   dmg:{name:'Damage',d:'+4% damage per level',icon:'atk',per:4,unit:'%'},
   regen:{name:'Power regen',d:'+3% power regeneration per level',icon:'regen',per:3,unit:'%'},
 };
-const CORE_MAX=30, coreCost=lv=>Math.round(100*Math.pow(1.45,lv)/5)*5;
+const CORE_MAX=20, coreCost=lv=>Math.round(100*Math.pow(1.18,lv)/5)*5;
 /* run skills: picked on level-up (skill roulette), from angels and devils. They last for the whole arena run.
    rarity: common (pure stats) · rare (projectile modifiers, on-kill triggers) · epic (orbits, mechanic-specific) · legendary (evolutions).
    bonus:{stat:value} is added per rank to that stat's bucket (see BAL and balance.js): bonuses add inside a bucket, buckets multiply.
@@ -251,7 +252,7 @@ const CURSES={
    teach it (firstBoss: the first block's boss). The arenas follow the story (patch.md 31): the pilot first fights what is far from his own form
    (angels invade the Low City), and his own kind, the machines, in Fallen Sky. phase = the story beat shown beside the name. */
 const ARENAS=[
-  {name:'The Low City', phase:'Siege', rooms:30, hpMul:1, dmgMul:1, bossMul:1, mobs:['shardling','warden','censer','seraph','ophan','cherub'], soft:1, bosses:['prism','seraph','throne'], firstBoss:'prism', rule:{}, trap:'saw', ruleTxt:'Training ground: no special rule',
+  {name:'The Low City', phase:'Siege', rooms:30, hpMul:1, dmgMul:1, bossMul:1, mobs:['shardling','warden','censer','seraph','ophan','cherub'], soft:1, bosses:['prism','seraph','throne'], firstBoss:'throne', rule:{}, trap:'saw', ruleTxt:'Training ground: no special rule',
    theme:{bg:0x1d1424,hemiS:0xffd6b8,hemiG:0x2a1d3a,ground:0x5a4c64,city:0xffffff,edge:0xff6a1a,rim:0xff7a40,win:0xffc47a,floor:0xa898b0,wall:0x3a3346,block:0x5e5468,water:0xff7a2a},
    colorCss:'#ff6a1a'},
   {name:'Night Harbor', phase:'Undertow', rooms:40, hpMul:1.3, dmgMul:1.15, bossMul:1.25, mobs:['seraph','shardling','warden','drone','lancer','bulwark'], bosses:['prism','arachne','hive'], rule:{shotSpd:1.15,hazards:.35}, trap:'spike', ruleTxt:'Enemy shots fly 15% faster',
@@ -355,7 +356,7 @@ const BOSS_TEACH={
   colossus:['heavy','heavy','drone','drone'],          // slams with shockwaves, spread shots, gunfire
   hive:['spark','spark','spark','howitzer','drone'],    // swarms and bombs from above
   arachne:['crawler','crawler','lancer'],               // mines, flanking, a laser that tracks you
-  prism:['shardling','shardling','warden'],             // shards and rings (angel side: Prism opens the Low City)
+  prism:['shardling','shardling','warden'],             // shards and rings (angel side)
   seraph:['seraph','seraph','warden','cherub'],         // charges and rings
   throne:['ophan','warden','censer'],                   // rolls and bullet walls
   archon:['seraph','ophan','warden'],                   // lunges, a rolling line, waves (angel side)

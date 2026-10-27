@@ -1,21 +1,110 @@
-MIT License
+Autocrat Source-Available License
+Version 1.0, effective 2026-10-27
 
-Copyright (c) 2026 selameddin00 and Seraph Breaker contributors
+Copyright (c) 2026 Selameddin Tirit (GitHub: selameddin00). All rights reserved.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+This repository contains the source code and assets of the game "Autocrat"
+(formerly "Seraph Breaker"). The source is published so that people can read
+it, play the game, and contribute to it through pull requests. It is NOT open
+source. Except for the permissions written below, all rights are reserved by
+the copyright holder ("the Owner").
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+1. DEFINITIONS
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+"The Software" means everything in this repository and in the published game:
+source code, data tables, 3D models and the code that builds them, designs and
+documents (including the pages under docs/), text, story, characters, names
+(including "Autocrat" and "Seraph Breaker"), user interface, sounds, music
+setups, images and screenshots.
+
+2. WHAT YOU MAY DO
+
+a) Read and study the source code in this repository.
+b) Run the Software on your own device to play it or to test it, for your own
+   personal, non-commercial use.
+c) Fork this repository on GitHub, and make changes in that fork, solely to
+   prepare and submit contributions back to this repository through pull
+   requests.
+d) Make and share videos, streams and screenshots of yourself playing the
+   published game, including monetized ones, as long as you do not share the
+   game files themselves.
+
+3. WHAT YOU MAY NOT DO
+
+Without the Owner's prior written permission you may not:
+
+a) copy, distribute, publish, host, mirror, sell, rent or sublicense the
+   Software or any part of it, whether modified or not;
+b) use the Software or any part of it for any commercial purpose, including
+   advertising, in-app purchases, donations tied to a copy of the game, game
+   portals or app stores;
+c) create or publish a derivative work, including a renamed, reskinned,
+   translated or otherwise modified version of the game, or another game that
+   reuses its code, data, models, designs, story or characters;
+d) use the names "Autocrat" or "Seraph Breaker", the characters, the story or
+   the art of the Software to identify any other product;
+e) use the Software to train or fine-tune machine learning models, or to build
+   datasets for that purpose;
+f) remove or change this license or any copyright notice.
+
+Forks that exist only to submit pull requests must not be published or played
+by others outside GitHub's own fork view.
+
+4. CONTRIBUTIONS
+
+By submitting a contribution (a pull request, a patch, an issue with code or
+assets, or any other material) you confirm that you have the right to submit
+it, and you grant the Owner a perpetual, worldwide, irrevocable, royalty-free,
+transferable license, with the right to sublicense, to use, copy, modify,
+distribute, publish and commercialize your contribution as part of the
+Software or separately. Your contribution does not give you any right to the
+Software beyond what this license allows everyone.
+
+5. EARLIER VERSIONS
+
+Versions of the Software published in this repository before this license
+took effect were released under the MIT License. Copies of those earlier
+versions remain under the MIT License; this license applies to every version
+from its effective date on. The earlier notice, kept for those versions and for
+the contributions made under it:
+
+    MIT License
+    Copyright (c) 2026 selameddin00 and Seraph Breaker contributors
+    Permission is hereby granted, free of charge, to any person obtaining a
+    copy of this software and associated documentation files (the
+    "Software"), to deal in the Software without restriction, including
+    without limitation the rights to use, copy, modify, merge, publish,
+    distribute, sublicense, and/or sell copies of the Software, and to permit
+    persons to whom the Software is furnished to do so, subject to the
+    following conditions: The above copyright notice and this permission
+    notice shall be included in all copies or substantial portions of the
+    Software. THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+    EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+    MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+    NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+    DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+    USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+6. THIRD-PARTY SOFTWARE
+
+The game loads Three.js (r128) from a CDN. Three.js is licensed under the MIT
+License by its own authors and is not covered by this license.
+
+7. TERMINATION
+
+If you break any term of this license, your permissions under it end
+immediately and automatically. The Owner may take any legal action available
+to protect the Software.
+
+8. NO WARRANTY
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND. IN NO EVENT
+SHALL THE OWNER BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY ARISING
+FROM THE SOFTWARE OR ITS USE.
+
+9. PERMISSIONS AND CONTACT
+
+For any use not allowed above (commercial use, publishing, partnerships), ask
+the Owner through this repository's issues or the contact on the Owner's
+GitHub profile.

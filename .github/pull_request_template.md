@@ -9,3 +9,4 @@
 - [ ] Oyunu açıp değişikliği denedim
 - [ ] Tarayıcı konsolunda hata yok
 - [ ] Eklediğim görsel/ses/kodu kullanma hakkım var
+- [ ] [Katkı şartlarını](../CONTRIBUTING.md#katkı-şartları) kabul ediyorum: katkımın oyunda süresiz kullanım hakkını proje sahibine veriyorum (LICENSE, madde 4)
