@@ -793,3 +793,41 @@ function corruptModel(m,amt=.45){
 const buildCorrupted=kind=>corruptModel(BOSS_BUILD[kind](),.45);
 const BOSS_BUILD={colossus:buildColossus,prism:buildPrism,seraph:buildSeraphBoss,hive:buildHive,arachne:buildArachne,throne:buildThrone,archon:buildArchon,highco:()=>buildHighCo(1)};
 for(const k in BOSSES) if(BOSSES[k].form&&!BOSS_BUILD[k]) BOSS_BUILD[k]=()=>buildCorrupted(BOSSES[k].form);
+/* machine charger, denial and support (docs/mob-designs.html 1-3): Ram rams a locked lane, Coil drops live fields, Mender welds its allies */
+function buildRam(){
+  const g=new THREE.Group(), body=new THREE.Group(); body.position.y=-.2; g.add(body);
+  const M1=toon(0x5a5244),M2=toon(0xd5352a),M3=toon(0x2a2620),ME=basic(0xff3030,false),MH=basic(0xff7a2a,false);
+  part(box(1.5,.8,1.9),M1,body,0,1.1,0);
+  const plow=new THREE.Group(); plow.position.set(0,.8,1.05); body.add(plow); part(box(1.7,.9,.3),M2,plow,0,0,0,.08).rotation.x=-.3;
+  const teeth=[-1,1].map(s=>{ const t=part(new THREE.ConeGeometry(.16,.6,5),M3,body,s*.78,.65,1.2,.04); t.rotation.x=Math.PI/2; return t; });
+  part(box(.7,.5,.6),M1,body,0,1.72,.7,.07);
+  const eye=new THREE.Mesh(box(.5,.07,.05),ME); eye.position.set(0,1.75,1.02); body.add(eye);
+  part(box(1.52,.14,1.2),M2,body,0,1.52,-.2,.04); part(box(1,.2,.7),M3,body,0,1.6,-.6,.05);
+  [-1,1].forEach(s=>{ part(box(.5,.6,.6),M3,g,s*.55,.3,.35,.06); part(box(.62,.16,.9),M1,g,s*.55,.08,.45,.05); });
+  const glows=[], thr=[-1,1].map(s=>{ const t=new THREE.Group(); t.position.set(s*.45,1.15,-1.2); body.add(t); part(box(.4,.4,.5),M3,t,0,0,0,.05); const f=new THREE.Mesh(box(.3,.3,.12),MH); f.position.z=-.31; t.add(f); glows.push(f); return t; });
+  g.scale.setScalar(1.2);
+  return {g,body,plow,teeth,thr,glows,eye,mats:[M1,M2,M3],shadow:blob(1.5),breaks:[{o:teeth[0],at:.5},{o:teeth[1],at:.5},{o:thr[0],at:.25}]};
+}
+function buildCoil(){
+  const g=new THREE.Group(), body=new THREE.Group(); body.position.y=1.1; g.add(body);
+  const M1=toon(0x4c4658),M2=toon(0xc86a3a),M3=toon(0x24202c),MG=basic(0xffa040,false);
+  part(box(1.1,.45,1.1),M1,body,0,0,0);
+  [0,1,2].forEach(i=>{ const a=i/3*Math.PI*2+Math.PI/6, l=part(box(.14,1,.14),M3,body,Math.cos(a)*.7,-.6,Math.sin(a)*.7,.04); l.rotation.z=Math.cos(a)*.35; l.rotation.x=-Math.sin(a)*.35; });
+  [[.9,.4],[.8,.75],[.7,1.1]].forEach(([k,y])=>part(new THREE.CylinderGeometry(.5*k*.9,.5*k,.35,10),M1,body,0,y,0,.05));
+  const rings=[[.24,.55],[.58,.45],[.93,.35]].map(([y,r])=>{ const t=part(new THREE.TorusGeometry(r,.05,5,18),M2,body,0,y,0,.04); t.rotation.x=Math.PI/2; return t; });
+  const cup=part(new THREE.CylinderGeometry(.32,.2,.2,8),M3,body,0,1.38,0,.04);
+  const orb=new THREE.Mesh(new THREE.SphereGeometry(.22,12,8),MG); orb.position.y=1.6; body.add(orb);
+  const tube=part(box(.2,.9,.2),M3,body,.62,.3,-.2,.05); tube.rotation.z=-.5;
+  g.scale.setScalar(.95);
+  return {g,body,rings,orb,tube,mats:[M1,M2,M3],shadow:blob(1),breaks:[{o:rings[0],at:.5},{o:rings[2],at:.5},{o:cup,at:.25}]};
+}
+function buildMender(){
+  const g=new THREE.Group(), body=new THREE.Group(); body.position.y=2.1; g.add(body);
+  const M1=toon(0x6a6a78),M2=toon(0xe07a2a),M3=toon(0x2a2630),MG=basic(0xffa040,false);
+  part(box(.9,.5,.9),M1,body,0,0,0,.08); part(box(.5,.1,.14),M2,body,0,.31,0,.03); part(box(.14,.1,.5),M2,body,0,.31,0,.03);
+  const rotors=[[1,1],[-1,1],[1,-1],[-1,-1]].map(([sx,sz])=>{ part(box(.1,.2,.1),M3,body,sx*.62,.1,sz*.62,.03); const p=new THREE.Group(); p.position.set(sx*.62,.25,sz*.62); body.add(p); part(box(.7,.04,.18),M3,p,0,0,0,.02); return p; });
+  const arm=part(box(.12,.9,.12),M3,body,0,-.7,.1,.03); const tip=new THREE.Mesh(new THREE.SphereGeometry(.15,10,8),MG); tip.position.set(0,-1.2,.1); body.add(tip);
+  const eye=new THREE.Mesh(box(.5,.07,.05),MG); eye.position.set(0,.05,.46); body.add(eye);
+  g.scale.setScalar(.85);
+  return {g,body,rotors,arm,tip,eye,mats:[M1,M2,M3],shadow:blob(.8),breaks:[{o:rotors[0],at:.5},{o:rotors[2],at:.5},{o:arm,at:.25}]};
+}

@@ -89,6 +89,7 @@ function hitEnemy(e,d,pos,dot,noProc,flat){
   if(e.shieldT>0) d*=.5;
   // Main Stage open moments (Dancer landing, Shredder headbang, Diver dazed)
   if(e.vulnT>0&&e!==boss) d*=1.6;
+  if(e.mendT>0) d*=.6; // a Mender's repair beam is on it
   // Shielded affix: the barrier soaks 75% of every hit until it breaks; it comes back after 6 s
   if(e.esh&&e.esh.hp>0){ const ab=d*.75; e.esh.hp-=ab; d-=ab; e.esh.m.scale.setScalar(1.12); if(e.esh.hp<=0){ e.esh.cd=6; e.esh.m.visible=false; sparks(e.pos.clone().setY(1.6),0x5fe0ff,10,6); sfx('shield'); } }
   // Headshot: small chance to instantly destroy a normal enemy

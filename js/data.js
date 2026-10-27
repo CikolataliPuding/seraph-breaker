@@ -254,13 +254,13 @@ const ARENAS=[
   {name:'The Low City', phase:'Siege', rooms:30, hpMul:1, dmgMul:1, bossMul:1, mobs:['shardling','warden','censer','seraph','ophan','cherub'], soft:1, bosses:['prism','seraph','throne'], firstBoss:'prism', rule:{}, trap:'saw', ruleTxt:'Training ground: no special rule',
    theme:{bg:0x1d1424,hemiS:0xffd6b8,hemiG:0x2a1d3a,ground:0x5a4c64,city:0xffffff,edge:0xff6a1a,rim:0xff7a40,win:0xffc47a,floor:0xa898b0,wall:0x3a3346,block:0x5e5468,water:0xff7a2a},
    colorCss:'#ff6a1a'},
-  {name:'Night Harbor', phase:'Undertow', rooms:40, hpMul:1.3, dmgMul:1.15, bossMul:1.25, mobs:['seraph','shardling','warden','drone','lancer','bulwark'], bosses:['prism','arachne','hive'], rule:{shotSpd:1.15,hazards:.35}, trap:'spike', ruleTxt:'Enemy shots fly 15% faster',
+  {name:'Night Harbor', phase:'Undertow', rooms:40, hpMul:1.3, dmgMul:1.15, bossMul:1.25, mobs:['seraph','shardling','warden','drone','ram','lancer','coil','bulwark','mender'], bosses:['prism','arachne','hive'], rule:{shotSpd:1.15,hazards:.35}, trap:'spike', ruleTxt:'Enemy shots fly 15% faster',
    theme:{bg:0x0b1726,hemiS:0xb8d4ff,hemiG:0x10203a,ground:0x3e5470,city:0x9ab4e0,edge:0x3ad0ff,rim:0x3a8aff,win:0x9ae4ff,floor:0x86a2c4,wall:0x22344a,block:0x2f5f9a,water:0x1a74e0},
    colorCss:'#3ad0ff'},
   {name:"Heaven's Gate", phase:'Ascent', rooms:50, hpMul:1.6, dmgMul:1.3, bossMul:1.5, mobs:['seraph','cherub','warden','censer','heavy','ophan'], bosses:['seraph','throne','archon'], rule:{elitePairs:true,hazards:.4}, trap:'pillar', ruleTxt:'Elites come in pairs',
    theme:{bg:0x2b1a26,hemiS:0xfff0d0,hemiG:0x3a2638,ground:0x7a6670,city:0xe2c8d8,edge:0xffd36a,rim:0xffb060,win:0xfff0b0,floor:0xd8c6cc,wall:0x8a7480,block:0xf0e8f2,water:0xffd36a},
    colorCss:'#ffd36a'},
-  {name:'Fallen Sky', phase:'Hubris', rooms:50, hpMul:1.9, dmgMul:1.45, bossMul:1.8, mixed:true, mobs:['drone','lancer','warden','spark','crawler','heavy','censer','howitzer','bulwark','cherub'], bosses:['colossus','hive','arachne'], rule:{hazards:.45,corruptElites:true}, trap:'mix', ruleTxt:'Both factions, corrupted elites, 2 random modifiers',
+  {name:'Fallen Sky', phase:'Hubris', rooms:50, hpMul:1.9, dmgMul:1.45, bossMul:1.8, mixed:true, mobs:['drone','lancer','warden','spark','ram','crawler','heavy','coil','censer','howitzer','bulwark','mender','cherub'], bosses:['colossus','hive','arachne'], rule:{hazards:.45,corruptElites:true}, trap:'mix', ruleTxt:'Both factions, corrupted elites, 2 random modifiers',
    theme:{bg:0x170e22,hemiS:0xe0c8ff,hemiG:0x22123a,ground:0x4a3a64,city:0xb8a0e0,edge:0xb070ff,rim:0xff4ad0,win:0xd8a0ff,floor:0x9a8ab8,wall:0x2e2244,block:0x5a3a8a,water:0xb070ff},
    colorCss:'#b070ff'},
   /* Main Stage (High-Co's festival): unlocked by Arena 4's first clear, one notch above it. 15 wave rooms (STAGE) and High-Co after room 15
@@ -299,6 +299,11 @@ const ENEMY={
   howitzer:{name:'Howitzer',tag:'move',mass:3,role:'artillery',hp:12,r:1.4,speed:0,sc:1,cost:2.2,xp:2.2,gold:13,score:260,build:()=>buildHowitzer(),init:e=>{ e.cd=rand(1.4,2.4); }},
   lancer:{name:'Lancer',tag:'focus',mass:1.1,role:'sniper',band:[11,17],hp:9,r:1.15,speed:3.2,sc:1.05,cost:2,xp:2,gold:12,score:240,build:()=>buildLancer(),init:e=>{ e.model.laser.material=e.model.laser.material.clone(); e.st='move'; e.stT=rand(1.2,2.2); }},
   bulwark:{name:'Bulwark',mass:2.8,role:'tank',hold:3.4,hp:24,r:1.6,speed:1.8,sc:1.15,cost:2.4,xp:2.6,gold:15,score:280,build:()=>buildBulwark(),init:e=>{ e.cd=rand(2,3); }},
+  // machine charger, denial and support (patch.md 25, docs/mob-designs.html): Ram rams a locked lane and stuns itself on walls, Coil drops
+  // live ground fields that die with it, Mender ties a repair beam to the most hurt ally (repairs, -40% damage taken)
+  ram:{name:'Ram',tag:'move',mass:2.4,role:'charger',band:[7,11],hp:14,r:1.5,speed:3,sc:1.2,cost:2.2,xp:2.2,gold:13,score:260,build:()=>buildRam(),init:e=>{ e.st='walk'; e.cd=rand(1.2,2); }},
+  coil:{name:'Coil',tag:'move',mass:1.2,role:'denial',band:[8,12],hp:9,r:1.2,speed:3,sc:.95,cost:1.9,xp:1.9,gold:12,score:250,build:()=>buildCoil(),init:e=>{ e.cd=rand(1.5,2.5); }},
+  mender:{name:'Mender',tag:'focus',mass:.5,role:'support',hp:7,r:1,speed:4.4,sc:.85,fly:true,cost:1.5,xp:1.5,gold:10,score:220,build:()=>buildMender(),elite:false,init:e=>{ e.st='rest'; e.stT=rand(1,2); }},
   shardling:{name:'Shardling',mass:.9,role:'kiter',band:[6,10],hp:8,r:1.2,speed:3,sc:1,fly:true,angel:true,cost:1.6,xp:1.4,gold:9,score:180,build:()=>buildShardling(),init:(e,o)=>{ e.gen=o.gen||0; e.sc=Math.pow(.72,e.gen); e.hp*=Math.pow(.45,e.gen); e.r*=e.sc; }},
   cherub:{name:'Cherub',tag:'focus',mass:.6,role:'support',hp:7,r:1,speed:4.6,sc:1,fly:true,angel:true,cost:1.5,xp:1.5,gold:10,score:220,build:()=>buildCherub(),elite:false,init:e=>{ e.cd=3; }},
   censer:{name:'Censer',tag:'move',mass:1.3,role:'artillery',band:[8,12],hp:10,r:1.1,speed:1.8,sc:1,fly:true,angel:true,cost:2,xp:2,gold:12,score:240,build:()=>buildCenser(),init:e=>{ e.cd=rand(1.5,2.5); }},
@@ -342,11 +347,11 @@ const COMPS=[
   [{name:'Splinter',core:['shardling','shardling','move']},{name:'Rings',core:['warden','shardling','focus']},{name:'Censure',core:['censer','warden','shardling']},
    {name:'Strafe run',core:['seraph','seraph','shardling']},{name:'Wheel',core:['ophan','shardling','focus']},{name:'Skirmish',core:['move','focus','shardling']}],
   [{name:'Strafe run',core:['seraph','seraph','lancer']},{name:'Shield wall',core:['bulwark','lancer','drone']},{name:'Rings',core:['warden','lancer','drone']},
-   {name:'Splinter',core:['shardling','seraph','focus']},{name:'Halo',core:['warden','seraph','shardling']},{name:'Skirmish',core:['move','focus','drone']}],
+   {name:'Splinter',core:['shardling','seraph','focus']},{name:'Halo',core:['warden','seraph','shardling']},{name:'Breach',core:['ram','drone','focus']},{name:'Grid',core:['coil','seraph','lancer']},{name:'Skirmish',core:['move','focus','drone']}],
   [{name:'Choir',core:['cherub','seraph','seraph']},{name:'Censure',core:['censer','cherub','warden']},{name:'Wheel',core:['ophan','cherub','seraph']},
    {name:'Bastion',core:['heavy','cherub','warden']},{name:'Skirmish',core:['move','focus','seraph']}],
   [{name:'Lanes',core:['lancer','crawler','drone']},{name:'Medics',core:['cherub','heavy','spark','spark']},{name:'Siege line',core:['howitzer','bulwark','lancer']},
-   {name:'Hunters',core:['crawler','crawler','warden','censer']},{name:'Judgement',core:['warden','lancer','heavy']},{name:'Skirmish',core:['move','focus','move']}],
+   {name:'Hunters',core:['crawler','crawler','warden','censer']},{name:'Judgement',core:['warden','lancer','heavy']},{name:'Breach',core:['ram','crawler','lancer']},{name:'Grid',core:['coil','drone','lancer']},{name:'Field repair',core:['mender','heavy','drone','drone']},{name:'Skirmish',core:['move','focus','move']}],
   // Main Stage rooms are composed wave by wave from STAGE (composeStage); these only cover a forced plain room there
   [{name:'Sound check',core:['bass','roadie','spot']},{name:'Moshpit',core:['mosher','mosher','mosher','mosher','mosher','mosher']},{name:'Encore',core:['bass','dancer','shredder','drummer']}],
 ];

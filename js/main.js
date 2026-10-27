@@ -22,7 +22,7 @@ function roomKinds(dt){
 function roomUpdate(dt,edt){
   if(room.type!=='boss'&&room.type!=='angel') roomKinds(dt);
   if(ARENAS[stage].stage) stageTick(dt);
-  updateEnemies(edt); updateEMines(edt,performance.now()/1000); updateHazards(dt); updateTraps(dt);
+  updateEnemies(edt); updateEMines(edt,performance.now()/1000); updateEFields(edt,performance.now()/1000); updateHazards(dt); updateTraps(dt);
   if(room.type!=='boss'&&room.type!=='angel'&&!room.cleared&&!enemies.length&&!spawnQ.length&&!room.ambush&&!(room.timer&&room.kind==='survive')){
     roomCleared();
     if(!room.hurt&&Math.random()<.35&&arenaRoomType(sortie.ri+2)==='combat') spawnNpc('devil',new V3(rand(-3,3),0,-2));
