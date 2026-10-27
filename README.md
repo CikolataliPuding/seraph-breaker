@@ -1,7 +1,7 @@
-<h1 align="center">SERAPH BREAKER</h1>
+<h1 align="center">AUTOCRAT</h1>
 
 <p align="center">
-  <b>Anime tarzı mecha aksiyon roguelite.</b> Şehri makinelere ve meleklere karşı savun, beş arenayı tek koşuda geç, High-Co'nun sahnesinde son sözü söyle.<br>
+  <b>Anime tarzı mecha aksiyon roguelite.</b> Ezilen bir robot-insan dünyasını savunmak için savaşır; güçlendikçe güç onu zehirler ve sonunda kendi ırkına döner.<br>
   Tarayıcıda çalışır, kurulum yok. Bilgisayarda ve telefonda kendine özgü kontrollerle oynanır.
 </p>
 
@@ -21,7 +21,9 @@
   <img src="test-shots/pr/choice-centered-desktop.jpg" alt="Oyun içinde yetenek ruleti: üç kart ekranın ortasında" height="360">
 </p>
 
-> Bu bir topluluk projesi. Fikir arkadaş grubumuzdan çıktı; herkes istediği özelliği ekleyebilir. Nasıl katkı vereceğin [CONTRIBUTING.md](CONTRIBUTING.md) dosyasında.
+> **© 2026 Selameddin Tirit. Tüm hakları saklıdır.** Autocrat ticari bir oyun projesidir; kaynak kodu okunabilsin ve katkı verilebilsin diye açık duruyor, ama açık kaynak **değildir**. Kopyalamak, adını değiştirip yayınlamak ya da üzerinden para kazanmak yasaktır. Ayrıntı: [Telif ve lisans](#telif-ve-lisans).
+>
+> Katkılar memnuniyetle karşılanır: nasıl katkı vereceğin [CONTRIBUTING.md](CONTRIBUTING.md) dosyasında, katkıya açık işler [yol haritasında](https://github.com/selameddin00/seraph-breaker/issues/80).
 
 ---
 
@@ -37,7 +39,7 @@
 - [Kontroller](#kontroller)
 - [Bilgisayarında çalıştır](#bilgisayarında-çalıştır)
 - [Tester araçları](#tester-araçları)
-- [Lisans](#lisans)
+- [Telif ve lisans](#telif-ve-lisans)
 
 ---
 
@@ -77,11 +79,11 @@ Her frame'in kendi zırhı, hızı, imza silahı ve özel hareketi var. Özel ha
 
 | # | Arena | Oda | Kural | Bosslar |
 |---|---|---|---|---|
-| 1 | **Outer City** | 30 | Eğitim alanı | Iron Colossus · Hive Carrier · Siege Arachne |
-| 2 | **Night Harbor** | 40 | Düşman mermileri %15 hızlı | Prism Angel · Siege Arachne · Hive Carrier |
-| 3 | **Heaven's Gate** | 50 | Elitler ikili gelir | The Last Seraph · Ophanim Throne · Archon |
-| 4 | **Fallen Sky** | 50 | İki taraf birlikte, corrupted elitler, 2 rastgele modifier | Karışık + Corrupted bosslar |
-| 5 | **Main Stage** *(beta)* | 15 + boss | Ritim senkronu | **High-Co** |
+| 1 | **Siege · The Low City** | 30 | Eğitim alanı; melekler şehri işgal ediyor | Ophanim Throne · Prism Angel · The Last Seraph |
+| 2 | **Undertow · Night Harbor** | 40 | Düşman mermileri %15 hızlı; ilk makineler | Prism Angel · Siege Arachne · Hive Carrier |
+| 3 | **Ascent · Heaven's Gate** | 50 | Elitler ikili gelir | The Last Seraph · Ophanim Throne · Archon |
+| 4 | **Hubris · Fallen Sky** | 50 | Kendi ırkın: makineler, bozulmuş elitler, 2 rastgele modifier | Iron Colossus · Hive Carrier · Siege Arachne |
+| 5 | **Encore · Main Stage** | 15 + boss | Ritim senkronu | **High-Co** |
 
 - **Arena boyutları:** Masaüstünde odalar 26 birim geniş, iki yanda boş kaçış koridorları var. Telefonda okunabilirlik için 20 birim.
 - **Spawn kuralı:** Düşmanlar pilota en az 8 birim uzakta doğar. Pusu odalarında en az 6 birim arkada ya da yanda doğarlar ve önce kırmızı bir halka yanar.
@@ -292,6 +294,29 @@ Test araçları bir **tester koduyla** açılır (proje sahibinden iste). Kodu S
 
 ---
 
-## Lisans
+## Telif ve lisans
 
-[MIT](LICENSE). Kodu istediğin gibi kullanabilir, değiştirebilir ve paylaşabilirsin.
+**© 2026 Selameddin Tirit (GitHub: selameddin00). Tüm hakları saklıdır.**
+
+Autocrat (eski adıyla Seraph Breaker) ticari olarak yayınlanacak bir oyundur. Bu depo **açık kaynak değildir**; kaynağı görünür bir lisansla yayınlanır: [LICENSE](LICENSE). Bağlayıcı olan İngilizce lisans metnidir; aşağıdaki özet bilgi içindir.
+
+**Serbest:**
+- Kaynak kodu okumak ve incelemek.
+- Oyunu kendi cihazında, kişisel ve ticari olmayan amaçla oynamak ve denemek.
+- Depoyu GitHub'da **sadece bu depoya pull request göndermek için** fork'lamak.
+- Oyunu oynarken video, yayın ve ekran görüntüsü paylaşmak (para kazanılan kanallarda da), oyun dosyalarını paylaşmadan.
+
+**Yasak (yazılı izin olmadan):**
+- Oyunu ya da herhangi bir parçasını kopyalamak, dağıtmak, başka bir yerde yayınlamak, barındırmak ya da satmak.
+- Adını, görselini ya da metnini değiştirip (yeniden adlandırılmış, yeniden boyanmış, çevrilmiş) bir sürümünü ya da kodunu, verisini, modellerini, tasarımlarını, hikayesini veya karakterlerini kullanan başka bir oyunu yayınlamak.
+- Oyunu ya da parçalarını herhangi bir ticari amaçla kullanmak: reklam, uygulama içi satın alma, oyun portalları, uygulama mağazaları.
+- "Autocrat" ve "Seraph Breaker" adlarını, karakterleri ve görselleri başka bir ürün için kullanmak.
+- İçeriği yapay zekâ modeli eğitmek için kullanmak.
+
+**Katkılar:** Pull request göndererek katkını göndermeye hakkın olduğunu onaylar ve katkının oyunda süresiz, devredilebilir ve ücretsiz kullanım hakkını proje sahibine vermiş olursun (ayrıntı: [CONTRIBUTING.md](CONTRIBUTING.md#katkı-şartları)).
+
+**Eski sürümler:** Bu lisanstan önce yayınlanan sürümler MIT lisansıyla yayınlanmıştı; o sürümlerin kopyaları MIT olarak kalır. Bu tarihten sonraki her sürüm yukarıdaki lisansa tabidir. O dönemde katkı verenlere teşekkürler.
+
+**Üçüncü taraf:** Three.js (r128) kendi MIT lisansıyla CDN'den yüklenir.
+
+Ticari kullanım, yayın ya da iş birliği için izin istemek istersen bir issue aç ya da GitHub profilindeki iletişim adresini kullan.
