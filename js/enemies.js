@@ -38,10 +38,16 @@ function spawnEnemy(type,pos,elite=false,o={}){
   return e;
 }
 /* mob tier (TIER in data.js): the side's body tint and 1-2 plates above the model; behavior comes from e.tier in enemy-ai.js */
-function tierModel(e,tier){ e.tier=tier; const pal=TIER.pal[e.angel?'angel':'machine'][tier-1]||{}, M=e.model.mats||[];
-  for(const i in pal) if(M[i]) M[i].color.setHex(pal[i]);
-  const top=new THREE.Box3().setFromObject(e.model.g).max.y-e.model.g.position.y;
-  for(let i=0;i<tier-1;i++){ const p=new THREE.Mesh(box(.55,.09,.16),basic(TIER.plate,false)); p.position.set(0,top+.3+i*.2,0); p.userData.nofit=1; e.model.g.add(p); } }
+function tierModel(e,tier){ e.tier=tier; const m=e.model, p=TIER.pal[e.angel?'angel':'machine'][tier]||{}, s=TIER.slot[e.kind]||{};
+  if(p.main!=null) tierRecolor(m,s.main==null?0:s.main,p.main); if(p.accent!=null) tierRecolor(m,s.accent==null?1:s.accent,p.accent);
+  // the plates float over the model's top (outlines left out), in the model's own scale
+  m.g.updateMatrixWorld(true); const bb=new THREE.Box3(), tb=new THREE.Box3();
+  m.g.traverse(o=>{ if(o.isMesh&&!o.userData.nofit&&o.material!==outlineMat&&o.visible){ if(!o.geometry.boundingBox) o.geometry.computeBoundingBox(); tb.copy(o.geometry.boundingBox).applyMatrix4(o.matrixWorld); bb.union(tb); } });
+  const y0=(bb.max.y-m.g.position.y+.4)/(m.g.scale.x||1), MP=basic(TIER.plate,false);
+  for(let i=0;i<tier-1;i++) part(box(.55,.09,.16),MP,m.g,0,y0+i*.2,0,.04).userData.nofit=1; }
+// repaint one mats[] color, and any other toon part of the same color in the model (Bulwark's shield trim)
+function tierRecolor(m,i,hex){ const mt=m.mats&&m.mats[i]; if(!mt) return; const old=mt.color.getHex();
+  m.g.traverse(o=>{ if(o.isMesh&&o.material&&o.material.isMeshToonMaterial&&o.material.color.getHex()===old) o.material.color.setHex(hex); }); mt.color.setHex(hex); }
 /* elite affixes (AFFIX in data.js): 1-2 random ones (corrupted elites and the hunted one: 1, no Blinker on a fleeing or static elite) */
 function applyAffixes(e,list){
   let ks=Object.keys(AFFIX).filter(k=>!(k==='blinker'&&(e.hunt||!e.speed))&&!(k==='swift'&&!e.speed));
