@@ -105,8 +105,8 @@ function freeSpot(minFromEntry=6){ let best=null,bd=-1;
     const d=player?Math.hypot(x-player.pos.x,z-player.pos.z):99; if(d>=SPAWN_MIN) return new V3(x,0,z); if(d>bd){ bd=d; best=new V3(x,0,z); } }
   return best||new V3(rand(-3,3),0,-AZ+2.5);
 }
-// mobs unlock in the arena's list order as the run goes on (3 at first, one more every 4 rooms)
-function arenaPool(a=sortie.a,ri=sortie.ri){ const A=ARENAS[a], ok=A.mobs.filter(t=>ENEMY[t]); return ok.slice(0,Math.min(ok.length,3+Math.floor(ri/4))); }
+// mobs unlock in the arena's list order as the run goes on (3 at first, one more every 4 rooms; soft delays the first unlock by that many rooms)
+function arenaPool(a=sortie.a,ri=sortie.ri){ const A=ARENAS[a], ok=A.mobs.filter(t=>ENEMY[t]); return ok.slice(0,Math.min(ok.length,3+Math.floor(Math.max(0,ri-(A.soft||0))/4))); }
 const HUNT_TYPES=['drone','crawler','seraph','shardling','lancer'];
 /* role-based composition: a COMPS template core (or the next boss's teaching core), then the room budget (roomBudget × PACING k × kind k) fills up
    from the unlocked pool, and the room always ends up with a 'move' and a 'focus' enemy. spec = a room of the run plan. Returns the waves

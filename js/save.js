@@ -3,7 +3,7 @@
 const SAVE_KEY='seraph-breaker-save-v2';
 // v4: the AI / level design update. beta: the save existed before it (badge). testerCode / testerSave / testerTools: tester mode (tester.js).
 // v5: the Main Stage (a 5th arena): bestRoom gets a 5th slot, and a save that already cleared Arena 4 opens it.
-// stageCode: the Main Stage beta access code (tester.js). Older saves get '' and can enter it in System.
+// stageCode: the old Main Stage beta access code; unused since the stage opens with Arena 4's first clear (patch.md 31), kept so saves keep their fields.
 // v6: frames are bought with diamonds (units: owned frames, Azure free). Saves from before v6 are beta saves and keep every frame.
 // v7: paint colors are bought with gold (paints: owned colors). Saves from before v7 keep the colors their frame wears.
 const DEF_P={v:7,beta:false,testerCode:'',testerSave:false,testerTools:false,stageCode:'',rev:0,pilot:'',unit:'azure',units:{azure:true},paints:[],lore:{intro:false,arenas:[]},c1:null,c2:null,gold:0,gems:0,skills:{},owned:{},weapon:'sig',gadgets:['',''],music:.55,sfx:.7,best:0,clears:0,progress:0,ctrl:'auto',autoGadget:false,mshield:'auto',arenas:1,bestRoom:[0,0,0,0,0],selArena:0,core:{armor:0,dmg:0,regen:0}};

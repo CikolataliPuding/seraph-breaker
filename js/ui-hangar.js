@@ -50,13 +50,13 @@ function renderHolo(sel){ const box=$('holoNodes'); if(!box) return; box.innerHT
   $('holoPath').setAttribute('points',pts); $('holoGlow').setAttribute('points',pts);
   ARENAS.forEach((A,i)=>{ const [x,y]=HOLO[i]||[50,50], open=arenaOpen(i), best=P.bestRoom[i]||0, done=best>=A.rooms, b=document.createElement('button');
     b.className='hn'+(x>50?' r':'')+(i===sel?' sel':'')+(open?'':' lock')+(done?' done':''); b.style.left=x+'%'; b.style.top=y+'%'; b.style.setProperty('--c',CSS(A.theme.edge)); b.disabled=!open;
-    const st=!open?t(A.stage?'Locked · beta':'Locked'):done?t('Cleared'):best?t('Best room {0}/{1}',best,A.rooms):t('{0} rooms',A.rooms);
+    const st=!open?t('Locked'):done?t('Cleared'):best?t('Best room {0}/{1}',best,A.rooms):t('{0} rooms',A.rooms);
     b.setAttribute('aria-label',t('Arena {0}: {1}, {2}',i+1,A.name,st));
     b.innerHTML=`<span class="hd">${String(i+1).padStart(2,'0')}</span><span class="tx"><b></b><small></small></span>`; b.querySelector('b').textContent=A.name; b.querySelector('small').textContent=st;
     b.onclick=()=>{ if(!open||i===sel) return; P.selArena=i; sfx('click'); persist(); renderMenu(); }; box.appendChild(b); }); }
 function renderHome(){
   const a=openSel(P.selArena), A=ARENAS[a];
-  $('hEye').textContent=t('ARENA {0}','0'+(a+1))+' · '+roomsLabel(A)+((P.bestRoom[a]||0)>=A.rooms?' · '+t('CLEARED'):'');
+  $('hEye').textContent=t('ARENA {0}','0'+(a+1))+' · '+A.phase.toLocaleUpperCase(LANG)+' · '+roomsLabel(A)+((P.bestRoom[a]||0)>=A.rooms?' · '+t('CLEARED'):'');
   $('hStage').textContent=A.name; hangarTheme(a); renderHolo(a);
   const pips=$('hPips'); pips.innerHTML=''; ARENAS.forEach((x,i)=>{ const p=document.createElement('i'); if((P.bestRoom[i]||0)>=x.rooms) p.className='f'; else if(arenaOpen(i)) p.className='c'; pips.appendChild(p); });
   const hb=$('hBosses'); hb.innerHTML=''; arenaBossPool(a).slice(0,3).forEach(k=>{ const img=document.createElement('img'); img.src=PORTRAIT[k]||''; img.alt=BOSSES[k].name; img.title=BOSSES[k].name; hb.appendChild(img); }); const bl=document.createElement('span'); bl.textContent=t('BOSSES'); hb.appendChild(bl);

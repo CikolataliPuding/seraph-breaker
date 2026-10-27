@@ -17,7 +17,7 @@ function arenaPlan(a,seed,lastBoss=''){
   // Main Stage: every room is a wave room (STAGE), the boss comes after the last one
   if(A.stage){ for(let n=1;n<=N;n++) plan.push(n===N?{n,boss:pool[0],k:1,type:'boss',kind:'boss'}:{n,boss:pool[0],k:1,type:'combat',kind:'stage'}); return plan; }
   for(let n=1;n<=N;n++){ const pos=n===N?10:((n-1)%10)+1, pc=PACING[pos];
-    if((n-1)%10===0||!bb){ const c=pool.filter(k=>k!==last); bb=c.length?c[(rnd()*c.length)|0]:pool[0]; last=bb; }
+    if((n-1)%10===0||!bb){ const c=pool.filter(k=>k!==last); bb=n===1&&A.firstBoss&&pool.includes(A.firstBoss)?A.firstBoss:c.length?c[(rnd()*c.length)|0]:pool[0]; last=bb; }
     const r={n,boss:bb,k:pc.k||1};
     if(pc.boss){ r.type='boss'; r.kind='boss'; }
     else if(pc.angel){ r.type='angel'; r.kind='angel'; }
@@ -50,7 +50,7 @@ function launchArena(a,saved,retry){
   if(saved) restoreRun(saved);
   sortie.plan=arenaPlan(a,sortie.seed,saved&&!saved.seed?sortie.lastBoss:'');
   buildRoom(roomHalfX(),ROOM_Z,SANCTUM,true); player.pos.set(0,0,AZ-1.5); camTarget.copy(player.pos);
-  $('cardNum').textContent=t('ARENA {0}','0'+(a+1))+' · '+(retry?t('RETRY BOSS · ROOM {0}/{1}',sortie.ri+1,N):saved?t('CONTINUE · ROOM {0}/{1}',sortie.ri+1,N):roomsLabel(A)); $('cardT').textContent=A.name;
+  $('cardNum').textContent=t('ARENA {0}','0'+(a+1))+' · '+A.phase.toLocaleUpperCase(LANG)+' · '+(retry?t('RETRY BOSS · ROOM {0}/{1}',sortie.ri+1,N):saved?t('CONTINUE · ROOM {0}/{1}',sortie.ri+1,N):roomsLabel(A)); $('cardT').textContent=A.name;
   $('cardS').textContent=[A.ruleTxt,...sortie.mods.map(m=>MODS[m].name)].join(' · ');
   // the pilot's inner voice, only the first time you enter an arena
   const vo=!saved&&!retry&&!P.lore.arenas[a]&&STORY.voice[a]; $('cardV').hidden=!vo; if(vo){ $('cardV').textContent=`“${vo}”`; P.lore.arenas[a]=true; persist(); }

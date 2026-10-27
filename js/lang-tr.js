@@ -185,7 +185,7 @@ const DICT_TR={
   'Greed':'Açgözlülük', '+50% gold. Enemies get +15% armor.':'+%50 altın. Düşmanlar +%15 zırh kazanır.', 'Enemies +15% armor':'Düşmanlar +%15 zırh',
   'Brittle':'Kırılgan', 'Take +20% damage. Gain a random epic skill.':'+%20 fazla hasar al. Rastgele bir destansı yetenek kazan.', '+20% damage taken':'+%20 alınan hasar',
   // arenas and Arena 4 modifiers (ARENAS, MODS)
-  'Outer City':'Dış Şehir', 'Training ground: no special rule':'Eğitim alanı: özel kural yok', 'Night Harbor':'Gece Limanı', 'Enemy shots fly 15% faster':'Düşman mermileri %15 daha hızlı uçar',
+  'The Low City':'Aşağı Şehir', 'Phase: Siege':'Kuşatma', 'Phase: Undertow':'Akıntı', 'Phase: Ascent':'Yükseliş', 'Phase: Hubris':'Kibir', 'Phase: Encore':'Bis', 'Training ground: no special rule':'Eğitim alanı: özel kural yok', 'Night Harbor':'Gece Limanı', 'Enemy shots fly 15% faster':'Düşman mermileri %15 daha hızlı uçar',
   'Heaven\'s Gate':'Cennet Kapısı', 'Elites come in pairs':'Elitler çift gelir', 'Fallen Sky':'Düşen Gök', 'Both factions, corrupted elites, 2 random modifiers':'İki taraf da, bozulmuş elitler, 2 rastgele değiştirici',
   'Main Stage':'Ana Sahne', '15 ROOMS + BOSS':'15 ODA + BOSS', 'Beat sync: attacks lock to the music, a dash on the beat dodges twice as wide':'Ritim senkronu: saldırılar müziğe kilitlenir, ritimde atılma iki kat geniş kaçırır',
   'Swift shots':'Hızlı mermiler', 'Enemy shots +15% speed.':'Düşman mermileri +%15 hız.', 'Frenzy':'Çılgınlık', 'Enemies move 20% faster.':'Düşmanlar %20 daha hızlı hareket eder.',
