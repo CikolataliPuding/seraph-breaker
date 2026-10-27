@@ -22,7 +22,7 @@ function showResult(win,bonusG=0,first=false){
   setState('result'); refreshControls(); resetTouch(); playTrack('menu');
   const A=ARENAS[sortie.a], reached=Math.min(sortie.ri+1,sortie.N);
   if(!win){ logRoomEnd('death'); clearRun(); if(reached>(P.bestRoom[sortie.a]||0)) P.bestRoom[sortie.a]=reached; }
-  $('resEye').textContent=t('Arena {0}','0'+(sortie.a+1))+' · '+A.name+(win?' · '+t('clear'):'');
+  $('resEye').textContent=t('Arena {0}','0'+(sortie.a+1))+' · '+A.phase+' · '+A.name+(win?' · '+t('clear'):'');
   $('resTitle').innerHTML=win?t('Arena <em>Clear</em>'):t('Signal <em>Lost</em>');
   $('resEarn').innerHTML=`<span class="cur gold"><i></i>+${sortie.gold}</span><span class="cur gem"><i></i>+${sortie.gems}</span>`+(win&&bonusG?`<small>${t(first?'First clear bonus: {0} diamonds':'Clear bonus: {0} diamonds',bonusG)}</small>`:'')+(!win?'<small>'+t('Gold and diamonds you picked up are kept.')+'</small>':'')
     +(sortie.farm<1?`<small>${t('Replay below your highest arena: rewards {0}%',Math.round(sortie.farm*100))}</small>`:'')+(sortie.tester?'<small>'+t('Tester run: flagged, never ranked')+'</small>':'')+(sortie.retries?`<small>${t('Boss retries: {0}',sortie.retries)}</small>`:'');

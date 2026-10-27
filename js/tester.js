@@ -25,17 +25,8 @@ const testerOK=()=>!!P.testerCode&&sha256(normCode(P.testerCode))===TESTER_HASH;
 function unlockTester(code){ if(sha256(normCode(code))!==TESTER_HASH) return false; P.testerCode=normCode(code); P.testerSave=true; persist(); return true; }
 function lockTester(){ P.testerCode=''; P.testerTools=false; persist(); }
 
-/* ================= MAIN STAGE ACCESS CODE ================= */
-/* During the beta the Main Stage is locked for regular players and opens only with an access code entered in System (its own field, separate
-   from the tester code: it opens the stage, not the tester tools). Same pattern as the tester code: only the SHA-256 is in the repo, the code
-   is kept in the save (P.stageCode), checked on every boot, and kept through Reset my progress. With the code the stage is open whatever the
-   arena progress; without it the warmap shows it locked with a beta tag. */
-const STAGE_HASH='46186a3b4b833812b43b2c573096ca5e861277619ae312cf9fc6b2a66579f37c';
-const stageOK=()=>!!P.stageCode&&sha256(normCode(P.stageCode))===STAGE_HASH;
-function unlockStage(code){ if(sha256(normCode(code))!==STAGE_HASH) return false; P.stageCode=normCode(code); persist(); return true; }
-function lockStage(){ P.stageCode=''; persist(); }
-// arenas the pilot can start: the normal unlocks, except the Main Stage, which needs the access code
-const arenaOpen=i=>!!ARENAS[i]&&(ARENAS[i].stage?stageOK():i<P.arenas);
+// arenas the pilot can start: the normal unlocks (the Main Stage opens with Arena 4's first clear; its beta access code is gone, patch.md 31)
+const arenaOpen=i=>!!ARENAS[i]&&i<P.arenas;
 const openArenaCount=()=>ARENAS.filter((A,i)=>arenaOpen(i)).length;
 // the selected arena, moved down to the nearest open one
 const openSel=i=>{ for(let k=clamp(i|0,0,ARENAS.length-1);k>=0;k--) if(arenaOpen(k)) return k; return 0; };
