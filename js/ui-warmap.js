@@ -5,16 +5,16 @@ function renderMap(){
   $('mapProg').textContent=t('ARENAS · {0}/{1} OPEN',openArenaCount(),ARENAS.length);
   const inner=$('mapInner'); inner.innerHTML='';
   // beta: the Main Stage shows locked with a beta tag until its access code is entered in System (tester.js)
-  ARENAS.forEach((A,i)=>{ const locked=!arenaOpen(i), beta=!!A.stage&&!stageOK(), best=P.bestRoom[i]||0, done=best>=A.rooms;
+  ARENAS.forEach((A,i)=>{ const locked=!arenaOpen(i), best=P.bestRoom[i]||0, done=best>=A.rooms;
     const b=document.createElement('button'); b.className='arena'+(locked?' lock':'')+(i===sel?' sel':'')+(done?' done':''); b.id='ar'+i; b.style.setProperty('--c',A.colorCss);
     b.innerHTML=`<span class="n"></span><b></b><span class="r"></span><span class="bp"></span><span class="pr"><i style="width:${Math.min(100,best/A.rooms*100)}%"></i></span>`;
-    b.querySelector('.n').textContent=`0${i+1} · ${roomsLabel(A)}`+(locked?' · '+t('LOCKED'):done?' · '+t('CLEARED'):'')+(A.stage?' · '+t('BETA'):'');
-    b.querySelector('b').textContent=A.name; b.querySelector('.r').textContent=beta?t('Beta: enter the access code in System to open it'):locked?t('Clear {0} to unlock',ARENAS[i-1].name):t('Best room {0}/{1}',best,A.rooms)+' · '+A.ruleTxt;
+    b.querySelector('.n').textContent=`0${i+1} · ${A.phase.toLocaleUpperCase(LANG)} · ${roomsLabel(A)}`+(locked?' · '+t('LOCKED'):done?' · '+t('CLEARED'):'');
+    b.querySelector('b').textContent=A.name; b.querySelector('.r').textContent=locked?t('Clear {0} to unlock',ARENAS[i-1].name):t('Best room {0}/{1}',best,A.rooms)+' · '+A.ruleTxt;
     const bp=b.querySelector('.bp'); arenaBossPool(i).slice(0,i===3?7:3).forEach(k=>{ const img=document.createElement('img'); img.src=PORTRAIT[k]||''; img.alt=BOSSES[k].name; img.title=BOSSES[k].name; bp.appendChild(img); });
     b.onclick=()=>{ if(locked) return; P.selArena=i; sfx('click'); delete $('launchBtn').dataset.arm; renderMap(); };
     inner.appendChild(b); });
   const A=ARENAS[sel], first=(P.bestRoom[sel]||0)<A.rooms, fm=farmMul(sel);
-  $('shEye').textContent=t('ARENA {0}','0'+(sel+1))+' · '+roomsLabel(A)+(fm<1?' · '+t('REWARDS {0}%',Math.round(fm*100)):''); $('shEye').style.color=A.colorCss; $('shName').textContent=A.name;
+  $('shEye').textContent=t('ARENA {0}','0'+(sel+1))+' · '+A.phase.toLocaleUpperCase(LANG)+' · '+roomsLabel(A)+(fm<1?' · '+t('REWARDS {0}%',Math.round(fm*100)):''); $('shEye').style.color=A.colorCss; $('shName').textContent=A.name;
   $('shReward').innerHTML=`<i></i>+${first?ECON.firstClear(sel):Math.round(ECON.repeatClear(sel)*fm)}${first?' '+t('first clear'):''}`;
   const rooms=$('shRooms'); rooms.innerHTML=''; const rt=document.createElement('span'); rt.textContent=A.stage?t('WAVE ROOMS 1-{0}',A.rooms-1):t('ROOMS 1-10'); rooms.appendChild(rt);
   // Main Stage: S sound check rooms, M rooms with Moshpit waves, E rooms that end in an Encore, then the boss
@@ -116,7 +116,7 @@ function renderFrames(){
   item('sp',t('Special'),SPECIALS[P.unit].name,()=>{});
   [0,1].forEach(i=>{ const g=P.gadgets[i]; item(g||'hook',t('Gadget {0}',i+1),g?GADGETS[g].name:t('Empty slot'),()=>openView('armory')); });
 }
-function renderSystem(){ $('buildTxt').textContent=t('Build {0}.',BUILD); renderTester(); renderStageCode(); $('volM').value=Math.round(P.music*100); $('volMo').textContent=Math.round(P.music*100); $('volS').value=Math.round(P.sfx*100); $('volSo').textContent=Math.round(P.sfx*100);
+function renderSystem(){ $('buildTxt').textContent=t('Build {0}.',BUILD); renderTester(); $('volM').value=Math.round(P.music*100); $('volMo').textContent=Math.round(P.music*100); $('volS').value=Math.round(P.sfx*100); $('volSo').textContent=Math.round(P.sfx*100);
   document.querySelectorAll('#ctrlSeg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.c===P.ctrl)); document.querySelectorAll('#shSeg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.s===P.mshield)); document.querySelectorAll('#langSeg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.l===LANG)); $('autoG').checked=P.autoGadget; }
 // language buttons in their own language; a change reloads the page (i18n.js)
 $('langSeg').innerHTML=Object.keys(LANGS).map(k=>`<button data-l="${k}" lang="${k}">${LANGS[k]}</button>`).join('');
@@ -142,11 +142,6 @@ $('testerBtn').onclick=()=>{ if(testerOK()){ lockTester(); renderTester(); if(DE
 $('testerIn').addEventListener('keydown',e=>{ if(e.code==='Enter') $('testerBtn').click(); });
 $('testerTools').onchange=e=>{ P.testerTools=e.target.checked; persist(); location.reload(); };
 /* Main Stage access code (tester.js): only its SHA-256 is in the code. Unlocked: the stage opens on the warmap; Lock closes it again. */
-function renderStageCode(){ const ok=stageOK(), n=$('stageNote'); $('stageBtn').textContent=ok?t('Lock'):t('Unlock'); $('stageIn').hidden=ok; n.className='note'+(ok?' ok':'');
-  n.textContent=ok?t('Main Stage unlocked. It is open on the arena map.'):t('The Main Stage is in beta. Enter the access code to open it.'); }
-$('stageBtn').onclick=()=>{ if(stageOK()){ lockStage(); renderStageCode(); renderMenu(); return; }
-  const ok=unlockStage($('stageIn').value); $('stageIn').value=''; renderStageCode(); if(ok) renderMenu(); else { const n=$('stageNote'); n.className='note bad'; n.textContent=t('That code is not valid.'); } sfx('click'); };
-$('stageIn').addEventListener('keydown',e=>{ if(e.code==='Enter') $('stageBtn').click(); });
 function renderAbilityIcons(){
   $('abQ').querySelector('span').innerHTML=svg('sp');
   [0,1].forEach(i=>{ const g=P.gadgets[i], el=$(i?'abR':'abE'); el.querySelector('span').innerHTML=g?svg(g):''; el.classList.toggle('empty',!g); const t=$(i?'tG2':'tG1'); t.classList.toggle('off',!g); t.innerHTML=g?svg(g):''; });
