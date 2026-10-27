@@ -4,7 +4,8 @@ const _sv=new V3(),_sv2=new V3(),_lp=new V3(),_ld=new V3();
 // how far a straight line runs before a block or the mat edge
 function lineLen(x,z,dx,dz,max,pad=0){ let t=0; while(t<max){ t+=.4; const px=x+dx*t,pz=z+dz*t; if(Math.abs(px)>AX-1||Math.abs(pz)>AZ-1||inBlock(px,pz,pad,'block')) return Math.max(0,t-.4); } return max; }
 // ground telegraph strip (fades out on its own)
-function teleStrip(pos,dx,dz,len,w,color,life){ const g=new THREE.Group(), mat=addMat(color,.3), pl=new THREE.Mesh(new THREE.PlaneGeometry(w,len),mat); pl.rotation.x=-Math.PI/2; pl.position.z=len/2; g.add(pl); g.position.set(pos.x,.05,pos.z); g.rotation.y=Math.atan2(dx,dz); addFx(g,life,(f,dt,k)=>{ mat.opacity=.18+.22*Math.abs(Math.sin((1-k)*life*9)); }); return g; }
+// solid: normal blending, so a red strip stays red on the light floors (additive red turns pink there)
+function teleStrip(pos,dx,dz,len,w,color,life,solid){ const g=new THREE.Group(), mat=solid?new THREE.MeshBasicMaterial({color,transparent:true,opacity:.3,depthWrite:false}):addMat(color,.3), pl=new THREE.Mesh(new THREE.PlaneGeometry(w,len),mat); pl.rotation.x=-Math.PI/2; pl.position.z=len/2; g.add(pl); g.position.set(pos.x,.05,pos.z); g.rotation.y=Math.atan2(dx,dz); addFx(g,life,(f,dt,k)=>{ mat.opacity=.18+.22*Math.abs(Math.sin((1-k)*life*9)); }); return g; }
 // lobbed shell (howitzer, mine layers): visual arc with a ground shadow, then onLand. marker: a red landing ring (the Howitzer has its own).
 function lobShell(from,to,dur,color,onLand,marker){ const g=new THREE.Group(), m=new THREE.Mesh(G.orb,basic(color,false)); m.scale.setScalar(1.2); const sh=blob(.4); sh.position.y=.04; g.add(m,sh);
   let mk=null; if(marker){ mk=new THREE.Mesh(G.ring,addMat(0xff3a2a,.8)); mk.rotation.x=-Math.PI/2; mk.position.set(to.x,.07,to.z); mk.scale.setScalar(1.3); g.add(mk); }
@@ -23,8 +24,9 @@ function dropEMine(x,z,arm=.8){ if(emines.length>=14||room&&room.cleared) return
    hurts 6 every .5 s inside; it blinks faster before it goes out, and every field dies with its Coil. 6 at most. */
 const FIELD={r:2.2,warn:1,live:4,dmg:6,tick:.5,max:6};
 function openField(e,x,z,warn){ if(efields.length>=FIELD.max||e.dead) return; const g=new THREE.Group(); g.position.set(x,0,z);
-  const ring=new THREE.Mesh(G.ring,addMat(0xff3a2a,.8)); ring.rotation.x=-Math.PI/2; ring.position.y=.06; ring.scale.setScalar(FIELD.r);
-  const disc=new THREE.Mesh(new THREE.CircleGeometry(FIELD.r,24),addMat(0xff7a2a,.22)); disc.rotation.x=-Math.PI/2; disc.position.y=.05; disc.visible=false; g.add(ring,disc); roomGroup.add(g);
+  // normal blending: the warning stays red on the light floors
+  const ring=new THREE.Mesh(G.ring,new THREE.MeshBasicMaterial({color:0xff3a2a,transparent:true,opacity:.8,depthWrite:false})); ring.rotation.x=-Math.PI/2; ring.position.y=.06; ring.scale.setScalar(FIELD.r);
+  const disc=new THREE.Mesh(new THREE.CircleGeometry(FIELD.r,24),new THREE.MeshBasicMaterial({color:0xff7a2a,transparent:true,opacity:.22,depthWrite:false})); disc.rotation.x=-Math.PI/2; disc.position.y=.05; disc.visible=false; g.add(ring,disc); roomGroup.add(g);
   efields.push({e,x,z,g,ring,disc,t:warn,live:false,cd:0}); }
 function updateEFields(dt,t){ for(let i=efields.length-1;i>=0;i--){ const f=efields[i]; f.t-=dt; f.cd-=dt;
     if(f.e.dead||f.live&&f.t<=0){ sparks(new V3(f.x,.4,f.z),0xff8a40,3,3); roomGroup.remove(f.g); efields.splice(i,1); continue; }
@@ -224,7 +226,7 @@ const AI={
     if(e.st==='tele'){ e.vel.set(0,0,0); m.plow.rotation.x=-.3*(1-Math.min(1,(.9-e.stT)/.5));
       if(e.stT>.3){ const ld=leadDir(e.pos.x,e.pos.z,17,_ld); e.yaw=lerpAngle(e.yaw,Math.atan2(ld.x,ld.z),Math.min(1,dt*8)); }
       else if(!e.rush){ const dx=Math.sin(e.yaw), dz=Math.cos(e.yaw), wall=lineLen(e.pos.x,e.pos.z,dx,dz,14,e.r*.7), len=Math.max(2,Math.min(14,wall));
-        e.rush={x:dx,z:dz,len,done:0,wall:wall<14,hit:false}; teleStrip(e.pos,dx,dz,len,1.9,0xff3a2a,.3+.15); groundRing(new V3(e.pos.x+dx*len,0,e.pos.z+dz*len),0xff3a2a,1.2,.6); sfx('click'); }
+        e.rush={x:dx,z:dz,len,done:0,wall:wall<14,hit:false}; teleStrip(e.pos,dx,dz,len,1.9,0xff3a2a,.3+.15,true); groundRing(new V3(e.pos.x+dx*len,0,e.pos.z+dz*len),0xff3a2a,1.2,.6); sfx('click'); }
       if(e.stT<=0){ e.st='rush'; e.rt=0; e.jz.pop.v=4; } return; }
     if(e.st==='rush'){ const r=e.rush; e.rt+=dt; const v=8+9*Math.min(1,e.rt/.4); e.vel.set(r.x*v,0,r.z*v); r.done+=v*dt*(e.slow>0?.55:1);
       if(Math.random()<dt*20) sparks(e.pos.clone().setY(.5).addScaledVector(_tmp.set(r.x,0,r.z),-1),0xff7a2a,1,3);
