@@ -111,13 +111,14 @@ const TREE=[
     {id:'magnet',name:'Salvage magnet',max:2,cost:[9,15],d:'+60% pickup reach, +10% gold'},
     {id:'gadget',name:'Quick deploy',max:2,cost:[18,33],d:'-12% gadget cooldowns'}]},
 ];
-/* core stats: the gold sink next to the diamond-priced skill tree. Cost grows ×1.45 per level, 30 levels each. */
+/* core stats: the gold sink next to the diamond-priced skill tree. 20 levels each, cost ×1.18 per level: the full Core (3 × 20) is ~44k gold,
+   about one campaign's gold plus a few replays (patch.md 27). */
 const CORE={
   armor:{name:'Armor',d:'+20 max armor per level',icon:'armor',per:20,unit:''},
   dmg:{name:'Damage',d:'+4% damage per level',icon:'atk',per:4,unit:'%'},
   regen:{name:'Power regen',d:'+3% power regeneration per level',icon:'regen',per:3,unit:'%'},
 };
-const CORE_MAX=30, coreCost=lv=>Math.round(100*Math.pow(1.45,lv)/5)*5;
+const CORE_MAX=20, coreCost=lv=>Math.round(100*Math.pow(1.18,lv)/5)*5;
 /* run skills: picked on level-up (skill roulette), from angels and devils. They last for the whole arena run.
    rarity: common (pure stats) · rare (projectile modifiers, on-kill triggers) · epic (orbits, mechanic-specific) · legendary (evolutions).
    bonus:{stat:value} is added per rank to that stat's bucket (see BAL and balance.js): bonuses add inside a bucket, buckets multiply.
