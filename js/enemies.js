@@ -17,6 +17,7 @@ function spawnEnemy(type,pos,elite=false,o={}){
   if(type==='warden') e.cd=rand(1.8,2.8);
   e.turnFirst=!!(model.legs&&model.hips&&def.speed>0); e.byaw=0; // mechs turn their body before they walk (enemy-ai.js steer)
   if(def.init) def.init(e,o);
+  if(o.tier>1&&!elite) tierModel(e,o.tier);
   const R=sortie?sortie.rule:{}, hm=roomHpScale();
   e.hp*=hm*(o.hpK||1)*SCALE.mob; if(o.minion) e.minion=true; e.pos=pos.clone(); e.vel=new V3(); e.flash=0; e.t=0; e.born=0; e.yaw=0; e.stun=0; e.wake=.7; e.burn=0; e.slow=0;
   // juice: springs, knockback, and the drop-in from the light pillar
@@ -36,6 +37,11 @@ function spawnEnemy(type,pos,elite=false,o={}){
     groundRing(pos,ARENAS[stage].theme.edge,2.5,.5); }
   return e;
 }
+/* mob tier (TIER in data.js): the side's body tint and 1-2 plates above the model; behavior comes from e.tier in enemy-ai.js */
+function tierModel(e,tier){ e.tier=tier; const pal=TIER.pal[e.angel?'angel':'machine'][tier-1]||{}, M=e.model.mats||[];
+  for(const i in pal) if(M[i]) M[i].color.setHex(pal[i]);
+  const top=new THREE.Box3().setFromObject(e.model.g).max.y-e.model.g.position.y;
+  for(let i=0;i<tier-1;i++){ const p=new THREE.Mesh(box(.55,.09,.16),basic(TIER.plate,false)); p.position.set(0,top+.3+i*.2,0); p.userData.nofit=1; e.model.g.add(p); } }
 /* elite affixes (AFFIX in data.js): 1-2 random ones (corrupted elites and the hunted one: 1, no Blinker on a fleeing or static elite) */
 function applyAffixes(e,list){
   let ks=Object.keys(AFFIX).filter(k=>!(k==='blinker'&&(e.hunt||!e.speed))&&!(k==='swift'&&!e.speed));
@@ -117,7 +123,7 @@ function killEnemy(e,byProc){
   // Volatile affix: a telegraphed blast where it died (hurts you and the other enemies)
   if(e.volatile&&!e.noLoot) queueBlast(e.pos.x,e.pos.z,{t:.75,rad:3.4,dmg:10*ARENAS[stage].hpMul,hurtP:18,color:0xff3a2a,size:1,skip:e,flat:true});
   // Shardlings split into two smaller copies, twice (capped per room)
-  if(e.type==='shardling'&&(e.gen||0)<2&&!e.noLoot){ let n=0; for(const o of enemies) if(o.type==='shardling'&&!o.dead) n++; for(const s of [-1,1]){ if(n++>=10) break; const c=spawnEnemy('shardling',new V3(clamp(e.pos.x+s*.9,-AX+1,AX-1),0,clamp(e.pos.z,-AZ+1,AZ-1)),false,{gen:(e.gen||0)+1,noDrop:true}); if(c){ c.kx=s*7; c.kz=rand(-3,3); c.elite=false; } } }
+  if(e.type==='shardling'&&(e.gen||0)<2&&!e.noLoot){ let n=0; for(const o of enemies) if(o.type==='shardling'&&!o.dead) n++; for(const s of e.tier>=3?[-1,0,1]:[-1,1]){ if(n++>=10) break; const c=spawnEnemy('shardling',new V3(clamp(e.pos.x+s*.9,-AX+1,AX-1),0,clamp(e.pos.z+(s?0:.9),-AZ+1,AZ-1)),false,{gen:(e.gen||0)+1,noDrop:true}); if(c){ c.kx=s*7; c.kz=rand(-3,3); c.elite=false; } } }
   if(sortie.rule.volatile){ const o=rand(0,1); for(let i=0;i<6;i++){ const a=(i+o)/6*Math.PI*2; shoot('e',e.pos.clone().setY(1.6),new V3(Math.sin(a),0,Math.cos(a)),4*eSpd(),8,0xb070ff,{life:3,r:.42}); } }
   const mul=e.elite?3:1, def=e.def||ENEMY.drone;
   score+=(def.score*(1+stage*.5)*mul)|0; kills++;
@@ -136,7 +142,7 @@ function killEnemy(e,byProc){
   // Shardling splits and boss summons pay a reduced share, so one Shardling is not worth seven kills; Survive spawns pay e.rw; leftovers pay nothing
   if(e.noLoot) return;
   const rw=(e.gen||e.minion?SPLIT_REWARD:1)*(e.rw==null?1:e.rw);
-  const g=def.gold*ECON.killGold[stage]*mul*(sortie.rule.goldMul||1)*rw*sortie.farm, gc=ECON.gemChance;
+  const g=def.gold*ECON.killGold[stage]*mul*TIER.gold[(e.tier||1)-1]*(sortie.rule.goldMul||1)*rw*sortie.farm, gc=ECON.gemChance;
   dropGold(e.pos,g,'kill');
   if(Math.random()<(e.elite?gc.elite:def.cost>=2.5?gc.big:gc.small)*rw*sortie.farm) dropPick(e.pos,'gem',1);
   if(e.elite&&Math.random()<.25) dropItem(e.pos);

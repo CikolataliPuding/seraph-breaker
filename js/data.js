@@ -361,6 +361,14 @@ const BOSS_TEACH={
   archon:['seraph','ophan','warden'],                   // lunges, a rolling line, waves (angel side)
   highco:['shredder','diver','pyro','bass'],           // cones and lightning (scream), a landing crush (slam stun), marked floor fire (pillars), slows
 };
+/* mob tiers (patch.md 25, the mob doc): T2 and T3 keep the silhouette, the telegraph and the armor, and add behavior (enemy-ai.js reads e.tier).
+   max: the highest tier a mob has behavior for (missing = T1 only; a higher roll folds down). from: [first T2 room, first T3 room] per arena
+   (0 = never); late: the T1/T2/T3 shares the arena ramps up to by its last quarter. Boss teaching rooms, elites and the Main Stage stay T1.
+   cost/gold: a tiered mob takes more of the room budget and pays more. pal: body tint per side and tier ({mats index: color}); plates (1 or 2
+   bars above the model) mark the tier for colorblind players. Shot and telegraph colors never change with the tier. */
+const TIER={max:{drone:2,heavy:2,bulwark:2,warden:2,shardling:3,censer:2,crawler:2},
+  from:[[16,0],[8,26],[6,20],[1,10],[0,0]], late:[[.5,.5,0],[.3,.45,.25],[.25,.45,.3],[.15,.4,.45],[1,0,0]], cost:[1,1.15,1.3], gold:[1,1.1,1.2],
+  pal:{machine:[null,{1:0x2fa890},{0:0x1c1a24,1:0xd8d0b8}], angel:[null,{0:0xe89ab8},{0:0x2a2232}]}, plate:0xf2eef8};
 /* room kinds. minRoom / minArena gate them early on. Ambush: they come from the sides and from behind. Reinforcements: waves arrive through gates.
    Survive: hold out for time seconds against endless spawns (spawns pay reward × the normal kill). Hunt: an elite flees and escapes after time
    seconds. Gauntlet: few enemies (budget × k), many traps. Dark: you only see what is within light units (light.m on phones). */
