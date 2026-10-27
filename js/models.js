@@ -831,3 +831,46 @@ function buildMender(){
   g.scale.setScalar(.85);
   return {g,body,rotors,arm,tip,eye,mats:[M1,M2,M3],shadow:blob(.8),breaks:[{o:rotors[0],at:.5},{o:rotors[2],at:.5},{o:arm,at:.25}]};
 }
+/* angel sniper, flanker and tank (docs/mob-designs.html 4-6): Beacon draws a lane through blocks, Herald dives from your side, Dominion turns shield plates */
+function buildBeacon(){
+  const g=new THREE.Group(), body=new THREE.Group(); body.position.y=3; g.add(body);
+  const MW=toon(0xeee8f4),MG=toon(0xd9a520),MD=toon(0x2a2232),MV=toon(0xd9c9ff);
+  const crystal=part(new THREE.OctahedronGeometry(.45,0),MW,body,0,0,0,.08); crystal.scale.y=2.4;
+  const tip=part(new THREE.OctahedronGeometry(.25,0),MD,body,0,-1.25,0,.05); tip.scale.y=1.6;
+  const lens=part(new THREE.TorusGeometry(.5,.07,8,28),MG,body,0,.15,.05,.05);
+  [-1,1].forEach(s=>part(box(.14,.14,.14),MG,body,s*.5,.15,.05,.03));
+  const core=new THREE.Mesh(new THREE.SphereGeometry(.2,12,8),basic(0xff2a3a,false)); core.position.set(0,.15,.1); body.add(core);
+  part(new THREE.ConeGeometry(.16,.5,6),MD,body,0,.15,.38,.04).rotation.x=Math.PI/2;
+  const wings=[-1,1].map(s=>{ const w=part(box(1.1,.05,.3),MV,body,s*.9,.1,-.15,.04); w.rotation.z=s*.35; return w; });
+  const halo=new THREE.Mesh(new THREE.TorusGeometry(.5,.05,6,28),basic(0xffd36a,false)); halo.rotation.x=Math.PI/2; halo.position.y=1.55; body.add(halo);
+  const ribbons=[-1,0,1].map(i=>{ const p=new THREE.Group(); p.position.set(i*.2,-1.5,-.1); body.add(p); part(box(.08,.9,.04),MV,p,0,-.45,0,.03); return p; });
+  return {g,body,lens,core,halo,wings,ribbons,mats:[MW,MG,MD,MV],shadow:blob(.7),breaks:[{o:wings[0],at:.5},{o:wings[1],at:.5},{o:lens,at:.25}]};
+}
+function buildHerald(){
+  const g=new THREE.Group(), body=new THREE.Group(); body.position.y=2; g.add(body);
+  const MW=toon(0xeee8f4),MD=toon(0x2a2232),MV=toon(0xd9c9ff);
+  const crystal=part(new THREE.OctahedronGeometry(.45,0),MW,body,0,0,0,.07); crystal.scale.set(.8,.75,2.1);
+  part(new THREE.ConeGeometry(.2,.8,5),MD,body,0,0,1.15,.04).rotation.x=Math.PI/2;
+  const wings=[-1,1].map(s=>{ const w=part(box(1,.05,.55),MV,body,s*.62,0,-.3,.04); w.rotation.y=s*.7; part(box(.5,.04,.3),MW,w,s*.5,0,-.2,.03); return w; });
+  const halo=new THREE.Mesh(new THREE.TorusGeometry(.3,.04,6,24),basic(0xffd36a,false)); halo.rotation.x=Math.PI/2; halo.position.y=.55; body.add(halo);
+  const core=new THREE.Mesh(new THREE.SphereGeometry(.12,10,8),basic(0xff2a3a,false)); core.position.set(0,.12,.5); body.add(core);
+  const tails=[-1,1].map(s=>{ const p=new THREE.Group(); p.position.set(s*.15,0,-.95); body.add(p); part(box(.07,.04,.6),MV,p,0,0,-.3,.03); return p; });
+  g.scale.setScalar(.8);
+  return {g,body,wings,halo,core,tails,mats:[MW,MV,MD],shadow:blob(.6),breaks:[{o:wings[0],at:.5},{o:wings[1],at:.25}]};
+}
+function buildDominion(){
+  const g=new THREE.Group(), body=new THREE.Group(); g.add(body);
+  const MW=toon(0xeee8f4),MG=toon(0xd9a520),MD=toon(0x2a2232),MS=toon(0xf2eef8); MS.side=THREE.DoubleSide;
+  [-1,1].forEach(s=>part(box(.45,1.2,.5),MW,body,s*.4,.6,0,.06));
+  part(box(1.4,1.6,1),MW,body,0,2,0); part(box(.7,1,.1),MD,body,0,1.9,.55,.04);
+  [-1,1].forEach(s=>part(box(.7,.5,.9),MG,body,s*1,2.65,0,.06));
+  const head=part(new THREE.OctahedronGeometry(.45,0),MD,body,0,3.2,0,.07); head.scale.y=1.2;
+  const slit=new THREE.Mesh(box(.08,.38,.05),basic(0xff2a3a,false)); slit.position.set(0,3.22,.4); body.add(slit);
+  part(new THREE.CylinderGeometry(.12,.12,2.2,8),MD,body,1.25,2.2,.4,.04); part(new THREE.OctahedronGeometry(.3,0),MG,body,1.25,3.45,.4,.05);
+  const halo=new THREE.Mesh(new THREE.TorusGeometry(.5,.05,6,28),basic(0xffd36a,false)); halo.rotation.x=Math.PI/2; halo.position.y=3.95; body.add(halo);
+  const plates=new THREE.Group(); plates.position.y=2.1; body.add(plates); const a=Math.PI*35/180;
+  const pg=[0,1,2].map(i=>{ const p=new THREE.Group(); p.rotation.y=i*Math.PI*2/3; plates.add(p);
+    part(new THREE.CylinderGeometry(1.55,1.55,1.5,12,1,true,-a,a*2),MS,p,0,0,0,0); part(new THREE.CylinderGeometry(1.57,1.57,.14,12,1,true,-a,a*2),MG,p,0,.76,0,0); return p; });
+  g.scale.setScalar(1.3);
+  return {g,body,halo,plates,pg,mats:[MW,MG,MD],shadow:blob(1.7),breaks:[{o:pg[0],at:.66},{o:pg[1],at:.33}]};
+}
