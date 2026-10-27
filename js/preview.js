@@ -26,7 +26,9 @@ const hangarWide=()=>!mobileMode&&innerWidth>=1000&&innerHeight>=600;
 function hangarTheme(a){ const t=ARENAS[a]&&ARENAS[a].theme; if(t) HANGAR.accent.forEach(m=>m.color.setHex(t.edge)); }
 function paint(){ const u=UNITS[P.unit]; return {c1:P.c1==null?u.c1:P.c1, c2:P.c2==null?u.c2:P.c2, c3:u.c3, eye:u.eye}; }
 function unitCss(){ const c=paint(); return CSS(P.unit==='verdant'&&P.c1==null?c.c2:c.c1); }
-function rebuildPreview(){ if(pv.mech) pv.ped.remove(pv.mech.g); const c=paint(); pv.mech=buildMech(c.c1,c.c2,c.c3,c.eye,1,P.unit); animMech(pv.mech,0,0); pv.mech.arms[1].rotation.x=-.9; pv.ped.add(pv.mech.g); }
+// paint being tried on in Frames (not bought yet): only the hangar mech wears it, paint() and the run keep the saved colors
+let paintTry=null;
+function rebuildPreview(){ if(pv.mech) pv.ped.remove(pv.mech.g); const c=Object.assign(paint(),paintTry); pv.mech=buildMech(c.c1,c.c2,c.c3,c.eye,1,P.unit); animMech(pv.mech,0,0); pv.mech.arms[1].rotation.x=-.9; pv.ped.add(pv.mech.g); }
 function renderPreview(t){
   const w=pv.canvas.clientWidth,h=pv.canvas.clientHeight; if(!w||!h) return;
   if(pv.w!==w||pv.h!==h){ pv.r.setSize(w,h,false); pv.cam.aspect=w/h; pv.cam.updateProjectionMatrix(); pv.w=w; pv.h=h; }
