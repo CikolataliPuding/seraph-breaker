@@ -30,7 +30,7 @@ function lockTester(){ P.testerCode=''; P.testerTools=false; persist(); }
    from the tester code: it opens the stage, not the tester tools). Same pattern as the tester code: only the SHA-256 is in the repo, the code
    is kept in the save (P.stageCode), checked on every boot, and kept through Reset my progress. With the code the stage is open whatever the
    arena progress; without it the warmap shows it locked with a beta tag. */
-const STAGE_HASH='1435d4827eeb0b870e881d8bc6c01012e897eb9cafb99cb828295becb05ba3da';
+const STAGE_HASH='46186a3b4b833812b43b2c573096ca5e861277619ae312cf9fc6b2a66579f37c';
 const stageOK=()=>!!P.stageCode&&sha256(normCode(P.stageCode))===STAGE_HASH;
 function unlockStage(code){ if(sha256(normCode(code))!==STAGE_HASH) return false; P.stageCode=normCode(code); persist(); return true; }
 function lockStage(){ P.stageCode=''; persist(); }
