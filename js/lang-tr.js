@@ -56,7 +56,7 @@ const DICT_TR={
   'Slot {0}':'Yuva {0}', 'Coming soon':'Yakında', 'now +{0}':'şu an +{0}', 'MAXED':'TAVAN',
   'tap again to buy':'almak için tekrar dokun', 'need {0} more':'{0} daha gerekli', 'buy':'satın al', 'Paint {0}':'Boya {0}', '{0} gold':'{0} altın',
   "Your frame's own colors are free. A new color costs {0} gold, once, and works in both slots.":'Gövdenin kendi renkleri ücretsiz. Yeni bir renk bir kez {0} altın tutar ve iki yuvada da çalışır.',
-  'Need {0} more gold for this color.':'Bu renk için {0} altın daha gerekli.', 'Tap the color again to buy it for {0} gold.':'{0} altına almak için renge tekrar dokun.',
+  'Need {0} more gold.':'{0} altın daha gerekli.', 'Trying it on. Buy to keep these colors, or cancel.':'Deneniyor. Bu renkleri tutmak için satın al ya da vazgeç.', 'Buy · {0} gold':'Satın al · {0} altın', 'Cancel':'Vazgeç',
   'Weapon':'Silah', 'Rapid rifle':'Seri tüfek', 'Scatter cannon':'Saçma topu', 'Pierce lance':'Delici mızrak', 'Gadget {0}':'Aparat {0}', 'Empty slot':'Boş yuva',
   'Build {0}.':'Sürüm {0}.', 'Tap again to erase your progress':'İlerlemeni silmek için tekrar dokun', 'Lock':'Kilitle', 'That code is not valid.':'Bu kod geçerli değil.',
   'Tester mode unlocked. Runs with tester tools are flagged and never count for rankings.':'Tester modu açıldı. Tester araçlı koşular işaretlenir ve sıralamaya asla girmez.',
