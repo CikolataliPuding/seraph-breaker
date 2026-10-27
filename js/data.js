@@ -251,7 +251,7 @@ const CURSES={
    teach it (firstBoss: the first block's boss). The arenas follow the story (patch.md 31): the pilot first fights what is far from his own form
    (angels invade the Low City), and his own kind, the machines, in Fallen Sky. phase = the story beat shown beside the name. */
 const ARENAS=[
-  {name:'The Low City', phase:'Siege', rooms:30, hpMul:1, dmgMul:1, bossMul:1, mobs:['shardling','warden','censer','seraph','ophan','cherub'], soft:1, bosses:['prism','seraph','throne'], firstBoss:'prism', rule:{}, trap:'saw', ruleTxt:'Training ground: no special rule',
+  {name:'The Low City', phase:'Siege', rooms:30, hpMul:1, dmgMul:1, bossMul:1, mobs:['shardling','warden','censer','seraph','ophan','cherub'], soft:1, bosses:['prism','seraph','throne'], firstBoss:'throne', rule:{}, trap:'saw', ruleTxt:'Training ground: no special rule',
    theme:{bg:0x1d1424,hemiS:0xffd6b8,hemiG:0x2a1d3a,ground:0x5a4c64,city:0xffffff,edge:0xff6a1a,rim:0xff7a40,win:0xffc47a,floor:0xa898b0,wall:0x3a3346,block:0x5e5468,water:0xff7a2a},
    colorCss:'#ff6a1a'},
   {name:'Night Harbor', phase:'Undertow', rooms:40, hpMul:1.3, dmgMul:1.15, bossMul:1.25, mobs:['seraph','shardling','warden','drone','lancer','bulwark'], bosses:['prism','arachne','hive'], rule:{shotSpd:1.15,hazards:.35}, trap:'spike', ruleTxt:'Enemy shots fly 15% faster',
@@ -355,7 +355,7 @@ const BOSS_TEACH={
   colossus:['heavy','heavy','drone','drone'],          // slams with shockwaves, spread shots, gunfire
   hive:['spark','spark','spark','howitzer','drone'],    // swarms and bombs from above
   arachne:['crawler','crawler','lancer'],               // mines, flanking, a laser that tracks you
-  prism:['shardling','shardling','warden'],             // shards and rings (angel side: Prism opens the Low City)
+  prism:['shardling','shardling','warden'],             // shards and rings (angel side)
   seraph:['seraph','seraph','warden','cherub'],         // charges and rings
   throne:['ophan','warden','censer'],                   // rolls and bullet walls
   archon:['seraph','ophan','warden'],                   // lunges, a rolling line, waves (angel side)
