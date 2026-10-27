@@ -366,7 +366,7 @@ const BOSS_TEACH={
    (0 = never); late: the T1/T2/T3 shares the arena ramps up to by its last quarter. Boss teaching rooms, elites and the Main Stage stay T1.
    cost/gold: a tiered mob takes more of the room budget and pays more. pal: the main / accent body color per side and tier; slot: a mob whose
    main or accent is not mats[0] / mats[1] (Ophan's white eyes are mats[1]). plates (1 or 2 bars above the model) mark the tier for colorblind
-   players. Shot and telegraph colors never change with the tier. Palette and slots follow the mob design file (autocrat-mob-gorsel.html). */
+   players. Shot and telegraph colors never change with the tier. Palette and slots follow the mob design file (docs/mob-designs.html). */
 const TIER={max:{drone:2,heavy:2,bulwark:2,warden:2,shardling:3,censer:2,crawler:2},
   from:[[16,0],[8,26],[6,20],[1,10],[0,0]], late:[[.5,.5,0],[.3,.45,.25],[.25,.45,.3],[.15,.4,.45],[1,0,0]], cost:[1,1.15,1.3], gold:[1,1.1,1.2],
   pal:{machine:{2:{accent:0x2fa890},3:{main:0x1c1a24,accent:0xd8d0b8}}, angel:{2:{main:0xe89ab8},3:{main:0x2a2232}}}, slot:{ophan:{main:1}}, plate:0xf2eef8};

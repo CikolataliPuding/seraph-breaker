@@ -1,0 +1,1063 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Autocrat · Mob Görsel Tasarımı</title>
+<style>
+:root{--bg:#0e0a14;--panel:#181220;--panel2:#1f1829;--line:#2e2542;--tx:#e9e3f2;--mut:#9a90ad;--gold:#d9a520;--red:#ff5a4a;--mach:#e0773a;--ang:#d9c9ff;--ok:#6fd08c;--bad:#ff6a6a}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.55 -apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+[hidden]{display:none!important}
+a{color:inherit}
+header.top{padding:28px 20px 14px;max-width:1240px;margin:0 auto}
+h1{margin:0 0 6px;font-size:26px;letter-spacing:.2px}
+h1 small{display:block;font-size:13px;font-weight:400;color:var(--mut);margin-top:4px}
+.wrap{max-width:1240px;margin:0 auto;padding:0 20px}
+#err{background:#3a1218;border:1px solid #7a2030;color:#ffb0b8;padding:10px 14px;border-radius:8px;margin:8px 0}
+.bar{position:sticky;top:0;z-index:20;background:rgba(14,10,20,.94);backdrop-filter:blur(6px);border-bottom:1px solid var(--line);padding:10px 0}
+.bar .in{max-width:1240px;margin:0 auto;padding:0 20px;display:flex;flex-wrap:wrap;gap:10px 22px;align-items:center}
+.grp{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.grp>span{color:var(--mut);font-size:12px;text-transform:uppercase;letter-spacing:.8px;margin-right:2px}
+button{font:inherit;cursor:pointer}
+.fb,.tb{background:var(--panel);color:var(--tx);border:1px solid var(--line);padding:5px 12px;border-radius:999px;font-size:13px}
+.fb.on,.tb.on{background:var(--gold);color:#1a1208;border-color:var(--gold);font-weight:600}
+.fb:hover,.tb:hover{border-color:var(--gold)}
+#count{margin-left:auto;color:var(--mut);font-size:13px}
+#nav{display:flex;flex-wrap:wrap;gap:5px;margin:12px 0 4px}
+.chip{font-size:12px;background:var(--panel);border:1px solid var(--line);padding:2px 9px;border-radius:999px;text-decoration:none;color:var(--mut)}
+.chip:hover{color:var(--tx);border-color:var(--gold)}
+details.note{background:var(--panel);border:1px solid var(--line);border-radius:12px;margin:14px 0;padding:0}
+details.note>summary{cursor:pointer;padding:12px 16px;font-weight:600;list-style:none}
+details.note>summary::before{content:"▸ ";color:var(--gold)}
+details[open].note>summary::before{content:"▾ "}
+details.note .body{padding:2px 18px 16px;color:#d8d1e6;overflow-x:auto}
+details.note ul{margin:6px 0 6px 18px;padding:0}
+details.note li{margin:4px 0}
+details.note code,.meta code{background:#120d1a;border:1px solid var(--line);padding:0 5px;border-radius:5px;font-size:12px;color:#f0e6c8}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{padding:5px 8px;border-bottom:1px solid var(--line);text-align:left}
+th{color:var(--mut);font-weight:600}
+.sw{display:inline-block;width:14px;height:14px;border-radius:4px;border:1px solid #0006;vertical-align:-2px;margin:0 4px 0 6px}
+.ok{color:var(--ok)}.bad{color:var(--bad)}.muted{color:var(--mut)}
+#cards{display:flex;flex-direction:column;gap:22px;margin:18px 0 40px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px 16px 18px;scroll-margin-top:70px}
+.card header{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
+.card h3{margin:0;font-size:20px}
+.no{font-variant-numeric:tabular-nums;background:var(--gold);color:#1a1208;font-weight:700;border-radius:8px;padding:1px 9px}
+.tag{font-size:12px;border:1px solid var(--line);padding:2px 10px;border-radius:999px;color:var(--mut)}
+.s-makine{color:#ffb48a;border-color:#7a4a2a}.s-melek{color:#e6dcff;border-color:#6a5a9a}.s-ayna{color:#ff9aa8;border-color:#8a3040}
+.k-yeni{color:#9fe0b0;border-color:#2e6a44}.k-varyant{color:#a8c8ff;border-color:#34507a}.k-ayna{color:#ff9aa8;border-color:#8a3040}
+.views{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}
+figure{margin:0;background:#120d1a;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+figure canvas,.wide canvas{display:block;width:100%;height:auto;background:#120d1a}
+figcaption{font-size:12px;color:var(--mut);padding:6px 10px;border-top:1px solid var(--line)}
+.wide{margin-top:12px;background:#120d1a;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.tabs{display:flex;gap:6px;align-items:center;padding:8px 10px;border-bottom:1px solid var(--line);font-size:13px;color:var(--mut)}
+.tabs .tb{padding:2px 12px}
+.wide .note{margin:0;padding:8px 12px 2px;font-size:13px;color:#d8d1e6}
+.wide .legend{margin:0;padding:2px 12px 10px;font-size:12px;color:var(--mut)}
+.meta{margin:14px 0 6px}
+.meta .row{display:grid;grid-template-columns:170px 1fr;gap:8px;padding:6px 0;border-bottom:1px solid #261e33}
+.meta dt{color:var(--mut);font-size:13px}
+.meta dd{margin:0;font-size:14px}
+.meta dd div{margin:1px 0}
+.codebtn,.copy,#copyshared{background:#241a33;color:var(--tx);border:1px solid var(--line);padding:6px 14px;border-radius:8px;font-size:13px}
+.codebtn:hover,.copy:hover,#copyshared:hover{border-color:var(--gold)}
+.codebox{position:relative;margin-top:10px}
+.codebox .copy{position:absolute;right:8px;top:8px}
+pre{margin:0;background:#0b0810;border:1px solid var(--line);border-radius:10px;padding:14px;overflow:auto;max-height:520px;font:12px/1.45 ui-monospace,Menlo,Consolas,monospace;color:#d9e0f0;white-space:pre}
+footer{max-width:1240px;margin:0 auto;padding:0 20px 60px;color:var(--mut);font-size:13px}
+@media(max-width:640px){.meta .row{grid-template-columns:1fr;gap:2px}#count{margin-left:0}h1{font-size:21px}}
+
+</style>
+</head>
+<body>
+<header class="top">
+  <h1>Autocrat · Mob Görsel Tasarımı<small>Three.js r128 · 12 yeni mob + 14 mobun T1/T2/T3 varyantı + ayna kopyaları · her kart models.js'e taşınabilir kodu içerir</small></h1>
+  <div id="err" hidden></div>
+</header>
+<div class="bar"><div class="in">
+  <div class="grp"><span>Taraf</span>
+    <button class="fb on" data-f="side:hepsi">Hepsi</button><button class="fb" data-f="side:makine">Makine</button><button class="fb" data-f="side:melek">Melek</button><button class="fb" data-f="side:ayna">Ayna</button></div>
+  <div class="grp"><span>Tür</span>
+    <button class="fb on" data-f="kind:hepsi">Hepsi</button><button class="fb" data-f="kind:yeni">Yeni</button><button class="fb" data-f="kind:varyant">Varyant</button></div>
+  <div class="grp"><span>Tier paleti</span>
+    <button class="fb on" data-pal="brief">Brief</button><button class="fb" data-pal="alt">Alternatif</button></div>
+  <div class="grp"><span>Önizleme ölçeği</span>
+    <button class="fb on" data-scale="fit">Sığdır</button><button class="fb" data-scale="fixed">Sabit (boyut karşılaştır)</button></div>
+  <div id="count"></div>
+</div></div>
+<main class="wrap">
+  <div id="nav"></div>
+
+  <details class="note" open><summary>models.js'in dili (kodu yazmadan önce okunan)</summary><div class="body">
+    <ul>
+      <li><b>Oran ve ölçek:</b> insansı gövde <code>buildMech</code>: kalça y 1.6, gövde 1.25×.8×.78, kutu bacaklar; ölçek Drone .8, Lancer 1.05, Bulwark 1.15, Heavy 1.25, Colossus 3. Özel gövdeler (Howitzer, Crawler, Spark) yere yakın ve geniş; melekler bacaksız, gövde y 2.1 – 3.6 arasında havada.</li>
+      <li><b>Parça sayısı:</b> <code>buildMech</code> tek başına yaklaşık 28 mesh; özel gövdeler 10 – 25. Aşağıdaki tablo sayıları kodun kendisinden sayıyor (dış hat meshleri, blob gölge ve <code>nofit</code> halkaları hariç). Mevcut mech tabanlı mobların hepsi 20'yi aşıyor: 20 sınırı yeni modellere ve plakalara uygulandı, mevcut modeller dokunulmadan T1 olarak kaldı.</li>
+      <li><b>Palet:</b> makine = grafit 0x4c4658 / zeytin-kahve 0x5a5244 / çelik mavi 0x3e4a5a + tek sıcak aksan (koyu kırmızı 0x9a2c42, hardal 0xc08a2a, beyaz) + koyu; gözler <code>basic()</code> kırmızı 0xff3030 (Lancer cyan). Melek = beyaz 0xeee8f4, koyu 0x2a2232, lavanta 0xd9c9ff, altın 0xd9a520 / 0xffd36a, kırmızı çekirdek 0xff2a3a.</li>
+      <li><b>Melek ve makine farkı:</b> melek octahedron, torus ve küre; bacaksız, ince yassı kanat (≈1.1×.05×.3), altın halo. Makine kutu ağırlıklı, bacaklı ya da paletli, göz yassı bir <code>basic()</code> çizgi.</li>
+      <li><b>breaks:</b> <code>[{o, at}]</code>: <code>o</code> bir Group ya da Mesh, <code>at</code> zırh oranı (.5 / .25, bazen .66 / .33); modelde 2 – 3 giriş, hasar alınca parça düşer.</li>
+      <li><b>mats sırası:</b> <code>[ana, aksan, koyu(, ek)]</code> <code>toon()</code> materyalleri. Parlayan parçalar (göz, çekirdek, halo, lamba) <code>basic()</code> ile <code>mats</code> dışında durur. Bu yüzden <code>applyTier</code> yalnız gövdeyi boyar; mermi, uyarı ve göz renkleri tier ile değişemez.</li>
+      <li><b>Yardımcılar:</b> <code>part()</code> her parçaya BackSide dış hat meshi (0x0a0610) ekler; <code>blob(r)</code> yuvarlak gölge; modeller <code>{g, body, …, mats, shadow, breaks}</code> döndürür.</li>
+    </ul></div></details>
+
+  <details class="note"><summary>Tier paleti (sabit kurallar) ve alternatif</summary><div class="body">
+    <table>
+      <thead><tr><th>taraf</th><th>T2 (brief)</th><th>T3 (brief)</th><th>Alternatif T2</th><th>Alternatif T3</th></tr></thead>
+      <tbody>
+        <tr><td>makine</td><td><span class="sw" style="background:#2fa890"></span>aksan (mats[1]) <code>0x2fa890</code> patina</td><td><span class="sw" style="background:#1c1a24"></span>ana (mats[0]) <code>0x1c1a24</code> + <span class="sw" style="background:#d8d0b8"></span>aksan <code>0xd8d0b8</code></td><td><span class="sw" style="background:#7fae3a"></span>aksan <code>0x7fae3a</code> yosun</td><td><span class="sw" style="background:#16141c"></span>ana <code>0x16141c</code> + <span class="sw" style="background:#e8dfc4"></span>aksan <code>0xe8dfc4</code></td></tr>
+        <tr><td>melek</td><td><span class="sw" style="background:#e89ab8"></span>ana (mats[0]) <code>0xe89ab8</code> gül</td><td><span class="sw" style="background:#2a2232"></span>ana <code>0x2a2232</code> obsidyen</td><td><span class="sw" style="background:#9ac8e8"></span>ana <code>0x9ac8e8</code> buz</td><td><span class="sw" style="background:#4a5062"></span>ana <code>0x4a5062</code> arduvaz</td></tr>
+      </tbody></table>
+    <ul>
+      <li>Rütbe plakası: modelin üstünde 1 (T2) ya da 2 (T3) beyaz <code>0xf2eef8</code> yatay çubuk, <code>.55 × .09 × .16</code>.</li>
+      <li><b>Sorun:</b> melek T3 obsidyeni <code>0x2a2232</code> mevcut koyu parçalarla (başlık, uç, pelerin) aynı renk; dış hat ayırıyor ama birleşiyor. Alternatif arduvaz bunu çözer. Makine T3 ana <code>0x1c1a24</code>, Spark'ın <code>0x2a2632</code> gövdesine çok yakın: T3 farkını orada dikenler ve plakalar taşıyor.</li>
+      <li>Altın (elit <code>0xffc83a</code>) ve mor (bozulmuş <code>0xb070ff</code>) hiçbir palette yok. Alternatif melek T2 buz mavisi, Shardling'in mavi mermisine (<code>0x8fd0ff</code>) yakın; seçilirse Shardling'in ana kristali (mavi) T2'de gövdeyle karışır.</li>
+    </ul></div></details>
+
+  <section id="cards"></section>
+
+  <details class="note" open><summary>Parça sayıları (kodun kendisinden sayıldı)</summary><div class="body">
+    <table id="parts"><thead><tr><th>#</th><th>mob</th><th>taraf</th><th>T1 mesh</th><th>T3 mesh (plaka dahil)</th><th>breaks</th><th>mats</th><th>20 sınırı</th></tr></thead><tbody></tbody></table>
+  </div></details>
+
+  <details class="note"><summary>Ortak kod: tier paleti + applyTier (kopyalanabilir)</summary><div class="body">
+    <p><button id="copyshared">kopyala</button></p><pre id="sharedcode"></pre></div></details>
+</main>
+<footer>Önizleme motoru (kamera, ızgara, animasyon, kartlar) models.js'e ait değil; yalnız <code>buildX()</code> fonksiyonları, <code>applyTier</code> ve yardımcılar taşınır. Animasyon model fonksiyonundan ayrıdır.</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const V3=THREE.Vector3, clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+/* ===== helpers: same names and signatures as js/renderer.js ===== */
+const grad=(()=>{ const d=new Uint8Array([80,80,80,255,165,165,165,255,255,255,255,255]); const t=new THREE.DataTexture(d,3,1,THREE.RGBAFormat); t.minFilter=t.magFilter=THREE.NearestFilter; t.needsUpdate=true; return t; })();
+const toon=(c,e=0)=>new THREE.MeshToonMaterial({color:c,gradientMap:grad,emissive:e});
+const outlineMat=new THREE.MeshBasicMaterial({color:0x0a0610,side:THREE.BackSide});
+const basicCache={};
+function basic(c,add=true,op=1){ const k=c+'_'+add+'_'+op; return basicCache[k]||(basicCache[k]=new THREE.MeshBasicMaterial({color:c,transparent:op<1||add,opacity:op,blending:add?THREE.AdditiveBlending:THREE.NormalBlending,depthWrite:!add})); }
+const addMat=(c,op=1)=>new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:op,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide});
+const box=(x,y,z)=>new THREE.BoxGeometry(x,y,z);
+let castShadows=true;
+function part(geo,mat,parent,x=0,y=0,z=0,t=.09){
+  const m=new THREE.Mesh(geo,mat); m.position.set(x,y,z); m.castShadow=castShadows; parent.add(m);
+  if(t){ geo.computeBoundingBox(); const s=new V3(); geo.boundingBox.getSize(s); const o=new THREE.Mesh(geo,outlineMat); o.scale.set((s.x+t)/(s.x||1),(s.y+t)/(s.y||1),(s.z+t)/(s.z||1)); m.add(o); }
+  return m;
+}
+const blob=r=>{ const m=new THREE.Mesh(new THREE.CircleGeometry(r,18),new THREE.MeshBasicMaterial({color:0,transparent:true,opacity:.34,depthWrite:false})); m.rotation.x=-Math.PI/2; m.position.y=.03; return m; };
+
+/* ===== existing models, verbatim from js/models.js (T1) ===== */
+function buildMech(c1,c2,c3,eye,scale=1,frame=''){
+  const g=new THREE.Group(); const M1=toon(c1),M2=toon(c2),M3=toon(c3),ME=basic(eye,false);
+  const hips=new THREE.Group(); hips.position.y=1.6; g.add(hips);
+  const torso=new THREE.Group(); hips.add(torso);
+  part(box(.85,.45,.55),M3,torso,0,.15,0);
+  part(box(1.25,.8,.78),M1,torso,0,.75,0);
+  part(box(.75,.42,.2),M2,torso,0,.82,.43,.06);
+  part(box(.5,.25,.5),M3,torso,0,1.2,0);
+  const head=new THREE.Group(); head.position.set(0,1.42,.05); torso.add(head);
+  part(box(.36,.4,.5),M1,head,0,.12,0);
+  part(box(.3,.18,.3),M3,head,0,-.06,.18,.05);
+  const hl=frame==='verdant'?.9:.6;
+  const horn=part(new THREE.ConeGeometry(.07,hl,5),M2,head,0,.3+hl*.25,.22,.05); horn.rotation.x=.5;
+  if(frame==='crimson') [-1,1].forEach(s=>{ const f=part(box(.05,.4,.26),M2,head,s*.21,.32,0,.04); f.rotation.z=-s*.45; });
+  const eyes=new THREE.Mesh(box(frame==='crimson'?.34:.3,.07,.06),ME); eyes.position.set(0,.14,.26); head.add(eyes);
+  const sf=frame==='verdant'?1.15:frame==='crimson'?.9:1;
+  const arms=[];
+  [-1,1].forEach(s=>{
+    const sh=part(box(.5*sf,.72*sf,.85*sf),M1,torso,s*.88,1.02,0);
+    part(box(.06,.5*sf,.6*sf),M2,sh,s*.26*sf,0,0,.04);
+    if(frame==='crimson'){ const sp=part(new THREE.ConeGeometry(.09,.5,4),M2,sh,0,.5,0,.04); sp.rotation.z=-s*.3; }
+    const arm=new THREE.Group(); arm.position.set(s*.86,.92,0); torso.add(arm);
+    part(box(.28,.6,.28),M3,arm,0,-.38,0,.06);
+    part(box(.36,.62,.4),M1,arm,0,-.92,0);
+    arms.push(arm);
+  });
+  const rifle=part(box(.2,1.5,.26),M3,arms[1],0,-1.45,.12,.07);
+  part(box(.22,.4,.32),M2,rifle,0,.25,0,.05);
+  const muzzle=new THREE.Object3D(); muzzle.position.y=-.8; rifle.add(muzzle);
+  const legs=[],shins=[];
+  [-1,1].forEach(s=>{
+    const leg=new THREE.Group(); leg.position.set(s*.3,0,0); hips.add(leg);
+    part(box(.38,.8,.42),M3,leg,0,-.4,0,.07);
+    const shin=new THREE.Group(); shin.position.y=-.8; leg.add(shin);
+    part(box(.44,.82,.52),M1,shin,0,-.38,0);
+    part(box(.46,.18,.75),M2,shin,0,-.73,.1,.06);
+    legs.push(leg); shins.push(shin);
+  });
+  g.scale.setScalar(scale);
+  return {g,hips,torso,head,arms,legs,shins,muzzle,rifle,mats:[M1,M2,M3],eyeM:ME,shadow:blob(.9*scale)};
+}
+const STRIDE=.5;
+function animMech(m,walk,amt){
+  const s=Math.sin(walk), c=Math.cos(walk), A=STRIDE*amt;
+  // a leg rotating +x pushes its foot backward: that is stance (foot planted, knee straight); the leg swinging forward lifts its knee
+  const a0=s*A, a1=-s*A, b0=Math.max(0,-c)*1.1*amt, b1=Math.max(0,c)*1.1*amt;
+  m.legs[0].rotation.x=a0; m.legs[1].rotation.x=a1; m.shins[0].rotation.x=b0; m.shins[1].rotation.x=b1;
+  // keep the lowest foot planted: hip height = longest vertical leg reach (thigh .8 + shin/foot .82)
+  const reach=(a,b)=>.8*Math.cos(a)+.82*Math.cos(a+b);
+  m.hips.position.y=Math.max(reach(a0,b0),reach(a1,b1))-.02;
+  m.arms[0].rotation.x=-s*.45*amt-.2; m.arms[1].rotation.x=-1.45;
+  m.torso.rotation.y=-s*.1*amt; m.torso.rotation.x=.09*amt;
+}
+// advance the walk phase so a planted foot moves backward exactly as fast as the body moves forward (dir -1: walking backward).
+// Returns true on a footfall (a foot plants), for dust and footsteps.
+function stepMech(m,o,spd,dt,scale,dir=1){
+  const amt=clamp(spd/(2*scale),0,1); let fall=false;
+  if(amt>.03){ const w0=o.walk||0; o.walk=w0+dir*dt*spd/(1.62*scale*STRIDE*amt); o.walkAmt=amt; fall=amt>.25&&Math.floor(o.walk/Math.PI)!==Math.floor(w0/Math.PI); }
+  else o.walkAmt=Math.max(0,(o.walkAmt||0)-dt*4);
+  animMech(m,o.walk||0,o.walkAmt||0);
+  return fall;
+}
+/* Seraph (charger): a crystal with a forward lance, a glowing core ring, feathered wings and trailing ribbons that stream behind it.
+   Damage states (m.breaks): two ribbons fall off below 50% armor, an inner wing below 25%. */
+function buildSeraph(scale=1){
+  const g=new THREE.Group(); const body=new THREE.Group(); body.position.y=2.1; g.add(body);
+  const MW=toon(0xeee8f4),MD=toon(0x2a2232),MG=toon(0xd9c9ff);
+  const crystal=part(new THREE.OctahedronGeometry(.8,0),MW,body,0,0,0,.1); crystal.scale.y=1.6;
+  part(new THREE.OctahedronGeometry(.32,0),MD,body,0,-1.25,0,.06);
+  const lance=part(new THREE.ConeGeometry(.17,1.15,5),MD,body,0,-.15,.95,.05); lance.rotation.x=Math.PI/2;
+  const core=new THREE.Mesh(new THREE.SphereGeometry(.28,14,10),basic(0xff2a3a,false)); core.position.z=.55; body.add(core);
+  const ring=new THREE.Mesh(new THREE.TorusGeometry(.4,.045,6,20),basic(0xff5a6a,true,.85)); ring.position.z=.58; body.add(ring);
+  const halo=new THREE.Mesh(new THREE.TorusGeometry(.6,.05,6,32),basic(0xffd36a,false)); halo.rotation.x=Math.PI/2; halo.position.y=1.75; body.add(halo);
+  const wings=[];
+  [-1,1].forEach(s=>{ const w=part(box(1.5,.08,.5),MW,body,s*1.1,.3,-.2,.06); w.rotation.z=s*.5; wings.push(w);
+    [0,1].forEach(k=>part(box(.42,.05,.28),MG,w,s*(.55+k*.32),-.02,-.28-k*.06,.03));
+    const w2=part(box(1.1,.06,.36),MW,body,s*.95,-.15,-.2,.05); w2.rotation.z=s*.15; wings.push(w2); });
+  const ribbons=[-1,0,1].map(i=>{ const p=new THREE.Group(); p.position.set(i*.26,-1.35,-.2); body.add(p); part(box(.09,1,.04),MG,p,0,-.5,0,.03); return p; });
+  g.scale.setScalar(scale);
+  return {g,body,core,ring,halo,wings,ribbons,mats:[MW,MD,MG],shadow:blob(.8*scale),breaks:[{o:ribbons[0],at:.5},{o:ribbons[2],at:.5},{o:wings[1],at:.25}]};
+}
+/* Warden (area denial): an eye orb inside gold rings, ringed by four petal shields that open before it fires, a glowing iris
+   and three chains swaying under it. Damage states: two petals fall off below 50% armor, the outer ring below 25%. */
+function buildWarden(){
+  const g=new THREE.Group(); const body=new THREE.Group(); body.position.y=2.6; g.add(body);
+  const MW=toon(0xe8e2f0),MG=toon(0xd4a640),MD=toon(0x2a2232);
+  part(new THREE.SphereGeometry(.7,16,12),MW,body,0,0,0,.1);
+  const eye=new THREE.Mesh(new THREE.TorusGeometry(.3,.09,8,24),basic(0xff2a3a,false)); eye.position.z=.66; body.add(eye);
+  const iris=new THREE.Mesh(new THREE.TorusGeometry(.42,.03,6,24),basic(0xff5a3a,true,.7)); iris.position.z=.62; body.add(iris);
+  const pupil=new THREE.Mesh(new THREE.SphereGeometry(.12,10,8),basic(0x0a0610,false)); pupil.position.z=.7; body.add(pupil);
+  const r1=part(new THREE.TorusGeometry(1.1,.07,6,40),MG,body,0,0,0,.05), r2=part(new THREE.TorusGeometry(1.35,.05,6,40),MG,body,0,0,0,.04);
+  const petals=[0,1,2,3].map(i=>{ const p=new THREE.Group(); p.rotation.z=i*Math.PI/2+Math.PI/4; body.add(p); const pl=part(box(.34,.5,.1),MW,p,0,.72,.18,.04); pl.rotation.x=-.35; part(box(.2,.08,.12),MG,pl,0,.2,.02,.02); return p; });
+  const chains=[0,1,2].map(i=>{ const a=i/3*Math.PI*2, c=new THREE.Group(); c.position.set(Math.cos(a)*.35,-.6,Math.sin(a)*.35); body.add(c); for(let k=0;k<3;k++) part(box(.08,.22,.08),k%2?MG:MD,c,0,-.15-k*.24,0,.02); return c; });
+  return {g,body,rings:[r1,r2],eye,iris,petals,chains,mats:[MW,MG,MD],shadow:blob(.9),breaks:[{o:petals[0],at:.5},{o:petals[2],at:.5},{o:r2,at:.25}]};
+}
+/* Drone (kiter): a light rifle scout. A backpack with a swaying antenna and a turning sensor dish makes it read from above,
+   a red visor and a rifle lamp glow. Damage states: antenna and dish break off below 50% armor, the whole pack below 25%. */
+function buildDrone(){
+  const m=buildMech(0x4c4658,0x9a2c42,0x24202c,0xff2a2a,.8), [M1,M2,M3]=m.mats, ME=basic(0xff3a2a,false);
+  const pack=part(box(.8,.72,.42),M3,m.torso,0,.85,-.58); part(box(.6,.12,.3),M2,pack,0,.4,0,.04);
+  const ant=new THREE.Group(); ant.position.set(-.25,.42,-.05); pack.add(ant); part(box(.06,1.15,.06),M3,ant,0,.57,0,.03); const tip=new THREE.Mesh(box(.13,.13,.13),ME); tip.position.y=1.16; ant.add(tip);
+  const dish=new THREE.Group(); dish.position.set(.28,.46,0); pack.add(dish); const dd=part(new THREE.CylinderGeometry(.28,.08,.12,10),M1,dish,0,.14,0,.04); dd.rotation.x=.6;
+  const vis=new THREE.Mesh(box(.42,.06,.04),ME); vis.position.set(0,.2,.27); m.head.add(vis);
+  const lamp=new THREE.Mesh(box(.1,.1,.1),basic(0xffd06a,false)); lamp.position.set(0,-.25,.18); m.rifle.add(lamp);
+  const cab=part(new THREE.CylinderGeometry(.04,.04,1.1,6),M3,m.torso,.6,.6,-.38,0); cab.rotation.set(.9,0,-.5);
+  m.ant=ant; m.dish=dish; m.breaks=[{o:ant,at:.5},{o:dish,at:.5},{o:pack,at:.25}]; return m;
+}
+/* Heavy (tank / slammer): wide pauldrons that swing with the stride, a slam fist on the left arm, a triple fan barrel on the right
+   and back vents that glow and flare during a wind-up. Damage states: one pauldron below 50% armor, the vents and the other pauldron below 25%. */
+function buildHeavy(){
+  const m=buildMech(0x5a5244,0xc08a2a,0x2a2620,0xff3030,1.25), [M1,M2,M3]=m.mats, MG=basic(0xff7a2a,false);
+  const pauls=[-1,1].map(s=>{ const p=new THREE.Group(); p.position.set(s*.98,1.42,0); m.torso.add(p); part(box(.78,.18,1.02),M2,p,s*.1,0,0,.05); part(box(.12,.6,.92),M1,p,s*.46,-.32,0,.05); return p; });
+  const fist=part(box(.62,.56,.64),M2,m.arms[0],0,-1.36,0,.06); part(box(.68,.12,.68),M3,fist,0,-.24,0,.04);
+  [-1,0,1].forEach(i=>part(box(.12,.5,.12),M3,m.rifle,i*.13,-.95,.06,.03));
+  const vents=new THREE.Group(); vents.position.set(0,.85,-.52); m.torso.add(vents); part(box(1,.62,.26),M3,vents,0,0,0,.05);
+  const glows=[-.3,0,.3].map(x=>{ const v=new THREE.Mesh(box(.18,.4,.05),MG); v.position.set(x,0,-.15); vents.add(v); return v; });
+  m.pauls=pauls; m.glows=glows; m.breaks=[{o:pauls[0],at:.5},{o:vents,at:.25},{o:pauls[1],at:.25}]; return m;
+}
+function buildCrawler(scale=1,pal){
+  const P=pal||{c1:0x4c4658,c2:0x9a2c42,c3:0x24202c,eye:0xff2a2a};
+  const g=new THREE.Group(), body=new THREE.Group(); body.position.y=1.15; g.add(body);
+  const M1=toon(P.c1),M2=toon(P.c2),M3=toon(P.c3),ME=basic(P.eye,false);
+  part(box(1.6,.5,1.9),M1,body,0,0,0); part(box(1.1,.3,1.2),M3,body,0,.38,-.1,.06); part(box(1.62,.12,.4),M2,body,0,.05,.78,.04);
+  const tur=new THREE.Group(); tur.position.set(0,.68,.1); body.add(tur);
+  part(box(.75,.34,.75),M1,tur,0,0,0); [-1,1].forEach(s=>part(box(.1,.1,.95),M3,tur,s*.17,0,.62,.04));
+  const eye=new THREE.Mesh(box(.5,.07,.05),ME); eye.position.set(0,.06,.39); tur.add(eye);
+  const legs=[];
+  [[1,1],[-1,1],[1,-1],[-1,-1]].forEach(([sx,sz],i)=>{
+    const leg=new THREE.Group(); leg.position.set(sx*.75,0,sz*.75); leg.rotation.y=Math.atan2(-sz,sx); body.add(leg);
+    const th=part(box(.95,.2,.22),M3,leg,.4,.28,0,.06); th.rotation.z=.55;
+    const sh=part(box(.2,1.55,.22),M1,leg,.92,-.28,0,.06); sh.rotation.z=.12;
+    part(new THREE.ConeGeometry(.14,.3,4),M2,leg,1.0,-1.05,0,.04).rotation.z=Math.PI;
+    legs.push(leg); leg.userData.i=i; leg.userData.ry=leg.rotation.y;
+  });
+  g.scale.setScalar(scale);
+  return {g,body,tur,legs,mats:[M1,M2,M3],shadow:blob(1.4*scale)};
+}
+// Lancer: thin long-barrel sniper mech. A red laser line tracks you before it fires.
+function buildLancer(){
+  const m=buildMech(0x3e4a5a,0xe8e8ee,0x1c2028,0x3ad0ff,1.05); const M3=m.mats[2], M2=m.mats[1];
+  part(box(.1,1.6,.1),M3,m.rifle,0,-1.5,0,.04); part(box(.16,.3,.16),M2,m.rifle,0,-.5,-.2,.04);
+  part(box(.16,.34,.2),M3,m.rifle,0,.1,-.22,.04);
+  const laser=new THREE.Mesh(box(.035,7,.035),basic(0xff2a3a,true,.75)); laser.position.y=-5.8; m.rifle.add(laser);
+  const ant=part(box(.05,.9,.05),M3,m.torso,-.4,1.6,-.3,.03); ant.rotation.z=.15;
+  part(box(.9,.5,.35),M3,m.torso,0,.9,-.5,.06);
+  laser.userData.nofit=1; laser.visible=false; m.laser=laser; m.shadow=blob(.95); return m;
+}
+// Howitzer: tracked mortar. Marks a target circle on the ground and lobs a shell onto it.
+function buildHowitzer(){
+  const g=new THREE.Group(), body=new THREE.Group(); body.position.y=.4; g.add(body);
+  const M1=toon(0x5a5244),M2=toon(0xc08a2a),M3=toon(0x2a2620),ME=basic(0xff3030,false);
+  [-1,1].forEach(s=>{ part(box(.55,.6,2.3),M3,body,s*.85,0,0); part(box(.57,.1,2.32),M2,body,s*.85,.32,0,.04); });
+  part(box(1.3,.7,1.7),M1,body,0,.45,0); part(box(.8,.42,.6),M1,body,0,.98,.45,.06);
+  const e=new THREE.Mesh(box(.5,.07,.05),ME); e.position.set(0,1.02,.76); body.add(e);
+  const mort=new THREE.Group(); mort.position.set(0,.95,-.35); mort.rotation.x=.55; body.add(mort);
+  part(new THREE.CylinderGeometry(.3,.36,1.7,10),M3,mort,0,.8,0);
+  const mouth=new THREE.Mesh(new THREE.TorusGeometry(.32,.07,6,16),M2); mouth.rotation.x=Math.PI/2; mouth.position.y=1.65; mort.add(mouth);
+  part(box(.6,.4,.5),M2,body,0,.6,-1.05,.05);
+  const target=new THREE.Mesh(new THREE.RingGeometry(1.1,1.25,32),addMat(0xff3a2a,.7)); target.rotation.x=-Math.PI/2; target.position.set(0,.05,3.2); target.userData.nofit=1; target.visible=false; g.add(target);
+  return {g,body,mort,mouth,target,mats:[M1,M2,M3],shadow:blob(1.5)};
+}
+// Bulwark: mech with a huge front shield that stops shots. Needs pierce or a flank.
+function buildBulwark(){
+  const m=buildMech(0x5a5244,0xc08a2a,0x2a2620,0xff3030,1.15);
+  const sh=new THREE.Group(); sh.position.set(0,.7,1.05); m.torso.add(sh);
+  part(box(1.9,2.5,.2),toon(0x3a3d48),sh,0,-.3,0,.08); part(box(1.5,.18,.24),toon(0xc08a2a),sh,0,.55,0,.04);
+  const slit=new THREE.Mesh(box(.8,.08,.06),basic(0xff3030,false)); slit.position.set(0,.2,.13); sh.add(slit);
+  const hex=new THREE.Mesh(new THREE.RingGeometry(.55,.68,6),addMat(0xff7a2a,.9)); hex.position.set(0,-.55,.13); hex.rotation.z=Math.PI/6; sh.add(hex);
+  m.hex=hex; m.shadow=blob(1.1); return m;
+}
+// Spark: small spiked kamikaze ball. Rolls in, blinks, explodes.
+function buildSpark(){
+  const g=new THREE.Group(), body=new THREE.Group(); body.position.y=.75; g.add(body);
+  const M1=toon(0x2a2632),M2=toon(0xd5352a);
+  part(new THREE.IcosahedronGeometry(.62,0),M1,body,0,0,0,.08);
+  [[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]].forEach(d=>{ const c=part(new THREE.ConeGeometry(.15,.5,4),M2,body,d[0]*.68,d[1]*.68,d[2]*.68,.04); c.lookAt(new V3(d[0]*3,d[1]*3,d[2]*3)); c.rotateX(Math.PI/2); });
+  const core=new THREE.Mesh(new THREE.SphereGeometry(.34,12,8),basic(0xffa040,true,.9)); body.add(core);
+  const warn=new THREE.Mesh(new THREE.RingGeometry(1.6,1.75,32),addMat(0xffa040,.6)); warn.rotation.x=-Math.PI/2; warn.position.y=.05; warn.userData.nofit=1; warn.visible=false; g.add(warn);
+  return {g,body,core,warn,mats:[M1,M2],shadow:blob(.6)};
+}
+// Shardling: crystal cluster. Splits into two smaller copies when it dies.
+function buildShardling(){
+  const g=new THREE.Group(), body=new THREE.Group(); body.position.y=1.7; g.add(body);
+  const MB=toon(0x3a78ff),MC=toon(0x9ad0ff);
+  const main=part(new THREE.OctahedronGeometry(.6,0),MB,body,0,0,0,.08); main.scale.y=1.7;
+  const subs=[]; for(let i=0;i<4;i++){ const a=i/4*Math.PI*2; const s=part(new THREE.OctahedronGeometry(.28,0),MC,body,Math.cos(a)*.75,(i%2?.3:-.3),Math.sin(a)*.75,.05); s.scale.y=1.8; s.rotation.z=(i%2?.4:-.4); subs.push(s); }
+  const core=new THREE.Mesh(new THREE.SphereGeometry(.18,10,8),basic(0xff2236,false)); core.position.z=.42; body.add(core);
+  return {g,body,subs,mats:[MB,MC],shadow:blob(.8)};
+}
+// Cherub: small choir angel. Never attacks; heals and shields enemies in its aura. Priority target.
+function buildCherub(){
+  const g=new THREE.Group(), body=new THREE.Group(); body.position.y=2.2; g.add(body);
+  const MW=toon(0xf6f0e6),MG=toon(0xd9a520);
+  part(new THREE.SphereGeometry(.45,14,10),MW,body,0,0,0,.08);
+  const sk=part(new THREE.ConeGeometry(.42,.8,6),MW,body,0,-.62,0,.06); sk.rotation.x=Math.PI;
+  const band=new THREE.Mesh(box(.5,.08,.05),basic(0xffd36a,false)); band.position.set(0,.05,.44); body.add(band);
+  const halo=new THREE.Mesh(new THREE.TorusGeometry(.42,.05,6,28),basic(0xffd36a,false)); halo.rotation.x=Math.PI/2; halo.position.y=.75; body.add(halo);
+  const wings=[]; [-1,1].forEach(s=>{ [0,1].forEach(k=>{ const piv=new THREE.Group(); piv.position.set(s*.3,.05-k*.25,-.2); body.add(piv); const w=part(box(.9-k*.25,.06,.32),k?MG:MW,piv,s*(.45-k*.1),0,0,.05); piv.userData.s=s; piv.userData.k=k; wings.push(piv); }); });
+  const aura=new THREE.Mesh(new THREE.RingGeometry(2.2,2.35,40),addMat(0x7dff9a,.55)); aura.rotation.x=-Math.PI/2; aura.position.y=.05; aura.userData.nofit=1; g.add(aura);
+  return {g,body,halo,wings,aura,mats:[MW,MG],shadow:blob(.6)};
+}
+// Ophan: two interlocked rings covered in eyes. Rolls in straight lines and leaves slow shots behind.
+function buildOphan(scale=1,R=1.3,nr=2,ne=4){
+  const g=new THREE.Group(), body=new THREE.Group(); body.position.y=(R+1.1); g.add(body);
+  const MG=toon(0xd9a520),MW=toon(0xf2eef8);
+  const rings=[], eyes=[];
+  for(let r=0;r<nr;r++){ const rr=R+r*.45; const ring=part(new THREE.TorusGeometry(rr,.13,8,40),MG,body,0,0,0,.06);
+    if(r===1) ring.rotation.y=Math.PI/2; if(r===2) ring.rotation.x=Math.PI/2;
+    for(let i=0;i<ne;i++){ const a=i/ne*Math.PI*2+r; const eg=new THREE.Group(); eg.position.set(Math.cos(a)*rr,Math.sin(a)*rr,0); ring.add(eg);
+      const w=part(new THREE.SphereGeometry(.2,10,8),MW,eg,0,0,0,.05); const p=new THREE.Mesh(new THREE.SphereGeometry(.09,8,6),basic(0xff2a3a,false)); p.position.z=.16; eg.add(p); eyes.push({g:eg,w,p,hp:0,alive:true}); }
+    rings.push(ring); }
+  const core=new THREE.Mesh(new THREE.OctahedronGeometry(.42,0),basic(0xff2236,false)); body.add(core);
+  core.add(new THREE.Mesh(new THREE.SphereGeometry(.7,14,10),basic(0xff6a3a,true,.25)));
+  g.scale.setScalar(scale);
+  return {g,body,rings,core,eyes,mats:[MG,MW],shadow:blob(1.2*scale)};
+}
+// Censer: chained lantern. Releases slow homing light orbs.
+function buildCenser(){
+  const g=new THREE.Group(), body=new THREE.Group(); body.position.y=3.6; g.add(body);
+  const MG=toon(0xd9a520),MD=toon(0x2a2232);
+  const halo=part(new THREE.TorusGeometry(.55,.07,6,28),MG,body,0,0,0,.04); halo.rotation.x=Math.PI/2;
+  const swing=new THREE.Group(); body.add(swing);
+  [0,1,2].forEach(i=>{ const a=i/3*Math.PI*2; const c=part(box(.04,1.1,.04),MG,swing,Math.cos(a)*.35,-.55,Math.sin(a)*.35,0); c.rotation.z=Math.cos(a)*.25; c.rotation.x=-Math.sin(a)*.25; });
+  const cage=part(new THREE.OctahedronGeometry(.62,0),MD,swing,0,-1.5,0,.08); cage.scale.y=1.35;
+  const glow=new THREE.Mesh(new THREE.SphereGeometry(.42,12,8),basic(0xffd36a,true,.85)); glow.position.y=-1.5; swing.add(glow);
+  const cap=part(new THREE.ConeGeometry(.35,.4,6),MG,swing,0,-.75,0,.04);
+  const orbs=[]; for(let i=0;i<3;i++){ const o=new THREE.Mesh(new THREE.SphereGeometry(.22,10,8),basic(0xffe9a0,true,.8)); body.add(o); orbs.push(o); }
+  return {g,body,swing,glow,orbs,mats:[MG,MD],shadow:blob(.7)};
+}
+
+/* ---- arena bosses ---- */
+// Hive Carrier: flying four-rotor carrier. Drops drones and bombs straight lines across the room.
+
+/* ================= NEW MOBS (12) =================
+   Same shape as models.js: {g, body, ..., mats:[main, accent, dark(, extra)], shadow, breaks:[{o, at}]}.
+   mats[0] = main body colour, mats[1] = accent, mats[2] = dark: applyTier() only repaints these, never eyes, cores, halos or telegraphs.
+   Glowing bits (eyes, cores, halos, lamps) use basic() and stay out of mats. Every model stays under 18 meshes (two rank plates still fit in 20). */
+
+// Ram (charger): low, wedge-nosed barricade breaker. The plow drops and the back thrusters flare before it charges a locked line.
+// Damage states (m.breaks): both side teeth fall off below 50% armor, a thruster below 25%.
+function buildRam(){
+  const g=new THREE.Group(), body=new THREE.Group(); body.position.y=-.2; g.add(body);
+  const M1=toon(0x5a5244),M2=toon(0xd5352a),M3=toon(0x2a2620),ME=basic(0xff3030,false),MH=basic(0xff7a2a,false);
+  part(box(1.5,.8,1.9),M1,body,0,1.1,0);
+  const plow=new THREE.Group(); plow.position.set(0,.8,1.05); body.add(plow); part(box(1.7,.9,.3),M2,plow,0,0,0,.08).rotation.x=-.3;
+  const teeth=[-1,1].map(s=>{ const t=part(new THREE.ConeGeometry(.16,.6,5),M3,body,s*.78,.65,1.2,.04); t.rotation.x=Math.PI/2; return t; });
+  part(box(.7,.5,.6),M1,body,0,1.72,.7,.07);
+  const eye=new THREE.Mesh(box(.5,.07,.05),ME); eye.position.set(0,1.75,1.02); body.add(eye);
+  part(box(1.52,.14,1.2),M2,body,0,1.52,-.2,.04); part(box(1,.2,.7),M3,body,0,1.6,-.6,.05);
+  [-1,1].forEach(s=>{ part(box(.5,.6,.6),M3,g,s*.55,.3,.35,.06); part(box(.62,.16,.9),M1,g,s*.55,.08,.45,.05); });
+  const glows=[], thr=[-1,1].map(s=>{ const t=new THREE.Group(); t.position.set(s*.45,1.15,-1.2); body.add(t); part(box(.4,.4,.5),M3,t,0,0,0,.05); const f=new THREE.Mesh(box(.3,.3,.12),MH); f.position.z=-.31; t.add(f); glows.push(f); return t; });
+  g.scale.setScalar(1.2);
+  return {g,body,plow,teeth,thr,glows,eye,mats:[M1,M2,M3],shadow:blob(1.5),breaks:[{o:teeth[0],at:.5},{o:teeth[1],at:.5},{o:thr[0],at:.25}]};
+}
+// Coil (denial): three-legged field unit. Stacked coil, copper rings and a glowing cap; a slanted tube lobs the stakes.
+// Damage states: two rings fall off below 50% armor, the cap cup below 25%.
+function buildCoil(){
+  const g=new THREE.Group(), body=new THREE.Group(); body.position.y=1.1; g.add(body);
+  const M1=toon(0x4c4658),M2=toon(0xc86a3a),M3=toon(0x24202c),MG=basic(0xffa040,false);
+  part(box(1.1,.45,1.1),M1,body,0,0,0);
+  [0,1,2].forEach(i=>{ const a=i/3*Math.PI*2+Math.PI/6, l=part(box(.14,1,.14),M3,body,Math.cos(a)*.7,-.6,Math.sin(a)*.7,.04); l.rotation.z=Math.cos(a)*.35; l.rotation.x=-Math.sin(a)*.35; });
+  [[.9,.4],[.8,.75],[.7,1.1]].forEach(([k,y])=>part(new THREE.CylinderGeometry(.5*k*.9,.5*k,.35,10),M1,body,0,y,0,.05));
+  const rings=[[.24,.55],[.58,.45],[.93,.35]].map(([y,r])=>{ const t=part(new THREE.TorusGeometry(r,.05,5,18),M2,body,0,y,0,.04); t.rotation.x=Math.PI/2; return t; });
+  const cup=part(new THREE.CylinderGeometry(.32,.2,.2,8),M3,body,0,1.38,0,.04);
+  const orb=new THREE.Mesh(new THREE.SphereGeometry(.22,12,8),MG); orb.position.y=1.6; body.add(orb);
+  const tube=part(box(.2,.9,.2),M3,body,.62,.3,-.2,.05); tube.rotation.z=-.5;
+  g.scale.setScalar(.95);
+  return {g,body,rings,orb,tube,mats:[M1,M2,M3],shadow:blob(1),breaks:[{o:rings[0],at:.5},{o:rings[2],at:.5},{o:cup,at:.25}]};
+}
+// Mender (support): small four-rotor repair drone. A welder tip glows under it; a beam ties it to the ally it keeps alive.
+// Damage states: two rotors fall off below 50% armor, the welder arm below 25%.
+function buildMender(){
+  const g=new THREE.Group(), body=new THREE.Group(); body.position.y=2.1; g.add(body);
+  const M1=toon(0x6a6a78),M2=toon(0xe07a2a),M3=toon(0x2a2630),MG=basic(0xffa040,false);
+  part(box(.9,.5,.9),M1,body,0,0,0,.08); part(box(.5,.1,.14),M2,body,0,.31,0,.03); part(box(.14,.1,.5),M2,body,0,.31,0,.03);
+  const rotors=[[1,1],[-1,1],[1,-1],[-1,-1]].map(([sx,sz])=>{ part(box(.1,.2,.1),M3,body,sx*.62,.1,sz*.62,.03); const p=new THREE.Group(); p.position.set(sx*.62,.25,sz*.62); body.add(p); part(box(.7,.04,.18),M3,p,0,0,0,.02); return p; });
+  const arm=part(box(.12,.9,.12),M3,body,0,-.7,.1,.03); const tip=new THREE.Mesh(new THREE.SphereGeometry(.15,10,8),MG); tip.position.set(0,-1.2,.1); body.add(tip);
+  const eye=new THREE.Mesh(box(.5,.07,.05),MG); eye.position.set(0,.05,.46); body.add(eye);
+  g.scale.setScalar(.85);
+  return {g,body,rotors,arm,tip,eye,mats:[M1,M2,M3],shadow:blob(.8),breaks:[{o:rotors[0],at:.5},{o:rotors[2],at:.5},{o:arm,at:.25}]};
+}
+// Beacon (sniper): tall thin crystal with an upright gold lens ring and a red core. Its light line ignores cover.
+// Damage states: both wings fall off below 50% armor, the lens ring below 25%.
+function buildBeacon(){
+  const g=new THREE.Group(), body=new THREE.Group(); body.position.y=3; g.add(body);
+  const MW=toon(0xeee8f4),MG=toon(0xd9a520),MD=toon(0x2a2232),MV=toon(0xd9c9ff);
+  const crystal=part(new THREE.OctahedronGeometry(.45,0),MW,body,0,0,0,.08); crystal.scale.y=2.4;
+  const tip=part(new THREE.OctahedronGeometry(.25,0),MD,body,0,-1.25,0,.05); tip.scale.y=1.6;
+  const lens=part(new THREE.TorusGeometry(.5,.07,8,28),MG,body,0,.15,.05,.05);
+  [-1,1].forEach(s=>part(box(.14,.14,.14),MG,body,s*.5,.15,.05,.03));
+  const core=new THREE.Mesh(new THREE.SphereGeometry(.2,12,8),basic(0xff2a3a,false)); core.position.set(0,.15,.1); body.add(core);
+  part(new THREE.ConeGeometry(.16,.5,6),MD,body,0,.15,.38,.04).rotation.x=Math.PI/2;
+  const wings=[-1,1].map(s=>{ const w=part(box(1.1,.05,.3),MV,body,s*.9,.1,-.15,.04); w.rotation.z=s*.35; return w; });
+  const halo=new THREE.Mesh(new THREE.TorusGeometry(.5,.05,6,28),basic(0xffd36a,false)); halo.rotation.x=Math.PI/2; halo.position.y=1.55; body.add(halo);
+  const ribbons=[-1,0,1].map(i=>{ const p=new THREE.Group(); p.position.set(i*.2,-1.5,-.1); body.add(p); part(box(.08,.9,.04),MV,p,0,-.45,0,.03); return p; });
+  return {g,body,lens,core,halo,wings,ribbons,mats:[MW,MG,MD,MV],shadow:blob(.7),breaks:[{o:wings[0],at:.5},{o:wings[1],at:.5},{o:lens,at:.25}]};
+}
+// Herald (rusher/flanker): small arrowhead. Swept wings fold shut right before a long dive.
+// Damage states: one wing below 50% armor, the other below 25%.
+function buildHerald(){
+  const g=new THREE.Group(), body=new THREE.Group(); body.position.y=2; g.add(body);
+  const MW=toon(0xeee8f4),MD=toon(0x2a2232),MV=toon(0xd9c9ff);
+  const crystal=part(new THREE.OctahedronGeometry(.45,0),MW,body,0,0,0,.07); crystal.scale.set(.8,.75,2.1);
+  part(new THREE.ConeGeometry(.2,.8,5),MD,body,0,0,1.15,.04).rotation.x=Math.PI/2;
+  const wings=[-1,1].map(s=>{ const w=part(box(1,.05,.55),MV,body,s*.62,0,-.3,.04); w.rotation.y=s*.7; part(box(.5,.04,.3),MW,w,s*.5,0,-.2,.03); return w; });
+  const halo=new THREE.Mesh(new THREE.TorusGeometry(.3,.04,6,24),basic(0xffd36a,false)); halo.rotation.x=Math.PI/2; halo.position.y=.55; body.add(halo);
+  const core=new THREE.Mesh(new THREE.SphereGeometry(.12,10,8),basic(0xff2a3a,false)); core.position.set(0,.12,.5); body.add(core);
+  const tails=[-1,1].map(s=>{ const p=new THREE.Group(); p.position.set(s*.15,0,-.95); body.add(p); part(box(.07,.04,.6),MV,p,0,0,-.3,.03); return p; });
+  g.scale.setScalar(.8);
+  return {g,body,wings,halo,core,tails,mats:[MW,MV,MD],shadow:blob(.6),breaks:[{o:wings[0],at:.5},{o:wings[1],at:.25}]};
+}
+// Dominion (tank): armored angel behind three curved shield arcs (70 deg each, 210 closed / 150 open) that turn around it.
+// Damage states: the first plate falls off below 66% armor, the second below 33%.
+function buildDominion(){
+  const g=new THREE.Group(), body=new THREE.Group(); g.add(body);
+  const MW=toon(0xeee8f4),MG=toon(0xd9a520),MD=toon(0x2a2232),MS=toon(0xf2eef8); MS.side=THREE.DoubleSide;
+  [-1,1].forEach(s=>part(box(.45,1.2,.5),MW,body,s*.4,.6,0,.06));
+  part(box(1.4,1.6,1),MW,body,0,2,0); part(box(.7,1,.1),MD,body,0,1.9,.55,.04);
+  [-1,1].forEach(s=>part(box(.7,.5,.9),MG,body,s*1,2.65,0,.06));
+  const head=part(new THREE.OctahedronGeometry(.45,0),MD,body,0,3.2,0,.07); head.scale.y=1.2;
+  const slit=new THREE.Mesh(box(.08,.38,.05),basic(0xff2a3a,false)); slit.position.set(0,3.22,.4); body.add(slit);
+  part(new THREE.CylinderGeometry(.12,.12,2.2,8),MD,body,1.25,2.2,.4,.04); part(new THREE.OctahedronGeometry(.3,0),MG,body,1.25,3.45,.4,.05);
+  const halo=new THREE.Mesh(new THREE.TorusGeometry(.5,.05,6,28),basic(0xffd36a,false)); halo.rotation.x=Math.PI/2; halo.position.y=3.95; body.add(halo);
+  const plates=new THREE.Group(); plates.position.y=2.1; body.add(plates); const a=Math.PI*35/180;
+  const pg=[0,1,2].map(i=>{ const p=new THREE.Group(); p.rotation.y=i*Math.PI*2/3; plates.add(p);
+    part(new THREE.CylinderGeometry(1.55,1.55,1.5,12,1,true,-a,a*2),MS,p,0,0,0,0); part(new THREE.CylinderGeometry(1.57,1.57,.14,12,1,true,-a,a*2),MG,p,0,.76,0,0); return p; });
+  g.scale.setScalar(1.3);
+  return {g,body,halo,plates,pg,mats:[MW,MG,MD],shadow:blob(1.7),breaks:[{o:pg[0],at:.66},{o:pg[1],at:.33}]};
+}
+// Sentry (pattern turret): bolted street-count tower. A drum with four short barrels turns between plus (+) and cross (x) volleys.
+// Damage states: antenna and cap fall off below 50% armor, two barrels below 25%.
+function buildSentry(){
+  const g=new THREE.Group();
+  const M1=toon(0x5a5244),M2=toon(0xc08a2a),M3=toon(0x2a2620),ME=basic(0xff3030,false),ML=basic(0xff3a2a,false);
+  part(new THREE.CylinderGeometry(.9,.9,.35,14),M3,g,0,.175,0,.06);
+  const drum=new THREE.Group(); drum.position.y=1.1; g.add(drum);
+  part(box(1,.7,1),M1,drum,0,0,0,.07); part(box(1.04,.12,1.04),M2,drum,0,-.28,0,.03);
+  const lamps=[], bars=[[0,1],[1,0],[0,-1],[-1,0]].map(([dx,dz])=>{ const b=new THREE.Group(); b.rotation.y=Math.atan2(dx,dz); drum.add(b); part(box(.14,.14,.5),M3,b,0,0,.75,.04); const l=new THREE.Mesh(box(.1,.1,.1),ML); l.position.set(0,.12,.98); b.add(l); lamps.push(l); return b; });
+  const eye=new THREE.Mesh(box(.5,.07,.05),ME); eye.position.set(0,.08,.51); drum.add(eye);
+  const top=new THREE.Group(); drum.add(top); part(box(.5,.12,.5),M2,top,0,.41,0,.04); part(box(.05,.5,.05),M3,top,.3,.66,-.2,.03);
+  return {g,drum,bars,lamps,eye,top,mats:[M1,M2,M3],shadow:blob(1.1),breaks:[{o:top,at:.5},{o:bars[1],at:.25},{o:bars[3],at:.25}]};
+}
+// Borer (ground-emerger): horizontal drill tank. Underground only dust shows; on the surface it fires lobbed shells from the top tube.
+// Damage states: the drill breaks off below 50% armor, the firing tube below 25%.
+function buildBorer(){
+  const g=new THREE.Group(), body=new THREE.Group(); g.add(body);
+  const M1=toon(0x6a5848),M2=toon(0xc08a2a),M3=toon(0x2a2620),ME=basic(0xff3030,false);
+  part(new THREE.CylinderGeometry(.6,.6,1.6,12),M1,body,0,.85,0,.07).rotation.x=Math.PI/2;
+  const drill=new THREE.Group(); drill.position.set(0,.85,.8); body.add(drill);
+  part(new THREE.ConeGeometry(.5,.9,6),M2,drill,0,0,.45,.05).rotation.x=Math.PI/2;
+  [[.43,.28],[.3,.62]].forEach(([r,z])=>part(new THREE.TorusGeometry(r,.05,5,10),M3,drill,0,0,z,.03));
+  [-1,1].forEach(s=>{ part(box(.35,.6,1.4),M3,body,s*.78,.3,0,.06); part(box(.1,.5,1),M2,body,s*.62,.85,-.1,.04); });
+  part(box(.5,.2,.5),M2,body,0,1.52,-.2,.04);
+  const tube=part(new THREE.CylinderGeometry(.22,.22,.9,8),M3,body,0,1.95,-.25,.05); tube.rotation.x=.6;
+  part(box(.5,.4,.3),M3,body,0,.95,-.95,.05); part(box(.3,.18,.3),M3,body,0,1.5,.35,.04);
+  const eye=new THREE.Mesh(box(.4,.07,.05),ME); eye.position.set(0,1.5,.51); body.add(eye);
+  g.scale.setScalar(1.1);
+  return {g,body,drill,tube,eye,mats:[M1,M2,M3],shadow:blob(1.3),breaks:[{o:drill,at:.5},{o:tube,at:.25}]};
+}
+// Hopper (erratic jumper): one spring leg under a boxy head. The spring squashes before every jump (scale the leg's y).
+// Damage states: both arm rods fall off below 50% armor, the hazard stripe below 25%.
+function buildHopper(){
+  const g=new THREE.Group();
+  const M1=toon(0x4c4658),M2=toon(0xe0c02a),M3=toon(0x24202c),ME=basic(0xff3030,false);
+  part(box(.8,.12,.8),M2,g,0,.06,0,.05);
+  const leg=new THREE.Group(); leg.position.y=.12; g.add(leg);
+  for(let i=0;i<5;i++){ const s=part(box(.12,.5,.12),M3,leg,(i%2?.1:-.1),.2+i*.36,0,.03); s.rotation.z=(i%2?-.5:.5); }
+  const head=new THREE.Group(); head.position.y=2.35; g.add(head);
+  part(box(1,.9,1),M1,head,0,0,0,.08); const stripe=part(box(1.05,.14,1.05),M2,head,0,.48,0,.03);
+  const eye=new THREE.Mesh(box(.5,.1,.05),ME); eye.position.set(0,.1,.52); head.add(eye);
+  const arms=[-1,1].map(s=>{ part(box(.18,.18,.18),M3,head,s*.55,.1,0,.03); return part(box(.1,.7,.1),M3,head,s*.62,-.4,.1,.03); });
+  g.scale.setScalar(.9);
+  return {g,leg,head,eye,arms,mats:[M1,M2,M3],shadow:blob(.8),breaks:[{o:arms[0],at:.5},{o:arms[1],at:.5},{o:stripe,at:.25}]};
+}
+// Emissary (teleporter): tall armored angel that hovers a hand above the ground. Light spear forward, dark cape and swept wings behind.
+// Damage states: the cape falls off below 50% armor, each wing below 25%.
+function buildEmissary(){
+  const g=new THREE.Group(), body=new THREE.Group(); body.position.y=.4; g.add(body);
+  const MW=toon(0xeee8f4),MG=toon(0xd9a520),MD=toon(0x2a2232),MV=toon(0xd9c9ff);
+  part(new THREE.ConeGeometry(.55,.9,6),MW,body,0,.45,0,.06);
+  part(box(.9,1.4,.6),MW,body,0,1.4,0,.07); part(box(.92,.14,.62),MG,body,0,.95,0,.03);
+  [-1,1].forEach(s=>part(box(.5,.3,.7),MG,body,s*.62,2,0,.05));
+  part(new THREE.OctahedronGeometry(.38,0),MD,body,0,2.5,0,.06);
+  const eye=new THREE.Mesh(box(.3,.06,.05),basic(0xff2a3a,false)); eye.position.set(0,2.52,.3); body.add(eye);
+  const arms=[-1,1].map(s=>part(box(.22,.9,.22),MW,body,s*.68,1.35,.05,.05));
+  const spear=new THREE.Group(); spear.position.set(.68,1.1,.5); spear.rotation.x=1.35; body.add(spear);
+  spear.add(new THREE.Mesh(new THREE.CylinderGeometry(.06,.06,2.4,6),basic(0xffd36a,false))); part(new THREE.ConeGeometry(.14,.4,5),MG,spear,0,1.4,0,.03);
+  const wings=[-1,1].map(s=>{ const w=part(box(1.3,.05,.3),MV,body,s*.9,1.9,-.4,.04); w.rotation.z=s*.5; return w; });
+  const cape=part(box(.8,1.2,.05),MD,body,0,1.35,-.38,.04);
+  const halo=new THREE.Mesh(new THREE.TorusGeometry(.38,.045,6,24),basic(0xffd36a,false)); halo.rotation.x=Math.PI/2; halo.position.y=3.1; body.add(halo);
+  g.scale.setScalar(1.1);
+  return {g,body,arms,spear,wings,cape,halo,eye,mats:[MW,MG,MD,MV],shadow:blob(.8),breaks:[{o:cape,at:.5},{o:wings[0],at:.25},{o:wings[1],at:.25}]};
+}
+// Aureole (boomerang): white sphere inside two crossed gold rings. The upright ring is the chakram it throws and calls back.
+// Damage states: both lower wings fall off below 50% armor, the upright ring below 25%.
+function buildAureole(){
+  const g=new THREE.Group(), body=new THREE.Group(); body.position.y=2.6; g.add(body);
+  const MW=toon(0xeee8f4),MG=toon(0xd9a520),MV=toon(0xd9c9ff);
+  part(new THREE.SphereGeometry(.5,16,12),MW,body,0,0,0,.08);
+  const ringA=part(new THREE.TorusGeometry(.8,.06,6,36),MG,body,0,0,0,.04); ringA.rotation.x=Math.PI/2;
+  const ringB=part(new THREE.TorusGeometry(.8,.06,6,36),MG,body,0,0,0,.04);
+  part(new THREE.TorusGeometry(.3,.04,6,24),MG,body,0,0,0,.03).rotation.y=Math.PI/2;
+  const core=new THREE.Mesh(new THREE.SphereGeometry(.22,12,8),basic(0xff2a3a,false)); core.position.z=.42; body.add(core);
+  const ribbons=[-1,0,1].map(i=>{ const p=new THREE.Group(); p.position.set(i*.3,-.55,-.2); body.add(p); part(box(.06,.8,.04),MV,p,0,-.4,0,.03); return p; });
+  const wings=[-1,1].map(s=>{ const w=part(box(.8,.05,.28),MV,body,s*.62,-.3,-.2,.04); w.rotation.z=-s*.3; return w; });
+  part(new THREE.ConeGeometry(.12,.4,5),MG,body,0,.62,0,.03);
+  g.scale.setScalar(.95);
+  return {g,body,ringA,ringB,core,ribbons,wings,mats:[MW,MG,MV],shadow:blob(.8),breaks:[{o:wings[0],at:.5},{o:wings[1],at:.5},{o:ringB,at:.25}]};
+}
+// Cantor (summoner): long-robed choir master. A raised gold hymn book and four shrinking halo rings behind the head; it never fights.
+// Damage states: the book falls off below 50% armor, the two outer rings below 25%.
+function buildCantor(){
+  const g=new THREE.Group(), body=new THREE.Group(); body.position.y=2.4; g.add(body);
+  const MW=toon(0xf6f0e6),MG=toon(0xd9a520),MD=toon(0x2a2232),MV=toon(0xd9c9ff);
+  part(new THREE.ConeGeometry(.55,1.6,8),MW,body,0,-.7,0,.07);
+  part(new THREE.SphereGeometry(.32,12,10),MW,body,0,.55,0,.06);
+  const band=new THREE.Mesh(box(.4,.07,.05),basic(0xff2a3a,false)); band.position.set(0,.58,.3); body.add(band);
+  part(new THREE.ConeGeometry(.4,.3,8),MG,body,0,.2,0,.04).rotation.x=Math.PI;
+  const arms=[-1,1].map(s=>{ const a=part(box(.18,.7,.2),MW,body,s*.42,-.05,.28,.04); a.rotation.x=-.9; return a; });
+  const book=part(box(.5,.08,.4),MG,body,0,.2,.55,.04); book.rotation.x=-.5;
+  const rings=[0,1,2,3].map(i=>part(new THREE.TorusGeometry(.5-i*.08,.04,6,28),MG,body,0,.55,-.35-i*.12,.03));
+  const wings=[-1,1].map(s=>{ const w=part(box(.9,.05,.3),MV,body,s*.7,-.1,-.3,.04); w.rotation.z=s*.5; return w; });
+  return {g,body,arms,book,rings,wings,band,mats:[MW,MG,MD,MV],shadow:blob(.7),breaks:[{o:book,at:.5},{o:rings[2],at:.25},{o:rings[3],at:.25}]};
+}
+
+/* ================= TIERS =================
+   T1 = today's model. T2 and T3 come from the SAME build function: applyTier() only repaints mats[] and adds rank plates.
+   Eyes, cores, halos, lamps, bullets and telegraphs are basic() materials outside mats[], so they never change with tier.
+   Gold (elite 0xffc83a) and purple (corrupted 0xb070ff) are never tier colours. */
+const TIER_PAL={ machine:{2:{accent:0x2fa890},3:{main:0x1c1a24,accent:0xd8d0b8}}, angel:{2:{main:0xe89ab8},3:{main:0x2a2232}} };
+const PLATE_COL=0xf2eef8;
+// repaint one mats[] slot, plus any inline toon() copy of the same colour (e.g. Bulwark's shield trim)
+function recolor(m,idx,hex){ const mt=m.mats[idx]; if(!mt) return; const old=mt.color.getHex();
+  m.g.traverse(o=>{ if(o.isMesh&&o.material&&o.material.isMeshToonMaterial&&o.material.color.getHex()===old) o.material.color.setHex(hex); }); mt.color.setHex(hex); }
+// slot: which mats[] index is the "main" and the "accent" body colour (default 0 and 1; Ophan's white eyes are mats[1], so it passes {main:1})
+function applyTier(m,side,tier,slot){
+  const s=slot||{}, mi=s.main==null?0:s.main, ai=s.accent==null?1:s.accent, p=(TIER_PAL[side]||{})[tier];
+  if(p){ if(p.main!=null) recolor(m,mi,p.main); if(p.accent!=null) recolor(m,ai,p.accent); }
+  if(tier>1) addRankPlates(m,tier); m.tier=tier; return m;
+}
+// 1 (T2) or 2 (T3) white bars (.55 x .09 x .16) floating above the model
+function addRankPlates(m,tier){
+  m.g.updateMatrixWorld(true); const bb=new THREE.Box3(), tmp=new THREE.Box3();
+  m.g.traverse(o=>{ if(o.isMesh&&!o.userData.nofit&&o.material!==outlineMat&&o.visible){ if(!o.geometry.boundingBox) o.geometry.computeBoundingBox(); tmp.copy(o.geometry.boundingBox).applyMatrix4(o.matrixWorld); bb.union(tmp); } });
+  const sc=m.g.scale.x||1, y0=(bb.max.y+.4)/sc, MP=basic(PLATE_COL,false); m.plates=[];
+  for(let i=0;i<tier-1;i++) m.plates.push(part(box(.55,.09,.16),MP,m.g,0,y0+i*.2,0,.04));
+}
+
+/* ================= MIRROR COPIES (final stage, optional) =================
+   The player's own buildMech, sunk by Hubris: colours drift toward black-red (hue stays, so you still know your frame),
+   the eyes turn enemy red, red cracks glow on the chest, shoulders, thighs and back, a faint red emissive tint, a red floor ring, and the horn grows. Not purple: purple is the corrupted-angel colour. */
+const MIRROR_UNIT={ azure:[0x2f62d8,0xeeeef4,0x1d2233,0x6ad8ff], crimson:[0xd5352a,0xf2a51e,0x2a1b20,0x9effa0], verdant:[0x6b3fb8,0x5fd04a,0x1d1a26,0xfff070] };
+const buildPlayerMech=unit=>{ const u=MIRROR_UNIT[unit]; return buildMech(u[0],u[1],u[2],u[3],1,unit); };
+// Mirror copy of a player frame (unit: 'azure' | 'crimson' | 'verdant'): the player's buildMech, darkened, with red cracks, red eyes and a longer horn.
+function buildMirror(unit){
+  const u=MIRROR_UNIT[unit], dk=(c,k)=>new THREE.Color(c).lerp(new THREE.Color(0x14080e),k).getHex();
+  const m=buildMech(dk(u[0],.62),dk(u[1],.5),dk(u[2],.3),0xff2a3a,1,unit), [M1,M2,M3]=m.mats, MC=basic(0xff2a3a,true,.95);
+  const crack=(host,x,y,z,h,rz)=>{ const c=new THREE.Mesh(box(.05,h,.04),MC); c.position.set(x,y,z); c.rotation.z=rz; host.add(c); return c; };
+  [M1,M2,M3].forEach(k=>k.emissive.setHex(0x2a0610)); // faint red glow so the copy reads as hostile from above too
+  m.cracks=[ crack(m.torso,.2,.8,-.42,.6,.4), crack(m.torso,-.25,.95,-.42,.5,-.5), crack(m.legs[0],-.1,-.3,-.23,.5,.3), crack(m.legs[1],.1,-.3,-.23,.5,-.3), crack(m.torso,-.15,.76,.55,.5,.5), crack(m.torso,.12,.9,.55,.4,-.45), crack(m.torso,-.9,1,.47,.4,.2), crack(m.torso,.9,.95,.47,.4,-.2), crack(m.legs[0],.12,-.35,.23,.5,.25), crack(m.legs[1],-.12,-.35,.23,.5,-.25) ];
+  const hl=unit==='verdant'?.9:.6, horn=m.head.children.find(c=>c.geometry&&c.geometry.type==='ConeGeometry'); horn.scale.y=2; horn.position.y+=hl/2; m.horn=horn;
+  if(unit==='azure'){ const l=new THREE.Mesh(box(.1,.1,.1),basic(0xff3a2a,false)); l.position.set(0,-.8,.17); m.rifle.add(l); }
+  if(unit==='crimson'){ part(box(.48,.3,.44),M1,m.rifle,0,-.72,.02,.04); [-1,1].forEach(s=>part(box(.1,.9,.1),M3,m.rifle,s*.17,-.35,.12,.03)); }
+  if(unit==='verdant'){ part(new THREE.CylinderGeometry(.07,.07,2.2,6),M3,m.rifle,0,-1.1,0,.04); part(new THREE.ConeGeometry(.16,.5,5),M2,m.rifle,0,-2.35,0,.04).rotation.z=Math.PI; }
+  const ring=new THREE.Mesh(new THREE.RingGeometry(1.15,1.28,40),addMat(0xff2a3a,.55)); ring.rotation.x=-Math.PI/2; ring.position.y=.05; ring.userData.nofit=1; m.g.add(ring); m.hubris=ring;
+  m.breaks=[{o:horn,at:.5},{o:m.rifle,at:.25}];
+  return m;
+}
+
+const SRC={"buildMech": "function buildMech(c1,c2,c3,eye,scale=1,frame=''){\n  const g=new THREE.Group(); const M1=toon(c1),M2=toon(c2),M3=toon(c3),ME=basic(eye,false);\n  const hips=new THREE.Group(); hips.position.y=1.6; g.add(hips);\n  const torso=new THREE.Group(); hips.add(torso);\n  part(box(.85,.45,.55),M3,torso,0,.15,0);\n  part(box(1.25,.8,.78),M1,torso,0,.75,0);\n  part(box(.75,.42,.2),M2,torso,0,.82,.43,.06);\n  part(box(.5,.25,.5),M3,torso,0,1.2,0);\n  const head=new THREE.Group(); head.position.set(0,1.42,.05); torso.add(head);\n  part(box(.36,.4,.5),M1,head,0,.12,0);\n  part(box(.3,.18,.3),M3,head,0,-.06,.18,.05);\n  const hl=frame==='verdant'?.9:.6;\n  const horn=part(new THREE.ConeGeometry(.07,hl,5),M2,head,0,.3+hl*.25,.22,.05); horn.rotation.x=.5;\n  if(frame==='crimson') [-1,1].forEach(s=>{ const f=part(box(.05,.4,.26),M2,head,s*.21,.32,0,.04); f.rotation.z=-s*.45; });\n  const eyes=new THREE.Mesh(box(frame==='crimson'?.34:.3,.07,.06),ME); eyes.position.set(0,.14,.26); head.add(eyes);\n  const sf=frame==='verdant'?1.15:frame==='crimson'?.9:1;\n  const arms=[];\n  [-1,1].forEach(s=>{\n    const sh=part(box(.5*sf,.72*sf,.85*sf),M1,torso,s*.88,1.02,0);\n    part(box(.06,.5*sf,.6*sf),M2,sh,s*.26*sf,0,0,.04);\n    if(frame==='crimson'){ const sp=part(new THREE.ConeGeometry(.09,.5,4),M2,sh,0,.5,0,.04); sp.rotation.z=-s*.3; }\n    const arm=new THREE.Group(); arm.position.set(s*.86,.92,0); torso.add(arm);\n    part(box(.28,.6,.28),M3,arm,0,-.38,0,.06);\n    part(box(.36,.62,.4),M1,arm,0,-.92,0);\n    arms.push(arm);\n  });\n  const rifle=part(box(.2,1.5,.26),M3,arms[1],0,-1.45,.12,.07);\n  part(box(.22,.4,.32),M2,rifle,0,.25,0,.05);\n  const muzzle=new THREE.Object3D(); muzzle.position.y=-.8; rifle.add(muzzle);\n  const legs=[],shins=[];\n  [-1,1].forEach(s=>{\n    const leg=new THREE.Group(); leg.position.set(s*.3,0,0); hips.add(leg);\n    part(box(.38,.8,.42),M3,leg,0,-.4,0,.07);\n    const shin=new THREE.Group(); shin.position.y=-.8; leg.add(shin);\n    part(box(.44,.82,.52),M1,shin,0,-.38,0);\n    part(box(.46,.18,.75),M2,shin,0,-.73,.1,.06);\n    legs.push(leg); shins.push(shin);\n  });\n  g.scale.setScalar(scale);\n  return {g,hips,torso,head,arms,legs,shins,muzzle,rifle,mats:[M1,M2,M3],eyeM:ME,shadow:blob(.9*scale)};\n}", "animMech": "function animMech(m,walk,amt){\n  const s=Math.sin(walk), c=Math.cos(walk), A=STRIDE*amt;\n  // a leg rotating +x pushes its foot backward: that is stance (foot planted, knee straight); the leg swinging forward lifts its knee\n  const a0=s*A, a1=-s*A, b0=Math.max(0,-c)*1.1*amt, b1=Math.max(0,c)*1.1*amt;\n  m.legs[0].rotation.x=a0; m.legs[1].rotation.x=a1; m.shins[0].rotation.x=b0; m.shins[1].rotation.x=b1;\n  // keep the lowest foot planted: hip height = longest vertical leg reach (thigh .8 + shin/foot .82)\n  const reach=(a,b)=>.8*Math.cos(a)+.82*Math.cos(a+b);\n  m.hips.position.y=Math.max(reach(a0,b0),reach(a1,b1))-.02;\n  m.arms[0].rotation.x=-s*.45*amt-.2; m.arms[1].rotation.x=-1.45;\n  m.torso.rotation.y=-s*.1*amt; m.torso.rotation.x=.09*amt;\n}", "stepMech": "// advance the walk phase so a planted foot moves backward exactly as fast as the body moves forward (dir -1: walking backward).\n// Returns true on a footfall (a foot plants), for dust and footsteps.\nfunction stepMech(m,o,spd,dt,scale,dir=1){\n  const amt=clamp(spd/(2*scale),0,1); let fall=false;\n  if(amt>.03){ const w0=o.walk||0; o.walk=w0+dir*dt*spd/(1.62*scale*STRIDE*amt); o.walkAmt=amt; fall=amt>.25&&Math.floor(o.walk/Math.PI)!==Math.floor(w0/Math.PI); }\n  else o.walkAmt=Math.max(0,(o.walkAmt||0)-dt*4);\n  animMech(m,o.walk||0,o.walkAmt||0);\n  return fall;\n}", "buildSeraph": "function buildSeraph(scale=1){\n  const g=new THREE.Group(); const body=new THREE.Group(); body.position.y=2.1; g.add(body);\n  const MW=toon(0xeee8f4),MD=toon(0x2a2232),MG=toon(0xd9c9ff);\n  const crystal=part(new THREE.OctahedronGeometry(.8,0),MW,body,0,0,0,.1); crystal.scale.y=1.6;\n  part(new THREE.OctahedronGeometry(.32,0),MD,body,0,-1.25,0,.06);\n  const lance=part(new THREE.ConeGeometry(.17,1.15,5),MD,body,0,-.15,.95,.05); lance.rotation.x=Math.PI/2;\n  const core=new THREE.Mesh(new THREE.SphereGeometry(.28,14,10),basic(0xff2a3a,false)); core.position.z=.55; body.add(core);\n  const ring=new THREE.Mesh(new THREE.TorusGeometry(.4,.045,6,20),basic(0xff5a6a,true,.85)); ring.position.z=.58; body.add(ring);\n  const halo=new THREE.Mesh(new THREE.TorusGeometry(.6,.05,6,32),basic(0xffd36a,false)); halo.rotation.x=Math.PI/2; halo.position.y=1.75; body.add(halo);\n  const wings=[];\n  [-1,1].forEach(s=>{ const w=part(box(1.5,.08,.5),MW,body,s*1.1,.3,-.2,.06); w.rotation.z=s*.5; wings.push(w);\n    [0,1].forEach(k=>part(box(.42,.05,.28),MG,w,s*(.55+k*.32),-.02,-.28-k*.06,.03));\n    const w2=part(box(1.1,.06,.36),MW,body,s*.95,-.15,-.2,.05); w2.rotation.z=s*.15; wings.push(w2); });\n  const ribbons=[-1,0,1].map(i=>{ const p=new THREE.Group(); p.position.set(i*.26,-1.35,-.2); body.add(p); part(box(.09,1,.04),MG,p,0,-.5,0,.03); return p; });\n  g.scale.setScalar(scale);\n  return {g,body,core,ring,halo,wings,ribbons,mats:[MW,MD,MG],shadow:blob(.8*scale),breaks:[{o:ribbons[0],at:.5},{o:ribbons[2],at:.5},{o:wings[1],at:.25}]};\n}", "buildWarden": "function buildWarden(){\n  const g=new THREE.Group(); const body=new THREE.Group(); body.position.y=2.6; g.add(body);\n  const MW=toon(0xe8e2f0),MG=toon(0xd4a640),MD=toon(0x2a2232);\n  part(new THREE.SphereGeometry(.7,16,12),MW,body,0,0,0,.1);\n  const eye=new THREE.Mesh(new THREE.TorusGeometry(.3,.09,8,24),basic(0xff2a3a,false)); eye.position.z=.66; body.add(eye);\n  const iris=new THREE.Mesh(new THREE.TorusGeometry(.42,.03,6,24),basic(0xff5a3a,true,.7)); iris.position.z=.62; body.add(iris);\n  const pupil=new THREE.Mesh(new THREE.SphereGeometry(.12,10,8),basic(0x0a0610,false)); pupil.position.z=.7; body.add(pupil);\n  const r1=part(new THREE.TorusGeometry(1.1,.07,6,40),MG,body,0,0,0,.05), r2=part(new THREE.TorusGeometry(1.35,.05,6,40),MG,body,0,0,0,.04);\n  const petals=[0,1,2,3].map(i=>{ const p=new THREE.Group(); p.rotation.z=i*Math.PI/2+Math.PI/4; body.add(p); const pl=part(box(.34,.5,.1),MW,p,0,.72,.18,.04); pl.rotation.x=-.35; part(box(.2,.08,.12),MG,pl,0,.2,.02,.02); return p; });\n  const chains=[0,1,2].map(i=>{ const a=i/3*Math.PI*2, c=new THREE.Group(); c.position.set(Math.cos(a)*.35,-.6,Math.sin(a)*.35); body.add(c); for(let k=0;k<3;k++) part(box(.08,.22,.08),k%2?MG:MD,c,0,-.15-k*.24,0,.02); return c; });\n  return {g,body,rings:[r1,r2],eye,iris,petals,chains,mats:[MW,MG,MD],shadow:blob(.9),breaks:[{o:petals[0],at:.5},{o:petals[2],at:.5},{o:r2,at:.25}]};\n}", "buildDrone": "function buildDrone(){\n  const m=buildMech(0x4c4658,0x9a2c42,0x24202c,0xff2a2a,.8), [M1,M2,M3]=m.mats, ME=basic(0xff3a2a,false);\n  const pack=part(box(.8,.72,.42),M3,m.torso,0,.85,-.58); part(box(.6,.12,.3),M2,pack,0,.4,0,.04);\n  const ant=new THREE.Group(); ant.position.set(-.25,.42,-.05); pack.add(ant); part(box(.06,1.15,.06),M3,ant,0,.57,0,.03); const tip=new THREE.Mesh(box(.13,.13,.13),ME); tip.position.y=1.16; ant.add(tip);\n  const dish=new THREE.Group(); dish.position.set(.28,.46,0); pack.add(dish); const dd=part(new THREE.CylinderGeometry(.28,.08,.12,10),M1,dish,0,.14,0,.04); dd.rotation.x=.6;\n  const vis=new THREE.Mesh(box(.42,.06,.04),ME); vis.position.set(0,.2,.27); m.head.add(vis);\n  const lamp=new THREE.Mesh(box(.1,.1,.1),basic(0xffd06a,false)); lamp.position.set(0,-.25,.18); m.rifle.add(lamp);\n  const cab=part(new THREE.CylinderGeometry(.04,.04,1.1,6),M3,m.torso,.6,.6,-.38,0); cab.rotation.set(.9,0,-.5);\n  m.ant=ant; m.dish=dish; m.breaks=[{o:ant,at:.5},{o:dish,at:.5},{o:pack,at:.25}]; return m;\n}", "buildHeavy": "function buildHeavy(){\n  const m=buildMech(0x5a5244,0xc08a2a,0x2a2620,0xff3030,1.25), [M1,M2,M3]=m.mats, MG=basic(0xff7a2a,false);\n  const pauls=[-1,1].map(s=>{ const p=new THREE.Group(); p.position.set(s*.98,1.42,0); m.torso.add(p); part(box(.78,.18,1.02),M2,p,s*.1,0,0,.05); part(box(.12,.6,.92),M1,p,s*.46,-.32,0,.05); return p; });\n  const fist=part(box(.62,.56,.64),M2,m.arms[0],0,-1.36,0,.06); part(box(.68,.12,.68),M3,fist,0,-.24,0,.04);\n  [-1,0,1].forEach(i=>part(box(.12,.5,.12),M3,m.rifle,i*.13,-.95,.06,.03));\n  const vents=new THREE.Group(); vents.position.set(0,.85,-.52); m.torso.add(vents); part(box(1,.62,.26),M3,vents,0,0,0,.05);\n  const glows=[-.3,0,.3].map(x=>{ const v=new THREE.Mesh(box(.18,.4,.05),MG); v.position.set(x,0,-.15); vents.add(v); return v; });\n  m.pauls=pauls; m.glows=glows; m.breaks=[{o:pauls[0],at:.5},{o:vents,at:.25},{o:pauls[1],at:.25}]; return m;\n}", "buildCrawler": "function buildCrawler(scale=1,pal){\n  const P=pal||{c1:0x4c4658,c2:0x9a2c42,c3:0x24202c,eye:0xff2a2a};\n  const g=new THREE.Group(), body=new THREE.Group(); body.position.y=1.15; g.add(body);\n  const M1=toon(P.c1),M2=toon(P.c2),M3=toon(P.c3),ME=basic(P.eye,false);\n  part(box(1.6,.5,1.9),M1,body,0,0,0); part(box(1.1,.3,1.2),M3,body,0,.38,-.1,.06); part(box(1.62,.12,.4),M2,body,0,.05,.78,.04);\n  const tur=new THREE.Group(); tur.position.set(0,.68,.1); body.add(tur);\n  part(box(.75,.34,.75),M1,tur,0,0,0); [-1,1].forEach(s=>part(box(.1,.1,.95),M3,tur,s*.17,0,.62,.04));\n  const eye=new THREE.Mesh(box(.5,.07,.05),ME); eye.position.set(0,.06,.39); tur.add(eye);\n  const legs=[];\n  [[1,1],[-1,1],[1,-1],[-1,-1]].forEach(([sx,sz],i)=>{\n    const leg=new THREE.Group(); leg.position.set(sx*.75,0,sz*.75); leg.rotation.y=Math.atan2(-sz,sx); body.add(leg);\n    const th=part(box(.95,.2,.22),M3,leg,.4,.28,0,.06); th.rotation.z=.55;\n    const sh=part(box(.2,1.55,.22),M1,leg,.92,-.28,0,.06); sh.rotation.z=.12;\n    part(new THREE.ConeGeometry(.14,.3,4),M2,leg,1.0,-1.05,0,.04).rotation.z=Math.PI;\n    legs.push(leg); leg.userData.i=i; leg.userData.ry=leg.rotation.y;\n  });\n  g.scale.setScalar(scale);\n  return {g,body,tur,legs,mats:[M1,M2,M3],shadow:blob(1.4*scale)};\n}", "buildLancer": "// Lancer: thin long-barrel sniper mech. A red laser line tracks you before it fires.\nfunction buildLancer(){\n  const m=buildMech(0x3e4a5a,0xe8e8ee,0x1c2028,0x3ad0ff,1.05); const M3=m.mats[2], M2=m.mats[1];\n  part(box(.1,1.6,.1),M3,m.rifle,0,-1.5,0,.04); part(box(.16,.3,.16),M2,m.rifle,0,-.5,-.2,.04);\n  part(box(.16,.34,.2),M3,m.rifle,0,.1,-.22,.04);\n  const laser=new THREE.Mesh(box(.035,7,.035),basic(0xff2a3a,true,.75)); laser.position.y=-5.8; m.rifle.add(laser);\n  const ant=part(box(.05,.9,.05),M3,m.torso,-.4,1.6,-.3,.03); ant.rotation.z=.15;\n  part(box(.9,.5,.35),M3,m.torso,0,.9,-.5,.06);\n  laser.userData.nofit=1; laser.visible=false; m.laser=laser; m.shadow=blob(.95); return m;\n}", "buildHowitzer": "// Howitzer: tracked mortar. Marks a target circle on the ground and lobs a shell onto it.\nfunction buildHowitzer(){\n  const g=new THREE.Group(), body=new THREE.Group(); body.position.y=.4; g.add(body);\n  const M1=toon(0x5a5244),M2=toon(0xc08a2a),M3=toon(0x2a2620),ME=basic(0xff3030,false);\n  [-1,1].forEach(s=>{ part(box(.55,.6,2.3),M3,body,s*.85,0,0); part(box(.57,.1,2.32),M2,body,s*.85,.32,0,.04); });\n  part(box(1.3,.7,1.7),M1,body,0,.45,0); part(box(.8,.42,.6),M1,body,0,.98,.45,.06);\n  const e=new THREE.Mesh(box(.5,.07,.05),ME); e.position.set(0,1.02,.76); body.add(e);\n  const mort=new THREE.Group(); mort.position.set(0,.95,-.35); mort.rotation.x=.55; body.add(mort);\n  part(new THREE.CylinderGeometry(.3,.36,1.7,10),M3,mort,0,.8,0);\n  const mouth=new THREE.Mesh(new THREE.TorusGeometry(.32,.07,6,16),M2); mouth.rotation.x=Math.PI/2; mouth.position.y=1.65; mort.add(mouth);\n  part(box(.6,.4,.5),M2,body,0,.6,-1.05,.05);\n  const target=new THREE.Mesh(new THREE.RingGeometry(1.1,1.25,32),addMat(0xff3a2a,.7)); target.rotation.x=-Math.PI/2; target.position.set(0,.05,3.2); target.userData.nofit=1; target.visible=false; g.add(target);\n  return {g,body,mort,mouth,target,mats:[M1,M2,M3],shadow:blob(1.5)};\n}", "buildBulwark": "// Bulwark: mech with a huge front shield that stops shots. Needs pierce or a flank.\nfunction buildBulwark(){\n  const m=buildMech(0x5a5244,0xc08a2a,0x2a2620,0xff3030,1.15);\n  const sh=new THREE.Group(); sh.position.set(0,.7,1.05); m.torso.add(sh);\n  part(box(1.9,2.5,.2),toon(0x3a3d48),sh,0,-.3,0,.08); part(box(1.5,.18,.24),toon(0xc08a2a),sh,0,.55,0,.04);\n  const slit=new THREE.Mesh(box(.8,.08,.06),basic(0xff3030,false)); slit.position.set(0,.2,.13); sh.add(slit);\n  const hex=new THREE.Mesh(new THREE.RingGeometry(.55,.68,6),addMat(0xff7a2a,.9)); hex.position.set(0,-.55,.13); hex.rotation.z=Math.PI/6; sh.add(hex);\n  m.hex=hex; m.shadow=blob(1.1); return m;\n}", "buildSpark": "// Spark: small spiked kamikaze ball. Rolls in, blinks, explodes.\nfunction buildSpark(){\n  const g=new THREE.Group(), body=new THREE.Group(); body.position.y=.75; g.add(body);\n  const M1=toon(0x2a2632),M2=toon(0xd5352a);\n  part(new THREE.IcosahedronGeometry(.62,0),M1,body,0,0,0,.08);\n  [[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]].forEach(d=>{ const c=part(new THREE.ConeGeometry(.15,.5,4),M2,body,d[0]*.68,d[1]*.68,d[2]*.68,.04); c.lookAt(new V3(d[0]*3,d[1]*3,d[2]*3)); c.rotateX(Math.PI/2); });\n  const core=new THREE.Mesh(new THREE.SphereGeometry(.34,12,8),basic(0xffa040,true,.9)); body.add(core);\n  const warn=new THREE.Mesh(new THREE.RingGeometry(1.6,1.75,32),addMat(0xffa040,.6)); warn.rotation.x=-Math.PI/2; warn.position.y=.05; warn.userData.nofit=1; warn.visible=false; g.add(warn);\n  return {g,body,core,warn,mats:[M1,M2],shadow:blob(.6)};\n}", "buildShardling": "// Shardling: crystal cluster. Splits into two smaller copies when it dies.\nfunction buildShardling(){\n  const g=new THREE.Group(), body=new THREE.Group(); body.position.y=1.7; g.add(body);\n  const MB=toon(0x3a78ff),MC=toon(0x9ad0ff);\n  const main=part(new THREE.OctahedronGeometry(.6,0),MB,body,0,0,0,.08); main.scale.y=1.7;\n  const subs=[]; for(let i=0;i<4;i++){ const a=i/4*Math.PI*2; const s=part(new THREE.OctahedronGeometry(.28,0),MC,body,Math.cos(a)*.75,(i%2?.3:-.3),Math.sin(a)*.75,.05); s.scale.y=1.8; s.rotation.z=(i%2?.4:-.4); subs.push(s); }\n  const core=new THREE.Mesh(new THREE.SphereGeometry(.18,10,8),basic(0xff2236,false)); core.position.z=.42; body.add(core);\n  return {g,body,subs,mats:[MB,MC],shadow:blob(.8)};\n}", "buildCherub": "// Cherub: small choir angel. Never attacks; heals and shields enemies in its aura. Priority target.\nfunction buildCherub(){\n  const g=new THREE.Group(), body=new THREE.Group(); body.position.y=2.2; g.add(body);\n  const MW=toon(0xf6f0e6),MG=toon(0xd9a520);\n  part(new THREE.SphereGeometry(.45,14,10),MW,body,0,0,0,.08);\n  const sk=part(new THREE.ConeGeometry(.42,.8,6),MW,body,0,-.62,0,.06); sk.rotation.x=Math.PI;\n  const band=new THREE.Mesh(box(.5,.08,.05),basic(0xffd36a,false)); band.position.set(0,.05,.44); body.add(band);\n  const halo=new THREE.Mesh(new THREE.TorusGeometry(.42,.05,6,28),basic(0xffd36a,false)); halo.rotation.x=Math.PI/2; halo.position.y=.75; body.add(halo);\n  const wings=[]; [-1,1].forEach(s=>{ [0,1].forEach(k=>{ const piv=new THREE.Group(); piv.position.set(s*.3,.05-k*.25,-.2); body.add(piv); const w=part(box(.9-k*.25,.06,.32),k?MG:MW,piv,s*(.45-k*.1),0,0,.05); piv.userData.s=s; piv.userData.k=k; wings.push(piv); }); });\n  const aura=new THREE.Mesh(new THREE.RingGeometry(2.2,2.35,40),addMat(0x7dff9a,.55)); aura.rotation.x=-Math.PI/2; aura.position.y=.05; aura.userData.nofit=1; g.add(aura);\n  return {g,body,halo,wings,aura,mats:[MW,MG],shadow:blob(.6)};\n}", "buildOphan": "// Ophan: two interlocked rings covered in eyes. Rolls in straight lines and leaves slow shots behind.\nfunction buildOphan(scale=1,R=1.3,nr=2,ne=4){\n  const g=new THREE.Group(), body=new THREE.Group(); body.position.y=(R+1.1); g.add(body);\n  const MG=toon(0xd9a520),MW=toon(0xf2eef8);\n  const rings=[], eyes=[];\n  for(let r=0;r<nr;r++){ const rr=R+r*.45; const ring=part(new THREE.TorusGeometry(rr,.13,8,40),MG,body,0,0,0,.06);\n    if(r===1) ring.rotation.y=Math.PI/2; if(r===2) ring.rotation.x=Math.PI/2;\n    for(let i=0;i<ne;i++){ const a=i/ne*Math.PI*2+r; const eg=new THREE.Group(); eg.position.set(Math.cos(a)*rr,Math.sin(a)*rr,0); ring.add(eg);\n      const w=part(new THREE.SphereGeometry(.2,10,8),MW,eg,0,0,0,.05); const p=new THREE.Mesh(new THREE.SphereGeometry(.09,8,6),basic(0xff2a3a,false)); p.position.z=.16; eg.add(p); eyes.push({g:eg,w,p,hp:0,alive:true}); }\n    rings.push(ring); }\n  const core=new THREE.Mesh(new THREE.OctahedronGeometry(.42,0),basic(0xff2236,false)); body.add(core);\n  core.add(new THREE.Mesh(new THREE.SphereGeometry(.7,14,10),basic(0xff6a3a,true,.25)));\n  g.scale.setScalar(scale);\n  return {g,body,rings,core,eyes,mats:[MG,MW],shadow:blob(1.2*scale)};\n}", "buildCenser": "// Censer: chained lantern. Releases slow homing light orbs.\nfunction buildCenser(){\n  const g=new THREE.Group(), body=new THREE.Group(); body.position.y=3.6; g.add(body);\n  const MG=toon(0xd9a520),MD=toon(0x2a2232);\n  const halo=part(new THREE.TorusGeometry(.55,.07,6,28),MG,body,0,0,0,.04); halo.rotation.x=Math.PI/2;\n  const swing=new THREE.Group(); body.add(swing);\n  [0,1,2].forEach(i=>{ const a=i/3*Math.PI*2; const c=part(box(.04,1.1,.04),MG,swing,Math.cos(a)*.35,-.55,Math.sin(a)*.35,0); c.rotation.z=Math.cos(a)*.25; c.rotation.x=-Math.sin(a)*.25; });\n  const cage=part(new THREE.OctahedronGeometry(.62,0),MD,swing,0,-1.5,0,.08); cage.scale.y=1.35;\n  const glow=new THREE.Mesh(new THREE.SphereGeometry(.42,12,8),basic(0xffd36a,true,.85)); glow.position.y=-1.5; swing.add(glow);\n  const cap=part(new THREE.ConeGeometry(.35,.4,6),MG,swing,0,-.75,0,.04);\n  const orbs=[]; for(let i=0;i<3;i++){ const o=new THREE.Mesh(new THREE.SphereGeometry(.22,10,8),basic(0xffe9a0,true,.8)); body.add(o); orbs.push(o); }\n  return {g,body,swing,glow,orbs,mats:[MG,MD],shadow:blob(.7)};\n}", "buildRam": "// Ram (charger): low, wedge-nosed barricade breaker. The plow drops and the back thrusters flare before it charges a locked line.\n// Damage states (m.breaks): both side teeth fall off below 50% armor, a thruster below 25%.\nfunction buildRam(){\n  const g=new THREE.Group(), body=new THREE.Group(); body.position.y=-.2; g.add(body);\n  const M1=toon(0x5a5244),M2=toon(0xd5352a),M3=toon(0x2a2620),ME=basic(0xff3030,false),MH=basic(0xff7a2a,false);\n  part(box(1.5,.8,1.9),M1,body,0,1.1,0);\n  const plow=new THREE.Group(); plow.position.set(0,.8,1.05); body.add(plow); part(box(1.7,.9,.3),M2,plow,0,0,0,.08).rotation.x=-.3;\n  const teeth=[-1,1].map(s=>{ const t=part(new THREE.ConeGeometry(.16,.6,5),M3,body,s*.78,.65,1.2,.04); t.rotation.x=Math.PI/2; return t; });\n  part(box(.7,.5,.6),M1,body,0,1.72,.7,.07);\n  const eye=new THREE.Mesh(box(.5,.07,.05),ME); eye.position.set(0,1.75,1.02); body.add(eye);\n  part(box(1.52,.14,1.2),M2,body,0,1.52,-.2,.04); part(box(1,.2,.7),M3,body,0,1.6,-.6,.05);\n  [-1,1].forEach(s=>{ part(box(.5,.6,.6),M3,g,s*.55,.3,.35,.06); part(box(.62,.16,.9),M1,g,s*.55,.08,.45,.05); });\n  const glows=[], thr=[-1,1].map(s=>{ const t=new THREE.Group(); t.position.set(s*.45,1.15,-1.2); body.add(t); part(box(.4,.4,.5),M3,t,0,0,0,.05); const f=new THREE.Mesh(box(.3,.3,.12),MH); f.position.z=-.31; t.add(f); glows.push(f); return t; });\n  g.scale.setScalar(1.2);\n  return {g,body,plow,teeth,thr,glows,eye,mats:[M1,M2,M3],shadow:blob(1.5),breaks:[{o:teeth[0],at:.5},{o:teeth[1],at:.5},{o:thr[0],at:.25}]};\n}", "buildCoil": "// Coil (denial): three-legged field unit. Stacked coil, copper rings and a glowing cap; a slanted tube lobs the stakes.\n// Damage states: two rings fall off below 50% armor, the cap cup below 25%.\nfunction buildCoil(){\n  const g=new THREE.Group(), body=new THREE.Group(); body.position.y=1.1; g.add(body);\n  const M1=toon(0x4c4658),M2=toon(0xc86a3a),M3=toon(0x24202c),MG=basic(0xffa040,false);\n  part(box(1.1,.45,1.1),M1,body,0,0,0);\n  [0,1,2].forEach(i=>{ const a=i/3*Math.PI*2+Math.PI/6, l=part(box(.14,1,.14),M3,body,Math.cos(a)*.7,-.6,Math.sin(a)*.7,.04); l.rotation.z=Math.cos(a)*.35; l.rotation.x=-Math.sin(a)*.35; });\n  [[.9,.4],[.8,.75],[.7,1.1]].forEach(([k,y])=>part(new THREE.CylinderGeometry(.5*k*.9,.5*k,.35,10),M1,body,0,y,0,.05));\n  const rings=[[.24,.55],[.58,.45],[.93,.35]].map(([y,r])=>{ const t=part(new THREE.TorusGeometry(r,.05,5,18),M2,body,0,y,0,.04); t.rotation.x=Math.PI/2; return t; });\n  const cup=part(new THREE.CylinderGeometry(.32,.2,.2,8),M3,body,0,1.38,0,.04);\n  const orb=new THREE.Mesh(new THREE.SphereGeometry(.22,12,8),MG); orb.position.y=1.6; body.add(orb);\n  const tube=part(box(.2,.9,.2),M3,body,.62,.3,-.2,.05); tube.rotation.z=-.5;\n  g.scale.setScalar(.95);\n  return {g,body,rings,orb,tube,mats:[M1,M2,M3],shadow:blob(1),breaks:[{o:rings[0],at:.5},{o:rings[2],at:.5},{o:cup,at:.25}]};\n}", "buildMender": "// Mender (support): small four-rotor repair drone. A welder tip glows under it; a beam ties it to the ally it keeps alive.\n// Damage states: two rotors fall off below 50% armor, the welder arm below 25%.\nfunction buildMender(){\n  const g=new THREE.Group(), body=new THREE.Group(); body.position.y=2.1; g.add(body);\n  const M1=toon(0x6a6a78),M2=toon(0xe07a2a),M3=toon(0x2a2630),MG=basic(0xffa040,false);\n  part(box(.9,.5,.9),M1,body,0,0,0,.08); part(box(.5,.1,.14),M2,body,0,.31,0,.03); part(box(.14,.1,.5),M2,body,0,.31,0,.03);\n  const rotors=[[1,1],[-1,1],[1,-1],[-1,-1]].map(([sx,sz])=>{ part(box(.1,.2,.1),M3,body,sx*.62,.1,sz*.62,.03); const p=new THREE.Group(); p.position.set(sx*.62,.25,sz*.62); body.add(p); part(box(.7,.04,.18),M3,p,0,0,0,.02); return p; });\n  const arm=part(box(.12,.9,.12),M3,body,0,-.7,.1,.03); const tip=new THREE.Mesh(new THREE.SphereGeometry(.15,10,8),MG); tip.position.set(0,-1.2,.1); body.add(tip);\n  const eye=new THREE.Mesh(box(.5,.07,.05),MG); eye.position.set(0,.05,.46); body.add(eye);\n  g.scale.setScalar(.85);\n  return {g,body,rotors,arm,tip,eye,mats:[M1,M2,M3],shadow:blob(.8),breaks:[{o:rotors[0],at:.5},{o:rotors[2],at:.5},{o:arm,at:.25}]};\n}", "buildBeacon": "// Beacon (sniper): tall thin crystal with an upright gold lens ring and a red core. Its light line ignores cover.\n// Damage states: both wings fall off below 50% armor, the lens ring below 25%.\nfunction buildBeacon(){\n  const g=new THREE.Group(), body=new THREE.Group(); body.position.y=3; g.add(body);\n  const MW=toon(0xeee8f4),MG=toon(0xd9a520),MD=toon(0x2a2232),MV=toon(0xd9c9ff);\n  const crystal=part(new THREE.OctahedronGeometry(.45,0),MW,body,0,0,0,.08); crystal.scale.y=2.4;\n  const tip=part(new THREE.OctahedronGeometry(.25,0),MD,body,0,-1.25,0,.05); tip.scale.y=1.6;\n  const lens=part(new THREE.TorusGeometry(.5,.07,8,28),MG,body,0,.15,.05,.05);\n  [-1,1].forEach(s=>part(box(.14,.14,.14),MG,body,s*.5,.15,.05,.03));\n  const core=new THREE.Mesh(new THREE.SphereGeometry(.2,12,8),basic(0xff2a3a,false)); core.position.set(0,.15,.1); body.add(core);\n  part(new THREE.ConeGeometry(.16,.5,6),MD,body,0,.15,.38,.04).rotation.x=Math.PI/2;\n  const wings=[-1,1].map(s=>{ const w=part(box(1.1,.05,.3),MV,body,s*.9,.1,-.15,.04); w.rotation.z=s*.35; return w; });\n  const halo=new THREE.Mesh(new THREE.TorusGeometry(.5,.05,6,28),basic(0xffd36a,false)); halo.rotation.x=Math.PI/2; halo.position.y=1.55; body.add(halo);\n  const ribbons=[-1,0,1].map(i=>{ const p=new THREE.Group(); p.position.set(i*.2,-1.5,-.1); body.add(p); part(box(.08,.9,.04),MV,p,0,-.45,0,.03); return p; });\n  return {g,body,lens,core,halo,wings,ribbons,mats:[MW,MG,MD,MV],shadow:blob(.7),breaks:[{o:wings[0],at:.5},{o:wings[1],at:.5},{o:lens,at:.25}]};\n}", "buildHerald": "// Herald (rusher/flanker): small arrowhead. Swept wings fold shut right before a long dive.\n// Damage states: one wing below 50% armor, the other below 25%.\nfunction buildHerald(){\n  const g=new THREE.Group(), body=new THREE.Group(); body.position.y=2; g.add(body);\n  const MW=toon(0xeee8f4),MD=toon(0x2a2232),MV=toon(0xd9c9ff);\n  const crystal=part(new THREE.OctahedronGeometry(.45,0),MW,body,0,0,0,.07); crystal.scale.set(.8,.75,2.1);\n  part(new THREE.ConeGeometry(.2,.8,5),MD,body,0,0,1.15,.04).rotation.x=Math.PI/2;\n  const wings=[-1,1].map(s=>{ const w=part(box(1,.05,.55),MV,body,s*.62,0,-.3,.04); w.rotation.y=s*.7; part(box(.5,.04,.3),MW,w,s*.5,0,-.2,.03); return w; });\n  const halo=new THREE.Mesh(new THREE.TorusGeometry(.3,.04,6,24),basic(0xffd36a,false)); halo.rotation.x=Math.PI/2; halo.position.y=.55; body.add(halo);\n  const core=new THREE.Mesh(new THREE.SphereGeometry(.12,10,8),basic(0xff2a3a,false)); core.position.set(0,.12,.5); body.add(core);\n  const tails=[-1,1].map(s=>{ const p=new THREE.Group(); p.position.set(s*.15,0,-.95); body.add(p); part(box(.07,.04,.6),MV,p,0,0,-.3,.03); return p; });\n  g.scale.setScalar(.8);\n  return {g,body,wings,halo,core,tails,mats:[MW,MV,MD],shadow:blob(.6),breaks:[{o:wings[0],at:.5},{o:wings[1],at:.25}]};\n}", "buildDominion": "// Dominion (tank): armored angel behind three curved shield arcs (70 deg each, 210 closed / 150 open) that turn around it.\n// Damage states: the first plate falls off below 66% armor, the second below 33%.\nfunction buildDominion(){\n  const g=new THREE.Group(), body=new THREE.Group(); g.add(body);\n  const MW=toon(0xeee8f4),MG=toon(0xd9a520),MD=toon(0x2a2232),MS=toon(0xf2eef8); MS.side=THREE.DoubleSide;\n  [-1,1].forEach(s=>part(box(.45,1.2,.5),MW,body,s*.4,.6,0,.06));\n  part(box(1.4,1.6,1),MW,body,0,2,0); part(box(.7,1,.1),MD,body,0,1.9,.55,.04);\n  [-1,1].forEach(s=>part(box(.7,.5,.9),MG,body,s*1,2.65,0,.06));\n  const head=part(new THREE.OctahedronGeometry(.45,0),MD,body,0,3.2,0,.07); head.scale.y=1.2;\n  const slit=new THREE.Mesh(box(.08,.38,.05),basic(0xff2a3a,false)); slit.position.set(0,3.22,.4); body.add(slit);\n  part(new THREE.CylinderGeometry(.12,.12,2.2,8),MD,body,1.25,2.2,.4,.04); part(new THREE.OctahedronGeometry(.3,0),MG,body,1.25,3.45,.4,.05);\n  const halo=new THREE.Mesh(new THREE.TorusGeometry(.5,.05,6,28),basic(0xffd36a,false)); halo.rotation.x=Math.PI/2; halo.position.y=3.95; body.add(halo);\n  const plates=new THREE.Group(); plates.position.y=2.1; body.add(plates); const a=Math.PI*35/180;\n  const pg=[0,1,2].map(i=>{ const p=new THREE.Group(); p.rotation.y=i*Math.PI*2/3; plates.add(p);\n    part(new THREE.CylinderGeometry(1.55,1.55,1.5,12,1,true,-a,a*2),MS,p,0,0,0,0); part(new THREE.CylinderGeometry(1.57,1.57,.14,12,1,true,-a,a*2),MG,p,0,.76,0,0); return p; });\n  g.scale.setScalar(1.3);\n  return {g,body,halo,plates,pg,mats:[MW,MG,MD],shadow:blob(1.7),breaks:[{o:pg[0],at:.66},{o:pg[1],at:.33}]};\n}", "buildSentry": "// Sentry (pattern turret): bolted street-count tower. A drum with four short barrels turns between plus (+) and cross (x) volleys.\n// Damage states: antenna and cap fall off below 50% armor, two barrels below 25%.\nfunction buildSentry(){\n  const g=new THREE.Group();\n  const M1=toon(0x5a5244),M2=toon(0xc08a2a),M3=toon(0x2a2620),ME=basic(0xff3030,false),ML=basic(0xff3a2a,false);\n  part(new THREE.CylinderGeometry(.9,.9,.35,14),M3,g,0,.175,0,.06);\n  const drum=new THREE.Group(); drum.position.y=1.1; g.add(drum);\n  part(box(1,.7,1),M1,drum,0,0,0,.07); part(box(1.04,.12,1.04),M2,drum,0,-.28,0,.03);\n  const lamps=[], bars=[[0,1],[1,0],[0,-1],[-1,0]].map(([dx,dz])=>{ const b=new THREE.Group(); b.rotation.y=Math.atan2(dx,dz); drum.add(b); part(box(.14,.14,.5),M3,b,0,0,.75,.04); const l=new THREE.Mesh(box(.1,.1,.1),ML); l.position.set(0,.12,.98); b.add(l); lamps.push(l); return b; });\n  const eye=new THREE.Mesh(box(.5,.07,.05),ME); eye.position.set(0,.08,.51); drum.add(eye);\n  const top=new THREE.Group(); drum.add(top); part(box(.5,.12,.5),M2,top,0,.41,0,.04); part(box(.05,.5,.05),M3,top,.3,.66,-.2,.03);\n  return {g,drum,bars,lamps,eye,top,mats:[M1,M2,M3],shadow:blob(1.1),breaks:[{o:top,at:.5},{o:bars[1],at:.25},{o:bars[3],at:.25}]};\n}", "buildBorer": "// Borer (ground-emerger): horizontal drill tank. Underground only dust shows; on the surface it fires lobbed shells from the top tube.\n// Damage states: the drill breaks off below 50% armor, the firing tube below 25%.\nfunction buildBorer(){\n  const g=new THREE.Group(), body=new THREE.Group(); g.add(body);\n  const M1=toon(0x6a5848),M2=toon(0xc08a2a),M3=toon(0x2a2620),ME=basic(0xff3030,false);\n  part(new THREE.CylinderGeometry(.6,.6,1.6,12),M1,body,0,.85,0,.07).rotation.x=Math.PI/2;\n  const drill=new THREE.Group(); drill.position.set(0,.85,.8); body.add(drill);\n  part(new THREE.ConeGeometry(.5,.9,6),M2,drill,0,0,.45,.05).rotation.x=Math.PI/2;\n  [[.43,.28],[.3,.62]].forEach(([r,z])=>part(new THREE.TorusGeometry(r,.05,5,10),M3,drill,0,0,z,.03));\n  [-1,1].forEach(s=>{ part(box(.35,.6,1.4),M3,body,s*.78,.3,0,.06); part(box(.1,.5,1),M2,body,s*.62,.85,-.1,.04); });\n  part(box(.5,.2,.5),M2,body,0,1.52,-.2,.04);\n  const tube=part(new THREE.CylinderGeometry(.22,.22,.9,8),M3,body,0,1.95,-.25,.05); tube.rotation.x=.6;\n  part(box(.5,.4,.3),M3,body,0,.95,-.95,.05); part(box(.3,.18,.3),M3,body,0,1.5,.35,.04);\n  const eye=new THREE.Mesh(box(.4,.07,.05),ME); eye.position.set(0,1.5,.51); body.add(eye);\n  g.scale.setScalar(1.1);\n  return {g,body,drill,tube,eye,mats:[M1,M2,M3],shadow:blob(1.3),breaks:[{o:drill,at:.5},{o:tube,at:.25}]};\n}", "buildHopper": "// Hopper (erratic jumper): one spring leg under a boxy head. The spring squashes before every jump (scale the leg's y).\n// Damage states: both arm rods fall off below 50% armor, the hazard stripe below 25%.\nfunction buildHopper(){\n  const g=new THREE.Group();\n  const M1=toon(0x4c4658),M2=toon(0xe0c02a),M3=toon(0x24202c),ME=basic(0xff3030,false);\n  part(box(.8,.12,.8),M2,g,0,.06,0,.05);\n  const leg=new THREE.Group(); leg.position.y=.12; g.add(leg);\n  for(let i=0;i<5;i++){ const s=part(box(.12,.5,.12),M3,leg,(i%2?.1:-.1),.2+i*.36,0,.03); s.rotation.z=(i%2?-.5:.5); }\n  const head=new THREE.Group(); head.position.y=2.35; g.add(head);\n  part(box(1,.9,1),M1,head,0,0,0,.08); const stripe=part(box(1.05,.14,1.05),M2,head,0,.48,0,.03);\n  const eye=new THREE.Mesh(box(.5,.1,.05),ME); eye.position.set(0,.1,.52); head.add(eye);\n  const arms=[-1,1].map(s=>{ part(box(.18,.18,.18),M3,head,s*.55,.1,0,.03); return part(box(.1,.7,.1),M3,head,s*.62,-.4,.1,.03); });\n  g.scale.setScalar(.9);\n  return {g,leg,head,eye,arms,mats:[M1,M2,M3],shadow:blob(.8),breaks:[{o:arms[0],at:.5},{o:arms[1],at:.5},{o:stripe,at:.25}]};\n}", "buildEmissary": "// Emissary (teleporter): tall armored angel that hovers a hand above the ground. Light spear forward, dark cape and swept wings behind.\n// Damage states: the cape falls off below 50% armor, each wing below 25%.\nfunction buildEmissary(){\n  const g=new THREE.Group(), body=new THREE.Group(); body.position.y=.4; g.add(body);\n  const MW=toon(0xeee8f4),MG=toon(0xd9a520),MD=toon(0x2a2232),MV=toon(0xd9c9ff);\n  part(new THREE.ConeGeometry(.55,.9,6),MW,body,0,.45,0,.06);\n  part(box(.9,1.4,.6),MW,body,0,1.4,0,.07); part(box(.92,.14,.62),MG,body,0,.95,0,.03);\n  [-1,1].forEach(s=>part(box(.5,.3,.7),MG,body,s*.62,2,0,.05));\n  part(new THREE.OctahedronGeometry(.38,0),MD,body,0,2.5,0,.06);\n  const eye=new THREE.Mesh(box(.3,.06,.05),basic(0xff2a3a,false)); eye.position.set(0,2.52,.3); body.add(eye);\n  const arms=[-1,1].map(s=>part(box(.22,.9,.22),MW,body,s*.68,1.35,.05,.05));\n  const spear=new THREE.Group(); spear.position.set(.68,1.1,.5); spear.rotation.x=1.35; body.add(spear);\n  spear.add(new THREE.Mesh(new THREE.CylinderGeometry(.06,.06,2.4,6),basic(0xffd36a,false))); part(new THREE.ConeGeometry(.14,.4,5),MG,spear,0,1.4,0,.03);\n  const wings=[-1,1].map(s=>{ const w=part(box(1.3,.05,.3),MV,body,s*.9,1.9,-.4,.04); w.rotation.z=s*.5; return w; });\n  const cape=part(box(.8,1.2,.05),MD,body,0,1.35,-.38,.04);\n  const halo=new THREE.Mesh(new THREE.TorusGeometry(.38,.045,6,24),basic(0xffd36a,false)); halo.rotation.x=Math.PI/2; halo.position.y=3.1; body.add(halo);\n  g.scale.setScalar(1.1);\n  return {g,body,arms,spear,wings,cape,halo,eye,mats:[MW,MG,MD,MV],shadow:blob(.8),breaks:[{o:cape,at:.5},{o:wings[0],at:.25},{o:wings[1],at:.25}]};\n}", "buildAureole": "// Aureole (boomerang): white sphere inside two crossed gold rings. The upright ring is the chakram it throws and calls back.\n// Damage states: both lower wings fall off below 50% armor, the upright ring below 25%.\nfunction buildAureole(){\n  const g=new THREE.Group(), body=new THREE.Group(); body.position.y=2.6; g.add(body);\n  const MW=toon(0xeee8f4),MG=toon(0xd9a520),MV=toon(0xd9c9ff);\n  part(new THREE.SphereGeometry(.5,16,12),MW,body,0,0,0,.08);\n  const ringA=part(new THREE.TorusGeometry(.8,.06,6,36),MG,body,0,0,0,.04); ringA.rotation.x=Math.PI/2;\n  const ringB=part(new THREE.TorusGeometry(.8,.06,6,36),MG,body,0,0,0,.04);\n  part(new THREE.TorusGeometry(.3,.04,6,24),MG,body,0,0,0,.03).rotation.y=Math.PI/2;\n  const core=new THREE.Mesh(new THREE.SphereGeometry(.22,12,8),basic(0xff2a3a,false)); core.position.z=.42; body.add(core);\n  const ribbons=[-1,0,1].map(i=>{ const p=new THREE.Group(); p.position.set(i*.3,-.55,-.2); body.add(p); part(box(.06,.8,.04),MV,p,0,-.4,0,.03); return p; });\n  const wings=[-1,1].map(s=>{ const w=part(box(.8,.05,.28),MV,body,s*.62,-.3,-.2,.04); w.rotation.z=-s*.3; return w; });\n  part(new THREE.ConeGeometry(.12,.4,5),MG,body,0,.62,0,.03);\n  g.scale.setScalar(.95);\n  return {g,body,ringA,ringB,core,ribbons,wings,mats:[MW,MG,MV],shadow:blob(.8),breaks:[{o:wings[0],at:.5},{o:wings[1],at:.5},{o:ringB,at:.25}]};\n}", "buildCantor": "// Cantor (summoner): long-robed choir master. A raised gold hymn book and four shrinking halo rings behind the head; it never fights.\n// Damage states: the book falls off below 50% armor, the two outer rings below 25%.\nfunction buildCantor(){\n  const g=new THREE.Group(), body=new THREE.Group(); body.position.y=2.4; g.add(body);\n  const MW=toon(0xf6f0e6),MG=toon(0xd9a520),MD=toon(0x2a2232),MV=toon(0xd9c9ff);\n  part(new THREE.ConeGeometry(.55,1.6,8),MW,body,0,-.7,0,.07);\n  part(new THREE.SphereGeometry(.32,12,10),MW,body,0,.55,0,.06);\n  const band=new THREE.Mesh(box(.4,.07,.05),basic(0xff2a3a,false)); band.position.set(0,.58,.3); body.add(band);\n  part(new THREE.ConeGeometry(.4,.3,8),MG,body,0,.2,0,.04).rotation.x=Math.PI;\n  const arms=[-1,1].map(s=>{ const a=part(box(.18,.7,.2),MW,body,s*.42,-.05,.28,.04); a.rotation.x=-.9; return a; });\n  const book=part(box(.5,.08,.4),MG,body,0,.2,.55,.04); book.rotation.x=-.5;\n  const rings=[0,1,2,3].map(i=>part(new THREE.TorusGeometry(.5-i*.08,.04,6,28),MG,body,0,.55,-.35-i*.12,.03));\n  const wings=[-1,1].map(s=>{ const w=part(box(.9,.05,.3),MV,body,s*.7,-.1,-.3,.04); w.rotation.z=s*.5; return w; });\n  return {g,body,arms,book,rings,wings,band,mats:[MW,MG,MD,MV],shadow:blob(.7),breaks:[{o:book,at:.5},{o:rings[2],at:.25},{o:rings[3],at:.25}]};\n}", "recolor": "// repaint one mats[] slot, plus any inline toon() copy of the same colour (e.g. Bulwark's shield trim)\nfunction recolor(m,idx,hex){ const mt=m.mats[idx]; if(!mt) return; const old=mt.color.getHex();\n  m.g.traverse(o=>{ if(o.isMesh&&o.material&&o.material.isMeshToonMaterial&&o.material.color.getHex()===old) o.material.color.setHex(hex); }); mt.color.setHex(hex); }", "applyTier": "// slot: which mats[] index is the \"main\" and the \"accent\" body colour (default 0 and 1; Ophan's white eyes are mats[1], so it passes {main:1})\nfunction applyTier(m,side,tier,slot){\n  const s=slot||{}, mi=s.main==null?0:s.main, ai=s.accent==null?1:s.accent, p=(TIER_PAL[side]||{})[tier];\n  if(p){ if(p.main!=null) recolor(m,mi,p.main); if(p.accent!=null) recolor(m,ai,p.accent); }\n  if(tier>1) addRankPlates(m,tier); m.tier=tier; return m;\n}", "addRankPlates": "// 1 (T2) or 2 (T3) white bars (.55 x .09 x .16) floating above the model\nfunction addRankPlates(m,tier){\n  m.g.updateMatrixWorld(true); const bb=new THREE.Box3(), tmp=new THREE.Box3();\n  m.g.traverse(o=>{ if(o.isMesh&&!o.userData.nofit&&o.material!==outlineMat&&o.visible){ if(!o.geometry.boundingBox) o.geometry.computeBoundingBox(); tmp.copy(o.geometry.boundingBox).applyMatrix4(o.matrixWorld); bb.union(tmp); } });\n  const sc=m.g.scale.x||1, y0=(bb.max.y+.4)/sc, MP=basic(PLATE_COL,false); m.plates=[];\n  for(let i=0;i<tier-1;i++) m.plates.push(part(box(.55,.09,.16),MP,m.g,0,y0+i*.2,0,.04));\n}", "buildMirror": "// Mirror copy of a player frame (unit: 'azure' | 'crimson' | 'verdant'): the player's buildMech, darkened, with red cracks, red eyes and a longer horn.\nfunction buildMirror(unit){\n  const u=MIRROR_UNIT[unit], dk=(c,k)=>new THREE.Color(c).lerp(new THREE.Color(0x14080e),k).getHex();\n  const m=buildMech(dk(u[0],.62),dk(u[1],.5),dk(u[2],.3),0xff2a3a,1,unit), [M1,M2,M3]=m.mats, MC=basic(0xff2a3a,true,.95);\n  const crack=(host,x,y,z,h,rz)=>{ const c=new THREE.Mesh(box(.05,h,.04),MC); c.position.set(x,y,z); c.rotation.z=rz; host.add(c); return c; };\n  [M1,M2,M3].forEach(k=>k.emissive.setHex(0x2a0610)); // faint red glow so the copy reads as hostile from above too\n  m.cracks=[ crack(m.torso,.2,.8,-.42,.6,.4), crack(m.torso,-.25,.95,-.42,.5,-.5), crack(m.legs[0],-.1,-.3,-.23,.5,.3), crack(m.legs[1],.1,-.3,-.23,.5,-.3), crack(m.torso,-.15,.76,.55,.5,.5), crack(m.torso,.12,.9,.55,.4,-.45), crack(m.torso,-.9,1,.47,.4,.2), crack(m.torso,.9,.95,.47,.4,-.2), crack(m.legs[0],.12,-.35,.23,.5,.25), crack(m.legs[1],-.12,-.35,.23,.5,-.25) ];\n  const hl=unit==='verdant'?.9:.6, horn=m.head.children.find(c=>c.geometry&&c.geometry.type==='ConeGeometry'); horn.scale.y=2; horn.position.y+=hl/2; m.horn=horn;\n  if(unit==='azure'){ const l=new THREE.Mesh(box(.1,.1,.1),basic(0xff3a2a,false)); l.position.set(0,-.8,.17); m.rifle.add(l); }\n  if(unit==='crimson'){ part(box(.48,.3,.44),M1,m.rifle,0,-.72,.02,.04); [-1,1].forEach(s=>part(box(.1,.9,.1),M3,m.rifle,s*.17,-.35,.12,.03)); }\n  if(unit==='verdant'){ part(new THREE.CylinderGeometry(.07,.07,2.2,6),M3,m.rifle,0,-1.1,0,.04); part(new THREE.ConeGeometry(.16,.5,5),M2,m.rifle,0,-2.35,0,.04).rotation.z=Math.PI; }\n  const ring=new THREE.Mesh(new THREE.RingGeometry(1.15,1.28,40),addMat(0xff2a3a,.55)); ring.rotation.x=-Math.PI/2; ring.position.y=.05; ring.userData.nofit=1; m.g.add(ring); m.hubris=ring;\n  m.breaks=[{o:horn,at:.5},{o:m.rifle,at:.25}];\n  return m;\n}"};
+/* ================= CARD DATA =================
+   Telegraph shapes are drawn on the floor at real scale (1 unit = 1 game unit), mob at the origin facing +z.
+   R ring · S strip (angle in deg, 0 = +z) · F fan · P dot. Colours stay side-coded: machine red 0xff3a2a, angel gold 0xffd36a, never tier-coloured. */
+const MC=0xff3a2a, MO=0xff7a2a, MF=0xffa040, AC=0xffd36a, GR=0x7dff9a, SB=0x8fd0ff, WH=0xffffff;
+const R=(x,z,r,c,o=1)=>({k:'ring',x,z,r,c,o}), S=(x,z,a,len,w,c,o=1)=>({k:'strip',x,z,a,len,w,c,o}), F=(x,z,a,len,arc,c,o=1)=>({k:'fan',x,z,a,len,arc,c,o}), P=(x,z,r,c,o=1)=>({k:'dot',x,z,r,c,o});
+const rd=d=>d*Math.PI/180, tip=s=>[s.x+Math.sin(rd(s.a))*s.len, s.z+Math.cos(rd(s.a))*s.len];
+const spread=(angs,len,w,c,o=1)=>angs.map(a=>S(0,0,a,len,w,c,o));
+const ringAt=(cx,cz,n,r,rr,c,o=1)=>Array.from({length:n},(_,i)=>R(cx+Math.sin(rd(i*360/n))*r,cz+Math.cos(rd(i*360/n))*r,rr,c,o));
+const dotsAt=(cx,cz,n,r,rr,c,o=1)=>Array.from({length:n},(_,i)=>P(cx+Math.sin(rd(i*360/n))*r,cz+Math.cos(rd(i*360/n))*r,rr,c,o));
+const chain=(x,z,list,w,c,o=1)=>{ const out=[]; list.forEach(([a,len],i)=>{ const s=S(x,z,a,len,w,c,i?o*.6:o); out.push(s); [x,z]=tip(s); }); return out; };
+const ret=(angs,len)=>angs.map(a=>{ const e=tip(S(0,0,a,len)); return S(e[0],e[1],a+180,len,.1,AC,.5); });
+const sideOf={makine:'machine',melek:'angel'};
+
+const ENTRIES=[
+/* ---------- NEW · MACHINE ---------- */
+{no:1,id:'ram',kind:'yeni',side:'makine',role:'charger',name:'Ram',fn:buildRam,
+ stats:'hp 14 · speed 3.0 (hücum 8→17) · r 1.5 · sc 1.2 · mass 2.4 · band [7,11] · cost 2.2',
+ enemy:"ram:{name:'Ram',tag:'move',mass:2.4,role:'charger',band:[7,11],hp:14,r:1.5,speed:3,sc:1.2,cost:2.2,xp:2.2,gold:13,score:260,build:()=>buildRam()},",
+ why:'Heavy paleti, Howitzer gibi özel gövde (buildMech yok). Silüet "yerde duran kama": alçak, geniş, öne eğik; pulluk ve yan dişler hücum yönünü zaten söylüyor. Seraph ve Ophan havada ve yuvarlak; Ram yerde ve köşeli, bu yüzden aynı charger rolü karışmıyor.',
+ inspo:'Archero Brown Wolf / Gray Wolf (kilitle ve atıl). Arka iticiler hücum öncesi parlar: okunur uyarının bir parçası.',
+ tele:{1:[S(0,0,0,14,1.9,MC),R(0,14,1.2,MC,.5)],2:[S(0,0,0,14,1.9,MC),R(0,14,1.2,MC,.5),S(0,14,200,9,1.9,MC,.45)],3:[S(0,0,0,14,1.9,MC),R(0,14,1.2,MC,.5),R(0,14,3.8,MC,.35),S(0,14,200,9,1.9,MC,.45)]},
+ teleNote:'.9 sn: pulluk iner, iticiler parlar. Son .3 sn: 14 birimlik kilit şeridi (w 1.9) + uçta çarpma halkası. T2 ikinci şerit, T3 duvar şok halkası r 3.8.'},
+{no:2,id:'coil',kind:'yeni',side:'makine',role:'denial',name:'Coil',fn:buildCoil,
+ stats:'hp 9 · speed 3.0 · r 1.2 · sc .95 · mass 1.2 · band [8,12] · cost 1.9',
+ enemy:"coil:{name:'Coil',tag:'move',mass:1.2,role:'denial',band:[8,12],hp:9,r:1.2,speed:3,sc:.95,cost:1.9,xp:1.9,gold:12,score:250,build:()=>buildCoil()},",
+ why:'Drone paleti (grafit + bakır). Üç bacak + üç istif bobin: Crawler\'ın dört bacaklı gövdesinden ve Warden\'ın halka dilinden ayrışır. Tepedeki küre göz yerine geçer: parlayan 0xffa040 uyarının kaynağı.',
+ inspo:'Archero Electric Ground Turret (yıldırım halkaları), Red Living Bomb\'un yerde bıraktığı ateş.',
+ tele:{1:[R(0,8,2.2,MC),R(4.3,10.5,2.2,MC),R(-4.3,10.5,2.2,MC)],2:[R(0,8,2.2,MC),R(4.3,10.5,2.2,MC),R(-4.3,10.5,2.2,MC),R(4.3,5.5,2.2,MC),R(-4.3,5.5,2.2,MC)],3:[R(0,8,2.2,MC),R(4.3,10.5,2.2,MC),R(-4.3,10.5,2.2,MC),R(4.3,5.5,2.2,MC),R(-4.3,5.5,2.2,MC),...dotsAt(0,8,6,2.2,.18,MO)]},
+ teleNote:'Atıştan itibaren iniş yerinde r 2.2 halka: uçuş .9 + yerde 1.0 sn (≥1.9 sn). Hiçbiri oyuncunun 3.5 biriminden yakın düşmez. T2: 5 kazık, T3: kenarda 6 kıvılcım noktası.'},
+{no:3,id:'mender',kind:'yeni',side:'makine',role:'support',name:'Mender',fn:buildMender,
+ stats:'hp 7 · speed 4.4 · fly · r 1.0 · sc .85 · mass .5 · cost 1.5 · elite:false',
+ enemy:"mender:{name:'Mender',tag:'focus',mass:.5,role:'support',hp:7,r:1,speed:4.4,sc:.85,fly:true,cost:1.5,xp:1.5,gold:10,score:220,build:()=>buildMender(),elite:false},",
+ why:'Küçük, havada, rotorlu: makine tarafının tek uçan küçüğü. Gri gövde + servis turuncusu; Cherub\'ın makine karşılığı olduğu artı işaretinden ve alttaki kaynak ucundan okunur. Kaynak ışını turuncu 0xff7a2a (destek rengi), saldırı kırmızısıyla karışmaz.',
+ inspo:'Cherub (aynı oyunda, alan aurası); burada tek hedefe görünür bağ: "kim korunuyor" okunur.',
+ tele:{1:[R(0,5,1.4,MO),S(0,0,0,5,.14,MO)],2:[R(0,5,1.4,MO),S(0,0,0,5,.14,MO),R(4.5,2.5,1.4,MO),S(0,0,61,5.1,.14,MO)],3:[R(0,5,1.4,MO),S(0,0,0,5,.14,MO),R(4.5,2.5,1.4,MO),S(0,0,61,5.1,.14,MO),R(-3.5,4,1.4,MO,.45)]},
+ teleNote:'Kurulmadan .5 sn önce ucu parlar, hedefin altında r 1.4 turuncu halka; sonra ince turuncu çizgi. T2 ikinci hedef, T3 yeniden kurulacak enkaz halkası (soluk).'},
+/* ---------- NEW · ANGEL ---------- */
+{no:4,id:'beacon',kind:'yeni',side:'melek',role:'sniper',name:'Beacon',fn:buildBeacon,
+ stats:'hp 8 · speed 2.6 · fly · r 1.1 · sc 1 · mass .8 · band [11,16] · cost 2.0',
+ enemy:"beacon:{name:'Beacon',tag:'focus',mass:.8,role:'sniper',band:[11,16],hp:8,r:1.1,speed:2.6,sc:1,fly:true,angel:true,cost:2,xp:2,gold:12,score:240,build:()=>buildBeacon()},",
+ why:'Seraph\'ten uzun ve ince (octahedron y×2.4), bacaksız; ayırıcı özellik gövdenin ortasında dik duran altın mercek halkası ve ön emiter konisi. Eklediğim: 2 mercek braketi ve emiter konisi, çünkü "bu bir ışın atıcı" silüette okunmalı (tarifte yoktu).',
+ inspo:'Archero One-Eyed Bat (duvardan geçen ışın). Lancer saklanmayı, Beacon hareketi öğretir.',
+ tele:{1:[S(0,0,0,22,.5,AC),S(0,0,0,22,.9,WH,.4)],2:[S(0,0,0,22,.5,AC),S(0,0,0,22,.9,WH,.4),S(0,0,12,22,.5,AC,.6),S(0,0,12,22,.9,WH,.25)],3:[...spread([0,-14.3,14.3],22,.5,AC),...spread([0,-14.3,14.3],22,.9,WH,.35)]},
+ teleNote:'1.05 sn: .6 sn izleme (w .5 altın), .45 sn kilit (w .9, beyaz, yanıp söner). Şerit isabet hattının tamamı. T2 ikinci hat, T3 üç hat (±.25 rad).'},
+{no:5,id:'herald',kind:'yeni',side:'melek',role:'rusher/flanker',name:'Herald',fn:buildHerald,
+ stats:'hp 5 · speed 6.5 (dalış 20) · fly · r 1.0 · sc .8 · mass .45 · band [6,9] · cost 1.0',
+ enemy:"herald:{name:'Herald',tag:'move',mass:.45,role:'rusher',band:[6,9],hp:5,r:1,speed:6.5,sc:.8,fly:true,angel:true,cost:1,xp:1,gold:6,score:120,build:()=>buildHerald()},",
+ why:'Octahedron yatay yatıyor (z×2.1) ve koyu burun konisi öne bakıyor: ok başı silüeti. Seraph dikey kristaldir, Herald yatay oktur; dalış yönü modelden okunur.',
+ inspo:'Archero Bee ve Wolf (yandan gelen hızlı mob). Seraph\'tan farkı: kendi slot\'unda beklemez, çevreler ve arkadan dalar.',
+ tele:{1:[S(0,0,0,15,1.3,AC),P(0,15,.4,AC)],2:[...chain(0,0,[[0,15],[165,15]],1.3,AC),P(0,15,.4,AC)],3:[...chain(0,0,[[0,15],[165,15],[15,15]],1.3,AC),P(0,15,.4,AC)]},
+ teleNote:'.6 sn: durur, kanatlar kapanır, burun hedefe döner. Son .2 sn: 15 birimlik altın ok şeridi (w 1.3). T2 U dönüşlü ikinci dalış, T3 üç dalış.'},
+{no:6,id:'dominion',kind:'yeni',side:'melek',role:'tank',name:'Dominion',fn:buildDominion,
+ stats:'hp 22 · speed 2.0 · r 1.7 · sc 1.3 · mass 2.8 · hold 4.0 · slam 4.4 · cost 2.6',
+ enemy:"dominion:{name:'Dominion',tag:'move',mass:2.8,role:'tank',hold:4,slam:4.4,hp:22,r:1.7,speed:2,sc:1.3,angel:true,cost:2.6,xp:2.8,gold:16,score:300,build:()=>buildDominion()},",
+ why:'Tarifteki 3 düz plaka yerine 3 eğri kalkan yayı (70° x 3 = 210° kapalı, 150° açık): kapalı oran koddaki sayıyla birebir aynı ve Bulwark\'ın düz kalkanından silüetle ayrışır. Yaylar dönerken boşluk görünür. Yaylarda dış hat yok (açık silindir; dış hat çizimi kayar).',
+ inspo:'Heavy\'nin yere vuruş halkası + Archon boss\'unun kalkan penceresi. Archero\'da tank neredeyse yok.',
+ tele:{1:[R(0,0,4.4,AC)],2:[R(0,0,4.4,AC),R(0,0,7,AC,.4)],3:[R(0,0,4.4,AC),R(0,0,7,AC,.4),...ringAt(0,0,3,6,2.2,AC,.4)]},
+ teleNote:'1.0 sn: zeminde altın halka r 4.4 dolar, patlamadan .25 sn önce beyaza döner; plakalar durup içeri çekilir. T2 dış halka r 7.0, T3 3 uydu halka r 2.2.'},
+/* ---------- NEW · ARCHERO ROLES ---------- */
+{no:7,id:'sentry',kind:'yeni',side:'makine',role:'pattern turret',name:'Sentry',fn:buildSentry,
+ stats:'hp 12 · speed 0 · still · seat · r 1.1 · sc 1 · mass 5 · cost 1.6',
+ enemy:"sentry:{name:'Sentry',tag:'move',mass:5,role:'pattern',hp:12,r:1.1,speed:0,sc:1,still:true,seat:true,cost:1.6,xp:1.6,gold:10,score:200,build:()=>buildSentry()},",
+ why:'Heavy ailesi paleti, dört yüzde dört namlu: desen (artı / çarpı) modelin kendisinde okunuyor. Dönen tambur "bir sonraki salvo" için ayrı bir animasyon bırakıyor. Yürümediği için taban silindiri: yere cıvatalı.',
+ inspo:'Archero Tree Stump (4 yön, mavide 8 yön). Vampire Survivors\'ın sabit yönlü atıcıları.',
+ tele:{1:[...[0,90,180,270].map(a=>S(0,0,a,16.8,.35,MC)),...[45,135,225,315].map(a=>S(0,0,a,16.8,.35,MC,.3))],2:[...[0,45,90,135,180,225,270,315].map(a=>S(0,0,a,16.8,.35,MC))],3:[...[0,45,90,135,180,225,270,315].map(a=>S(0,0,a,16.8,.35,MC)),...[22.5,67.5,112.5,157.5,202.5,247.5,292.5,337.5].map(a=>S(0,0,a,16.8,.35,MC,.3))]},
+ teleNote:'.8 sn: namlu lambaları yanıp söner, zeminde mermi yolunu birebir gösteren 4 çizgi (w .35, menzil 16.8). Sonraki desen (artı / çarpı) soluk çizgilerle önceden okunur.'},
+{no:8,id:'borer',kind:'yeni',side:'makine',role:'ground-emerger',name:'Borer',fn:buildBorer,
+ stats:'hp 10 · speed 4.2 (yer altı 6) · r 1.2 · sc 1.1 · mass 1.6 · cost 1.8',
+ enemy:"borer:{name:'Borer',tag:'move',mass:1.6,role:'emerger',hp:10,r:1.2,speed:4.2,sc:1.1,cost:1.8,xp:1.8,gold:11,score:230,build:()=>buildBorer()},",
+ why:'Yatay silindir + önde hardal matkap: yönü ve yüzeye çıkış anını açık söyler. Yer altındayken model gizlenir, bu yüzden silüet yüzeyde tam görünmeli: düşük, uzun, tek bir ayırt edici parça (matkap). Toz halkayı örtmez.',
+ inspo:'Archero Brown Worm / Blue Worm (toprak altından çıkıp 3 yaylı mermi).',
+ tele:{1:[R(0,0,1.6,MC),R(0,8,1.2,MC),R(-3.2,7,1.2,MC),R(3.2,7,1.2,MC)],2:[R(0,0,1.6,MC),R(0,8,1.2,MC),R(-3.2,7,1.2,MC),R(3.2,7,1.2,MC),R(-6.4,6,1.2,MC),R(6.4,6,1.2,MC)],3:[R(0,0,1.6,MC),R(0,8,1.2,MC),R(-3.2,7,1.2,MC),R(3.2,7,1.2,MC),R(-6.4,6,1.2,MC),R(6.4,6,1.2,MC),R(0,10,1.2,MC,.4),R(-3.2,9,1.2,MC,.4),R(3.2,9,1.2,MC,.4)]},
+ teleNote:'Çıkıştan .9 sn önce r 1.6 kırmızı halka + çatlak. Her mermi için .9 sn iniş halkası r 1.2. T2: 5 mermi, T3: 5 + ikinci kısa salvo (soluk halkalar).'},
+{no:9,id:'hopper',lift:1.3,kind:'yeni',side:'makine',role:'erratic hopper',name:'Hopper',fn:buildHopper,
+ stats:'hp 8 · speed 5 (zıplama) · r 1.0 · sc .9 · mass .9 · cost 1.2',
+ enemy:"hopper:{name:'Hopper',tag:'move',mass:.9,role:'hopper',hp:8,r:1,speed:5,sc:.9,cost:1.2,xp:1.2,gold:8,score:150,build:()=>buildHopper()},",
+ why:'Tek yay bacak: tek başına "zıplıyor" diyor; yay çömelirken kısalır (leg.scale.y), bu .35 sn uyarının kendisi. Tehlike sarısı aksan rengi makine paletinde tek sıcak renk: ayak plakası ve şerit, mermi turuncusuyla karışmayacak kadar sarı.',
+ inspo:'Archero Green Slime, Blue Spider, Mummy (rastgele zıplar; buffed Mummy inince 6 mermi). Chain Gunner\'ın "dur ve poz ver" uyarısı çömelmeye dönüştü.',
+ tele:{1:[R(0,4.5,1.6,MC),...[45,135,225,315].map(a=>S(0,4.5,a,6,.3,MC,.35))],2:[R(0,4.5,1.6,MC),...[45,135,225,315].map(a=>S(0,4.5,a,6,.3,MC))],3:[R(0,4.5,2.2,MC),...[0,60,120,180,240,300].map(a=>S(0,4.5,a,6,.3,MC))]},
+ teleNote:'.35 sn çömelme (yay kısalır, göz yanıp söner), zıplamadan inişe .5 sn iniş halkası r 1.6 (= gerçek şok yarıçapı). 3. zıplayışta (T2/T3: 2.) 4 çapraz / 6 altıgen mermi çizgisi.'},
+{no:10,id:'emissary',kind:'yeni',side:'melek',role:'teleporter',name:'Emissary',fn:buildEmissary,
+ stats:'hp 10 · speed 3.4 · angel · r 1.2 · sc 1.1 · mass 1.0 · band [5,9] · cost 2.1',
+ enemy:"emissary:{name:'Emissary',tag:'move',mass:1,role:'teleporter',band:[5,9],hp:10,r:1.2,speed:3.4,sc:1.1,angel:true,cost:2.1,xp:2.1,gold:13,score:250,build:()=>buildEmissary()},",
+ why:'İnsansı melek: tek "yürüyen" melek ailesinin (Dominion\'la birlikte) ince, uzun kolu. Altın omuz plakaları, koyu pelerin ve yerden .4 süzülme onu Dominion\'dan ayırır; mızrak ışıklı (basic) olduğu için hamle şeridiyle aynı altın.',
+ inspo:'Archero Knight (oyuncunun yanına ışınlanır). Blinker elit özelliğinin çekirdek mob hali; mor halka değil altın halka.',
+ tele:{1:[R(0,0,1.4,AC),S(0,0,0,6,1.3,AC,.8)],2:[R(0,0,1.4,AC),S(0,0,0,6,1.3,AC,.8),R(-4,6,1.4,AC,.6),S(-4,6,20,6,1.3,AC,.5)],3:[R(0,0,1.4,AC),S(0,0,30,6,1.3,AC,.8),S(0,0,-30,6,1.3,AC,.5)]},
+ teleNote:'Varış noktasında .6 sn r 1.4 altın halka; varıştan sonra mızrak iner, .5 sn 6 birimlik hamle şeridi (w 1.3). T2 ikinci halka + şerit, T3 V şeklinde iki şerit.'},
+{no:11,id:'aureole',kind:'yeni',side:'melek',role:'boomerang',name:'Aureole',fn:buildAureole,
+ stats:'hp 9 · speed 3.0 · fly · angel · r 1.0 · sc .95 · mass .8 · band [7,11] · cost 1.8',
+ enemy:"aureole:{name:'Aureole',tag:'move',mass:.8,role:'boomerang',band:[7,11],hp:9,r:1,speed:3,sc:.95,fly:true,angel:true,cost:1.8,xp:1.8,gold:11,score:200,build:()=>buildAureole()},",
+ why:'Küre + birbirine dik iki halka: atılacak chakram modelin parçası olarak zaten okunuyor (dik halka). Warden\'ın göz küresi + yatay halkalarından farkı: iç içe çapraz halkalar ve kırmızı çekirdeğin öne bakması; Ophan\'dan farkı: halkalar küçük ve kürenin içinde.',
+ inspo:'Archero BlueScythe Mage (dönen orak; buffed hali 3 orak).',
+ tele:{1:[S(0,0,0,11,.4,AC),...ret([0],11),P(0,11,.4,AC)],2:[...spread([-20,0,20],11,.4,AC),...ret([-20,0,20],11)],3:[...spread([-20,0,20],11,.4,AC),...ret([-20,0,20],11),S(0,11,40,8,.4,AC,.45)]},
+ teleNote:'.6 sn: halka hızlanıp parlar; gidiş hattı w .4 altın şerit. Chakram asılıyken Aureole ile arasında ince çizgi (dönüş yolu). T2: 3 chakram yelpazesi, T3: ortadaki ikinci kez fırlar.'},
+{no:12,id:'cantor',kind:'yeni',side:'melek',role:'summoner',name:'Cantor',fn:buildCantor,
+ stats:'hp 8 · speed 3.2 · fly · angel · r 1.1 · sc 1 · mass .6 · band [9,13] · cost 1.8 · elite:false',
+ enemy:"cantor:{name:'Cantor',tag:'focus',mass:.6,role:'summoner',band:[9,13],hp:8,r:1.1,speed:3.2,sc:1,fly:true,angel:true,cost:1.8,xp:1.8,gold:11,score:200,build:()=>buildCantor(),elite:false},",
+ why:'Uzun cüppe koni (Cherub\'ın küçük koni eteğinin büyüğü) ve arkadaki 4 küçülen halo halkası: "koro şefi" okunur, silah yok. Halka tonu altın, Cherub\'ın tek halo\'sundan 4 halka olmasıyla ayrışır. Kitap kalkınca çağrı başlar.',
+ inspo:'Archero Blue Blob (çağıran mob), Summoner elit özelliği (7-9 sn\'de 2 yardımcı, en çok 4).',
+ tele:{1:[R(4,6,1.2,AC),R(-4,6,1.2,AC)],2:[R(4,6,1.2,AC),R(-4,6,1.2,AC),R(0,8.5,1.2,AC)],3:[R(4,6,1.2,AC),R(-4,6,1.2,AC),R(0,8.5,1.2,AC),R(6,3.5,1.2,AC,.4),R(-6,3.5,1.2,AC,.4)]},
+ teleNote:'1.2 sn kanal: kitap kalkar, iki doğum noktasında r 1.2 altın halka dolar (oyuncudan ≥4 birim). T2: 3 çağrı, T3: ikinci çağrı için soluk halkalar.'},
+/* ---------- VARIANTS · EXISTING 14 ---------- */
+{no:13,id:'drone',kind:'varyant',side:'makine',role:'kiter',name:'Drone',fn:buildDrone,
+ stats:'hp 5 · speed 3.4 · band [6,10.5] · sc .8 · cost 1.0',
+ why:'T1 bugünkü model. T2/T3 aynı fonksiyon: sadece aksan (mats[1]: koyu kırmızı) patina olur; T3\'te gövde (mats[0]) karartılır, aksan kemik. Rafal çizgisi ve .38 sn lamba aynı kalır.',
+ inspo:'Archero Skeleton Archer; Gungeon Ashen Bullet Kin.',
+ tele:{1:[S(0,0,0,12,.3,MC)],2:[S(0,0,0,12,.3,MC)],3:[S(0,0,0,12,.3,MC),S(0,0,7,12,.3,MC,.6),S(2.5,0,0,12,.3,MC,.35)]},
+ teleNote:'.38 sn namlu lambası + öncül nişan çizgisi. T2 3 mermilik rafal, T3 ilk/son öncül + yana kayıp ikinci rafal.'},
+{no:14,id:'heavy',kind:'varyant',side:'makine',role:'tank',name:'Heavy',fn:buildHeavy,
+ stats:'hp 20 · speed 2.4 · hold 4.2 · slam 4.6 · sc 1.25 · cost 2.6',
+ why:'Hardal aksan patina / kemik olur, çelik kahve gövde T3\'te karartılır. Omuzluk, yumruk ve havalandırma aynı: silüet değişmez. Havalandırmanın turuncu parıltısı tier ile değişmez (uyarı parçası).',
+ inspo:'Archero Rock Golem (3 kaya → 5), Blue Living Bomb.',
+ tele:{1:[R(0,0,4.6,MC),F(0,0,0,10,34,MC,.3)],2:[R(0,0,4.6,MC),F(0,0,0,10,50,MC,.3),F(0,0,0,10,50,MC,.15)],3:[R(0,0,4.6,MC),R(0,3,4.6,MC,.5),F(0,0,0,10,34,MC,.3)]},
+ teleNote:'Slam .85 sn kırmızı halka r 4.6, yelpaze .5 sn. T2 7\'li + ikinci yelpaze, T3 3 birim adım + ikinci slam halkası.'},
+{no:15,id:'spark',kind:'varyant',side:'makine',role:'rusher',name:'Spark',fn:buildSpark,
+ stats:'hp 3 · speed 7.5 · fuse .55 · cost 0.7',
+ why:'Dikenler aksan (mats[1]): T2 patina, T3 kemik. Gövde T3\'te 0x1c1a24: orijinal 0x2a2632\'ye çok yakın, T3 gövde farkı çok az görünür, ayrımı dikenler ve plakalar taşıyor.',
+ inspo:'Archero Blue Living Bomb; Yellow Skull (ölünce 2 White Skull).',
+ tele:{1:[R(0,0,1.7,MF),R(0,0,2.6,MF,.3)],2:[R(0,0,1.7,MF),R(0,0,2.6,MF,.3),P(2.2,2.2,.25,MF),P(-2.2,2.2,.25,MF),P(2.2,-2.2,.25,MF),P(-2.2,-2.2,.25,MF)],3:[R(0,0,1.7,MF),R(0,0,2.6,MF,.3),P(2.2,2.2,.25,MF),P(-2.2,2.2,.25,MF),P(2.2,-2.2,.25,MF),P(-2.2,-2.2,.25,MF),R(1.4,0,.6,MF,.5),R(-1.4,0,.6,MF,.5)]},
+ teleNote:'.55 sn fitil: r 1.6-1.75 turuncu halka, çekirdek parlar (patlama r 2.6 soluk). T2 çapraz kıymık noktaları, T3 bölünme halkaları.'},
+{no:16,id:'crawler',kind:'varyant',side:'makine',role:'flanker',name:'Crawler',fn:buildCrawler,
+ stats:'hp 9 · speed 5.5 · band [5.5,8] · cost 1.4',
+ why:'Koyu kırmızı aksan (mats[1]: bacak uçları, ön şerit) patina olur. Taret ve göz aynı. Plaka taretin üstüne gelir.',
+ inspo:'Archero Blue Spider; Red Spider (4 çapraz mermi, buffed iz bırakır).',
+ tele:{1:[S(0,0,0,12,.3,MC),R(-3,5,1.2,MC,.6),R(3,5,1.2,MC,.6)],2:[S(0,0,0,12,.3,MC),R(0,6,1.2,MC,.6),R(-3.5,3,1.2,MC,.6),R(3.5,3,1.2,MC,.6)],3:[S(0,0,0,12,.3,MC),R(0,6,1.2,MC,.6),R(-3.5,3,1.2,MC,.6),R(3.5,3,1.2,MC,.6),S(0,0,90,4,.5,MC,.6),R(4,0,1.2,MC,.4)]},
+ teleNote:'Rafal .3 sn lamba; mayın için yanıp sönen halka (yarıçap tahmin: 1.2). T2: 3 mayın, T3: yana atılma oku + atılma noktasına mayın.'},
+{no:17,id:'howitzer',kind:'varyant',side:'makine',role:'artillery',name:'Howitzer',fn:buildHowitzer,
+ stats:'hp 12 · speed 0 · cost 2.2',
+ why:'Aksan hardal (mats[1]) patina olur; palet ve namlu koyu gövde. Plaka paletin üstüne. Hedef halkası kırmızı kalır (modelde invisible, nofit).',
+ inspo:'Archero Blue / Red Living Bomb, Worm.',
+ tele:{1:[R(0,8,2.3,MC)],2:[R(0,8,2.3,MC),R(-1.6,5.2,2.3,MC),R(1.6,5.2,2.3,MC)],3:[R(0,8,2.3,MC),R(-1.6,5.2,2.3,MC),R(1.6,5.2,2.3,MC),R(0,8,1.6,MO,.5),R(-1.6,5.2,1.6,MO,.5),R(1.6,5.2,1.6,MO,.5)]},
+ teleNote:'1.2 sn kırmızı iniş halkası r 2.3 (opaklık artar). T2 3 mermi (3.2 aralıklı üçgen), T3 inişte 2.5 sn yanan zemin (turuncu kor halkası).'},
+{no:18,id:'lancer',kind:'varyant',side:'makine',role:'sniper',name:'Lancer',fn:buildLancer,
+ stats:'hp 9 · speed 3.2 · band [11,17] · sc 1.05 · cost 2.0',
+ why:'Beyaz aksan (mats[1]: namlu parçası) patina olur: çelik mavi gövde ve cyan göz aynı kalır. Lazer çizgisi tier ile değişmez.',
+ inspo:'Archero Laser Mage ve Cactus. Beacon\'la ilişkisi: Lancer saklanmayı, Beacon hareketi öğretir.',
+ tele:{1:[S(0,0,0,20,.12,MC)],2:[S(0,0,0,20,.12,MC),S(0,0,3,20,.12,MC,.5)],3:[S(0,0,9.5,20,.12,MC),S(0,0,-9.5,20,.12,MC)]},
+ teleNote:'1.4 sn lazer izler, .35 sn kilit (titrer). T2 ikinci atış çizgisi, T3 oyuncunun iki yanına çizgi (ortada çizgi yok).'},
+{no:19,id:'bulwark',kind:'varyant',side:'makine',role:'tank',name:'Bulwark',fn:buildBulwark,
+ stats:'hp 24 · speed 1.8 · hold 3.4 · sc 1.15 · cost 2.4',
+ why:'Hardal aksan hem gövdede hem kalkan şeridinde: recolor() inline toon kopyasını da boyar, kalkan şeridi de patina olur. Altıgen halka turuncu kalır.',
+ inspo:'Archero Rock Golem; Gungeon Tanker.',
+ tele:{1:[F(0,0,0,13.6,29,MC,.3)],2:[F(0,0,0,10,55,MC,.3)],3:[F(0,0,0,10,55,MC,.2),F(0,0,0,3.4,69,MC,.5)]},
+ teleNote:'.45 sn yelpaze uyarısı. T2 9\'lu dar yelpaze, T3 kalkan darbesi: .7 sn kırmızı yay (1.2 rad, menzil 3.4).'},
+{no:20,id:'seraph',kind:'varyant',side:'melek',role:'charger',name:'Seraph',fn:buildSeraph,
+ stats:'hp 7 · speed 5 · fly · band [5,8] · cost 1.3',
+ why:'Ana renk (mats[0]: beyaz kristal ve kanat) T2\'de gül, T3\'te obsidyen. Lavanta kanat tüyleri ve altın halo yerinde kalır, silüet okunur. T3 obsidyen koyu parçalarla (0x2a2232) aynı tonda: kristal ve uçlar birleşir, dış hat bunu ayırır.',
+ inspo:'Archero Red-Winged Bat; Brown Wolf (3 hücum).',
+ tele:{1:[S(0,0,0,12,1.4,AC)],2:[S(0,0,0,12,1.4,AC),S(0,12,200,12,1.4,AC,.5)],3:[S(0,0,0,12,1.4,AC),S(0,12,200,12,1.4,AC,.5),R(0,12,.6,AC),F(0,12,0,6,50,AC,.3)]},
+ teleNote:'.65 sn çekirdek şişer ve titrer; son .25 sn altın şerit (12 birim). T2 ikinci hücum, T3 bitişte 5\'li tüy yelpazesi.'},
+{no:21,id:'mini',kind:'varyant',side:'melek',role:'charger (minion)',name:'Mini seraph',fn:()=>buildSeraph(.7),srcFn:buildSeraph,call:'buildSeraph(.7)',
+ stats:'hp 4 · speed 6 · fly · sc .7 · cost .8 · xp 0',
+ why:'Seraph\'in .7 ölçeği: aynı boyama, rütbe plakası modelin üstüne konur (tarifteki "kanat ucu" yerine; brief\'e uyuyor).',
+ inspo:'Archero Red Skeleton Archer; Bee sürüsü.',
+ tele:{1:[S(0,0,0,12,1,AC)],2:[S(0,0,0,12,1,AC),S(0,12,140,7,1,AC,.35)],3:chain(0,0,[[0,12],[140,7],[-20,5]],1,AC)},
+ teleNote:'.5 sn; altın şerit son .18 sn. T2 duvardan seken soluk ikinci şerit, T3 iki sekme.'},
+{no:22,id:'warden',kind:'varyant',side:'melek',role:'denial',name:'Warden',fn:buildWarden,
+ stats:'hp 11 · speed 3 · fly · band [8,12] · cost 1.9',
+ why:'Ana renk (mats[0]) göz küresini ve 4 taç yaprağını birlikte boyar (ikisi aynı materyal); altın halkalar ve zincirler (mats[1]) sabit kalır. Halka ve göz çekirdeği basic() olduğu için uyarı rengi değişmez.',
+ inspo:'Archero Fire Spirit (2 volley), Electric Spirit.',
+ tele:{1:spread(Array.from({length:10},(_,i)=>i*36),9,.22,AC),2:[...spread(Array.from({length:10},(_,i)=>i*36),9,.22,AC),...spread(Array.from({length:10},(_,i)=>i*36+18),9,.22,AC,.4)],3:[...spread(Array.from({length:10},(_,i)=>i*36),9,.22,AC),...spread(Array.from({length:10},(_,i)=>i*36+18),9,.22,AC,.4),...spread([-12,-4,4,12],10,.25,AC,.8)]},
+ teleNote:'.5 sn: taç yaprakları açılır. 10\'lu halka (hız 6.5). T2 ikinci halka (18° kayık), T3 yapraklardan 4 nişanlı mermi.'},
+{no:23,id:'shardling',kind:'varyant',side:'melek',role:'kiter (splitter)',name:'Shardling',fn:buildShardling,
+ stats:'hp 8 · speed 3 · fly · band [6,10] · cost 1.6',
+ why:'Ana kristal mavi (mats[0]) gül / obsidyen olur, alt kristaller (mats[1]) açık mavi kalır. Kendi renkli bir mob olduğu için mermi mavi 0x8fd0ff: tier mermiyi değiştirmez.',
+ inspo:'Archero Brown Rock Golem (ölünce 2\'ye bölünür); Gungeon Chain Gunner ölüm halkası.',
+ tele:{1:spread([0,-12.6,12.6],9.5,.2,SB),2:spread([0,-10.3,10.3,-20.6,20.6],9.5,.2,SB),3:[...spread([0,-12.6,12.6],9.5,.2,SB),...ringAt(0,0,3,1.5,.6,SB,.4)]},
+ teleNote:'.4 sn; 3 kristal (±.22 rad). T2 5 kristal, T3 ölünce 3 parçaya bölünür (bölünme halkaları).'},
+{no:24,id:'cherub',kind:'varyant',side:'melek',role:'support',name:'Cherub',fn:buildCherub,
+ stats:'hp 7 · speed 4.6 · fly · cost 1.5 · elite:false',
+ why:'Ana renk (mats[0]: krem küre ve etek) gül / obsidyen; altın bant ve kanat altın kalır. Aura yeşil 0x7dff9a: iyileştirme rengi, tier ile değişmez.',
+ inspo:'Kendi oyunumuz; Archero\'da support neredeyse yok.',
+ tele:{1:[R(0,0,4.6,GR,.7)],2:[R(0,0,4.6,GR,.7),R(3,3,1,GR,.6)],3:[R(0,0,4.6,GR,.4),R(0,0,6.2,GR,.6),R(0,7.5,.8,GR)]},
+ teleNote:'Aura r 4.6; kalkan darbesi halkayı .6 sn genişletir. T2 kurtarma halkası, T3 aura r 6.2 + ışınlanma hedef halkası.'},
+{no:25,id:'censer',kind:'varyant',side:'melek',role:'artillery',name:'Censer',fn:buildCenser,
+ stats:'hp 10 · speed 1.8 · fly · band [8,12] · cost 2.0',
+ why:'mats[0] altın (halka, zincirler, kep): gül / obsidyen olur; kafes koyu ve çekirdek altın kalır. T3\'te zincir ve kafes aynı koyu tona iner: yanan çekirdek tek altın nokta olarak okunur.',
+ inspo:'Archero Purple Orb Mage (güdümlü orb).',
+ tele:{1:spread([0,40,-40],7,.3,AC),2:spread([0,20,-20,40,-40],7,.3,AC),3:[...spread([0,20,-20,40,-40],7,.3,AC),...dotsAt(0,9,6,1.5,.25,AC)]},
+ teleNote:'.55 sn orblar gövdede parlayıp yükselir. T2 5 orb, T3 6\'lı yavaş halka patlaması.'},
+{no:26,id:'ophan',kind:'varyant',side:'melek',role:'charger (rolling)',name:'Ophan',fn:buildOphan,slot:{main:1},
+ stats:'hp 16 · speed 11 · band [6,10] · cost 2.8',
+ why:'mats[0] altın halkalar, mats[1] beyaz göz küreleri: ana renk göz beyazıdır, bu yüzden applyTier(…, {main:1}) ile gövde olarak mats[1] boyanır. Halkalar altın kalır: silüetin iskeleti sabit.',
+ inspo:'Archero Rock Golem (dönen kaya), Brown Wolf (3 hücum).',
+ tele:{1:[S(0,0,0,22,3.6,AC,.8)],2:[S(0,0,0,22,3.6,AC,.8),S(0,22,130,12,3.6,AC,.4)],3:[S(0,0,0,22,3.6,AC,.8),S(0,22,130,12,3.6,AC,.4),R(0,22,3.5,AC,.35),...dotsAt(0,22,8,3.5,.2,AC)]},
+ teleNote:'.85 sn altın şerit (w = 2r = 3.6). T2 ikinci yuvarlanma, T3 duruş noktasında 8\'li halka.'},
+/* ---------- MIRROR · FINAL STAGE ---------- */
+{no:27,id:'mirror-azure',kind:'ayna',side:'ayna',role:'seri tüfek',name:'Ayna · Azure',fn:()=>buildMirror('azure'),srcFn:buildMirror,call:"buildMirror('azure')",mirror:'azure',
+ stats:'oyuncu hp 100 · speed 8.6 · Type-00 rapid rifle (oyuncu verisi, mob değeri yok)',
+ why:'Oyuncunun buildMech\'i: aynı silüet, aynı çerçeve. Hubris ile mavi → koyu çelik mavi (hue kalır, 0.62 karışım), gözler cyan → düşman kırmızısı, 6 kırmızı çatlak, boynuz ×2 uzar. Mor yok (bozulmuş meleğe ait). Tüfek ucuna kırmızı lamba.',
+ inspo:'Hades "shade" kopyaları: oyuncu silüeti, ters palet.',
+ tele:{1:[S(0,0,0,14,.4,MC),S(0,0,0,14,.9,MC,.15)]},
+ teleNote:'[öneri] Namlu lambası + 14 birimlik öncül nişan çizgisi (w .4), makine kırmızısı.'},
+{no:28,id:'mirror-crimson',kind:'ayna',side:'ayna',role:'pompalı',name:'Ayna · Crimson',fn:()=>buildMirror('crimson'),srcFn:buildMirror,call:"buildMirror('crimson')",mirror:'crimson',
+ stats:'oyuncu hp 100 · speed 10.4 · Type-02 scatter cannon (oyuncu verisi)',
+ why:'Crimson\'ın yelken omuz çıtaları korunur, gövde kömür kırmızısına iner. Pompalı için geniş ağızlı namlu + iki yan boru: yakın menzil silüeti.',
+ inspo:'Hades kopya düşman fikri; Gungeon pompalı (Shotgun Kin).',
+ tele:{1:[F(0,0,0,8,40,MC,.35),...spread([-20,-13,-7,0,7,13,20],8,.12,MC,.8)]},
+ teleNote:'[öneri] .5 sn yelpaze: 40° koni, 7 saçma çizgisi, menzil 8.'},
+{no:29,id:'mirror-verdant',kind:'ayna',side:'ayna',role:'delici mızrak',name:'Ayna · Verdant',fn:()=>buildMirror('verdant'),srcFn:buildMirror,call:"buildMirror('verdant')",mirror:'verdant',
+ stats:'oyuncu hp 140 · speed 7.6 · Type-01 pierce lance (oyuncu verisi)',
+ why:'Verdant\'ın uzun boynuzu zaten en uzunu: ×2 ile en dramatik siluet. Mızrak: 2.2 uzunluklu çubuk + uç; çizgi bloklardan geçer, uyarı şeridi bunu gösterir.',
+ inspo:'Judgement Lance (oyuncunun kendi yeteneği) düşman hali.',
+ tele:{1:[S(0,0,0,16,.9,MC,.6),S(0,0,0,16,.25,WH,.5)]},
+ teleNote:'[öneri] .7 sn: w .9 şerit (bloklardan geçer), kilitte beyaz çekirdek çizgi.'},
+];
+
+/* ================= PREVIEW ENGINE (not part of models.js) ================= */
+const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
+const el=(tag,cls,html)=>{ const e=document.createElement(tag); if(cls) e.className=cls; if(html!=null) e.innerHTML=html; return e; };
+const hex=c=>'#'+c.toString(16).padStart(6,'0');
+const W1=420,H1=315,W2=900,H2=380;
+const errors=[];
+function mkGL(w,h){ const r=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true}); r.setPixelRatio(1); r.setSize(w,h,false); r.setClearColor(0x120d1a,1); return r; }
+let GL1,GL2; try{ GL1=mkGL(W1,H1); GL2=mkGL(W2,H2); }catch(e){ errors.push('WebGL açılamadı: '+e.message); }
+
+/* ---- palette modes (brief palette is the default; alt is an alternative proposal) ---- */
+const PALS={
+  brief:{ machine:{2:{accent:0x2fa890},3:{main:0x1c1a24,accent:0xd8d0b8}}, angel:{2:{main:0xe89ab8},3:{main:0x2a2232}} },
+  alt:  { machine:{2:{accent:0x7fae3a},3:{main:0x16141c,accent:0xe8dfc4}}, angel:{2:{main:0x9ac8e8},3:{main:0x4a5062}} }
+};
+let palMode='brief';
+function setPal(mode){ palMode=mode; Object.assign(TIER_PAL,JSON.parse(JSON.stringify(PALS[mode]))); }
+
+/* ---- scene helpers ---- */
+function newScene(){ const sc=new THREE.Scene(); sc.add(new THREE.HemisphereLight(0xffd6b8,0x2a1d3a,.8)); const sun=new THREE.DirectionalLight(0xffe6cc,.95); sun.position.set(-14,26,18); sc.add(sun); const rim=new THREE.DirectionalLight(0xff7a40,.35); rim.position.set(-20,8,-30); sc.add(rim); return sc; }
+const FLOOR=new THREE.MeshBasicMaterial({color:0x1a1424}), LINE=new THREE.LineBasicMaterial({color:0x2e2542});
+function bboxOf(root){ const bb=new THREE.Box3(), tmp=new THREE.Box3(); root.updateMatrixWorld(true); // per-mesh geometry boxes: setFromObject would also swallow nofit children (Lancer laser)
+  root.traverse(o=>{ if(o.isMesh&&!o.userData.nofit&&o.material!==outlineMat&&o.visible&&!(o.parent&&o.parent.userData.nofit)){ if(!o.geometry.boundingBox) o.geometry.computeBoundingBox(); tmp.copy(o.geometry.boundingBox).applyMatrix4(o.matrixWorld); bb.union(tmp); } }); return bb; }
+function countParts(m){ let n=0; m.g.traverse(o=>{ if(o.isMesh&&o.material!==outlineMat&&!o.userData.nofit) n++; }); return n; }
+
+/* ---- telegraph shapes -> floor meshes ---- */
+function buildTele(list){
+  const g=new THREE.Group(), items=[]; g.userData.nofit=1;
+  const add=(m,c,base,pulse=1)=>{ m.material=addMat(c,base); m.userData.nofit=1; items.push({m,base,pulse}); return m; };
+  list.forEach(sp=>{
+    const o=sp.o==null?1:sp.o;
+    if(sp.k==='ring'){ const r=add(new THREE.Mesh(new THREE.RingGeometry(Math.max(.04,sp.r-.14),sp.r,56)),sp.c,.85*o); r.rotation.x=-Math.PI/2; r.position.set(sp.x,.06,sp.z); g.add(r);
+      const d=add(new THREE.Mesh(new THREE.CircleGeometry(sp.r,40)),sp.c,.1*o); d.rotation.x=-Math.PI/2; d.position.set(sp.x,.05,sp.z); g.add(d); }
+    else if(sp.k==='strip'){ const grp=new THREE.Group(); grp.position.set(sp.x,.055,sp.z); grp.rotation.y=rd(sp.a); g.add(grp);
+      const p=add(new THREE.Mesh(new THREE.PlaneGeometry(sp.w,sp.len)),sp.c,.46*o); p.rotation.x=-Math.PI/2; p.position.z=sp.len/2; grp.add(p);
+      if(sp.w>.5){ [-1,1].forEach(s=>{ const e=add(new THREE.Mesh(new THREE.PlaneGeometry(.09,sp.len)),sp.c,.8*o,.4); e.rotation.x=-Math.PI/2; e.position.set(s*sp.w/2,.005,sp.len/2); grp.add(e); }); } }
+    else if(sp.k==='fan'){ const arc=rd(sp.arc), t0=rd(sp.a)-Math.PI/2-arc/2;
+      const f=add(new THREE.Mesh(new THREE.CircleGeometry(sp.len,40,t0,arc)),sp.c,.26*o); f.rotation.x=-Math.PI/2; f.position.set(sp.x,.05,sp.z); g.add(f);
+      const e=add(new THREE.Mesh(new THREE.RingGeometry(sp.len-.1,sp.len,40,1,t0,arc)),sp.c,.8*o); e.rotation.x=-Math.PI/2; e.position.set(sp.x,.06,sp.z); g.add(e); }
+    else if(sp.k==='dot'){ const d=add(new THREE.Mesh(new THREE.CircleGeometry(sp.r,16)),sp.c,.85*o); d.rotation.x=-Math.PI/2; d.position.set(sp.x,.065,sp.z); g.add(d); }
+  });
+  g.userData.items=items; return g;
+}
+function teleBounds(list){
+  const b={x0:-1.6,x1:1.6,z0:-1.6,z1:1.6}, pt=(x,z)=>{ b.x0=Math.min(b.x0,x); b.x1=Math.max(b.x1,x); b.z0=Math.min(b.z0,z); b.z1=Math.max(b.z1,z); };
+  list.forEach(s=>{ if(s.k==='ring'){ pt(s.x-s.r,s.z-s.r); pt(s.x+s.r,s.z+s.r); }
+    else if(s.k==='dot'){ pt(s.x-s.r,s.z-s.r); pt(s.x+s.r,s.z+s.r); }
+    else if(s.k==='strip'){ const e=tip(s), nx=Math.cos(rd(s.a))*s.w/2, nz=-Math.sin(rd(s.a))*s.w/2; [[s.x,s.z],[e[0],e[1]]].forEach(([x,z])=>{ pt(x+nx,z+nz); pt(x-nx,z-nz); }); }
+    else if(s.k==='fan'){ for(let i=0;i<=8;i++){ const a=rd(s.a-s.arc/2+s.arc*i/8); pt(s.x+Math.sin(a)*s.len,s.z+Math.cos(a)*s.len); } pt(s.x,s.z); } });
+  return b;
+}
+function floorWide(sc,b){ // grid every 2 units + 4-unit ruler
+  const x0=Math.floor((b.x0-2)/2)*2, x1=Math.ceil((b.x1+2)/2)*2, z0=Math.floor((b.z0-2)/2)*2, z1=Math.ceil((b.z1+2)/2)*2;
+  const fl=new THREE.Mesh(new THREE.PlaneGeometry(x1-x0,z1-z0),FLOOR); fl.rotation.x=-Math.PI/2; fl.position.set((x0+x1)/2,0,(z0+z1)/2); fl.userData.nofit=1; sc.add(fl);
+  const pos=[]; for(let x=x0;x<=x1;x+=2) pos.push(x,.01,z0,x,.01,z1); for(let z=z0;z<=z1;z+=2) pos.push(x0,.01,z,x1,.01,z);
+  const ge=new THREE.BufferGeometry(); ge.setAttribute('position',new THREE.Float32BufferAttribute(pos,3)); const ln=new THREE.LineSegments(ge,LINE); ln.userData.nofit=1; sc.add(ln);
+  const rm=new THREE.MeshBasicMaterial({color:0xffffff}); const bar=new THREE.Mesh(new THREE.PlaneGeometry(4,.22),rm); bar.rotation.x=-Math.PI/2; bar.position.set(x0+2.3,.03,z0+.5); bar.userData.nofit=1; sc.add(bar);
+  [0,4].forEach(d=>{ const t=new THREE.Mesh(new THREE.PlaneGeometry(.18,.8),rm); t.rotation.x=-Math.PI/2; t.position.set(x0+.3+d,.03,z0+.5); t.userData.nofit=1; sc.add(t); });
+  return {x0,x1,z0,z1};
+}
+function fitWide(cam,b,top){
+  const cx=(b.x0+b.x1)/2, cz=(b.z0+b.z1)/2, yaw=rd(18), pitch=rd(52), pts=[[b.x0,0,b.z0],[b.x1,0,b.z0],[b.x0,0,b.z1],[b.x1,0,b.z1],[0,top,0]].map(p=>new THREE.Vector3(...p));
+  for(let d=8;d<260;d+=.5){ cam.position.set(cx-Math.sin(yaw)*Math.cos(pitch)*d,Math.sin(pitch)*d,cz-Math.cos(yaw)*Math.cos(pitch)*d); cam.lookAt(cx,0,cz); cam.updateMatrixWorld(true);
+    if(pts.every(p=>{ const q=p.clone().project(cam); return Math.abs(q.x)<.94&&Math.abs(q.y)<.9; })) break; }
+}
+
+/* ---- idle animation (model functions only build; this lives outside them) ---- */
+const FLY=new Set(['seraph','mini','warden','shardling','cherub','censer','beacon','herald','emissary','aureole','cantor','mender']);
+const pulse=(o,t,k=.2,f=6)=>o&&o.scale.setScalar(1+k*Math.sin(t*f));
+const ANIM={
+  ram:(m,t)=>{ m.plow.rotation.x=Math.sin(t*2)*.12; m.glows.forEach(g=>pulse(g,t,.25)); },
+  coil:(m,t)=>pulse(m.orb,t,.25),
+  mender:(m,t)=>{ m.rotors.forEach((r,i)=>r.rotation.y=t*30*(i%2?1:-1)); pulse(m.tip,t,.2); },
+  beacon:(m,t)=>{ pulse(m.core,t,.2); m.ribbons.forEach((r,i)=>r.rotation.x=Math.sin(t*2+i)*.15); },
+  herald:(m,t)=>{ m.tails.forEach((r,i)=>r.rotation.y=Math.sin(t*3+i)*.12); },
+  dominion:(m,t)=>{ m.plates.rotation.y=t*.7; },
+  sentry:(m,t)=>{ m.drum.rotation.y=t*.35; m.lamps.forEach((l,i)=>l.visible=((t*2+i*.25)%1)<.6); },
+  borer:(m,t)=>{ m.drill.rotation.z=t*5; },
+  hopper:(m,t)=>{ const p=(t*1.1)%1, sq=p<.3?1-.35*Math.sin(p/.3*Math.PI):1, jump=p>.3&&p<.8?Math.sin((p-.3)/.5*Math.PI)*1.3:0; m.leg.scale.y=sq; m.head.position.y=2.35-(1-sq)*1.9; m.g.position.y=jump; },
+  emissary:(m,t)=>{ m.cape.rotation.x=Math.sin(t*2)*.08; m.spear.rotation.x=1.2+Math.sin(t*1.5)*.06; },
+  aureole:(m,t)=>{ m.ringB.rotation.y=t*2.2; pulse(m.core,t,.2); },
+  cantor:(m,t)=>{ m.rings.forEach((r,i)=>r.scale.setScalar(1+.05*Math.sin(t*3+i))); m.book.position.y=.2+Math.sin(t*2)*.04; },
+  seraph:(m,t)=>{ pulse(m.core,t,.2,8); m.ribbons.forEach((r,i)=>r.rotation.x=Math.sin(t*3+i)*.2); },
+  mini:(m,t)=>ANIM.seraph(m,t),
+  warden:(m,t)=>{ m.rings[0].rotation.y=t; m.rings[1].rotation.x=-t*.7; m.chains.forEach((c,i)=>c.rotation.z=Math.sin(t*2+i)*.12); },
+  shardling:(m,t)=>{ m.body.rotation.y=t*.8; },
+  cherub:(m,t)=>{ m.aura.scale.setScalar(1+.04*Math.sin(t*3)); },
+  censer:(m,t)=>{ m.swing.rotation.z=Math.sin(t*1.5)*.12; pulse(m.glow,t,.1,5); },
+  ophan:(m,t)=>{ m.rings[0].rotation.x=t*1.2; m.rings[1].rotation.x=-t*.9; },
+  spark:(m,t)=>{ m.body.rotation.x=t*2; pulse(m.core,t,.2,10); },
+  crawler:(m,t)=>{ m.tur.rotation.y=Math.sin(t)*.4; },
+  howitzer:(m,t)=>{ m.mort.rotation.x=.55+Math.sin(t)*.1; },
+  drone:(m,t)=>{ m.dish.rotation.y=t*2; m.ant.rotation.z=Math.sin(t*3)*.08; },
+  heavy:(m,t)=>{ m.glows.forEach(g=>pulse(g,t,.2)); },
+  bulwark:(m,t)=>{ m.hex.rotation.z=Math.PI/6+t*.8; },
+};
+function animate(entry,m,t,ph){
+  try{
+    if(FLY.has(entry.id)&&m.body){ if(m.body.userData.y0==null) m.body.userData.y0=m.body.position.y; m.body.position.y=m.body.userData.y0+Math.sin(t*1.7+ph)*.15; }
+    const f=ANIM[entry.id]; if(f) f(m,t+ph);
+  }catch(e){ if(!errors.includes(e.message)){ errors.push('anim '+entry.id+': '+e.message); showErrors(); } }
+}
+function poseMech(m){ if(m.legs&&m.arms) { animMech(m,0,0); m.arms[1].rotation.x=-.9; } }
+
+/* ---- views ---- */
+function createView(canvas,kind,spec){
+  const W=kind==='wide'?W2:W1, H=kind==='wide'?H2:H1; canvas.width=W; canvas.height=H;
+  return {canvas,ctx:canvas.getContext('2d'),kind,W,H,GL:kind==='wide'?GL2:GL1,spec,sc:null,cam:new THREE.PerspectiveCamera(30,W/H,.1,500),models:[],tele:null,ph:Math.random()*6};
+}
+function populate(v){ // (re)build scene content for one view
+  v.sc=newScene(); v.models=[]; v.tele=null; const hold=new THREE.Group(); v.hold=hold; v.sc.add(hold);
+  const sp=v.spec;
+  if(v.kind==='close'){
+    const disc=new THREE.Mesh(new THREE.CircleGeometry(7,48),FLOOR); disc.rotation.x=-Math.PI/2; disc.userData.nofit=1; v.sc.add(disc);
+    sp.items.forEach(it=>{ const m=it.build(); poseMech(m); m.g.position.x=it.x||0; hold.add(m.g); if(m.shadow){ m.shadow.userData.nofit=1; m.shadow.position.x=it.x||0; hold.add(m.shadow); } v.models.push({m,x:it.x||0}); });
+    const bb=bboxOf(hold), sz=bb.getSize(new THREE.Vector3()); const lift=(sp.items[0].entry&&sp.items[0].entry.lift)||0; bb.max.y+=lift; sz.y+=lift; const ctr=bb.getCenter(new THREE.Vector3());
+    const rxz=Math.max(...[[bb.min.x,bb.min.z],[bb.min.x,bb.max.z],[bb.max.x,bb.min.z],[bb.max.x,bb.max.z]].map(([x,z])=>Math.hypot(x,z))), Rs=Math.sqrt(rxz*rxz+(sz.y/2)*(sz.y/2)), pitch=rd(24), s15=Math.sin(rd(15));
+    const cam=(R,cy)=>{ const d=R/s15*1.06; return {p:new THREE.Vector3(0,cy+d*Math.sin(pitch),d*Math.cos(pitch)),l:new THREE.Vector3(0,cy,0)}; };
+    v.camFit=cam(Rs,ctr.y); v.camFixed=cam(4.3,2); setCam(v);
+  } else { // wide telegraph view, real scale
+    const list=sp.entry.tele[sp.tier]||sp.entry.tele[1], b=teleBounds(list), fl=floorWide(v.sc,b);
+    const m=sp.entry.mk(sp.tier); poseMech(m); hold.add(m.g); if(m.shadow){ m.shadow.userData.nofit=1; hold.add(m.shadow); } v.models.push({m,x:0});
+    v.tele=buildTele(list); v.sc.add(v.tele);
+    const top=bboxOf(m.g).max.y; fitWide(v.cam,{x0:b.x0-1.2,x1:b.x1+1.2,z0:b.z0-1.2,z1:b.z1+1.2},top);
+  }
+}
+let scaleMode='fit';
+function setCam(v){ if(!v.camFit) return; const c=scaleMode==='fit'?v.camFit:v.camFixed; v.cam.position.copy(c.p); v.cam.lookAt(c.l); }
+function renderView(v,t){
+  v.models.forEach(({m},i)=>animate(v.spec.entry||v.spec.items[i].entry,m,t,v.ph+i));
+  if(v.kind==='close') v.hold.rotation.y=(v.spec.rot0||0)+t*.55;
+  if(v.tele) v.tele.userData.items.forEach(it=>{ it.m.material.opacity=it.base*(it.pulse===.4?.85:.62+.38*Math.sin(t*5.5)); });
+  v.GL.render(v.sc,v.cam); v.ctx.drawImage(v.GL.domElement,0,0);
+}
+
+/* ================= PAGE: cards, filters, code view ================= */
+function showErrors(){ const b=$('#err'); if(!b) return; b.hidden=!errors.length; b.innerHTML='<b>Hata:</b> '+errors.map(e=>String(e).replace(/</g,'&lt;')).join(' · '); }
+const TIER_TXT={1:'T1 · bugünkü model',2:'T2',3:'T3'};
+const BULLET={makine:'mermi #ff5a2a · uyarı #ff3a2a',melek:'mermi #ffc040 / #ffe9a0 · uyarı #ffd36a',ayna:'mermi #ff5a2a · uyarı #ff3a2a (makine)'};
+ENTRIES.forEach(e=>{ e.pal=sideOf[e.side]; e.mk=tier=>{ const m=e.fn(); if(e.pal) applyTier(m,e.pal,tier,e.slot); return m; }; });
+setPal('brief');
+
+function codeText(e){
+  const name=(e.srcFn||e.fn).name, slot=e.slot?`,{main:${e.slot.main}}`:'', call=e.call||`${name}()`;
+  let s=`// Seraph Breaker · Autocrat mob ${String(e.no).padStart(2,'0')}: ${e.name}\n`;
+  if(e.enemy) s+=`\n// ---- js/data.js · ENEMY ----\n${e.enemy}\n`;
+  s+=`\n// ---- js/models.js ----\n${SRC[name]||'// (kaynak bulunamadı)'}\n`;
+  if(e.pal) s+=`\n// ---- tier varyantları (aynı fonksiyon; applyTier ortak kodda) ----\nconst t2=applyTier(${call},'${e.pal}',2${slot});\nconst t3=applyTier(${call},'${e.pal}',3${slot});\n`;
+  return s;
+}
+function copyText(txt,btn){ const done=()=>{ const o=btn.textContent; btn.textContent='kopyalandı'; setTimeout(()=>btn.textContent=o,1200); };
+  if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(done,()=>fallback()); else fallback();
+  function fallback(){ const ta=el('textarea'); ta.value=txt; ta.style.cssText='position:fixed;opacity:0'; document.body.appendChild(ta); ta.select(); try{ document.execCommand('copy'); done(); }catch(_){} ta.remove(); } }
+
+function swatches(m){ return m.mats.map((mt,i)=>`<span class="sw" style="background:${hex(mt.color.getHex())}"></span><code>mats[${i}] ${hex(mt.color.getHex())}</code>`).join(' '); }
+
+function makeCard(e){
+  const card=el('article','card'); card.id='m'+e.no; card.dataset.side=e.side; card.dataset.kind=e.kind; card._e=e; card.vis=false; card.built=false; card.views=[];
+  const head=el('header'); head.innerHTML=`<span class="no">#${String(e.no).padStart(2,'0')}</span><h3>${e.name}</h3><span class="tag s-${e.side}">${e.side}</span><span class="tag">${e.role}</span><span class="tag k-${e.kind}">${e.kind==='yeni'?'yeni mob':e.kind==='varyant'?'varyant · T1/T2/T3':'ayna kopya'}</span>`;
+  card.appendChild(head);
+  const row=el('div','views'); card.appendChild(row);
+  let specs;
+  if(e.mirror){ const u=e.mirror; specs=[
+    {label:'Oyuncu (orijinal buildMech)',spec:{items:[{build:()=>buildPlayerMech(u),entry:e}]}},
+    {label:'Ayna kopya (Hubris)',spec:{items:[{build:()=>buildMirror(u),entry:e}]}},
+    {label:'Yan yana',spec:{items:[{build:()=>buildPlayerMech(u),x:-1.7,entry:e},{build:()=>buildMirror(u),x:1.7,entry:e}]}}]; }
+  else specs=[1,2,3].map(t=>({label:TIER_TXT[t],tier:t,spec:{items:[{build:()=>e.mk(t),entry:e}]}}));
+  specs.forEach(s=>{ const f=el('figure'); const cv=el('canvas'); const cap=el('figcaption',null,s.label); f.append(cv,cap); row.appendChild(f); const v=createView(cv,'close',s.spec); v.tier=s.tier; v.cap=cap; card.views.push(v); });
+  // wide telegraph view
+  const wide=el('div','wide'), tabs=el('div','tabs',`<span>Saldırı uyarısı, gerçek ölçü:</span>`);
+  const wcv=el('canvas'); wide.append(tabs,wcv);
+  const wv=createView(wcv,'wide',{entry:e,tier:1}); card.wide=wv; card.views.push(wv);
+  const tierBtns=[1,2,3].filter(t=>e.tele[t]||t===1).map(t=>{ const b=el('button','tb'+(t===1?' on':''),'T'+t); b.onclick=()=>{ wv.spec.tier=t; $$('.tb',tabs).forEach(x=>x.classList.toggle('on',x===b)); populate(wv); }; tabs.appendChild(b); return b; });
+  if(e.mirror) tabs.querySelector('span').textContent='Saldırı uyarısı (öneri), gerçek ölçü:';
+  wide.appendChild(el('p','note',`<b>Uyarı:</b> ${e.teleNote}`)); wide.appendChild(el('p','legend','Izgara hücresi = 2 birim · beyaz çubuk = 4 birim · mob orijinde, +z\'ye bakar · şeritler/halkalar oyun ölçüsünde'));
+  card.appendChild(wide);
+  const meta=el('dl','meta'); card.meta=meta; card.appendChild(meta);
+  const codebtn=el('button','codebtn','kodu göster'), pre=el('div','codebox'); pre.hidden=true;
+  const cp=el('button','copy','kopyala'), code=el('pre'); pre.append(cp,code);
+  codebtn.onclick=()=>{ pre.hidden=!pre.hidden; codebtn.textContent=pre.hidden?'kodu göster':'kodu gizle'; if(!pre.hidden) code.textContent=codeText(e); };
+  cp.onclick=()=>copyText(codeText(e),cp);
+  card.append(codebtn,pre);
+  return card;
+}
+function fillMeta(c){
+  const e=c._e, v=c.views;
+  const info=[]; let models;
+  try{ models=e.mirror?[v[1].models[0].m]:[1,2,3].map(t=>e.mk(t)); }catch(err){ errors.push(e.name+': '+err.message); showErrors(); return; }
+  const m1=models[0], n1=countParts(m1), n3=models[models.length-1]&&e.pal?countParts(models[2]):n1;
+  const lim=e.kind==='yeni'?(n3<=20?`<span class="ok">≤ 20 ✓</span>`:`<span class="bad">20'yi aşıyor</span>`):(e.kind==='varyant'?`<span class="muted">mevcut model, değişmedi (20 sınırı yeni modeller ve plakalar için)</span>`:`<span class="muted">oyuncunun buildMech'i + kopya parçaları (oyuncu modeli de bu boyutta)</span>`);
+  const row=(k,val)=>`<div class="row"><dt>${k}</dt><dd>${val}</dd></div>`;
+  let h='';
+  h+=row('Parça (mesh)',e.pal?`T1 <b>${n1}</b> · T2 <b>${countParts(models[1])}</b> · T3 <b>${n3}</b> (plakalar dahil) · ${lim}`:`<b>${n1}</b> · ${lim}`);
+  h+=row('breaks',`${m1.breaks?m1.breaks.length:0} kırılan parça, ${m1.breaks?m1.breaks.map(b=>Math.round(b.at*100)+'%').join(' / '):'-'} zırhta düşer`);
+  h+=row('Renk kodları',e.pal?`<div>T1 ${swatches(models[0])}</div><div>T2 ${swatches(models[1])}</div><div>T3 ${swatches(models[2])}</div>`:`<div>Ayna ${swatches(m1)}</div>`);
+  h+=row('Mermi ve uyarı renkleri',`${BULLET[e.side]} <span class="muted">(tier ile değişmez)</span>`);
+  h+=row('Rol / ENEMY ölçeği',`${e.role} · ${e.stats}`);
+  h+=row('Tasarım gerekçesi',e.why); h+=row('İlham',e.inspo);
+  c.meta.innerHTML=h;
+  if(!e.mirror) v.forEach(x=>{ if(x.cap&&x.tier>1&&models[x.tier-1]){ const m=models[x.tier-1], p=TIER_PAL[e.pal][x.tier]||{}; const ms=[]; const mi=e.slot&&e.slot.main!=null?e.slot.main:0; if(p.main!=null) ms.push(`mats[${mi}] ${hex(p.main)}`); if(p.accent!=null) ms.push(`mats[1] ${hex(p.accent)}`); x.cap.textContent=`T${x.tier} · ${ms.join(' · ')} · ${x.tier-1} plaka`; } });
+}
+function buildCard(c){ c.built=true; c.views.forEach(v=>{ try{ populate(v); }catch(err){ errors.push(c._e.name+': '+err.message); showErrors(); } }); fillMeta(c); }
+
+/* ---- page assembly ---- */
+const cards=[], list=$('#cards');
+ENTRIES.forEach(e=>{ const c=makeCard(e); cards.push(c); list.appendChild(c); });
+const nav=$('#nav'); ENTRIES.forEach(e=>{ const a=el('a','chip',`${e.no} ${e.name}`); a.href='#m'+e.no; a.dataset.side=e.side; a.dataset.kind=e.kind; nav.appendChild(a); });
+const ioBuild=new IntersectionObserver(es=>es.forEach(en=>{ if(en.isIntersecting&&!en.target._c.built) buildCard(en.target._c); }),{rootMargin:'900px 0px'});
+const ioVis=new IntersectionObserver(es=>es.forEach(en=>{ en.target._c.vis=en.isIntersecting; }),{rootMargin:'60px 0px'});
+cards.forEach(c=>{ c._c=c; ioBuild.observe(c); ioVis.observe(c); });
+
+/* filters */
+const FILT={side:'hepsi',kind:'hepsi'};
+function applyFilter(){ let n=0; cards.forEach(c=>{ const e=c._e, ok=(FILT.side==='hepsi'||e.side===FILT.side)&&(FILT.kind==='hepsi'||e.kind===FILT.kind); c.hidden=!ok; if(ok) n++; }); $$('#nav a').forEach(a=>{ a.hidden=!((FILT.side==='hepsi'||a.dataset.side===FILT.side)&&(FILT.kind==='hepsi'||a.dataset.kind===FILT.kind)); }); $('#count').textContent=n+' / '+cards.length+' kart'; }
+$$('[data-f]').forEach(b=>b.onclick=()=>{ const [k,v]=b.dataset.f.split(':'); FILT[k]=v; $$(`[data-f^="${k}:"]`).forEach(x=>x.classList.toggle('on',x===b)); applyFilter(); });
+$$('[data-pal]').forEach(b=>b.onclick=()=>{ setPal(b.dataset.pal); $$('[data-pal]').forEach(x=>x.classList.toggle('on',x===b)); cards.forEach(c=>{ if(c.built){ c.views.forEach(v=>populate(v)); fillMeta(c); } }); buildPartsTable(); });
+$$('[data-scale]').forEach(b=>b.onclick=()=>{ scaleMode=b.dataset.scale; $$('[data-scale]').forEach(x=>x.classList.toggle('on',x===b)); cards.forEach(c=>c.views.forEach(setCam)); });
+applyFilter();
+
+/* parts table: every entry built once, offscreen (also a load-time smoke test) */
+function buildPartsTable(){
+  const rows=ENTRIES.map(e=>{ try{ const a=e.mk(1), b=e.mirror?buildMirror(e.mirror):null, c=e.pal?e.mk(3):a, n1=countParts(b||a), n3=countParts(c);
+      return `<tr><td>${e.no}</td><td>${e.name}</td><td>${e.side}</td><td>${n1}</td><td>${e.pal?n3:'-'}</td><td>${(a.breaks||[]).length}</td><td>${a.mats.length}</td><td>${e.kind==='ayna'?'<span class="muted">oyuncu modeli</span>':e.kind==='yeni'?(n3<=20?'<span class="ok">✓ ≤20</span>':'<span class="bad">&gt;20</span>'):'<span class="muted">mevcut</span>'}</td></tr>`; }
+    catch(err){ errors.push(e.name+': '+err.message); return `<tr><td>${e.no}</td><td>${e.name}</td><td colspan="6" class="bad">${err.message}</td></tr>`; } });
+  $('#parts tbody').innerHTML=rows.join(''); showErrors();
+}
+if(GL1) buildPartsTable();
+$('#sharedcode').textContent=`// ---- ortak: tier paleti + applyTier (js/models.js'e) ----\nconst TIER_PAL=${'{'} machine:{2:{accent:0x2fa890},3:{main:0x1c1a24,accent:0xd8d0b8}}, angel:{2:{main:0xe89ab8},3:{main:0x2a2232}} ${'}'};\nconst PLATE_COL=0xf2eef8;\n${SRC.recolor}\n${SRC.applyTier}\n${SRC.addRankPlates}\n`;
+$('#copyshared').onclick=function(){ copyText($('#sharedcode').textContent,this); };
+
+/* loop */
+function loop(ms){ const t=ms/1000; if(GL1&&document.visibilityState==='visible') cards.forEach(c=>{ if(!c.vis||!c.built||c.hidden) return; c.views.forEach(v=>{ if(!v.sc) return; try{ renderView(v,t); }catch(err){ if(!errors.includes(err.message)){ errors.push(c._e.name+': '+err.message); showErrors(); } } }); }); requestAnimationFrame(loop); }
+if(GL1) requestAnimationFrame(loop); else showErrors();
+window.__ready=true;
+
+</script>
+</body>
+</html>
