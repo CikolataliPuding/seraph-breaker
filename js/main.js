@@ -110,7 +110,7 @@ function tick(dt,now){
     if(low&&obstacles.length&&!b.ghost){ const h=sweepBlock(ox,oz,p.x,p.z,rr); if(h){ p.x=ox+(p.x-ox)*h.t; p.z=oz+(p.z-oz)*h.t; if(b.grav) makeHole(p); sparks(p,b.from==='p'?unit.shot:0xff8a40,3,4); killBullet(i,b); continue; } }
     if(b.from==='p'){
       let gone=false;
-      for(const e of enemies){ if(e.dead||e.born<.4)continue; if(b.hit&&b.hit.has(e))continue;
+      for(const e of enemies){ if(e.dead||e.born<.4||e.under)continue; if(b.hit&&b.hit.has(e))continue;
         const shieldPad=e===boss&&boss.barrier>0?1.2:0, r=e.r+b.r*.5+shieldPad, dx=p.x-e.pos.x, dz=p.z-e.pos.z;
         if(segDist(ox,oz,p.x,p.z,e.pos.x,e.pos.z).d2<r*r){ if(b.grav){ makeHole(p); gone=true; break; }
           // Dominion: its turning plates stop plain shots while they are up

@@ -92,7 +92,7 @@ function moveVec(){
   if(mobileMode){ joyVec(_jv); x+=_jv.x; z+=_jv.z; }
   _mv.set(x,0,z); const l=_mv.length(); if(l>1)_mv.divideScalar(l); return _mv;
 }
-function nearestFoe(from,maxD=1e9,cone=null,skip=null){ let best=null,bd=maxD*maxD; for(const e of enemies){ if(e.dead||e.born<.4||(skip&&skip.has(e)))continue; const dx=e.pos.x-from.x,dz=e.pos.z-from.z,d=dx*dx+dz*dz; if(d>=bd)continue; if(cone){ const l=Math.sqrt(d)||1; if((dx*cone.x+dz*cone.z)/l<cone.c) continue; } bd=d; best=e; } return best; }
+function nearestFoe(from,maxD=1e9,cone=null,skip=null){ let best=null,bd=maxD*maxD; for(const e of enemies){ if(e.dead||e.born<.4||e.under||(skip&&skip.has(e)))continue; const dx=e.pos.x-from.x,dz=e.pos.z-from.z,d=dx*dx+dz*dz; if(d>=bd)continue; if(cone){ const l=Math.sqrt(d)||1; if((dx*cone.x+dz*cone.z)/l<cone.c) continue; } bd=d; best=e; } return best; }
 // damage over time (Main Stage follow spot): no invulnerability window, no hit flash or hitstop, dodge and Aegis do not apply; the room curve does
 function dotHurt(d){
   const p=player; if(godMode||!p||p.dead||p.dashT>0||state!=='fight') return;

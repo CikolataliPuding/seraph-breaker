@@ -874,3 +874,87 @@ function buildDominion(){
   g.scale.setScalar(1.3);
   return {g,body,halo,plates,pg,mats:[MW,MG,MD],shadow:blob(1.7),breaks:[{o:pg[0],at:.66},{o:pg[1],at:.33}]};
 }
+/* Archero roles (docs/mob-designs.html 7-12): Sentry pattern turret, Borer burrower, Hopper erratic hopper, Emissary blinker, Aureole boomerang, Cantor summoner */
+function buildSentry(){
+  const g=new THREE.Group();
+  const M1=toon(0x5a5244),M2=toon(0xc08a2a),M3=toon(0x2a2620),ME=basic(0xff3030,false),ML=basic(0xff3a2a,false);
+  part(new THREE.CylinderGeometry(.9,.9,.35,14),M3,g,0,.175,0,.06);
+  const drum=new THREE.Group(); drum.position.y=1.1; g.add(drum);
+  part(box(1,.7,1),M1,drum,0,0,0,.07); part(box(1.04,.12,1.04),M2,drum,0,-.28,0,.03);
+  const lamps=[], bars=[[0,1],[1,0],[0,-1],[-1,0]].map(([dx,dz])=>{ const b=new THREE.Group(); b.rotation.y=Math.atan2(dx,dz); drum.add(b); part(box(.14,.14,.5),M3,b,0,0,.75,.04); const l=new THREE.Mesh(box(.1,.1,.1),ML); l.position.set(0,.12,.98); b.add(l); lamps.push(l); return b; });
+  const eye=new THREE.Mesh(box(.5,.07,.05),ME); eye.position.set(0,.08,.51); drum.add(eye);
+  const top=new THREE.Group(); drum.add(top); part(box(.5,.12,.5),M2,top,0,.41,0,.04); part(box(.05,.5,.05),M3,top,.3,.66,-.2,.03);
+  return {g,drum,bars,lamps,eye,top,mats:[M1,M2,M3],shadow:blob(1.1),breaks:[{o:top,at:.5},{o:bars[1],at:.25},{o:bars[3],at:.25}]};
+}
+function buildBorer(){
+  const g=new THREE.Group(), body=new THREE.Group(); g.add(body);
+  const M1=toon(0x6a5848),M2=toon(0xc08a2a),M3=toon(0x2a2620),ME=basic(0xff3030,false);
+  part(new THREE.CylinderGeometry(.6,.6,1.6,12),M1,body,0,.85,0,.07).rotation.x=Math.PI/2;
+  const drill=new THREE.Group(); drill.position.set(0,.85,.8); body.add(drill);
+  part(new THREE.ConeGeometry(.5,.9,6),M2,drill,0,0,.45,.05).rotation.x=Math.PI/2;
+  [[.43,.28],[.3,.62]].forEach(([r,z])=>part(new THREE.TorusGeometry(r,.05,5,10),M3,drill,0,0,z,.03));
+  [-1,1].forEach(s=>{ part(box(.35,.6,1.4),M3,body,s*.78,.3,0,.06); part(box(.1,.5,1),M2,body,s*.62,.85,-.1,.04); });
+  part(box(.5,.2,.5),M2,body,0,1.52,-.2,.04);
+  const tube=part(new THREE.CylinderGeometry(.22,.22,.9,8),M3,body,0,1.95,-.25,.05); tube.rotation.x=.6;
+  part(box(.5,.4,.3),M3,body,0,.95,-.95,.05); part(box(.3,.18,.3),M3,body,0,1.5,.35,.04);
+  const eye=new THREE.Mesh(box(.4,.07,.05),ME); eye.position.set(0,1.5,.51); body.add(eye);
+  g.scale.setScalar(1.1);
+  return {g,body,drill,tube,eye,mats:[M1,M2,M3],shadow:blob(1.3),breaks:[{o:drill,at:.5},{o:tube,at:.25}]};
+}
+function buildHopper(){
+  const g=new THREE.Group();
+  const M1=toon(0x4c4658),M2=toon(0xe0c02a),M3=toon(0x24202c),ME=basic(0xff3030,false);
+  part(box(.8,.12,.8),M2,g,0,.06,0,.05);
+  const leg=new THREE.Group(); leg.position.y=.12; g.add(leg);
+  for(let i=0;i<5;i++){ const s=part(box(.12,.5,.12),M3,leg,(i%2?.1:-.1),.2+i*.36,0,.03); s.rotation.z=(i%2?-.5:.5); }
+  const head=new THREE.Group(); head.position.y=2.35; g.add(head);
+  part(box(1,.9,1),M1,head,0,0,0,.08); const stripe=part(box(1.05,.14,1.05),M2,head,0,.48,0,.03);
+  const eye=new THREE.Mesh(box(.5,.1,.05),ME); eye.position.set(0,.1,.52); head.add(eye);
+  const arms=[-1,1].map(s=>{ part(box(.18,.18,.18),M3,head,s*.55,.1,0,.03); return part(box(.1,.7,.1),M3,head,s*.62,-.4,.1,.03); });
+  g.scale.setScalar(.9);
+  return {g,leg,head,eye,arms,mats:[M1,M2,M3],shadow:blob(.8),breaks:[{o:arms[0],at:.5},{o:arms[1],at:.5},{o:stripe,at:.25}]};
+}
+function buildEmissary(){
+  const g=new THREE.Group(), body=new THREE.Group(); body.position.y=.4; g.add(body);
+  const MW=toon(0xeee8f4),MG=toon(0xd9a520),MD=toon(0x2a2232),MV=toon(0xd9c9ff);
+  part(new THREE.ConeGeometry(.55,.9,6),MW,body,0,.45,0,.06);
+  part(box(.9,1.4,.6),MW,body,0,1.4,0,.07); part(box(.92,.14,.62),MG,body,0,.95,0,.03);
+  [-1,1].forEach(s=>part(box(.5,.3,.7),MG,body,s*.62,2,0,.05));
+  part(new THREE.OctahedronGeometry(.38,0),MD,body,0,2.5,0,.06);
+  const eye=new THREE.Mesh(box(.3,.06,.05),basic(0xff2a3a,false)); eye.position.set(0,2.52,.3); body.add(eye);
+  const arms=[-1,1].map(s=>part(box(.22,.9,.22),MW,body,s*.68,1.35,.05,.05));
+  const spear=new THREE.Group(); spear.position.set(.68,1.1,.5); spear.rotation.x=1.35; body.add(spear);
+  spear.add(new THREE.Mesh(new THREE.CylinderGeometry(.06,.06,2.4,6),basic(0xffd36a,false))); part(new THREE.ConeGeometry(.14,.4,5),MG,spear,0,1.4,0,.03);
+  const wings=[-1,1].map(s=>{ const w=part(box(1.3,.05,.3),MV,body,s*.9,1.9,-.4,.04); w.rotation.z=s*.5; return w; });
+  const cape=part(box(.8,1.2,.05),MD,body,0,1.35,-.38,.04);
+  const halo=new THREE.Mesh(new THREE.TorusGeometry(.38,.045,6,24),basic(0xffd36a,false)); halo.rotation.x=Math.PI/2; halo.position.y=3.1; body.add(halo);
+  g.scale.setScalar(1.1);
+  return {g,body,arms,spear,wings,cape,halo,eye,mats:[MW,MG,MD,MV],shadow:blob(.8),breaks:[{o:cape,at:.5},{o:wings[0],at:.25},{o:wings[1],at:.25}]};
+}
+function buildAureole(){
+  const g=new THREE.Group(), body=new THREE.Group(); body.position.y=2.6; g.add(body);
+  const MW=toon(0xeee8f4),MG=toon(0xd9a520),MV=toon(0xd9c9ff);
+  part(new THREE.SphereGeometry(.5,16,12),MW,body,0,0,0,.08);
+  const ringA=part(new THREE.TorusGeometry(.8,.06,6,36),MG,body,0,0,0,.04); ringA.rotation.x=Math.PI/2;
+  const ringB=part(new THREE.TorusGeometry(.8,.06,6,36),MG,body,0,0,0,.04);
+  part(new THREE.TorusGeometry(.3,.04,6,24),MG,body,0,0,0,.03).rotation.y=Math.PI/2;
+  const core=new THREE.Mesh(new THREE.SphereGeometry(.22,12,8),basic(0xff2a3a,false)); core.position.z=.42; body.add(core);
+  const ribbons=[-1,0,1].map(i=>{ const p=new THREE.Group(); p.position.set(i*.3,-.55,-.2); body.add(p); part(box(.06,.8,.04),MV,p,0,-.4,0,.03); return p; });
+  const wings=[-1,1].map(s=>{ const w=part(box(.8,.05,.28),MV,body,s*.62,-.3,-.2,.04); w.rotation.z=-s*.3; return w; });
+  part(new THREE.ConeGeometry(.12,.4,5),MG,body,0,.62,0,.03);
+  g.scale.setScalar(.95);
+  return {g,body,ringA,ringB,core,ribbons,wings,mats:[MW,MG,MV],shadow:blob(.8),breaks:[{o:wings[0],at:.5},{o:wings[1],at:.5},{o:ringB,at:.25}]};
+}
+function buildCantor(){
+  const g=new THREE.Group(), body=new THREE.Group(); body.position.y=2.4; g.add(body);
+  const MW=toon(0xf6f0e6),MG=toon(0xd9a520),MD=toon(0x2a2232),MV=toon(0xd9c9ff);
+  part(new THREE.ConeGeometry(.55,1.6,8),MW,body,0,-.7,0,.07);
+  part(new THREE.SphereGeometry(.32,12,10),MW,body,0,.55,0,.06);
+  const band=new THREE.Mesh(box(.4,.07,.05),basic(0xff2a3a,false)); band.position.set(0,.58,.3); body.add(band);
+  part(new THREE.ConeGeometry(.4,.3,8),MG,body,0,.2,0,.04).rotation.x=Math.PI;
+  const arms=[-1,1].map(s=>{ const a=part(box(.18,.7,.2),MW,body,s*.42,-.05,.28,.04); a.rotation.x=-.9; return a; });
+  const book=part(box(.5,.08,.4),MG,body,0,.2,.55,.04); book.rotation.x=-.5;
+  const rings=[0,1,2,3].map(i=>part(new THREE.TorusGeometry(.5-i*.08,.04,6,28),MG,body,0,.55,-.35-i*.12,.03));
+  const wings=[-1,1].map(s=>{ const w=part(box(.9,.05,.3),MV,body,s*.7,-.1,-.3,.04); w.rotation.z=s*.5; return w; });
+  return {g,body,arms,book,rings,wings,band,mats:[MW,MG,MD,MV],shadow:blob(.7),breaks:[{o:book,at:.5},{o:rings[2],at:.25},{o:rings[3],at:.25}]};
+}

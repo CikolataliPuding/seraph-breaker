@@ -115,7 +115,13 @@ function dominionBlocks(e,dx,dz){ if(e.downT>0) return false; const f=Math.atan2
   for(const p of e.model.pg){ if(p.userData.broken) continue; p.getWorldDirection(_dq); if(Math.abs(angDiff(f,Math.atan2(_dq.x,_dq.z)))<.61) return true; } return false; }
 // Beacon: distance from (x,z) along (dx,dz) to the room edge (its arrow ignores blocks)
 function edgeLen(x,z,dx,dz){ const tx=dx>1e-3?(AX-1-x)/dx:dx<-1e-3?(-AX+1-x)/dx:1e9, tz=dz>1e-3?(AZ-1-z)/dz:dz<-1e-3?(-AZ+1-z)/dz:1e9; return Math.max(1,Math.min(tx,tz)); }
+// a free spot near (x,z) r away at angle a (falls back on other angles); not in a block, inside the room, at least minP from you
+function spotNear(x,z,r,a,minP){ for(let k=0;k<14;k++){ const aa=a+(k?rand(-Math.PI,Math.PI):0), px=clamp(x+Math.sin(aa)*r,-AX+1.5,AX-1.5), pz=clamp(z+Math.cos(aa)*r,-AZ+1.5,AZ-1.5);
+    if(!inBlock(px,pz,.6)&&(!player||Math.hypot(px-player.pos.x,pz-player.pos.z)>=minP)) return {x:px,z:pz}; } return null; }
 const ATK={
+  // Sentry salvo: + or x by turns, one shot down each of 4 lines drawn on the floor (to a block or the edge) .8 s before
+  salvo:{tele:.8,rec:.4,cd:[2.6,3.4],start(e){ e.salvoA=e.pat?Math.PI/4:0; for(let i=0;i<4;i++){ const a=e.salvoA+i*Math.PI/2, dx=Math.sin(a), dz=Math.cos(a); teleStrip(e.pos,dx,dz,Math.max(1,lineLen(e.pos.x,e.pos.z,dx,dz,17,.2)),.35,0xff3a2a,.8,true); } sfx('click'); },
+    fire(e){ for(let i=0;i<4;i++){ const a=e.salvoA+i*Math.PI/2; shoot('e',e.pos.clone().setY(1),new V3(Math.sin(a),0,Math.cos(a)),7*eSpd(),8,0xff5a2a,{life:2.4,r:.45}); } e.pat=1-e.pat; e.jz.rec.v+=4; sfx('shot'); }},
   // Beacon: a gold lane to the room edge tracks you (.6 s), then locks white and wider (.45 s); the arrow (38 u/s, 20) passes through blocks
   beam:{tele:1.05,rec:.5,cd:[2.6,3.6],start(e){ const T=tgt(); e.aim=new V3(T.x-e.pos.x,0,T.z-e.pos.z).normalize();
       if(!e.lane){ const g=new THREE.Group(), mat=new THREE.MeshBasicMaterial({color:0xffd36a,transparent:true,opacity:.4,depthWrite:false}), pl=new THREE.Mesh(new THREE.PlaneGeometry(1,1),mat); pl.rotation.x=-Math.PI/2; g.add(pl); roomGroup.add(g); (e.props||(e.props=[])).push(g); e.lane={g,pl,mat}; }
@@ -239,7 +245,6 @@ const AI={
     const Ll=len/1.05; m.laser.visible=true; m.laser.scale.set(e.st==='lock'?2.2:1,Ll/7,e.st==='lock'?2.2:1); m.laser.position.y=-.8-Ll/2; m.laser.material.opacity=e.st==='lock'?(Math.sin(e.t*50)>0?1:.4):.55;
     if(e.blocked>.45){ e.st='move'; e.stT=rand(1,1.6); m.laser.visible=false; dropToken(e); }
     else if(e.stT<=0){ m.muzzle.getWorldPosition(_tmp2); shoot('e',_tmp2.clone().setY(1.6),new V3(fx,0,fz),34*eSpd(),22,0xff3a3a,{life:1.2,r:.42,scale:.9}); e.jz.rec.v+=7; sparks(_tmp2,0xff3a3a,5,6); sfx('heavy'); e.st='move'; e.stT=rand(1.6,2.6); m.laser.visible=false; dropToken(e); } },
-  /* support: stays behind the enemy closest to you (its tank), heals and shields everyone inside the green aura */
   /* charger (machine): walks its band, then lowers the plow (.9 s); the last .3 s lock a red lane to the wall (14 units at most) with a ring at its
      end, and it rams along it, ramping from 8 to 17. A block or wall at the end stuns it 1.4 s (+60% damage); a miss stops it 1 s. It cannot turn. */
   ram(e,dt,to,d,pd,m){ e.stT-=dt;
@@ -293,6 +298,70 @@ const AI={
   // tank (angel): walks in and holds at 4, plates turning; Judgement (ATK.judge) when you are close
   dominion(e,dt,to,d,pd,m){ const want=d>e.def.hold?chase(e,e.speed,_sv):_sv.set(0,0,0); attackCycle(e,dt,want,()=>d<e.def.slam+2.5?ATK.judge:null,2); faceAim(e,dt,to,3);
     if(e.ph==='pos'){ e.judging=false; if(e.downT>0) e.downT-=dt; } },
+  // pattern turret (machine): never moves; fires ATK.salvo
+  sentry(e,dt,to,d,pd,m){ e.vel.set(0,0,0); attackCycle(e,dt,_sv.set(0,0,0),()=>d<18&&!player.dead?ATK.salvo:null,1); },
+  /* burrower (machine): under the floor it takes no hits and is no target (dust trail only); it surfaces at least 4.5 from you on a red ring (.9 s),
+     stays up 2.2 s and lobs three shells (yours and both sides, each on its own red ring), then digs back in (.6 s) */
+  borer(e,dt,to,d,pd,m){ e.stT-=dt;
+    if(e.st==='under'){ e.under=true; m.g.visible=false; const T=tgt(); if(!e.goal2||e.stT>1.4) e.goal2=spotNear(T.x,T.z,rand(6,8),Math.atan2(e.pos.x-T.x,e.pos.z-T.z),5)||{x:e.pos.x,z:e.pos.z};
+      steer(e,seek(e,e.goal2.x,e.goal2.z,6,_sv),dt,4); if(Math.random()<dt*14) sparks(e.pos.clone().setY(.15),0x8a7a68,1,2);
+      if(e.stT<=0&&!player.dead){ const s=spotNear(T.x,T.z,rand(4.5,6.5),Math.atan2(e.pos.x-T.x,e.pos.z-T.z),4.5); if(s){ e.pos.set(s.x,0,s.z); e.vel.set(0,0,0); e.st='rise'; e.stT=.9; groundRing(e.pos,0xff3a2a,1.6,.9); sparks(e.pos.clone().setY(.2),0x8a7a68,6,4); } else e.stT=.5; } return; }
+    if(e.st==='rise'){ e.vel.set(0,0,0); if(Math.random()<dt*20) sparks(e.pos.clone().setY(.2),0x8a7a68,1,3); if(e.stT<=0){ e.st='up'; e.stT=2.2; e.under=false; m.g.visible=true; e.jz.pop.v=6; e.shots=3; e.shotT=.3; sfx('heavy'); } return; }
+    if(e.st==='up'){ e.vel.set(0,0,0); faceAim(e,dt,to,6); e.shotT-=dt;
+      if(e.shots>0&&e.shotT<=0&&!player.dead){ e.shotT=.35; const k=3-e.shots, T=leadPoint(e.pos.x,e.pos.z,6,AIL().lead,_lp,2.5), a=Math.atan2(T.x-e.pos.x,T.z-e.pos.z)+Math.PI/2, off=(k-1)*2;
+        const x=clamp(T.x+Math.sin(a)*off,-AX+1,AX-1), z=clamp(T.z+Math.cos(a)*off,-AZ+1,AZ-1); m.tube.getWorldPosition(_tmp2);
+        lobShell(_tmp2.clone(),new V3(x,0,z),.9,0x6a5848,()=>{ crossBlast(new V3(x,0,z),0xff5a2a,.6); if(player&&!player.dead&&Math.hypot(player.pos.x-x,player.pos.z-z)<1.2) hurt(12); },true); e.shots--; }
+      if(e.stT<=0){ e.st='dig'; e.stT=.6; } return; }
+    if(e.st==='dig'){ e.vel.set(0,0,0); if(Math.random()<dt*20) sparks(e.pos.clone().setY(.2),0x8a7a68,1,3); if(e.stT<=0){ e.st='under'; e.stT=rand(3,4); e.goal2=null; } return; } },
+  /* erratic hopper (machine): crouches (.35 s; .5 s and its foot glows before every third), hops 4-5 units in a random direction (never within 3 of
+     you), its landing ring (r 1.6, the real shock radius) shown the whole time in the air; every third landing also fires 4 diagonal shots */
+  hopper(e,dt,to,d,pd,m){ e.stT-=dt; e.vel.set(0,0,0);
+    if(e.st==='wait'){ if(e.stT<=0&&!player.dead){ e.st='crouch'; e.stT=(e.hops%3===2)?.5:.35; } return; }
+    if(e.st==='crouch'){ if(e.stT<=0){ const s=spotNear(e.pos.x,e.pos.z,rand(4,5),rand(-Math.PI,Math.PI),3); if(!s){ e.st='wait'; e.stT=.4; return; }
+        e.hop={from:e.pos.clone(),to:new V3(s.x,0,s.z),t:0}; e.st='air'; groundRing(e.hop.to,0xff3a2a,1.6,.5); sfx('dash'); } return; }
+    if(e.st==='air'){ const H=e.hop; H.t+=dt; const k=Math.min(1,H.t/.5); e.pos.lerpVectors(H.from,H.to,k); e.dropY=Math.sin(Math.PI*k)*2.2; e.dropV=0;
+      if(k>=1){ e.dropY=0; e.hops++; e.st='wait'; e.stT=rand(.45,.8); e.jz.pop.v=-6; sparks(e.pos.clone().setY(.3),0xc8c0d0,4,4);
+        if(player&&!player.dead&&pd<1.6+.4) hurt(8);
+        if(e.hops%3===0) for(let i=0;i<4;i++){ const a=Math.PI/4+i*Math.PI/2; shoot('e',e.pos.clone().setY(.8),new V3(Math.sin(a),0,Math.cos(a)),6*eSpd(),7,0xff5a2a,{life:2.2,r:.42}); } } return; } },
+  /* blinker (angel): walks its band; then fades out (.5 s) while a gold ring marks where it lands (4.5-6.5 from you, your back preferred, never at
+     your feet), appears, and .3 s later lunges 6 units at you along a gold lane (16 u/s, contact 14); .9 s to recover */
+  emissary(e,dt,to,d,pd,m){ e.stT=(e.stT||0)-dt;
+    if(e.st==='vanish'){ e.vel.set(0,0,0); m.g.visible=Math.floor(e.t*24)%2===0; if(e.stT<=0){ sparks(e.pos.clone().setY(1.5),0xffd36a,8,5); e.pos.set(e.to.x,0,e.to.z); e.goal=null; e.path=null; m.g.visible=true; e.st='set'; e.stT=.3; } return; }
+    if(e.st==='set'){ e.vel.set(0,0,0); faceAim(e,dt,to,12); if(e.stT<=0){ const dx=Math.sin(e.yaw), dz=Math.cos(e.yaw), len=Math.max(2,Math.min(6,lineLen(e.pos.x,e.pos.z,dx,dz,6,.3)));
+        e.lunge={x:dx,z:dz,len,done:0,hit:false}; teleStrip(e.pos,dx,dz,len,1.3,0xffd36a,.5,true); e.st='aim'; e.stT=.5; } return; }
+    if(e.st==='aim'){ e.vel.set(0,0,0); if(e.stT<=0){ e.st='lunge'; e.jz.pop.v=3; } return; }
+    if(e.st==='lunge'){ const r=e.lunge; e.vel.set(r.x*16,0,r.z*16); r.done+=16*dt; if(pd<e.r+.5&&!player.dead&&!r.hit){ r.hit=true; contactHurt(e,14); } if(r.done>=r.len){ e.vel.set(0,0,0); e.st='recover'; e.stT=.9; dropToken(e); } return; }
+    if(e.st==='recover'){ e.vel.multiplyScalar(Math.pow(.05,dt)); if(e.stT<=0){ e.st='walk'; e.cd=rand(3,4); } return; }
+    const [n,f]=e.def.band; steer(e,holdBand(e,dt,to,d,n,f),dt,3); faceAim(e,dt,to,5);
+    if(e.hold||player.dead) return; e.cd-=dt*cdRate(e);
+    if(e.cd<=0&&takeToken(e)){ const T=tgt(), back=Math.atan2(-player.aim.x,-player.aim.z), s=spotNear(T.x,T.z,rand(4.5,6.5),back,4.5); if(!s){ dropToken(e); e.cd=.5; return; }
+      e.to=s; e.st='vanish'; e.stT=.5; groundRing(new V3(s.x,0,s.z),0xffd36a,1.4,.8); sfx('zap'); } },
+  /* boomerang (angel): throws its chakram along a gold lane (11 units or to a block, .6 s warning), it hangs .3 s then flies back to the Aureole
+     wherever it is (12 each way, once per pass); a thin gold line ties the chakram to the Aureole; killing the Aureole ends the chakram */
+  aureole(e,dt,to,d,pd,m){ const [n,f]=e.def.band; steer(e,holdBand(e,dt,to,d,n,f),dt,2.5); faceAim(e,dt,to,4); const C=e.chak;
+    if(C){ C.t+=dt; const p=C.m.position;
+      if(C.ph==='tele'){ if(C.t>=.6){ C.ph='out'; C.t=0; m.ringA.visible=false; C.m.visible=true; p.set(e.pos.x,1.6,e.pos.z); sfx('slash'); } }
+      else if(C.ph==='out'){ p.x+=C.x*9*dt; p.z+=C.z*9*dt; C.done+=9*dt; if(C.done>=C.len){ C.ph='hang'; C.t=0; } }
+      else if(C.ph==='hang'){ if(C.t>=.3){ C.ph='back'; C.hit=false; } }
+      else { const dx=e.pos.x-p.x, dz=e.pos.z-p.z, l=Math.hypot(dx,dz)||1; p.x+=dx/l*9*dt; p.z+=dz/l*9*dt; if(l<.8){ C.m.visible=false; C.tie.visible=false; m.ringA.visible=true; e.chak=null; dropToken(e); e.cd=rand(3.2,4.4); } }
+      if(e.chak&&C.ph!=='tele'){ C.m.rotation.y+=dt*18; if(player&&!player.dead&&!C.hit&&Math.hypot(player.pos.x-p.x,player.pos.z-p.z)<1.1){ C.hit=true; hurt(12); }
+        const tx=e.pos.x-p.x, tz=e.pos.z-p.z, L=Math.hypot(tx,tz)||.01; C.tie.visible=true; C.tie.position.set(p.x+tx/2,.06,p.z+tz/2); C.tie.rotation.y=Math.atan2(tx,tz); C.tie.scale.set(1,1,L); C.tie.material.opacity=Math.floor(e.t*10)%2?.25:.55; }
+      return; }
+    if(e.hold||player.dead) return; e.cd-=dt*cdRate(e);
+    if(e.cd<=0&&(e.see||e.cd<-3)&&takeToken(e)){ const ld=leadDir(e.pos.x,e.pos.z,9,_ld), len=Math.max(2,Math.min(11,lineLen(e.pos.x,e.pos.z,ld.x,ld.z,11,.3)));
+      if(!e.chakM){ const cm=new THREE.Mesh(new THREE.TorusGeometry(.7,.09,6,20),basic(0xffd36a,false)); cm.rotation.x=Math.PI/2; const g=new THREE.Group(); g.add(cm); roomGroup.add(g);
+        const tie=new THREE.Mesh(box(.06,.02,1),new THREE.MeshBasicMaterial({color:0xffd36a,transparent:true,opacity:.4,depthWrite:false})); roomGroup.add(tie); (e.props||(e.props=[])).push(g,tie); e.chakM={g,tie}; }
+      e.chak={m:e.chakM.g,tie:e.chakM.tie,x:ld.x,z:ld.z,len,done:0,t:0,ph:'tele',hit:false}; e.chak.m.visible=false; teleStrip(e.pos,ld.x,ld.z,len,.4,0xffd36a,.7,true); sfx('click'); } },
+  /* summoner (angel): stays back (runs when you come within 6); every 7-9 s it chants 1.2 s (gold rings fill where two Mini seraphs will stand, at
+     least 4 from you), then they appear (4 at most, they give no xp); a stun stops the chant */
+  cantor(e,dt,to,d,pd,m){ const [n,f]=e.def.band;
+    if(e.st==='chant'){ e.vel.multiplyScalar(Math.pow(.05,dt)); e.stT-=dt; if(e.stT<=0){ for(const s of e.chantAt){ const c=spawnEnemy('mini',new V3(s.x,0,s.z),false,{minion:true,noDrop:true}); if(c){ c.summoner=e; c.wake=.5; } } e.st='move'; e.chantT=rand(7,9); sfx('door'); } return; }
+    steer(e,holdBand(e,dt,to,d,n,f),dt,2.5); if(pd<6) e.vel.addScaledVector(to,-e.speed*.6*dt*4); faceAim(e,dt,to,3);
+    if(player.dead) return; e.chantT-=dt;
+    if(e.chantT<=0){ let k=0; for(const o of enemies) if(o.summoner===e&&!o.dead) k++; if(k>=4){ e.chantT=2; return; }
+      const pts=[]; for(let i=0;i<2&&k+i<4;i++){ const s=spotNear(e.pos.x,e.pos.z,rand(1.8,3),rand(-Math.PI,Math.PI),4); if(s){ pts.push(s); groundRing(new V3(s.x,0,s.z),0xffd36a,1.2,1.2); } }
+      if(!pts.length){ e.chantT=1; return; } e.chantAt=pts; e.st='chant'; e.stT=1.2; sfx('zap'); } },
+  /* support: stays behind the enemy closest to you (its tank), heals and shields everyone inside the green aura */
   cherub(e,dt,to,d,pd,m){ const T=tgt(); let front=null,fd=1e9;
     for(const o of enemies){ if(o===e||o.dead||o===boss||o.def&&o.def.role==='support') continue; const od=Math.hypot(o.pos.x-T.x,o.pos.z-T.z); if(od<fd){ fd=od; front=o; } }
     let gx,gz; if(front){ const ux=(front.pos.x-T.x)/(fd||1), uz=(front.pos.z-T.z)/(fd||1); gx=front.pos.x+ux*3.2; gz=front.pos.z+uz*3.2; } else { gx=e.pos.x-to.x*5; gz=e.pos.z-to.z*5; }
@@ -542,6 +611,12 @@ const ANIM={
   beacon(e,dt,m){ m.body.position.y=3+Math.sin(e.t*2)*.15; m.halo.rotation.z+=dt*1.5; m.ribbons.forEach((p,i)=>{ p.rotation.x=Math.sin(e.t*3+i)*.25; }); m.core.scale.setScalar(e.ph==='tele'?1.3+Math.sin(e.t*30)*.15:1); },
   herald(e,dt,m){ m.body.position.y=2+Math.sin(e.t*4)*.12; const fold=e.st==='tele'||e.st==='dive'; m.wings.forEach((w,i)=>{ if(!w.userData.broken) w.rotation.y=(i?1:-1)*(fold?.25:.7+Math.sin(e.t*12)*.15); }); },
   dominion(e,dt,m){ if(!e.judging&&!(e.downT>0)) m.plates.rotation.y+=dt*.7; m.plates.position.y+=((e.downT>0?.6:2.1)-m.plates.position.y)*Math.min(1,dt*10); m.halo.rotation.z+=dt; },
+  sentry(e,dt,m){ const on=e.ph==='tele'; m.lamps.forEach(l=>{ l.visible=!on||Math.floor(e.t*14)%2===0; }); if(!on) m.drum.rotation.y+=dt*.4; },
+  borer(e,dt,m){ m.drill.rotation.z+=dt*(e.st==='rise'||e.st==='dig'?30:8); },
+  hopper(e,dt,m){ m.leg.scale.y=e.st==='crouch'?.6:e.st==='air'?1.15:1+Math.sin(e.t*6)*.03; m.head.position.y=.12+2.23*m.leg.scale.y; m.eye.visible=!(e.st==='crouch'&&Math.floor(e.t*20)%2); },
+  emissary(e,dt,m){ if(e.st!=='vanish') m.body.position.y=.4+Math.sin(e.t*2.5)*.08; m.halo.rotation.z+=dt*1.5; m.spear.rotation.x=e.st==='aim'||e.st==='lunge'?1.2:0; },
+  aureole(e,dt,m){ m.body.position.y=2.6+Math.sin(e.t*2)*.12; m.ringA.rotation.z+=dt*(e.chak&&e.chak.ph==='tele'?16:2); m.ringB.rotation.x+=dt*1.5; },
+  cantor(e,dt,m){ m.body.position.y=2.4+Math.sin(e.t*1.6)*.12; m.rings.forEach((r,i)=>{ if(!r.userData.broken) r.rotation.z+=dt*(1+i*.3)*(e.st==='chant'?4:1); }); m.book.rotation.x=e.st==='chant'?-.9:0; },
   cherub(e,dt,m){ m.body.position.y=2.2+Math.sin(e.t*3)*.25; m.halo.rotation.z+=dt*2; const wa=wingBeat(e,dt,14); m.wings.forEach(p=>{ p.rotation.z=p.userData.s*(Math.sin(e.wph+p.userData.k)*(.4+wa*.25)); }); m.aura.scale.setScalar(2*(.95+Math.sin(e.t*2)*.05)); },
   censer(e,dt,m){ m.swing.rotation.z=Math.sin(e.t*1.6)*.28; m.swing.rotation.x=Math.cos(e.t*1.3)*.12; m.orbs.forEach((o,i)=>{ const a=e.t*.8+i*2.1; o.position.set(Math.cos(a)*1.9,-1.4+Math.sin(e.t*1.5+i)*.4,Math.sin(a)*1.9); }); m.glow.scale.setScalar((1+Math.sin(e.t*4)*.12)*(e.ph==='tele'?1.5:1)); },
   ophan(e,dt,m){ if(e.st==='roll') m.body.rotation.x+=e.speed*dt/1.6; else { m.body.rotation.x*=Math.pow(.05,dt); m.rings[0].rotation.z+=dt*(e.st==='tele'?5:1.2); m.rings[1].rotation.x+=dt*(e.st==='tele'?4:1); } m.core.rotation.y+=dt*2; },
