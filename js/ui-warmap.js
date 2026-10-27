@@ -96,15 +96,20 @@ function renderFrames(){
     const own=!!P.units[x.key], key='u'+x.key; if(!own) bt.classList.add('lock');
     bt.innerHTML=`<span class="n">${x.name}</span><span class="r">${x.role}</span><span class="r">SP · ${SPECIALS[x.key].name}</span>`+(own?'':`<span class="r price"><span class="cur gem"><i></i>${x.price}</span> ${armed===key?'· '+t('tap again to buy'):P.gems<x.price?'· '+t('need {0} more',x.price-P.gems):'· '+t('buy')}</span>`);
     bt.onclick=()=>{ if(!own){ if(P.gems<x.price) return; if(armed!==key){ armed=key; sfx('click'); renderFrames(); return; } armed=null; P.gems-=x.price; P.units[x.key]=true; sfx('gem'); }
-      P.unit=x.key; P.c1=null; P.c2=null; sfx('click'); rebuildPreview(); renderMenu(); persist(); }; fr.appendChild(bt); });
-  // paint: the frame's own two colors are free, any other costs PAINT_PRICE gold once (tap to arm, tap again to buy) and then works in both slots
-  const ownPaint=col=>col===u.c1||col===u.c2||P.paints.includes(col);
-  const sw=(el,list,cur,key)=>{ el.innerHTML=''; list.forEach((col,i)=>{ const bt=document.createElement('button'), own=ownPaint(col), arm=armed==='p'+key+i; bt.id=key+'_'+i; bt.style.setProperty('--c',CSS(col));
-    if(!own) bt.classList.add('lock'); if(arm) bt.classList.add('arm'); bt.setAttribute('aria-label',t('Paint {0}',CSS(col))+(own?'':' · '+t('{0} gold',PAINT_PRICE))); bt.setAttribute('aria-pressed',col===cur);
-    bt.onclick=()=>{ if(!own){ if(!arm){ armed='p'+key+i; sfx('click'); renderFrames(); return; } if(P.gold<PAINT_PRICE){ renderFrames(); return; } armed=null; P.gold-=PAINT_PRICE; P.paints.push(col); sfx('coin'); }
-      P[key]=col; sfx('click'); rebuildPreview(); renderMenu(); persist(); }; el.appendChild(bt); }); };
-  sw($('sw1'),PAINT1,c.c1,'c1'); sw($('sw2'),PAINT2,c.c2,'c2');
-  const pa=typeof armed==='string'&&armed[0]==='p'; $('paintNote').textContent=!pa?t("Your frame's own colors are free. A new color costs {0} gold, once, and works in both slots.",PAINT_PRICE):P.gold<PAINT_PRICE?t('Need {0} more gold for this color.',(PAINT_PRICE-P.gold).toLocaleString()):t('Tap the color again to buy it for {0} gold.',PAINT_PRICE);
+      paintTry=null; P.unit=x.key; P.c1=null; P.c2=null; sfx('click'); rebuildPreview(); renderMenu(); persist(); }; fr.appendChild(bt); });
+  // paint: the frame's own two colors are free, any other costs PAINT_PRICE gold once and then works in both slots. A tap only tries the color on
+  // the hangar mech (paintTry): a try without new colors is kept at once, one with new colors waits for the Buy button (patch.md 24)
+  const ownPaint=col=>col===u.c1||col===u.c2||P.paints.includes(col), cur=Object.assign({},c,paintTry), fresh=[...new Set([cur.c1,cur.c2])].filter(x=>!ownPaint(x)), cost=fresh.length*PAINT_PRICE;
+  // only the slots that differ from the saved colors are written (an untouched slot stays null: the frame's own color)
+  const keep=T=>{ ['c1','c2'].forEach(k=>{ if(T[k]!==c[k]) P[k]=T[k]; }); paintTry=null; };
+  const sw=(el,list,key)=>{ el.innerHTML=''; list.forEach((col,i)=>{ const bt=document.createElement('button'), own=ownPaint(col), on=col===cur[key]; bt.id=key+'_'+i; bt.style.setProperty('--c',CSS(col));
+    if(!own) bt.classList.add('lock'); if(on&&!own) bt.classList.add('try'); bt.setAttribute('aria-label',t('Paint {0}',CSS(col))+(own?'':' · '+t('{0} gold',PAINT_PRICE))); bt.setAttribute('aria-pressed',on);
+    bt.onclick=()=>{ const T={c1:cur.c1,c2:cur.c2}; T[key]=col; sfx('click'); if(ownPaint(T.c1)&&ownPaint(T.c2)){ keep(T); persist(); } else paintTry=T; rebuildPreview(); renderMenu(); }; el.appendChild(bt); }); };
+  sw($('sw1'),PAINT1,'c1'); sw($('sw2'),PAINT2,'c2');
+  const pb=$('paintBuyBt'), pc=$('paintCancel'); $('paintBuy').hidden=!fresh.length; pb.textContent=t('Buy · {0} gold',cost.toLocaleString()); pb.disabled=P.gold<cost; pc.textContent=t('Cancel');
+  pb.onclick=()=>{ if(!paintTry||P.gold<cost) return; P.gold-=cost; P.paints.push(...fresh); keep(paintTry); sfx('coin'); rebuildPreview(); renderMenu(); persist(); };
+  pc.onclick=()=>{ paintTry=null; sfx('click'); rebuildPreview(); renderMenu(); };
+  $('paintNote').textContent=!fresh.length?t("Your frame's own colors are free. A new color costs {0} gold, once, and works in both slots.",PAINT_PRICE):P.gold<cost?t('Need {0} more gold.',(cost-P.gold).toLocaleString()):t('Trying it on. Buy to keep these colors, or cancel.');
   const lo=$('loadout'); lo.innerHTML='';
   const item=(icon,label,name,go)=>{ const bt=document.createElement('button'); bt.className='lo'; bt.innerHTML=`${svg(icon)}<span><small>${label}</small><b></b></span>`; bt.querySelector('b').textContent=name; bt.onclick=go; lo.appendChild(bt); };
   const w=P.weapon; item(w,t('Weapon'),w==='sig'?t({azure:'Rapid rifle',crimson:'Scatter cannon',verdant:'Pierce lance'}[P.unit]):WEAPONS[w].name,()=>openView('armory'));

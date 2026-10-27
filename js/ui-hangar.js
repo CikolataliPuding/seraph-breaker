@@ -3,6 +3,7 @@
 let view='home';
 document.querySelectorAll('.bnav button').forEach(b=>b.onclick=()=>{ sfx('click'); openView(b.dataset.v); });
 function openView(v){
+  if(paintTry){ paintTry=null; rebuildPreview(); } // leaving Frames (or any view change) drops a paint that was only tried on
   view=v;
   ['home','map','armory','skills','frames','system'].forEach(x=>$('v-'+x).hidden=x!==v);
   document.querySelectorAll('.bnav button').forEach(b=>{ if(b.dataset.v===(v==='map'?'home':v)) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current'); });

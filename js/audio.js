@@ -139,6 +139,8 @@ function extPlay(T,landIn,vol){
   if(!src){ AU.live.gain.setTargetAtTime(1,now,HC_FADE/3); return; }
   const g=AU.ctx.createGain(); g.gain.value=0; g.connect(AU.music);
   const off=+T.offset||0, x={src,key,g,node:null,bpm:+T.bpm||0,offset:off,start:+T.start||off,end:+T.end||0,vol,on:false,t0:0,ls:0,le:0,base:0,last:-1,asked:now}; AU.ext=x;
+  // the live band goes quiet at once: a long file takes a second or two to decode, and the synth would play its first bars meanwhile
+  AU.live.gain.setTargetAtTime(0,now,.1);
   if(!MUSIC_BYTES.has(src)) MUSIC_BYTES.set(src,fetch(src).then(r=>{ if(!r.ok) throw new Error(r.status); return r.arrayBuffer(); }));
   if(MUSIC_DEC.src!==src){ MUSIC_DEC.src=src; MUSIC_DEC.p=MUSIC_BYTES.get(src).then(b=>AU.ctx.decodeAudioData(b.slice(0))); MUSIC_DEC.p.catch(()=>{ if(MUSIC_DEC.src===src) MUSIC_DEC.src=''; }); }
   MUSIC_DEC.p.then(buf=>{ if(AU.ext!==x) return; const n=AU.ctx.createBufferSource(), t=AU.ctx.currentTime;
