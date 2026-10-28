@@ -35,6 +35,12 @@ const DICT_TR={
   'Fullscreen':'Tam ekran', 'Reset my progress':'İlerlememi sıfırla', 'Replay story':'Hikayeyi yeniden oynat',
   // story, cards, pause, report
   // patch notes (NEWS)
+  'The Power Curve Update':'Güç Eğrisi Güncellemesi',
+  'Arenas now unlock your power. Every arena you open lets each Core stat go 4 levels higher and opens new skill tree ranks. Levels you bought above the limit are kept and come back as you open arenas.':'Arenalar artık gücünün kilidini açıyor. Açtığın her arena, Çekirdeğin her statını 4 seviye daha yükseltmene ve ağaçta yeni kademelere izin verir. Sınırın üstünde aldığın seviyeler kaybolmaz, arena açtıkça geri gelir.',
+  'Core levels now multiply: every Armor or Damage level is +9% on top of the last, so late levels count as much as early ones.':'Çekirdek seviyeleri artık katlanıyor: her Zırh ya da Hasar seviyesi bir öncekinin üstüne +%9 ekler, geç seviyeler de erken seviyeler kadar değerli.',
+  'Enemies grow with you: every arena is a little harder than the last at the power it lets you have. Arena 1 hits softer to match the new Core limit, and later arenas get tougher.':'Düşmanlar seninle büyüyor: her arena, sana izin verdiği güçte bir öncekinden biraz daha zor. Arena 1 yeni Çekirdek sınırına uysun diye daha yumuşak vuruyor, sonraki arenalar daha sert.',
+  'Enemy shots get a little faster in every arena.':'Düşman mermileri her arenada biraz daha hızlı.',
+  "Gold follows the Core's price: each arena pays for its own Core levels in about one and a half runs.":'Altın Çekirdeğin fiyatını takip ediyor: her arena kendi Çekirdek seviyelerini yaklaşık bir buçuk koşuda öder.',
   'The Balance Update':'Denge Güncellemesi', 'UPDATE':'GÜNCELLEME', 'Got it ▸':'Anladım ▸', 'Patch notes':'Güncelleme notları', 'NERF':'ZAYIFLADI', 'BUFF':'GÜÇLENDİ', 'NEW':'YENİ', 'CHANGE':'DEĞİŞTİ', 'FIX':'DÜZELDİ',
   'Run cards stop at rank 3, and cards you already own show up less often.':'Koşu kartları en fazla 3. kademeye çıkar; elindeki kartlar daha seyrek gelir.',
   'Angels offer two choices: one repair and one attack card.':'Melekler iki seçenek sunar: bir onarım, bir saldırı kartı.',
