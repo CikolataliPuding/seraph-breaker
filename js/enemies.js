@@ -26,6 +26,8 @@ function spawnEnemy(type,pos,elite=false,o={}){
   if(elite){ e.elite=true; e.hp*=3.2; e.sc*=1.3; e.r*=1.25; e.model.mats[0].color.lerp(new THREE.Color(0xffc83a),.45);
     const ring=new THREE.Mesh(new THREE.RingGeometry(.9,1.05,32),addMat(0xffc83a,.8)); ring.rotation.x=-Math.PI/2; ring.position.y=.05; ring.userData.nofit=1; e.model.g.add(ring);
     if(R.corruptElites){ corruptModel(e.model,.4); e.hp*=1.2; e.corrupt=true; } }
+  // Hex Breach: any room mob may come hex-mutated, elites always do (rule.hexMut)
+  if(R.hexMut&&!o.minion&&!e.corrupt&&(elite||Math.random()<R.hexMut)){ hexModel(e.model); e.hp*=1.15; e.hexed=true; }
   // the hunted elite (Hunt rooms) runs faster and escapes when the timer ends
   if(o.hunt){ e.hunt=true; e.speed*=1.25; }
   e.maxHp=e.hp;
@@ -65,7 +67,7 @@ function applyAffixes(e,list){
 function elitePlate(e){
   const cv=document.createElement('canvas'); cv.width=320; cv.height=80; const g=cv.getContext('2d'); g.textAlign='center'; g.lineJoin='round';
   const line=(txt,y,font,col)=>{ g.font=font; g.lineWidth=6; g.strokeStyle='#0a0610'; g.strokeText(txt,160,y); g.fillStyle=col; g.fillText(txt,160,y); };
-  line(((e.corrupt?t('CORRUPTED')+' ':'')+(e.hunt?t('HUNTED'):t('ELITE'))).toLocaleUpperCase(LANG)+' '+e.def.name.toUpperCase(),30,'700 26px "Barlow Condensed",Arial,sans-serif',e.corrupt?'#d8a0ff':'#ffc83a');
+  line(((e.corrupt?t('CORRUPTED')+' ':e.hexed?t('HEX')+' ':'')+(e.hunt?t('HUNTED'):t('ELITE'))).toLocaleUpperCase(LANG)+' '+e.def.name.toUpperCase(),30,'700 26px "Barlow Condensed",Arial,sans-serif',e.corrupt?'#d8a0ff':'#ffc83a');
   if(e.affix.length) line(e.affix.map(k=>AFFIX[k].name).join(' · '),66,'600 24px "Barlow Condensed",Arial,sans-serif','#ffffff');
   const tex=new THREE.CanvasTexture(cv), sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthTest:false,depthWrite:false}));
   sp.scale.set(mobileMode?6.4:5.6,mobileMode?1.6:1.4,1); sp.renderOrder=20; sp.userData.h=(e.fly?4.3:3)*e.sc/(e.def.sc||1)+.4; return sp;

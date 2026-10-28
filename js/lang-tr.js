@@ -36,6 +36,7 @@ const DICT_TR={
   // story, cards, pause, report
   // patch notes (NEWS)
   'The Power Curve Update':'Güç Eğrisi Güncellemesi',
+  'New arena 5: Hex Breach. The grid itself has come alive: any enemy may come hex-mutated and tougher, elites always do. Clear Fallen Sky to open it.':"Yeni 5. arena: Hex Gediği. Izgaranın kendisi canlandı: her düşman hex mutasyonlu ve daha dayanıklı gelebilir, elitler hep öyle gelir. Açmak için Düşen Gök'ü bitir.",
   'Arenas now unlock your power. Every arena you open lets each Core stat go 4 levels higher and opens new skill tree ranks. Levels you bought above the limit are kept and come back as you open arenas.':'Arenalar artık gücünün kilidini açıyor. Açtığın her arena, Çekirdeğin her statını 4 seviye daha yükseltmene ve ağaçta yeni kademelere izin verir. Sınırın üstünde aldığın seviyeler kaybolmaz, arena açtıkça geri gelir.',
   'Core levels now multiply: every Armor or Damage level is +9% on top of the last, so late levels count as much as early ones.':'Çekirdek seviyeleri artık katlanıyor: her Zırh ya da Hasar seviyesi bir öncekinin üstüne +%9 ekler, geç seviyeler de erken seviyeler kadar değerli.',
   'Enemies grow with you: every arena is a little harder than the last at the power it lets you have. Arena 1 hits softer to match the new Core limit, and later arenas get tougher.':'Düşmanlar seninle büyüyor: her arena, sana izin verdiği güçte bir öncekinden biraz daha zor. Arena 1 yeni Çekirdek sınırına uysun diye daha yumuşak vuruyor, sonraki arenalar daha sert.',
@@ -206,7 +207,7 @@ const DICT_TR={
   'Brittle':'Kırılgan', 'Take +20% damage. Gain a random epic skill.':'+%20 fazla hasar al. Rastgele bir destansı yetenek kazan.', '+20% damage taken':'+%20 alınan hasar',
   // arenas and Arena 4 modifiers (ARENAS, MODS)
   'The Low City':'Aşağı Şehir', 'Phase: Siege':'Kuşatma', 'Phase: Undertow':'Akıntı', 'Phase: Ascent':'Yükseliş', 'Phase: Hubris':'Kibir', 'Phase: Encore':'Bis', 'Training ground: no special rule':'Eğitim alanı: özel kural yok', 'Night Harbor':'Gece Limanı', 'Enemy shots fly 15% faster':'Düşman mermileri %15 daha hızlı uçar',
-  'Heaven\'s Gate':'Cennet Kapısı', 'Elites come in pairs':'Elitler çift gelir', 'Fallen Sky':'Düşen Gök', 'Both factions, corrupted elites, 2 random modifiers':'İki taraf da, bozulmuş elitler, 2 rastgele değiştirici',
+  'Heaven\'s Gate':'Cennet Kapısı', 'Elites come in pairs':'Elitler çift gelir', 'Fallen Sky':'Düşen Gök', 'Hex Breach':'Hex Gediği', 'Breach':'Gedik', 'Hex breach: any enemy may come hex-mutated, elites always do':'Hex gediği: her düşman hex mutasyonlu gelebilir, elitler hep öyle gelir', 'HEX':'HEX', 'Both factions, corrupted elites, 2 random modifiers':'İki taraf da, bozulmuş elitler, 2 rastgele değiştirici',
   'Main Stage':'Ana Sahne', '15 ROOMS + BOSS':'15 ODA + BOSS', 'Beat sync: attacks lock to the music, a dash on the beat dodges twice as wide':'Ritim senkronu: saldırılar müziğe kilitlenir, ritimde atılma iki kat geniş kaçırır',
   'Swift shots':'Hızlı mermiler', 'Enemy shots +15% speed.':'Düşman mermileri +%15 hız.', 'Frenzy':'Çılgınlık', 'Enemies move 20% faster.':'Düşmanlar %20 daha hızlı hareket eder.',
   'Volatile':'Uçucu', 'Enemies burst into slow shots when they die.':'Düşmanlar ölünce yavaş mermilere dağılır.', 'Armored':'Zırhlı', 'Enemies +20% armor, +25% gold.':'Düşmanlar +%20 zırh, +%25 altın.',
