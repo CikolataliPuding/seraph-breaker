@@ -77,11 +77,11 @@ function renderTree(container){
   renderCore();
   $('sGold').textContent=P.gold.toLocaleString(); $('sGems').textContent=P.gems.toLocaleString(); container.innerHTML=''; const wrap=document.createElement('div'); wrap.className='tree';
   TREE.forEach(br=>{ const col=document.createElement('div'); col.className='branch'; col.style.setProperty('--c',br.c); const h=document.createElement('h3'); h.textContent=br.branch; col.appendChild(h);
-    br.nodes.forEach((n,i)=>{ const rk=P.skills[n.id]||0, unlocked=i===0||(P.skills[br.nodes[i-1].id]||0)>0, max=rk>=n.max, gate=!max&&rk>=treeRankAt(n,P.arenas), cost=max?0:n.cost[rk];
+    br.nodes.forEach((n,i)=>{ const rk=P.skills[n.id]||0, unlocked=i===0||(P.skills[br.nodes[i-1].id]||0)>0, on=Math.min(rk,treeRankAt(n,P.arenas)), max=rk>=n.max, gate=on<rk||!max&&rk>=treeRankAt(n,P.arenas), cost=max?0:n.cost[rk];
       const b=document.createElement('button'); b.className='node'+(rk>0?' on':'')+(unlocked?'':' lock')+(max?' max':'')+(!max&&P.gems<cost?' poor':''); b.id='sk_'+n.id;
-      b.innerHTML=`<span class="t"><b></b><span class="npips">${Array.from({length:n.max},(_,j)=>`<i class="${j<rk?'f':''}"></i>`).join('')}</span></span><small></small><span class="cost"></span>`;
+      b.innerHTML=`<span class="t"><b></b><span class="npips">${Array.from({length:n.max},(_,j)=>`<i class="${j<on?'f':''}"></i>`).join('')}</span></span><small></small><span class="cost"></span>`;
       b.querySelector('b').textContent=n.name; b.querySelector('small').textContent=n.d;
-      b.querySelector('.cost').innerHTML=max?t('MAXED'):!unlocked?'<span class="tag">'+t('Locked')+'</span>':gate?'<span class="tag">'+t('Arena {0}',treeOpenAt(n,rk+1))+'</span>':`<span class="cur gem"><i></i>${cost.toLocaleString()}</span>`;
+      b.querySelector('.cost').innerHTML=max&&!gate?t('MAXED'):!unlocked?'<span class="tag">'+t('Locked')+'</span>':gate?'<span class="tag">'+t('Arena {0}',treeOpenAt(n,on+1))+'</span>':`<span class="cur gem"><i></i>${cost.toLocaleString()}</span>`;
       if(!unlocked||max||gate) b.disabled=true;
       b.onclick=()=>{ if(!unlocked||max||gate||P.gems<cost) return; P.gems-=cost; P.skills[n.id]=rk+1; sfx('gem'); persist(); renderMenu(); };
       col.appendChild(b); });
