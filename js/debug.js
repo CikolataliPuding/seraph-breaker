@@ -219,6 +219,7 @@ function botTick(dt){
         if(bm.fire&&bm.sweep){ const off=((Math.atan2(rx,rz)-Math.atan2(bm.dir.x,bm.dir.z))+Math.PI*3)%(Math.PI*2)-Math.PI; if(Math.sign(off)===Math.sign(bm.sweep)&&Math.abs(off)<.35&&Math.random()<BOT.skill*.25) dashDir=new V3(bm.dir.z*side,0,-bm.dir.x*side); } } } }
   for(const s of shocks){ if(s.hit||s.friendly) continue; const df=Math.hypot(p.pos.x-s.x,p.pos.z-s.z)-s.r; if(df>0&&df<1.6&&Math.random()<BOT.skill) dashDir=new V3(s.x-p.pos.x,0,s.z-p.pos.z).normalize(); else if(df>0&&df<s.max-s.r+1) flee(s.x,s.z,s.max+1.5,2.5); }
   for(const m of emines) flee(m.x,m.z,2.4,2);
+  for(const f of efields) flee(f.x,f.z,FIELD.r+1.2,f.live?3:2); // Coil fields: step off the ring before it goes live
   for(const t of traps){ if(room&&room.cleared||!trapDanger(t)) continue; /* traps are off once the room is clear (a stopped saw would pin the bot) */ if(t.kind==='saw') flee(t.x,t.z,t.r+1.7,3); else for(const c of t.cells) flee(c.x,c.z,t.cw*.75+.9,3); }
   for(const h of hazards) if(h.ph>=1||h.t<.3&&h.ph===0) flee(h.x,h.z,2.4,2.5);
   // spacing: circle the nearest enemy at 6-10 units, switch direction now and then

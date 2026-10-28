@@ -298,12 +298,12 @@ const MODS={
    dmgK: damage multiplier for everything the mob does (shots, blasts queued by its AI, touches), set from the standing-bot measure. */
 const ENEMY={
   drone:{name:'Drone',mass:.9,role:'kiter',band:[6,10.5],hp:5,r:1.15,speed:3.4,sc:.8,cost:1,xp:1,gold:6,score:100,build:()=>buildDrone(),elite:false},
-  seraph:{name:'Seraph',tag:'move',mass:.7,role:'charger',band:[5,8],hp:7,r:1.45,speed:5,sc:1,fly:true,angel:true,cost:1.3,xp:1.3,gold:8,score:150,build:()=>buildSeraph(1)},
+  seraph:{name:'Seraph',tag:'move',mass:.7,role:'charger',band:[5,8],hp:7,r:1.45,speed:5,sc:1,fly:true,angel:true,cost:1.3,xp:1.3,gold:8,score:150,dmgK:1.25,build:()=>buildSeraph(1)},
   mini:{name:'Mini seraph',mass:.5,role:'charger',band:[4.5,7],hp:4,r:1.05,speed:6,sc:.7,fly:true,angel:true,cost:.8,xp:0,gold:3,score:60,build:()=>buildSeraph(.7),elite:false,ai:'seraph'},
   heavy:{name:'Heavy',tag:'move',mass:2.6,role:'tank',hold:4.2,slam:4.6,hp:20,r:1.7,speed:2.4,sc:1.25,cost:2.6,xp:3,gold:16,score:300,build:()=>buildHeavy()},
   warden:{name:'Warden',tag:'move',mass:1.4,role:'denial',band:[8,12],hp:11,r:1.45,speed:3,sc:1,fly:true,angel:true,cost:1.9,xp:2,gold:12,score:250,build:()=>buildWarden()},
   // arena mobs (models from docs/bestiary.html, behavior in enemy-ai.js)
-  spark:{name:'Spark',tag:'move',mass:.45,role:'rusher',fuse:.55,hp:3,r:.9,speed:7.5,sc:1,cost:.7,xp:.6,gold:4,score:80,build:()=>buildSpark(),elite:false,init:e=>{ e.model.core.material=e.model.core.material.clone(); e.st='roll'; }},
+  spark:{name:'Spark',tag:'move',mass:.45,role:'rusher',fuse:.55,hp:3,r:.9,speed:7.5,sc:1,cost:.7,xp:.6,gold:4,score:80,dmgK:1.5,build:()=>buildSpark(),elite:false,init:e=>{ e.model.core.material=e.model.core.material.clone(); e.st='roll'; }},
   crawler:{name:'Crawler',tag:'move',mass:.55,role:'flanker',band:[5.5,8],hp:9,r:1.3,speed:5.5,sc:1,cost:1.4,xp:1.4,gold:9,score:160,build:()=>buildCrawler(1),init:e=>{ e.cd=rand(1.5,2.5); }},
   howitzer:{name:'Howitzer',tag:'move',mass:3,role:'artillery',hp:12,r:1.4,speed:0,sc:1,cost:2.2,xp:2.2,gold:13,score:260,build:()=>buildHowitzer(),init:e=>{ e.cd=rand(1.4,2.4); }},
   lancer:{name:'Lancer',tag:'focus',mass:1.1,role:'sniper',band:[11,17],hp:9,r:1.15,speed:3.2,sc:1.05,cost:2,xp:2,gold:12,score:240,build:()=>buildLancer(),init:e=>{ e.model.laser.material=e.model.laser.material.clone(); e.st='move'; e.stT=rand(1.2,2.2); }},
@@ -316,15 +316,15 @@ const ENEMY={
   // angel sniper, flanker and tank (patch.md 25, docs/mob-designs.html): Beacon's arrow passes through blocks (move, do not hide), Herald circles
   // to your side and dives, Dominion's three turning plates stop plain shots and drop for 1 s after its Judgement ring
   beacon:{name:'Beacon',tag:'focus',mass:.8,role:'sniper',band:[11,16],hp:8,r:1.1,speed:2.6,sc:1,fly:true,angel:true,cost:2,xp:2,gold:12,score:240,build:()=>buildBeacon(),init:e=>{ e.cd=rand(1.5,2.5); }},
-  herald:{name:'Herald',tag:'move',mass:.45,role:'flanker',band:[6,9],hp:5,r:1,speed:6.5,sc:.8,fly:true,angel:true,cost:1,xp:1,gold:6,score:120,build:()=>buildHerald(),init:e=>{ e.cd=rand(1.5,2.5); e.st='orbit'; e.orb=Math.random()<.5?-1:1; }},
-  dominion:{name:'Dominion',tag:'move',mass:2.8,role:'tank',hold:4,slam:4.4,hp:22,r:1.7,speed:2,sc:1.3,angel:true,cost:2.6,xp:2.8,gold:16,score:300,build:()=>buildDominion(),init:e=>{ e.cd=rand(2,3); e.downT=0; }},
+  herald:{name:'Herald',tag:'move',mass:.45,role:'flanker',band:[6,9],hp:5,r:1,speed:6.5,sc:.8,fly:true,angel:true,cost:1,xp:1,gold:6,score:120,dmgK:1.5,build:()=>buildHerald(),init:e=>{ e.cd=rand(1.5,2.5); e.st='orbit'; e.orb=Math.random()<.5?-1:1; }},
+  dominion:{name:'Dominion',tag:'move',mass:2.8,role:'tank',hold:4,slam:4.4,hp:22,r:1.7,speed:2,sc:1.3,angel:true,cost:2.6,xp:2.8,gold:16,score:300,dmgK:1.4,build:()=>buildDominion(),init:e=>{ e.cd=rand(2,3); e.downT=0; }},
   // Archero roles (patch.md 25, docs/mob-designs.html): Sentry fires fixed + / x salvos down drawn lines, Borer moves under the floor (no hits) and
   // surfaces on a red ring to lob three shells, Hopper hops at random and shocks where it lands, Emissary blinks onto a gold ring and lunges,
   // Aureole throws a chakram that hangs and comes back, Cantor chants two Mini seraphs in (4 at most) and runs from you
-  sentry:{name:'Sentry',tag:'move',mass:5,role:'turret',hp:12,r:1.1,speed:0,sc:1,still:true,seat:true,cost:1.6,xp:1.6,gold:10,score:200,build:()=>buildSentry(),init:e=>{ e.cd=rand(1.2,2); e.pat=Math.random()<.5?0:1; }},
+  sentry:{name:'Sentry',tag:'move',mass:5,role:'turret',hp:12,r:1.1,speed:0,sc:1,still:true,seat:true,cost:1.6,xp:1.6,gold:10,score:200,dmgK:1.3,build:()=>buildSentry(),init:e=>{ e.cd=rand(1.2,2); e.pat=Math.random()<.5?0:1; }},
   borer:{name:'Borer',tag:'move',mass:1.6,role:'burrower',hp:10,r:1.2,speed:4.2,sc:1.1,cost:1.8,xp:1.8,gold:11,score:230,build:()=>buildBorer(),init:e=>{ e.st='under'; e.stT=rand(1.5,2.5); }},
-  hopper:{name:'Hopper',tag:'move',mass:.9,role:'hopper',hp:8,r:1,speed:5,sc:.9,cost:1.2,xp:1.2,gold:8,score:150,build:()=>buildHopper(),init:e=>{ e.st='wait'; e.stT=rand(.5,1); e.hops=0; }},
-  emissary:{name:'Emissary',tag:'move',mass:1,role:'blinker',band:[5,9],hp:10,r:1.2,speed:3.4,sc:1.1,angel:true,cost:2.1,xp:2.1,gold:13,score:250,build:()=>buildEmissary(),init:e=>{ e.cd=rand(1.5,2.5); e.st='walk'; }},
+  hopper:{name:'Hopper',tag:'move',mass:.9,role:'hopper',hp:8,r:1,speed:5,sc:.9,cost:1.2,xp:1.2,gold:8,score:150,dmgK:1.4,build:()=>buildHopper(),init:e=>{ e.st='wait'; e.stT=rand(.5,1); e.hops=0; }},
+  emissary:{name:'Emissary',tag:'move',mass:1,role:'blinker',band:[5,9],hp:10,r:1.2,speed:3.4,sc:1.1,angel:true,cost:2.1,xp:2.1,gold:13,score:250,dmgK:1.3,build:()=>buildEmissary(),init:e=>{ e.cd=rand(1.5,2.5); e.st='walk'; }},
   aureole:{name:'Aureole',tag:'move',mass:.8,role:'boomerang',band:[7,11],hp:9,r:1,speed:3,sc:.95,fly:true,angel:true,cost:1.8,xp:1.8,gold:11,score:200,build:()=>buildAureole(),init:e=>{ e.cd=rand(1.5,2.5); }},
   cantor:{name:'Cantor',tag:'focus',mass:.6,role:'summoner',band:[9,13],hp:8,r:1.1,speed:3.2,sc:1,fly:true,angel:true,cost:1.8,xp:1.8,gold:11,score:200,build:()=>buildCantor(),elite:false,init:e=>{ e.chantT=3; e.st='move'; }},
   shardling:{name:'Shardling',mass:.9,role:'kiter',band:[6,10],hp:8,r:1.2,speed:3,sc:1,fly:true,angel:true,cost:1.6,xp:1.4,gold:9,score:180,build:()=>buildShardling(),init:(e,o)=>{ e.gen=o.gen||0; e.sc=Math.pow(.72,e.gen); e.hp*=Math.pow(.45,e.gen); e.r*=e.sc; }},
