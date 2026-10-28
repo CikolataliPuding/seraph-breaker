@@ -27,7 +27,7 @@ function spawnEnemy(type,pos,elite=false,o={}){
     const ring=new THREE.Mesh(new THREE.RingGeometry(.9,1.05,32),addMat(0xffc83a,.8)); ring.rotation.x=-Math.PI/2; ring.position.y=.05; ring.userData.nofit=1; e.model.g.add(ring);
     if(R.corruptElites){ corruptModel(e.model,.4); e.hp*=1.2; e.corrupt=true; } }
   // Hex Breach: any room mob may come hex-mutated, elites always do (rule.hexMut)
-  if(R.hexMut&&!o.minion&&!e.corrupt&&(elite||Math.random()<R.hexMut)){ hexModel(e.model); e.hp*=1.15; e.hexed=true; }
+  if(R.hexMut&&!o.minion&&!e.corrupt&&!def.anomaly&&(elite||Math.random()<R.hexMut)){ hexModel(e.model); e.hp*=1.15; e.hexed=true; }
   // the hunted elite (Hunt rooms) runs faster and escapes when the timer ends
   if(o.hunt){ e.hunt=true; e.speed*=1.25; }
   e.maxHp=e.hp;
@@ -139,6 +139,7 @@ function killEnemy(e,byProc){
   // Volatile affix: a telegraphed blast where it died (hurts you and the other enemies)
   if(e.volatile&&!e.noLoot) queueBlast(e.pos.x,e.pos.z,{t:.75,rad:3.4,dmg:10*arenaCurve(stage).hp,hurtP:18,color:0xff3a2a,size:1,skip:e,flat:true});
   // Shardlings split into two smaller copies, twice (capped per room)
+  if(e.kind==='hexdrone'&&!e.noLoot) for(let i=0;i<3;i++){ const a=i/3*Math.PI*2, c=spawnEnemy('cellmite',freeNear(e.pos.x+Math.cos(a)*1.2,e.pos.z+Math.sin(a)*1.2,.5),false,{noDrop:true}); if(c){ c.kx=Math.cos(a)*6; c.kz=Math.sin(a)*6; } }
   if(e.type==='shardling'&&(e.gen||0)<2&&!e.noLoot){ let n=0; for(const o of enemies) if(o.type==='shardling'&&!o.dead) n++; for(const s of e.tier>=3?[-1,0,1]:[-1,1]){ if(n++>=10) break; const c=spawnEnemy('shardling',freeNear(e.pos.x+s*.9,e.pos.z+(s?0:.9),.6),false,{gen:(e.gen||0)+1,noDrop:true}); if(c){ c.kx=s*7; c.kz=rand(-3,3); c.elite=false; } } }
   if(sortie.rule.volatile){ const o=rand(0,1); for(let i=0;i<6;i++){ const a=(i+o)/6*Math.PI*2; shoot('e',e.pos.clone().setY(1.6),new V3(Math.sin(a),0,Math.cos(a)),4*eSpd(),8,0xb070ff,{life:3,r:.42}); } }
   const mul=e.elite?3:1, def=e.def||ENEMY.drone;

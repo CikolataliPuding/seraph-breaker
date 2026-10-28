@@ -312,7 +312,7 @@ const ARENAS=[
      Every earlier mob may come hex-mutated (rule.hexMut: 20%, elites always): teal tint, hex lenses, +15% armor (enemies.js hexMutate).
      The anomaly units, the shifting grid rule and Hexarch (the last room) come in later PRs; until then the corrupted bosses hold the pool.
      No hpMul / dmgMul: the arena curve (CURVE) sets its numbers, the first arena that needs no table row. */
-  {name:'Hex Breach', phase:'Breach', rooms:50, mixed:true, mobs:['drone','seraph','warden','lancer','shardling','ram','censer','crawler','herald','coil','heavy','beacon','hopper','dominion','sentry','bulwark','emissary','howitzer'], blockTypes:10, pin:['warden','censer','beacon'], bosses:['x_colossus','x_archon','x_arachne'], rule:{hazards:.5,hexMut:.2}, trap:'mix', ruleTxt:'Hex breach: any enemy may come hex-mutated, elites always do',
+  {name:'Hex Breach', phase:'Breach', rooms:50, mixed:true, mobs:['hexdrone','cellmite','drone','seraph','warden','lancer','shardling','ram','censer','crawler','herald','coil','heavy','beacon','hopper','dominion','sentry','bulwark','emissary','howitzer'], blockTypes:10, pin:['warden','censer','beacon'], bosses:['x_colossus','x_archon','x_arachne'], rule:{hazards:.5,hexMut:.2}, trap:'mix', ruleTxt:'Hex breach: any enemy may come hex-mutated, elites always do',
    theme:{bg:0x120a22,hemiS:0xbff6ff,hemiG:0x1c1036,ground:0x3a2c5a,city:0x7ae8e0,edge:0x36e8d8,rim:0xb070ff,win:0x9ff4ee,floor:0x8a7ab0,wall:0x261c40,block:0x4a3a7a,water:0x36e8d8},
    colorCss:'#36e8d8'},
   /* Main Stage (High-Co's festival): unlocked by Hex Breach's first clear (it was Arena 4's), one notch above it. 15 wave rooms (STAGE) and High-Co after room 15
@@ -370,6 +370,12 @@ const ENEMY={
   hopper:{name:'Hopper',tag:'move',mass:.9,role:'hopper',hp:8,r:1,speed:5,sc:.9,cost:1.2,xp:1.2,gold:8,score:150,dmgK:1.4,build:()=>buildHopper(),init:e=>{ e.st='wait'; e.stT=rand(.5,1); e.hops=0; }},
   emissary:{name:'Emissary',tag:'move',mass:1,role:'blinker',band:[5,9],hp:10,r:1.2,speed:3.4,sc:1.1,angel:true,cost:2.1,xp:2.1,gold:13,score:250,dmgK:1.3,build:()=>buildEmissary(),init:e=>{ e.cd=rand(1.5,2.5); e.st='walk'; }},
   aureole:{name:'Aureole',tag:'move',mass:.8,role:'boomerang',band:[7,11],hp:9,r:1,speed:3,sc:.95,fly:true,angel:true,cost:1.8,xp:1.8,gold:11,score:200,dmgK:1.3,build:()=>buildAureole(),init:e=>{ e.cd=rand(1.5,2.5); }},
+  // Hex Breach anomalies (patch.md 36). Cellmite: swarm biter; three that stay together for 2 s merge into a Cell Brute (enemy-ai.js).
+  // Cell Brute: slow, slams a hex shockwave. Hex Drone: a Drone whose cells scatter as 3 Cellmites when it dies (enemies.js killEnemy).
+  // anomaly: born of the breach, so the hex mutation (rule.hexMut) skips it
+  cellmite:{name:'Cellmite',tag:'move',anomaly:true,mass:.4,role:'swarm',hp:3,r:.8,speed:5.2,sc:.8,cost:.5,xp:.4,gold:3,score:60,build:()=>buildCellmite(),elite:false,init:e=>{ e.biteCd=rand(.5,1.2); e.mergeT=0; }},
+  cellbrute:{name:'Cell Brute',tag:'move',anomaly:true,mass:3,role:'tank',hold:3.2,slam:4.4,hp:22,r:1.9,speed:1.8,sc:1.1,cost:3,xp:3,gold:16,score:320,build:()=>buildCellBrute(),init:e=>{ e.slamCd=rand(1.5,2.5); }},
+  hexdrone:{name:'Hex Drone',anomaly:true,mass:.9,role:'kiter',band:[6,10.5],hp:6,r:1.15,speed:3.4,sc:.8,cost:1.4,xp:1.2,gold:8,score:140,ai:'drone',build:()=>hexModel(buildDrone()),elite:false},
   cantor:{name:'Cantor',tag:'focus',mass:.6,role:'summoner',band:[9,13],hp:8,r:1.1,speed:3.2,sc:1,fly:true,angel:true,cost:1.8,xp:1.8,gold:11,score:200,build:()=>buildCantor(),elite:false,init:e=>{ e.chantT=3; e.st='move'; }},
   shardling:{name:'Shardling',mass:.9,role:'kiter',band:[6,10],hp:8,r:1.2,speed:3,sc:1,fly:true,angel:true,cost:1.6,xp:1.4,gold:9,score:180,build:()=>buildShardling(),init:(e,o)=>{ e.gen=o.gen||0; e.sc=Math.pow(.72,e.gen); e.hp*=Math.pow(.45,e.gen); e.r*=e.sc; }},
   cherub:{name:'Cherub',tag:'focus',mass:.6,role:'support',hp:7,r:1,speed:4.6,sc:1,fly:true,angel:true,cost:1.5,xp:1.5,gold:10,score:220,build:()=>buildCherub(),elite:false,init:e=>{ e.cd=3; }},
@@ -420,7 +426,7 @@ const COMPS=[
   [{name:'Lanes',core:['lancer','crawler','drone']},{name:'Medics',core:['cherub','heavy','spark','spark']},{name:'Siege line',core:['howitzer','bulwark','lancer']},
    {name:'Hunters',core:['crawler','crawler','warden','censer']},{name:'Judgement',core:['warden','lancer','heavy']},{name:'Breach',core:['ram','crawler','lancer']},{name:'Grid',core:['coil','drone','lancer']},{name:'Field repair',core:['mender','heavy','drone','drone']},{name:'Turret line',core:['sentry','howitzer','crawler']},{name:'Dig',core:['borer','hopper','lancer']},{name:'Skirmish',core:['move','focus','move']}],
   // Hex Breach: mixed squads from both factions; the hex mutation (rule.hexMut) does the rest
-  [{name:'Breach',core:['ram','drone','focus']},{name:'Lattice',core:['warden','coil','lancer']},{name:'Choir',core:['seraph','herald','beacon']},
+  [{name:'Hive',core:['cellmite','cellmite','cellmite','hexdrone']},{name:'Breach',core:['ram','hexdrone','focus']},{name:'Lattice',core:['warden','coil','lancer']},{name:'Choir',core:['seraph','herald','beacon']},
    {name:'Wall',core:['bulwark','sentry','move']},{name:'Siege',core:['howitzer','heavy','drone']},{name:'Swarm',core:['shardling','crawler','hopper']},{name:'Court',core:['dominion','emissary','focus']}],
   // Main Stage rooms are composed wave by wave from STAGE (composeStage); these only cover a forced plain room there
   [{name:'Sound check',core:['bass','roadie','spot']},{name:'Moshpit',core:['mosher','mosher','mosher','mosher','mosher','mosher']},{name:'Encore',core:['bass','dancer','shredder','drummer']}]
