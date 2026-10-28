@@ -5,9 +5,13 @@ const BUCKET_KEYS=['dmg','rate','hp','hpFlat','regen','spd','crit','dodge','gold
 // bucket bonus above +100% only counts at 50%
 const softCap=x=>x<=BAL.soft?x:BAL.soft+(x-BAL.soft)*BAL.softRate;
 // permanent layer: skill tree + Core stats (prof = the save object P)
+// tier gate (patch.md 38): a profile with arenas (the save) only counts the ranks and Core levels its arenas open; the reference pilot
+// and the measuring tools pass no arenas and count everything. Cooldowns, fire rate and damage taken are hyperbolic (1/(1+x)), so an
+// extra rank can never reach zero; the factors give today's values at today's max rank.
+const TREE_NODE={}; TREE.forEach(b=>b.nodes.forEach(n=>TREE_NODE[n.id]=n));
 function metaStats(prof,unitKey){
-  const r=id=>prof.skills[id]||0, c=prof.core;
-  return {dmg:(1+.1*r('dmg'))*(1+.04*c.dmg),rate:1-.08*r('rate'),crit:.07*r('crit'),sp:1+.25*r('sp'),boss:1+.3*r('exec'),heal:1+.4*r('repair'),hexDrain:1-.2*r('hex'),armor:1-.08*r('plate'),second:r('second')>0,spd:1+.06*r('spd'),regen:(1+.15*r('regen'))*(1+.03*c.regen),dashCd:1-.15*r('dashcd'),magnet:3.2*(1+.6*r('magnet')),goldMul:1+.1*r('magnet'),gadgetCd:1-.12*r('gadget'),maxHp:UNITS[unitKey].hp+15*r('hp')+20*c.armor};
+  const t=prof.arenas, r=id=>t==null?prof.skills[id]||0:Math.min(prof.skills[id]||0,treeRankAt(TREE_NODE[id],t)), cap=t==null?CORE_MAX:coreCap(prof), cl=k=>Math.min(prof.core[k]||0,cap), c={armor:cl('armor'),dmg:cl('dmg'),regen:cl('regen')};
+  return {dmg:(1+.1*r('dmg'))*Math.pow(CORE.dmg.k,c.dmg),rate:1/(1+.095*r('rate')),crit:.07*r('crit'),sp:1+.25*r('sp'),boss:1+.3*r('exec'),heal:1+.4*r('repair'),hexDrain:1/(1+r('hex')/3),armor:1/(1+.095*r('plate')),second:r('second')>0,spd:1+.06*r('spd'),regen:(1+.15*r('regen'))*Math.pow(CORE.regen.k,c.regen),dashCd:1/(1+.215*r('dashcd')),magnet:3.2*(1+.6*r('magnet')),goldMul:1+.1*r('magnet'),gadgetCd:1/(1+.158*r('gadget')),maxHp:(UNITS[unitKey].hp+15*r('hp'))*Math.pow(CORE.armor.k,c.armor)};
 }
 // sum of all run bonuses: skills count per rank, then items, curses and extra (angel blessings)
 function sumBonus(rs,items,curses,extra){
@@ -72,7 +76,7 @@ const growth=(g,ri)=>Math.pow(1+g,ri);
    The boss keeps the roomK curve. */
 const kneeCurve=(c,xr,knee)=>c[0]*Math.pow(c[1],Math.min(xr,knee))*Math.pow(c[2],Math.max(0,xr-knee));
 /* the reference pilot of arena a (CURVE): tree ranks open at tier a+1, Core half way into tier a+1; no tier gate (prof has no arenas) */
-const treeRankAt=(n,t)=>{ let k=0; while(k<n.max&&Math.ceil((k+1)*CURVE.treeFull/n.max)<=t) k++; return k; };
+const treeRankAt=(n,t)=>{ let k=0; while(k<n.max&&Math.ceil((k+1)*CURVE.treeFull/n.max)<=t) k++; return k; }, treeOpenAt=(n,k)=>Math.ceil(k*CURVE.treeFull/n.max);
 function refMeta(a){ const sk={}, lv=CURVE.tier*a+CURVE.tier/2; TREE.forEach(b=>b.nodes.forEach(n=>sk[n.id]=treeRankAt(n,a+1))); return {skills:sk,core:{armor:lv,dmg:lv,regen:lv}}; }
 function refPower(a){ const m=metaStats(refMeta(a),'azure'); return {dps:m.dmg/m.rate*(1+m.crit),ehp:m.maxHp/m.armor}; }
 // arena multipliers: enemy armor follows the reference dps, damage the reference ehp, both × √pressure; crowd growth comes off the armor

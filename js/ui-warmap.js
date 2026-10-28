@@ -63,12 +63,13 @@ function renderArmory(){
 }
 function renderCore(){
   const el=$('coreHangar'); el.innerHTML='';
-  Object.entries(CORE).forEach(([k,d])=>{ const lv=P.core[k], max=lv>=CORE_MAX, cost=coreCost(lv);
+  const cap=coreCap();
+  Object.entries(CORE).forEach(([k,d])=>{ const lv=P.core[k], on=Math.min(lv,cap), max=lv>=cap, cost=coreCost(lv);
     const b=document.createElement('button'); b.className='coreRow'+(max?' max':'')+(!max&&P.gold<cost?' poor':''); b.id='core_'+k;
     b.innerHTML=`<span class="ic">${svg(d.icon)}</span><span class="t"><b></b><small></small></span><span class="lv"></span><span class="cost"></span>`;
-    b.querySelector('b').textContent=d.name; b.querySelector('small').textContent=d.d+' · '+t('now +{0}',lv*d.per+d.unit);
-    b.querySelector('.lv').textContent=`${lv}/${CORE_MAX}`;
-    b.querySelector('.cost').innerHTML=max?t('MAXED'):`<span class="cur gold"><i></i>${cost.toLocaleString()}</span>`;
+    b.querySelector('b').textContent=d.name; b.querySelector('small').textContent=d.d+' · '+t('now +{0}',Math.round((Math.pow(d.k,on)-1)*100)+'%');
+    b.querySelector('.lv').textContent=`${on}/${cap}`;
+    b.querySelector('.cost').innerHTML=max?t('Next arena'):`<span class="cur gold"><i></i>${cost.toLocaleString()}</span>`;
     b.disabled=max; b.onclick=()=>{ if(max||P.gold<cost) return; P.gold-=cost; P.core[k]=lv+1; sfx('gem'); persist(); renderMenu(); };
     el.appendChild(b); });
 }
@@ -76,13 +77,13 @@ function renderTree(container){
   renderCore();
   $('sGold').textContent=P.gold.toLocaleString(); $('sGems').textContent=P.gems.toLocaleString(); container.innerHTML=''; const wrap=document.createElement('div'); wrap.className='tree';
   TREE.forEach(br=>{ const col=document.createElement('div'); col.className='branch'; col.style.setProperty('--c',br.c); const h=document.createElement('h3'); h.textContent=br.branch; col.appendChild(h);
-    br.nodes.forEach((n,i)=>{ const rk=P.skills[n.id]||0, unlocked=i===0||(P.skills[br.nodes[i-1].id]||0)>0, max=rk>=n.max, cost=max?0:n.cost[rk];
+    br.nodes.forEach((n,i)=>{ const rk=P.skills[n.id]||0, unlocked=i===0||(P.skills[br.nodes[i-1].id]||0)>0, max=rk>=n.max, gate=!max&&rk>=treeRankAt(n,P.arenas), cost=max?0:n.cost[rk];
       const b=document.createElement('button'); b.className='node'+(rk>0?' on':'')+(unlocked?'':' lock')+(max?' max':'')+(!max&&P.gems<cost?' poor':''); b.id='sk_'+n.id;
       b.innerHTML=`<span class="t"><b></b><span class="npips">${Array.from({length:n.max},(_,j)=>`<i class="${j<rk?'f':''}"></i>`).join('')}</span></span><small></small><span class="cost"></span>`;
       b.querySelector('b').textContent=n.name; b.querySelector('small').textContent=n.d;
-      b.querySelector('.cost').innerHTML=max?t('MAXED'):!unlocked?'<span class="tag">'+t('Locked')+'</span>':`<span class="cur gem"><i></i>${cost.toLocaleString()}</span>`;
-      if(!unlocked||max) b.disabled=true;
-      b.onclick=()=>{ if(!unlocked||max||P.gems<cost) return; P.gems-=cost; P.skills[n.id]=rk+1; sfx('gem'); persist(); renderMenu(); };
+      b.querySelector('.cost').innerHTML=max?t('MAXED'):!unlocked?'<span class="tag">'+t('Locked')+'</span>':gate?'<span class="tag">'+t('Arena {0}',treeOpenAt(n,rk+1))+'</span>':`<span class="cur gem"><i></i>${cost.toLocaleString()}</span>`;
+      if(!unlocked||max||gate) b.disabled=true;
+      b.onclick=()=>{ if(!unlocked||max||gate||P.gems<cost) return; P.gems-=cost; P.skills[n.id]=rk+1; sfx('gem'); persist(); renderMenu(); };
       col.appendChild(b); });
     wrap.appendChild(col); });
   container.appendChild(wrap);
