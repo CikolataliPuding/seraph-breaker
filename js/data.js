@@ -178,8 +178,8 @@ const RSK={
   // legendary: evolutions, offered only when both parents are maxed
   storm:{name:'Bullet Storm',d:'Evolution of Twin Shot + Rapid Cycle: +25% fire rate and every shot fans out.',rarity:'legendary',max:1,icon:'storm',evo:['twin','sig'],proj:2,bonus:{rate:.25}},
   inferno:{name:'Inferno Ring',d:'Evolution of Burn Rounds + Orbit Blades: blades become a wide ring of fire.',rarity:'legendary',max:1,icon:'inferno',evo:['torch','orbit'],orb:2,apply:()=>buildOrbit()},
-  halo:{name:'Storm Halo',d:'Evolution of Chain Spark + Bolt Orbit: lightning strikes 3 enemies every second.',rarity:'legendary',max:1,icon:'halo',evo:['arc','borb']},
-  blood:{name:'Blood Engine',d:'Evolution of Vampiric Core + Rage: kills repair 4% and Rage counts double.',rarity:'legendary',max:1,icon:'blood',evo:['vamp','rage']},
+  halo:{name:'Storm Halo',d:'Evolution of Chain Spark + Bolt Orbit: lightning strikes 2 enemies every 1.25 seconds.',rarity:'legendary',max:1,icon:'halo',evo:['arc','borb']},
+  blood:{name:'Blood Engine',d:'Evolution of Vampiric Core + Rage: kills repair 6% and Rage counts 2.5 times.',rarity:'legendary',max:1,icon:'blood',evo:['vamp','rage']},
 };
 // the angel's second card comes from these (patch.md 34): damage, fire rate and kill cards, never armor or utility
 const RSK_AGGRO=['atk','sig','crit','twin','diag','side','rear','pierce','ricochet','torch','poison','arc','nova','shard','rage','overload','orbit','forb','borb','meteor','headshot','storm','inferno','halo'];
@@ -209,6 +209,23 @@ const BAL={
    bossDmgK: every boss hits harder by this much. A tougher start and a gentler climb (mob 2.2, hp .058, dmg .04) keep the late rooms from
    running away, and a full campaign (all arenas + Main Stage) takes a strong pilot about 2.5 h (measured with the autopilot campaign). */
 const SCALE={mob:2.2,hp:.058,dmg:.04,bossDmgK:1.4,bossRef:9,finalHp:1.5,finalDmg:1.25,budget:{base:4.6,arena:1.1,room:.07,elite:.55,cap:12}};
+/* patch notes: shown once on the first boot after a big update (ui-hangar.js newsBoot), newest first; System > Patch notes shows them again.
+   Plain player words: what got weaker (nerf), stronger (buff), what is new, what changed and what was fixed. A new pilot skips them. */
+const NEWS=[
+  {id:'balance-1',title:'The Balance Update',items:[
+    {k:'nerf',t:'Run cards stop at rank 3, and cards you already own show up less often.'},
+    {k:'change',t:'Angels offer two choices: one repair and one attack card.'},
+    {k:'nerf',t:'Desktop: holding fire while moving slows you by 35%. You can no longer shoot non-stop at full speed for free.'},
+    {k:'new',t:'Angel bosses have two new attacks that break cover: golden judgment circles and a shockwave you must dash through. Hiding behind a box is no longer safe.'},
+    {k:'nerf',t:"Thorns deal at most 30% of an enemy's armor per hit."},
+    {k:'change',t:'Some enemies hit harder (Hopper, Dominion, Spark, Sentry, Ram and others); Heavy, Howitzer and Bulwark hit softer.'},
+    {k:'nerf',t:'Storm Halo: lightning strikes 2 enemies every 1.25 s (was 3 every second).'},
+    {k:'buff',t:'Inferno Ring: hotter, wider blades and a longer burn.'},
+    {k:'buff',t:'Blood Engine: kills repair 6% (was 4%) and Rage counts 2.5 times (was 2).'},
+    {k:'fix',t:'The same boss never comes twice in one arena.'},
+    {k:'fix',t:'Crystal shards no longer spawn inside blocks.'},
+    {k:'fix',t:"Phone: auto-aim no longer fires into corners, and Crimson's Nova lands on the crowd, not at the boss's feet."}]},
+];
 /* arena curve (patch.md 39, balance.js arenaCurve): every number an arena needs comes from its index a, so a new arena needs no table row.
    The reference pilot of arena a has the tree ranks open at tier a+1 and Core level tier*a + tier/2 (the last tier full, the new one half
    bought). His dps and ehp set the enemy armor and damage; press keeps each arena a little harder than the last at that power

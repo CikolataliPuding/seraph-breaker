@@ -308,6 +308,14 @@ button.card:hover,button.card:focus-visible{border-color:var(--c,var(--signal));
 body.mob .brand{display:none}
 .brand{font-family:var(--f-display);font-weight:800;letter-spacing:.32em;font-size:14px;color:var(--unit);opacity:.9;margin-right:4px}
 @media (prefers-reduced-motion:reduce){ .stTxt.in{animation:none} }
+/* patch notes (ui-hangar.js newsShow): a tag per line says what happened to it */
+#news{z-index:40;background:radial-gradient(ellipse at 50% 45%,rgba(30,20,42,.96),rgba(6,4,8,.98))}
+.nwBox{width:min(680px,100%);max-height:100%;display:grid;grid-template-rows:auto auto 1fr auto;gap:12px;min-height:0}
+.nwT{margin:0;font-family:var(--f-display);font-weight:800;font-size:clamp(26px,5vw,40px);color:var(--paper)}
+.nwList{margin:0;padding:0 6px 0 0;list-style:none;display:grid;gap:9px;overflow:auto;min-height:0;font-size:15px;line-height:1.4;color:var(--paper)}
+.nwList li{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:baseline}
+.nwTag{font-family:var(--f-data);font-size:11px;letter-spacing:.14em;padding:2px 6px;border:1px solid currentColor;border-radius:3px;min-width:7.5em;text-align:center}
+.nwTag.nerf{color:#ff7a66} .nwTag.buff{color:#7dff9a} .nwTag.new{color:var(--signal)} .nwTag.change{color:#ffd36a} .nwTag.fix{color:#9fd0ff}
 @keyframes cardIn{0%{opacity:0;transform:translateY(6px)}12%{opacity:1;transform:none}82%{opacity:1}100%{opacity:0}}
 #warn{pointer-events:none;background:rgba(232,36,60,.12)}
 #warn .w{display:grid;gap:4px;text-align:center;padding:18px 26px;background:repeating-linear-gradient(-45deg,rgba(232,36,60,.9) 0 18px,rgba(12,9,16,.9) 18px 36px);animation:blink .45s steps(2) infinite;max-width:100%}

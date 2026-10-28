@@ -86,7 +86,7 @@ function hitEnemy(e,d,pos,dot,noProc,flat){
   const rs=player.rs;
   let crit=false; if(!dot&&!flat&&Math.random()<player.st.crit){ d*=player.critMul||2; crit=true; }
   // Rage (doubled by Blood Engine): more damage as your armor drops
-  if(rs.rage&&!flat) d*=1+.25*rs.rage*(rs.blood?2:1)*(1-player.hp/player.maxHp);
+  if(rs.rage&&!flat) d*=1+.25*rs.rage*(rs.blood?2.5:1)*(1-player.hp/player.maxHp);
   if(e.shieldT>0) d*=.5;
   // Main Stage open moments (Dancer landing, Shredder headbang, Diver dazed)
   if(e.vulnT>0&&e!==boss) d*=1.6;
@@ -142,7 +142,7 @@ function killEnemy(e,byProc){
   const mul=e.elite?3:1, def=e.def||ENEMY.drone;
   score+=(def.score*(1+stage*.5)*mul)|0; kills++;
   const rs=player.rs;
-  if(rs.vamp) player.hp=Math.min(player.maxHp,player.hp+player.maxHp*(.02*rs.vamp+(rs.blood?.04:0)));
+  if(rs.vamp) player.hp=Math.min(player.maxHp,player.hp+player.maxHp*(.02*rs.vamp+(rs.blood?.06:0)));
   // Death Nova and Shard Burst: a share of the dying enemy's max armor, capped, no damage multipliers, no further chains
   if(!byProc){ const cap=k=>PROC_KILL[k].cap*roomHpScale(), rk=(k,a)=>a[Math.min(a.length,rs[k])-1];
     if(rs.nova&&procOk('nova')) queueBlast(e.pos.x,e.pos.z,{t:.14,rad:rk('nova',PROC_KILL.nova.rad),dmg:Math.min(e.maxHp*rk('nova',PROC_KILL.nova.pct),cap('nova')),flat:true,color:0xff5a2a,size:.7,skip:e});
