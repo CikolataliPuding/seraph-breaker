@@ -161,7 +161,7 @@ function tick(dt,now){
   sun.position.copy(camTarget).add(_sunOff); sun.target.position.copy(camTarget);
   hudT-=dt; if(player&&sortie&&hudT<=0){ hudT=.06; const p=player;
     $('hpBar').firstElementChild.style.width=(Math.max(0,p.hp)/p.maxHp*100)+'%'; $('hpTxt').textContent=Math.ceil(Math.max(0,p.hp))+'/'+p.maxHp;
-    $('enBar').firstElementChild.style.width=Math.max(0,p.en/p.enMax*100)+'%'; $('enBar').classList.toggle('hot',p.overheat>0); $('enLbl').textContent=p.overheat>0?HUD_TXT.heat:mobileMode?HUD_TXT.bar:HUD_TXT.pow; $('enTxt').textContent=Math.max(0,Math.floor(p.en));
+    $('enBar').firstElementChild.style.width=Math.max(0,p.en/p.enMax*100)+'%'; $('enBar').classList.toggle('hot',p.overheat>0||p.gunLock>0); $('enLbl').textContent=p.overheat>0||p.gunLock>0?HUD_TXT.heat:mobileMode?HUD_TXT.bar:HUD_TXT.pow; $('enTxt').textContent=Math.max(0,Math.floor(p.en));
     const spv=p.od>0?p.od/5*100:p.lance>0?p.lance/2.4*100:p.sp; $('spBar').firstElementChild.style.width=spv+'%'; $('spBar').classList.toggle('ready',p.sp>=100); $('spLbl').textContent=SPECIALS[P.unit].name; $('spTxt').textContent=p.sp>=100?HUD_TXT.ready:Math.floor(p.sp)+'%';
     $('roomTxt').textContent=String(sortie.ri+1).padStart(2,'0'); $('roomN').textContent='/'+sortie.N;
     // Main Stage: wave counter and the beat pip (it flashes on every beat of the live music)

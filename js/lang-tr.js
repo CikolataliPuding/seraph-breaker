@@ -59,7 +59,7 @@ const DICT_TR={
   'The same boss never comes twice in one arena.':'Aynı boss bir arenada iki kez gelmez.',
   'Crystal shards no longer spawn inside blocks.':'Kristal parçaları artık blokların içinde doğmuyor.',
   "Phone: auto-aim no longer fires into corners, and Crimson's Nova lands on the crowd, not at the boss's feet.":"Telefon: otomatik nişan köşelere boşa ateş etmiyor; Crimson'un Nova'sı boss'un dibine değil kalabalığa iniyor.",
-  'Skip ▸▸':'Geç ▸▸', 'Left thumb: move · right thumb: aim and fire · DASH and SP on the right':'Sol başparmak: hareket · sağ başparmak: nişan ve ateş · DASH ve SP sağda', 'Next ▸':'İleri ▸', 'Skip ▸':'Geç ▸', 'WARNING':'UYARI',
+  'Skip ▸▸':'Geç ▸▸', 'OVERHEAT':'AŞIRI ISINDI', 'Left thumb: move · right thumb: aim and fire · DASH and SP on the right':'Sol başparmak: hareket · sağ başparmak: nişan ve ateş · DASH ve SP sağda', 'Next ▸':'İleri ▸', 'Skip ▸':'Geç ▸', 'WARNING':'UYARI',
   'Level up':'Seviye atladın', 'Choose a skill':'Bir yetenek seç', 'Reroll':'Yeniden çek',
   'Build':'Yapı', 'Paused':'Duraklatıldı', 'Resume':'Devam et', 'Save & exit':'Kaydet ve çık', 'Abandon run':'Koşuyu bırak',
   'Save & exit continues from the last cleared room. Gold and diamonds you already picked up are always kept.':'Kaydet ve çık, son temizlenen odadan devam eder. Topladığın altın ve elmaslar her zaman sende kalır.',
