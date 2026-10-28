@@ -247,8 +247,9 @@ const NEWS=[
    there, so the anchor brings Arena 1 to that power (A1-only campaigns: .35-.45 clear it in 2-4 tries, ~20-40 min; .6 walls Azure).
    An ARENAS row or ECON table that lists its own value keeps it. */
 const CURVE={hp0:.85,dmg0:.4,tier:4,treeFull:3,press:.5,bossT:1.06,tempo:.04,tempoMax:1.25,runs:1.5};
-// pilot xp per level: base + per × level (about one level every 1-2 rooms)
-const XP_NEED={base:6,per:.35}, XP_BOSS=10;
+// pilot xp per level: base + per × level. cap: the arena's level cap is this share of its rooms (patch.md 40 [karar]: 50 rooms → level 40),
+// reached around room 45; past it there are no more cards, only the angel and the devil. The curve was ~1 level a room (level 54 in 50 rooms).
+const XP_NEED={base:8.5,per:.5,cap:.8}, XP_BOSS=10;
 /* economy: target earnings for one full run of each arena without gold bonuses (first-clear diamonds come on top, once).
    The per-kill, boss and clear numbers below are tuned so a full run lands near target; the gold the game pays follows goldTarget
    (balance.js, patch.md 39: the price of the arena's Core tier), these gold tables only give the split (check with DBG.sim()). */
