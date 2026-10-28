@@ -209,9 +209,9 @@ function bossDeath(){
   if(!player||player.dead||state==='dying'||state==='result') return;
   if(boss.poles){ boss.poles.forEach(p=>roomGroup.remove(p.m.g)); boss.poles.length=0; hcStreamsEnd(boss,false); }
   const def=boss.def; score+=[5000,8000,12000,16000,20000][stage]; kills++; hideBeams(); fizzleRoom(); boss.jumpY=0; boss.reflectT=0;
-  const gm=Math.round(def.gems*ECON.bossGems[sortie.a]*sortie.farm); P.gems+=gm; sortie.gems+=gm; logEarn('gems','boss',gm);
+  const gm=Math.round(def.gems*econAt('bossGems',sortie.a)*sortie.farm); P.gems+=gm; sortie.gems+=gm; logEarn('gems','boss',gm);
   setState('bossdeath'); stateT=3.2; boss.final=false; buzz(200); hitstop(120,true);
-  dropGold(boss.pos,def.gold*ECON.bossGold[sortie.a]*sortie.farm,'boss'); dropItem(boss.pos); gainXp(XP_BOSS);
+  dropGold(boss.pos,def.gold*econAt('bossGold',sortie.a)*sortie.farm,'boss'); dropItem(boss.pos); gainXp(XP_BOSS);
 }
 function startCine(){
   const kind=room.boss, def=BOSSES[kind];

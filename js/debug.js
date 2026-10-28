@@ -139,10 +139,10 @@ function simulate(o={}){
           // Survive: about one extra spawn every 1.3 s, paying K.reward of a normal kill
           if(spec.kind==='survive') for(let i=0;i<Math.round(K.time/1.3);i++) list.push(pickOne(arenaPool(a,ri))+'~');
           for(const t0 of list){ const W=waveType(t0), tg=W.tg, el=W.elite, k=W.k, d=ENEMY[k], fam=(k==='shardling'?1+6*SPLIT_REWARD:1)*(tg==='~'?K.reward:1), mul=el?3:1;
-            count++; g+=d.gold*ECON.killGold[a]*mul*fam; gm+=(el?ECON.gemChance.elite:d.cost>=2.5?ECON.gemChance.big:ECON.gemChance.small)*fam;
+            count++; g+=d.gold*econAt('killGold',a)*mul*fam; gm+=(el?ECON.gemChance.elite:d.cost>=2.5?ECON.gemChance.big:ECON.gemChance.small)*fam;
             gain(d.xp*mul*(1+a*.12)*fam); if(el&&Math.random()<.25) item(); }
-          src.kill+=g; src.gemKill+=gm; g+=ECON.clearGold[a]; src.clear+=ECON.clearGold[a];
-        } else if(type==='boss'){ count=1; g=avgBoss('gold')*ECON.bossGold[a]; gm=Math.round(avgBoss('gems')*ECON.bossGems[a]); src.boss+=g; src.gemBoss+=gm; gain(XP_BOSS); item(); }
+          src.kill+=g; src.gemKill+=gm; g+=econAt('clearGold',a); src.clear+=econAt('clearGold',a);
+        } else if(type==='boss'){ count=1; g=avgBoss('gold')*econAt('bossGold',a); gm=Math.round(avgBoss('gems')*econAt('bossGems',a)); src.boss+=g; src.gemBoss+=gm; gain(XP_BOSS); item(); }
         else pick(skillOptions(2,null,ctx));
         if(ri===N-1){ gm+=ECON.repeatClear(a); src.gemClear+=ECON.repeatClear(a); }
         goldT+=g; gemT+=gm;

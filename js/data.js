@@ -206,7 +206,14 @@ const BAL={
    the arena's final boss gets finalHp / finalDmg on top. mob: extra armor for every room mob (not bosses), so enemies live long enough to attack.
    bossDmgK: every boss hits harder by this much. A tougher start and a gentler climb (mob 2.2, hp .058, dmg .04) keep the late rooms from
    running away, and a full campaign (all arenas + Main Stage) takes a strong pilot about 2.5 h (measured with the autopilot campaign). */
-const SCALE={mob:2.2,hp:.058,dmg:.04,bossDmgK:1.4,bossRef:9,finalHp:1.5,finalDmg:1.25,budget:{base:4.6,arena:1.1,room:.07,elite:.55}};
+const SCALE={mob:2.2,hp:.058,dmg:.04,bossDmgK:1.4,bossRef:9,finalHp:1.5,finalDmg:1.25,budget:{base:4.6,arena:1.1,room:.07,elite:.55,cap:12}};
+/* arena curve (patch.md 39, balance.js arenaCurve): every number an arena needs comes from its index a, so a new arena needs no table row.
+   The reference pilot of arena a has the tree ranks open at tier a+1 and Core level tier*a + tier/2 (the last tier full, the new one half
+   bought). His dps and ehp set the enemy armor and damage; press keeps each arena a little harder than the last at that power
+   (difficulty ratio 1 + press × ln(1+a): skill grows fast first, then slower). bossT: the boss fight gets this much longer per arena.
+   tempo: enemy shot speed per arena, capped for readability. treeFull: the tier where today's tree is complete.
+   An ARENAS row or ECON table that lists its own value keeps it. */
+const CURVE={tier:4,treeFull:3,press:.25,bossT:1.06,tempo:.04,tempoMax:1.25,runs:1.5};
 // pilot xp per level: base + per × level (about one level every 1-2 rooms)
 const XP_NEED={base:6,per:.35}, XP_BOSS=10;
 /* economy: target earnings for one full run of each arena without gold bonuses (first-clear diamonds come on top, once).

@@ -71,11 +71,19 @@ const growth=(g,ri)=>Math.pow(1+g,ri);
    damage (ri + wf rooms in), so the stage climbs steadily from room 1; past the knee (the pilot hits the level cap there) it climbs slower.
    The boss keeps the roomK curve. */
 const kneeCurve=(c,xr,knee)=>c[0]*Math.pow(c[1],Math.min(xr,knee))*Math.pow(c[2],Math.max(0,xr-knee));
-function enemyScale(a,ri,rule,wf){ const A=ARENAS[a], hm=rule&&rule.hpMul||1, dm=A.dmgMul||1, fin=ri>=A.rooms-1, x=A.roomK?(ri+(wf||0))*A.roomK:ri, mc=A.mobCurve, xr=ri+(wf||0);
-  return {hp:(mc?kneeCurve(mc.hp,xr,mc.knee):A.hpMul*growth(SCALE.hp,x))*hm, dmg:mc?kneeCurve(mc.dmg,xr,mc.knee):dm*growth(SCALE.dmg,x),
-    boss:A.bossMul*growth(SCALE.hp,x)/growth(SCALE.hp,SCALE.bossRef)*hm*(fin?SCALE.finalHp:1), bossDmg:dm*growth(SCALE.dmg,x)/growth(SCALE.dmg,SCALE.bossRef)*(fin?SCALE.finalDmg:1)*SCALE.bossDmgK}; }
-// enemy budget for a room (sum of ENEMY cost); grows slowly next to the exponential armor curve
-function roomBudget(a,ri,elite){ const B=SCALE.budget; return (B.base+a*B.arena+(ri+1)*B.room)*(elite?B.elite:1); }
+/* the reference pilot of arena a (CURVE): tree ranks open at tier a+1, Core half way into tier a+1; no tier gate (prof has no arenas) */
+const treeRankAt=(n,t)=>{ let k=0; while(k<n.max&&Math.ceil((k+1)*CURVE.treeFull/n.max)<=t) k++; return k; };
+function refMeta(a){ const sk={}, lv=CURVE.tier*a+CURVE.tier/2; TREE.forEach(b=>b.nodes.forEach(n=>sk[n.id]=treeRankAt(n,a+1))); return {skills:sk,core:{armor:lv,dmg:lv,regen:lv}}; }
+function refPower(a){ const m=metaStats(refMeta(a),'azure'); return {dps:m.dmg/m.rate*(1+m.crit),ehp:m.maxHp/m.armor}; }
+// arena multipliers: enemy armor follows the reference dps, damage the reference ehp, both × √pressure; crowd growth comes off the armor
+const _curve=[];
+function arenaCurve(a){ if(_curve[a]) return _curve[a]; const A=ARENAS[a]||{}, r0=refPower(0), r=refPower(a), z=Math.sqrt(1+CURVE.press*Math.log(1+a)), crowd=roomBudget(a,0,false)/roomBudget(0,0,false), own=(k,v)=>A[k]!=null?A[k]:v;
+  return _curve[a]={hp:own('hpMul',r.dps/r0.dps*z/crowd),dmg:own('dmgMul',r.ehp/r0.ehp*z),boss:own('bossMul',r.dps/r0.dps*Math.pow(CURVE.bossT,a)),tempo:own('tempo',Math.min(CURVE.tempoMax,1+CURVE.tempo*a))}; }
+function enemyScale(a,ri,rule,wf){ const A=ARENAS[a], K=arenaCurve(a), hm=rule&&rule.hpMul||1, dm=K.dmg, fin=ri>=A.rooms-1, x=A.roomK?(ri+(wf||0))*A.roomK:ri, mc=A.mobCurve, xr=ri+(wf||0);
+  return {hp:(mc?kneeCurve(mc.hp,xr,mc.knee):K.hp*growth(SCALE.hp,x))*hm, dmg:mc?kneeCurve(mc.dmg,xr,mc.knee):dm*growth(SCALE.dmg,x),
+    boss:K.boss*growth(SCALE.hp,x)/growth(SCALE.hp,SCALE.bossRef)*hm*(fin?SCALE.finalHp:1), bossDmg:dm*growth(SCALE.dmg,x)/growth(SCALE.dmg,SCALE.bossRef)*(fin?SCALE.finalDmg:1)*SCALE.bossDmgK}; }
+// enemy budget for a room (sum of ENEMY cost); grows slowly next to the exponential armor curve, the arena part stops at cap (readability)
+function roomBudget(a,ri,elite){ const B=SCALE.budget; return (Math.min(B.cap,B.base+a*B.arena)+(ri+1)*B.room)*(elite?B.elite:1); }
 const xpNeedAt=lv=>XP_NEED.base+Math.floor(lv*XP_NEED.per*10)/10;
 
 /* ================= POWER ESTIMATE ================= */
@@ -108,5 +116,9 @@ function playerPower(){ const p=player; if(!p) return {dps:1,ehp:1,power:1}; ret
 /* ================= ECONOMY ================= */
 // every gold and diamond gain goes through here, so the debug run log can split earnings by source (kill, boss, clear, pickup)
 function logEarn(cur,src,v){ if(!sortie||!v) return; const L=sortie.earn||(sortie.earn={}), k=cur+':'+src; L[k]=(L[k]||0)+v; }
+/* ECON's per-arena tables (killGold, bossGold, bossGems, clearGold, healChance): an arena past the table end takes the last value,
+   grown with the gold target. goldTarget: ECON.target when listed, else the gold that pays the arena's new Core tier in CURVE.runs runs. */
+function goldTarget(a){ const g=ECON.target.gold; if(a<g.length) return g[a]; let s=0; for(let lv=CURVE.tier*a;lv<CURVE.tier*(a+1);lv++) s+=3*coreCost(lv); return s/CURVE.runs; }
+function econAt(k,a){ const v=ECON[k], n=v.length-1; return a<=n?v[a]:v[n]*(k==='healChance'?1:goldTarget(a)/goldTarget(n)); }
 // flat gold for every cleared combat or elite room (Gold Rush, Greed and the tree's magnet bonus apply)
-function clearBonus(){ if(!sortie||!room||room.type==='angel'||room.type==='boss') return; const v=Math.round(ECON.clearGold[sortie.a]*player.st.goldMul*(sortie.farm||1)); P.gold+=v; sortie.gold+=v; logEarn('gold','clear',v); }
+function clearBonus(){ if(!sortie||!room||room.type==='angel'||room.type==='boss') return; const v=Math.round(econAt('clearGold',sortie.a)*player.st.goldMul*(sortie.farm||1)); P.gold+=v; sortie.gold+=v; logEarn('gold','clear',v); }
