@@ -111,14 +111,16 @@ const TREE=[
     {id:'magnet',name:'Salvage magnet',max:2,cost:[9,15],d:'+60% pickup reach, +10% gold'},
     {id:'gadget',name:'Quick deploy',max:2,cost:[18,33],d:'-12% gadget cooldowns'}]},
 ];
-/* core stats: the gold sink next to the diamond-priced skill tree. 20 levels each, cost ×1.18 per level: the full Core (3 × 20) is ~44k gold,
-   about one campaign's gold plus a few replays (patch.md 27). */
+/* core stats: the gold sink next to the diamond-priced skill tree (patch.md 39). Every level multiplies (k per level, compounding), so each
+   tier of 4 levels is the same step of power in Arena 2 and in Arena 8. The tier gate: you can raise each stat to CURVE.tier levels per arena
+   opened (coreCap); levels a save already has above it wait until the next arena opens. Cost ×1.107 per level: one tier costs ×1.5 the last.
+   CORE_MAX: a sanity cap for the save, ten arenas' worth. */
 const CORE={
-  armor:{name:'Armor',d:'+20 max armor per level',icon:'armor',per:20,unit:''},
-  dmg:{name:'Damage',d:'+4% damage per level',icon:'atk',per:4,unit:'%'},
-  regen:{name:'Power regen',d:'+3% power regeneration per level',icon:'regen',per:3,unit:'%'},
+  armor:{name:'Armor',d:'+9% max armor per level, compounding',icon:'armor',k:1.09},
+  dmg:{name:'Damage',d:'+9% damage per level, compounding',icon:'atk',k:1.09},
+  regen:{name:'Power regen',d:'+3% power regeneration per level, compounding',icon:'regen',k:1.03},
 };
-const CORE_MAX=20, coreCost=lv=>Math.round(100*Math.pow(1.18,lv)/5)*5;
+const CORE_MAX=40, coreCost=lv=>Math.round(100*Math.pow(1.107,lv)/5)*5, coreCap=(prof=P)=>CURVE.tier*Math.max(1,prof.arenas|0);
 /* run skills: picked on level-up (skill roulette), from angels and devils. They last for the whole arena run.
    rarity: common (pure stats) · rare (projectile modifiers, on-kill triggers) · epic (orbits, mechanic-specific) · legendary (evolutions).
    bonus:{stat:value} is added per rank to that stat's bucket (see BAL and balance.js): bonuses add inside a bucket, buckets multiply.
@@ -228,7 +230,8 @@ const NEWS=[
    The reference pilot of arena a has the tree ranks open at tier a+1 and Core level tier*a + tier/2 (the last tier full, the new one half
    bought). His dps and ehp set the enemy armor and damage; press keeps each arena a little harder than the last at that power
    (difficulty ratio 1 + press × ln(1+a): skill grows fast first, then slower). bossT: the boss fight gets this much longer per arena.
-   tempo: enemy shot speed per arena, capped for readability. treeFull: the tier where today's tree is complete.
+   tempo: enemy shot speed per arena, capped for readability. treeFull: the tier where today's tree is complete; a tree node's rank k
+   opens at tier ceil(k × treeFull / max), the same gate as the Core (a save's ranks above it wait).
    An ARENAS row or ECON table that lists its own value keeps it. */
 const CURVE={tier:4,treeFull:3,press:.25,bossT:1.06,tempo:.04,tempoMax:1.25,runs:1.5};
 // pilot xp per level: base + per × level (about one level every 1-2 rooms)

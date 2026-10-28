@@ -14,7 +14,7 @@ const DICT_TR={
   'Weapons replace your frame\'s signature gun. Gadgets add moves of their own: equip two.':'Silahlar gövdenin kendi silahının yerine geçer. Aparatlar kendi hareketlerini ekler: iki tane tak.',
   'Gold buys looks only, never power. Paint, shot colors and arena themes are on the way.':'Altın sadece görünüş alır, asla güç almaz. Boya, atış renkleri ve arena temaları yolda.',
   'Upgrades':'Geliştirmeler', 'Core':'Çekirdek', 'Skill tree':'Yetenek ağacı',
-  'Permanent upgrades for every frame. Core levels cost gold and never cap out early; tree nodes cost diamonds and open one after another.':'Her gövde için kalıcı geliştirmeler. Çekirdek seviyeleri altınla alınır ve erken tavan yapmaz; ağaç düğümleri elmasla alınır ve sırayla açılır.',
+  'Permanent upgrades for every frame. Core levels cost gold; every arena you open lets them go 4 levels higher. Tree nodes cost diamonds, open one after another, and their higher ranks open with the arenas.':'Her gövde için kalıcı geliştirmeler. Çekirdek seviyeleri altınla alınır; açtığın her arena 4 seviye daha yükseltmene izin verir. Ağaç düğümleri elmasla alınır, sırayla açılır ve üst kademeleri arenalarla açılır.',
   'Frames':'Gövdeler', 'Pilot callsign':'Pilot çağrı adı', 'Enter callsign':'Çağrı adını yaz',
   'Frame · sets your special move · new frames cost diamonds':'Gövde · özel hareketini belirler · yeni gövdeler elmasla alınır',
   'Primary paint':'Ana boya', 'Accent paint':'Vurgu boyası', 'Loadout':'Teçhizat',
@@ -145,7 +145,7 @@ const DICT_TR={
   'Servo tuning':'Servo ayarı', '+6% move speed per rank':'Kademe başına +%6 hareket hızı', 'Cell recharge':'Hücre şarjı', '+15% power regeneration':'+%15 güç yenilenmesi',
   'Thruster vents':'İtici delikleri', '-15% dash cooldown':'Atılma bekleme süresi -%15', 'Salvage magnet':'Hurda mıknatısı', '+60% pickup reach, +10% gold':'+%60 toplama menzili, +%10 altın',
   'Quick deploy':'Hızlı kurulum', '-12% gadget cooldowns':'Aparat bekleme süreleri -%12',
-  '+20 max armor per level':'Seviye başına +20 azami zırh', '+4% damage per level':'Seviye başına +%4 hasar', '+3% power regeneration per level':'Seviye başına +%3 güç yenilenmesi',
+  '+9% max armor per level, compounding':'Seviye başına +%9 azami zırh, katlanarak', '+9% damage per level, compounding':'Seviye başına +%9 hasar, katlanarak', '+3% power regeneration per level, compounding':'Seviye başına +%3 güç yenilenmesi, katlanarak', 'Next arena':'Sonraki arena',
   // run skills (RARITY, RSK)
   'Common':'Sıradan', 'Rare':'Nadir', 'Epic':'Destansı', 'Legendary':'Efsanevi',
   'Attack Boost':'Saldırı Artışı', '+20% damage.':'+%20 hasar.', 'Rapid Cycle':'Seri Döngü', '+13% fire rate.':'+%13 atış hızı.',

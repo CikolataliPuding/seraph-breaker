@@ -28,7 +28,8 @@ function normP(d){
   p.progress=clamp(Math.floor(+p.progress||0),0,12);
   // saves from the 12-level campaign: progress 4/8/12 unlock arenas 2/3/4
   if(!d||typeof d.arenas!=='number') p.arenas=p.progress>=12?4:p.progress>=8?3:p.progress>=4?2:1;
-  // v8: the Core caps at CORE_MAX (20, was 30; patch.md 27); higher beta levels came from debug tools, so they drop to 20 with no refund
+  // v8: the Core caps at CORE_MAX (was 20, then 30; patch.md 27). Since the tier gate (patch.md 38) levels above the arena's cap stay saved and
+  // count again when the next arena opens; CORE_MAX (40) is only a sanity cap
   const c=p.core&&typeof p.core==='object'?p.core:{}; p.core={}; for(const k of ['armor','dmg','regen']) p.core[k]=clamp(Math.floor(+c[k]||0),0,CORE_MAX);
   p.bestRoom=ARENAS.map((A,i)=>clamp(Math.floor(+(Array.isArray(p.bestRoom)&&p.bestRoom[i])||0),0,A.rooms));
   // 4-arena saves: the last arena's clear used to cap the unlocks at 4, so a cleared Arena 4 opens the next arena now
