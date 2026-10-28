@@ -17,15 +17,15 @@ const skillOk=(id,rs=player.rs)=>{ const s=RSK[id]; if((rs[id]||0)>=s.max||(s.re
 // Lucky Coin pushes every roll one tier up
 function rarityWeights(l=player.luck||0){ return l?{common:Math.max(20,60-15*l),rare:28+5*l,epic:10+6*l,legendary:2+4*l}:{common:60,rare:28,epic:10,legendary:2}; }
 /* weighted pick: rarity weights 60/28/10/2 are shared by the skills of that rarity that can still be offered;
-   skills you own (and evolutions you unlocked) get x2.5; if any owned skill can rank up, one of the cards is always such an upgrade */
-// ctx defaults to the live player; the debug simulation passes its own {rs,luck}
-function skillOptions(n,rarity,ctx=player){
-  const prs=ctx.rs, rw=rarityWeights(ctx.luck||0), ids=Object.keys(RSK).filter(id=>skillOk(id,prs)&&(!rarity||RSK[id].rarity===rarity));
+   skills you own get x1.3 and unlocked evolutions x2.5. No card is forced to be an upgrade any more (patch.md 34: a card you
+   own used to come back almost every level, so Vampiric Core or Attack Boost maxed in the first rooms) */
+// ctx defaults to the live player; the debug simulation passes its own {rs,luck}; only: limit the pool to these ids
+function skillOptions(n,rarity,ctx=player,only){
+  const prs=ctx.rs, rw=rarityWeights(ctx.luck||0), ids=Object.keys(RSK).filter(id=>skillOk(id,prs)&&(!rarity||RSK[id].rarity===rarity)&&(!only||only.includes(id)));
   const cnt={}; ids.forEach(id=>cnt[RSK[id].rarity]=(cnt[RSK[id].rarity]||0)+1);
-  const w=id=>{ const r=RSK[id].rarity; return rw[r]/cnt[r]*((prs[id]||RSK[id].evo)?2.5:1); };
+  const w=id=>{ const r=RSK[id].rarity; return rw[r]/cnt[r]*(RSK[id].evo?2.5:prs[id]?1.3:1); };
   const pick=list=>{ let t=0; list.forEach(id=>t+=w(id)); let x=Math.random()*t; for(const id of list){ x-=w(id); if(x<=0) return id; } return list[list.length-1]; };
-  const out=[], pool=ids.slice(), ups=pool.filter(id=>prs[id]);
-  if(ups.length&&n>1&&!rarity){ const id=pick(ups); out.push(id); pool.splice(pool.indexOf(id),1); }
+  const out=[], pool=ids.slice();
   while(out.length<n&&pool.length){ const id=pick(pool); out.push(id); pool.splice(pool.indexOf(id),1); }
   for(let i=out.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0; [out[i],out[j]]=[out[j],out[i]]; }
   return out;
@@ -186,7 +186,9 @@ function angelChoice(){
   const heal=Math.round(40*player.st.heal);
   const opts=[{icon:'heal',name:t('Repair'),desc:grace?t('Grace already repaired you. Take 15 extra max armor instead.'):t('Restore {0}% of your armor.',heal),tag:t('{0}/{1} now',Math.ceil(player.hp),player.maxHp),color:'#7dff9a',static:true,
     act:()=>{ if(grace){ player.extra.hpFlat=(player.extra.hpFlat||0)+15; recalcStats(); } else player.hp=Math.min(player.maxHp,player.hp+player.maxHp*heal/100); sparks(player.pos.clone().setY(2),0x7dff9a,12,6); npcGone(); }}];
-  skillOptions(grace?3:2).forEach(id=>opts.push({...skillCard(id),act:()=>{ applySkill(id); npcGone(); }}));
+  // Repair or one aggressive card (patch.md 34); Grace adds a second card from the whole pool
+  const ag=skillOptions(1,null,player,RSK_AGGRO), more=grace?skillOptions(2).filter(id=>!ag.includes(id)).slice(0,1):[];
+  [...ag,...more].forEach(id=>opts.push({...skillCard(id),act:()=>{ applySkill(id); npcGone(); }}));
   openChoice({eyebrow:t('Sanctuary'),title:t('The angel offers a blessing'),note:t('Pick one.'),options:opts,spin:true});
 }
 function devilChoice(){

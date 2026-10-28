@@ -128,14 +128,14 @@ const CORE_MAX=20, coreCost=lv=>Math.round(100*Math.pow(1.18,lv)/5)*5;
    directly (bullets.js, enemies.js, player.js), so a new skill is: an entry here, an IC icon, and a few lines where it acts. */
 const RARITY={common:{w:60,c:'#d6cfdc',n:'Common'},rare:{w:28,c:'#3ad0ff',n:'Rare'},epic:{w:10,c:'#b070ff',n:'Epic'},legendary:{w:2,c:'#ffc83a',n:'Legendary'}};
 const RSK={
-  // common: pure stats
-  atk:{name:'Attack Boost',d:'+18% damage.',rarity:'common',max:6,icon:'atk',bonus:{dmg:.18}},
-  sig:{name:'Rapid Cycle',d:'+13% fire rate.',rarity:'common',max:4,icon:'arc',bonus:{rate:.13}},
-  armor:{name:'Armor Up',d:'+15% max armor and repair 15%.',rarity:'common',max:5,icon:'armor',bonus:{hp:.15},apply:p=>{ p.hp=Math.min(p.maxHp,p.hp+p.maxHp*.15*p.st.heal); }},
-  maxarmor:{name:'Max Armor+',d:'+30 max armor.',rarity:'common',max:5,icon:'maxarmor',bonus:{hpFlat:30}},
+  // common: pure stats. Every card stops at rank 3 (patch.md 34): a run spreads over more cards instead of maxing a few early
+  atk:{name:'Attack Boost',d:'+20% damage.',rarity:'common',max:3,icon:'atk',bonus:{dmg:.2}},
+  sig:{name:'Rapid Cycle',d:'+13% fire rate.',rarity:'common',max:3,icon:'arc',bonus:{rate:.13}},
+  armor:{name:'Armor Up',d:'+15% max armor and repair 15%.',rarity:'common',max:3,icon:'armor',bonus:{hp:.15},apply:p=>{ p.hp=Math.min(p.maxHp,p.hp+p.maxHp*.15*p.st.heal); }},
+  maxarmor:{name:'Max Armor+',d:'+35 max armor.',rarity:'common',max:3,icon:'maxarmor',bonus:{hpFlat:35}},
   regen:{name:'Hex Regen',d:'+35% power regeneration.',rarity:'common',max:3,icon:'regen',bonus:{regen:.35}},
-  dash:{name:'Swift Servos',d:'+8% move speed.',rarity:'common',max:4,icon:'dash',bonus:{spd:.08}},
-  crit:{name:'Crit Lens',d:'+7% critical chance.',rarity:'common',max:4,icon:'crit',bonus:{crit:.07}},
+  dash:{name:'Swift Servos',d:'+8% move speed.',rarity:'common',max:3,icon:'dash',bonus:{spd:.08}},
+  crit:{name:'Crit Lens',d:'+8% critical chance.',rarity:'common',max:3,icon:'crit',bonus:{crit:.08}},
   dodge:{name:'Dodge',d:'6% chance to ignore a hit.',rarity:'common',max:3,icon:'dodge',bonus:{dodge:.06}},
   goldrush:{name:'Gold Rush',d:'+25% gold.',rarity:'common',max:3,icon:'goldrush',bonus:{gold:.25}},
   sync:{name:'Sync Surge',d:'Special recharges 20% faster.',rarity:'common',max:3,icon:'sync',bonus:{sp:.2}},
@@ -179,6 +179,8 @@ const RSK={
   halo:{name:'Storm Halo',d:'Evolution of Chain Spark + Bolt Orbit: lightning strikes 3 enemies every second.',rarity:'legendary',max:1,icon:'halo',evo:['arc','borb']},
   blood:{name:'Blood Engine',d:'Evolution of Vampiric Core + Rage: kills repair 4% and Rage counts double.',rarity:'legendary',max:1,icon:'blood',evo:['vamp','rage']},
 };
+// the angel's second card comes from these (patch.md 34): damage, fire rate and kill cards, never armor or utility
+const RSK_AGGRO=['atk','sig','crit','twin','diag','side','rear','pierce','ricochet','torch','poison','arc','nova','shard','rage','overload','orbit','forb','borb','meteor','headshot','storm','inferno','halo'];
 for(const id in RSK){ const s=RSK[id]; if(s.evo&&!s.req) s.req=rs=>s.evo.every(k=>(rs[k]||0)>=RSK[k].max); }
 /* on-kill procs: damage is a share of the dying enemy's max armor (by rank), capped at cap × the room's enemy armor scale.
    It ignores your damage multipliers, and kills made by any proc never trigger on-kill procs again (proc depth 1). */
