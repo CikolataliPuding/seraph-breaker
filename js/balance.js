@@ -82,7 +82,7 @@ function refPower(a){ const m=metaStats(refMeta(a),'azure'); return {dps:m.dmg/m
 // arena multipliers: enemy armor follows the reference dps, damage the reference ehp, both × √pressure; crowd growth comes off the armor
 const _curve=[];
 function arenaCurve(a){ if(_curve[a]) return _curve[a]; const A=ARENAS[a]||{}, r0=refPower(0), r=refPower(a), z=Math.sqrt(1+CURVE.press*Math.log(1+a)), crowd=roomBudget(a,0,false)/roomBudget(0,0,false), own=(k,v)=>A[k]!=null?A[k]:v;
-  return _curve[a]={hp:own('hpMul',r.dps/r0.dps*z/crowd),dmg:own('dmgMul',r.ehp/r0.ehp*z),boss:own('bossMul',r.dps/r0.dps*Math.pow(CURVE.bossT,a)),tempo:own('tempo',Math.min(CURVE.tempoMax,1+CURVE.tempo*a))}; }
+  return _curve[a]={hp:own('hpMul',CURVE.hp0*r.dps/r0.dps*z/crowd),dmg:own('dmgMul',CURVE.dmg0*r.ehp/r0.ehp*z),boss:own('bossMul',CURVE.hp0*r.dps/r0.dps*Math.pow(CURVE.bossT,a)),tempo:own('tempo',Math.min(CURVE.tempoMax,1+CURVE.tempo*a))}; }
 function enemyScale(a,ri,rule,wf){ const A=ARENAS[a], K=arenaCurve(a), hm=rule&&rule.hpMul||1, dm=K.dmg, fin=ri>=A.rooms-1, x=A.roomK?(ri+(wf||0))*A.roomK:ri, mc=A.mobCurve, xr=ri+(wf||0);
   return {hp:(mc?kneeCurve(mc.hp,xr,mc.knee):K.hp*growth(SCALE.hp,x))*hm, dmg:mc?kneeCurve(mc.dmg,xr,mc.knee):dm*growth(SCALE.dmg,x),
     boss:K.boss*growth(SCALE.hp,x)/growth(SCALE.hp,SCALE.bossRef)*hm*(fin?SCALE.finalHp:1), bossDmg:dm*growth(SCALE.dmg,x)/growth(SCALE.dmg,SCALE.bossRef)*(fin?SCALE.finalDmg:1)*SCALE.bossDmgK}; }

@@ -216,7 +216,7 @@ const SCALE={mob:2.2,hp:.058,dmg:.04,bossDmgK:1.4,bossRef:9,finalHp:1.5,finalDmg
    tempo: enemy shot speed per arena, capped for readability. treeFull: the tier where today's tree is complete; a tree node's rank k
    opens at tier ceil(k × treeFull / max), the same gate as the Core (a save's ranks above it wait).
    An ARENAS row or ECON table that lists its own value keeps it. */
-const CURVE={tier:4,treeFull:3,press:.25,bossT:1.06,tempo:.04,tempoMax:1.25,runs:1.5};
+const CURVE={hp0:1,dmg0:1,tier:4,treeFull:3,press:.25,bossT:1.06,tempo:.04,tempoMax:1.25,runs:1.5};
 // pilot xp per level: base + per × level (about one level every 1-2 rooms)
 const XP_NEED={base:6,per:.35}, XP_BOSS=10;
 /* economy: target earnings for one full run of each arena without gold bonuses (first-clear diamonds come on top, once).
