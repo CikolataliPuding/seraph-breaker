@@ -2,10 +2,9 @@
 /* ================= ARENA SELECT ================= */
 function renderMap(){
   const sel=openSel(P.selArena); P.selArena=sel;
-  $('mapProg').textContent=t('ARENAS · {0}/{1} OPEN',openArenaCount(),ARENAS.length);
+  $('mapProg').textContent=t('ARENAS · {0}/{1} OPEN',openArenaCount(),shownArenas().length);
   const inner=$('mapInner'); inner.innerHTML='';
-  // beta: the Main Stage shows locked with a beta tag until its access code is entered in System (tester.js)
-  ARENAS.forEach((A,i)=>{ const locked=!arenaOpen(i), best=P.bestRoom[i]||0, done=best>=A.rooms;
+  ARENAS.forEach((A,i)=>{ if(!arenaShown(i)) return; const locked=!arenaOpen(i), best=P.bestRoom[i]||0, done=best>=A.rooms;
     const b=document.createElement('button'); b.className='arena'+(locked?' lock':'')+(i===sel?' sel':'')+(done?' done':''); b.id='ar'+i; b.style.setProperty('--c',A.colorCss);
     b.innerHTML=`<span class="n"></span><b></b><span class="r"></span><span class="bp"></span><span class="pr"><i style="width:${Math.min(100,best/A.rooms*100)}%"></i></span>`;
     b.querySelector('.n').textContent=`0${i+1} · ${A.phase.toLocaleUpperCase(LANG)} · ${roomsLabel(A)}`+(locked?' · '+t('LOCKED'):done?' · '+t('CLEARED'):'');
@@ -141,7 +140,6 @@ $('testerBtn').onclick=()=>{ if(testerOK()){ lockTester(); renderTester(); if(DE
   const ok=unlockTester($('testerIn').value); $('testerIn').value=''; renderTester(); if(!ok){ const n=$('testerNote'); n.className='note bad'; n.textContent=t('That code is not valid.'); } sfx('click'); };
 $('testerIn').addEventListener('keydown',e=>{ if(e.code==='Enter') $('testerBtn').click(); });
 $('testerTools').onchange=e=>{ P.testerTools=e.target.checked; persist(); location.reload(); };
-/* Main Stage access code (tester.js): only its SHA-256 is in the code. Unlocked: the stage opens on the warmap; Lock closes it again. */
 function renderAbilityIcons(){
   $('abQ').querySelector('span').innerHTML=svg('sp');
   [0,1].forEach(i=>{ const g=P.gadgets[i], el=$(i?'abR':'abE'); el.querySelector('span').innerHTML=g?svg(g):''; el.classList.toggle('empty',!g); const t=$(i?'tG2':'tG1'); t.classList.toggle('off',!g); t.innerHTML=g?svg(g):''; });
