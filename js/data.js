@@ -220,7 +220,8 @@ const CURVE={tier:4,treeFull:3,press:.25,bossT:1.06,tempo:.04,tempoMax:1.25,runs
 // pilot xp per level: base + per × level (about one level every 1-2 rooms)
 const XP_NEED={base:6,per:.35}, XP_BOSS=10;
 /* economy: target earnings for one full run of each arena without gold bonuses (first-clear diamonds come on top, once).
-   The per-kill, boss and clear numbers below are tuned so a full run lands near the targets (check with DBG.sim()). */
+   The per-kill, boss and clear numbers below are tuned so a full run lands near target; the gold the game pays follows goldTarget
+   (balance.js, patch.md 39: the price of the arena's Core tier), these gold tables only give the split (check with DBG.sim()). */
 const ECON={
   // Main Stage: Arena 4's gold and diamonds per minute (≈125 gold, ≈2.4 diamonds) over its ≈29 min run (15 rooms × par 95 s + High-Co)
   target:{gold:[1200,2000,3000,4000,3600],gems:[30,45,60,80,70]},

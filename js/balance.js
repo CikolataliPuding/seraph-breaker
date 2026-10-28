@@ -121,8 +121,12 @@ function playerPower(){ const p=player; if(!p) return {dps:1,ehp:1,power:1}; ret
 // every gold and diamond gain goes through here, so the debug run log can split earnings by source (kill, boss, clear, pickup)
 function logEarn(cur,src,v){ if(!sortie||!v) return; const L=sortie.earn||(sortie.earn={}), k=cur+':'+src; L[k]=(L[k]||0)+v; }
 /* ECON's per-arena tables (killGold, bossGold, bossGems, clearGold, healChance): an arena past the table end takes the last value,
-   grown with the gold target. goldTarget: ECON.target when listed, else the gold that pays the arena's new Core tier in CURVE.runs runs. */
-function goldTarget(a){ const g=ECON.target.gold; if(a<g.length) return g[a]; let s=0; for(let lv=CURVE.tier*a;lv<CURVE.tier*(a+1);lv++) s+=3*coreCost(lv); return s/CURVE.runs; }
-function econAt(k,a){ const v=ECON[k], n=v.length-1; return a<=n?v[a]:v[n]*(k==='healChance'?1:goldTarget(a)/goldTarget(n)); }
+   grown with the gold target. goldTarget (patch.md 39): the gold that pays the arena's new Core tier (3 stats × 4 levels) in CURVE.runs
+   full runs, so the reward follows the price and new arenas need no number; the Main Stage keeps its own. ECON.target is what the gold
+   tables were tuned to, so a gold table value is scaled by goldTarget / ECON.target. */
+function goldTarget(a){ const g=ECON.target.gold; if(ARENAS[a]&&ARENAS[a].stage) return g[a]; let s=0; for(let lv=CURVE.tier*a;lv<CURVE.tier*(a+1);lv++) s+=3*coreCost(lv); return s/CURVE.runs; }
+const ECON_GOLD={killGold:1,bossGold:1,clearGold:1};
+// past the table end an arena takes the last plain arena's row (the Main Stage pays for long wave rooms)
+function econAt(k,a){ const v=ECON[k], n=v.length-1, i=a<=n?a:ARENAS.slice(0,n+1).map(A=>!A.stage).lastIndexOf(true); return ECON_GOLD[k]?v[i]*goldTarget(a)/ECON.target.gold[i]:v[i]; }
 // flat gold for every cleared combat or elite room (Gold Rush, Greed and the tree's magnet bonus apply)
 function clearBonus(){ if(!sortie||!room||room.type==='angel'||room.type==='boss') return; const v=Math.round(econAt('clearGold',sortie.a)*player.st.goldMul*(sortie.farm||1)); P.gold+=v; sortie.gold+=v; logEarn('gold','clear',v); }
