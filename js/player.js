@@ -276,9 +276,7 @@ function weaponUpdate(dt,fireIn){
   const fired=(kick,size=1)=>{ p.jz.rec.v+=kick; muzzleFlash(mz,col,size); };
   if(wp!=='rail') chargeOrb.visible=false;
   switch(wp){
-    case 'azure': { const H=BAL.azHeat; if(p.gunLock>0){ p.gunLock-=dt; if(p.gunLock<=0) p.heat=0; break; } if(!fireIn||p.od>0) p.heat=Math.max(0,(p.heat||0)-H.cool*dt);
-      if(p.heat>.7&&Math.random()<dt*12) sparks(mz,0x9a9aa8,1,2); // smoke: the rifle is running hot
-      if(fireIn&&p.fireCd<=0){ if(p.od<=0){ p.heat=(p.heat||0)+H.shot; if(p.heat>=1){ p.gunLock=H.lock; popText(t('OVERHEAT')); sfx('hurt'); break; } } p.fireCd=Math.max(0,p.fireCd+.1*rateM); const a=base+rand(-.025,.025); pshot(mz,new V3(Math.sin(a),0,Math.cos(a)),36,1*dmg,col,{life:.9,pierce:p.od>0}); sparks(mz,col,1,3); fired(1.6,.7); sfx('shot'); } } break;
+    case 'azure': if(fireIn&&p.fireCd<=0){ p.fireCd=Math.max(0,p.fireCd+.1*rateM); const a=base+rand(-.025,.025); pshot(mz,new V3(Math.sin(a),0,Math.cos(a)),36,1*dmg,col,{life:.9,pierce:p.od>0}); sparks(mz,col,1,3); fired(1.6,.7); sfx('shot'); } break;
     case 'crimson': if(fireIn&&p.fireCd<=0){ p.fireCd=Math.max(0,p.fireCd+.6*rateM); for(let i=-2;i<=2;i++){ const mid=i===0; const a=base+i*.1+rand(-.025,.025); shoot('p',mz,new V3(Math.sin(a),0,Math.cos(a)),rand(28,33),1.05*dmg,col,{geo:G.pel,life:.3,pierce:mid&&p.rs.pierce>0,bounce:mid?(p.rs.ricochet||0):0,wall:mid?(p.rs.wall||0):0}); }
       // Pierce / Ricochet / Wall Bounce ride the centre pellet only; Twin and Storm add a straight slug (Diagonal, Side, Rear fan out from it)
       if(p.rs.twin||p.rs.storm) pshot(mz,dir,30,1.6*dmg,col,{geo:G.pel,life:.3}); shake=Math.max(shake,.08); fired(5,1.4); sfx('heavy'); } break;
