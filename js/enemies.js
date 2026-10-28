@@ -164,7 +164,7 @@ function killEnemy(e,byProc){
   if(Math.random()<(e.elite?gc.elite:def.cost>=2.5?gc.big:gc.small)*rw*sortie.farm) dropPick(e.pos,'gem',1);
   if(e.elite&&Math.random()<.25*(sortie.rule.eliteReward||1)) dropItem(e.pos);
   if(Math.random()<econAt('healChance',stage)*rw) dropPick(e.pos,'heal',.14);
-  if(def.xp) gainXp(def.xp*mul*(1+sortie.a*.12)*rw*(sortie.rule.xpMul||1));
+  if(def.xp) gainXp(def.xp*mul*rw*(sortie.rule.xpMul||1)); // same xp in every arena: the level cap (XP_NEED.cap) is reached near each arena's end
 }
 function dropPick(pos,kind,v,src){
   let m;
