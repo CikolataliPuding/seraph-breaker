@@ -32,7 +32,7 @@
 - [Bir bakışta](#bir-bakışta)
 - [Üç frame](#üç-frame)
 - [Beş arena](#beş-arena)
-- [Main Stage ve High-Co](#main-stage-ve-high-co)
+- [Main Stage ve High-Co (tester'a özel)](#main-stage-ve-high-co-testera-özel)
 - [Bir koşunun anatomisi](#bir-koşunun-anatomisi)
 - [Düşmanlar ve bosslar](#düşmanlar-ve-bosslar)
 - [Hangar ve kalıcı ilerleme](#hangar-ve-kalıcı-ilerleme)
@@ -48,13 +48,13 @@
 | | |
 |---|---|
 | 🤖 **3 frame** | Azure, Crimson, Verdant. Her birinin kendi silahı, kendi özel hareketi ve kendi cooldown'u var. |
-| 🏙️ **5 arena** | Outer City'den Fallen Sky'a, sonra High-Co'nun festival sahnesi Main Stage. |
+| 🏙️ **5 arena** | The Low City'den Fallen Sky'a, sonra anomalilerin gediği Hex Breach. Her arena biraz daha zor; açtığın her arena gücünün tavanını da yükseltir. |
 | 🎰 **Yetenek ruleti** | Level atladıkça 3 kart slot makinesi gibi döner. 40'tan fazla yetenek ve 4 evrim var. Takılı silahta işe yaramayan kart hiç gelmez. |
 | 👹 **8 boss + corrupted sürümleri** | Sinematik girişler, okunabilir saldırılar, Retry boss. |
 | 🏗️ **3D hangar** | Mech'in platformda, ışıklar seçtiğin arenanın renginde. Masaüstünde yan menülü, telefonda tek sütunlu. |
-| 💎 **Kalıcı ilerleme** | Elmasla yetenek ağacı, silah, gadget ve yeni frame. Altınla Core ve kozmetik. |
-| 🎵 **Canlı müzik** | Tarayıcıda üretilen metal. Main Stage'de bütün saldırılar vuruşa kilitli. |
-| 📱 **İki kontrol modu** | Bilgisayarda WASD ve fare. Telefonda Archero tarzı joystick ve otomatik ateş. |
+| 💎 **Kalıcı ilerleme** | Elmasla yetenek ağacı, silah, gadget ve yeni frame. Altınla Core ve kozmetik. Core ve ağacın üst basamakları açtığın arenalarla açılır. |
+| 🎵 **Canlı müzik** | Tarayıcıda üretilen metal. |
+| 📱 **Telefonda iki tutuş** | Bilgisayarda WASD ve fare. Telefonu yan tut: çift çubuk, tam ekran, bilgisayarla aynı kurallar. Dik tut: Archero tarzı joystick ve otomatik ateş. |
 
 ---
 
@@ -83,17 +83,18 @@ Her frame'in kendi zırhı, hızı, imza silahı ve özel hareketi var. Özel ha
 | 2 | **Undertow · Night Harbor** | 40 | Düşman mermileri %15 hızlı; ilk makineler | Prism Angel · Siege Arachne · Hive Carrier |
 | 3 | **Ascent · Heaven's Gate** | 50 | Elitler ikili gelir | The Last Seraph · Ophanim Throne · Archon |
 | 4 | **Hubris · Fallen Sky** | 50 | Kendi ırkın: makineler, bozulmuş elitler, 2 rastgele modifier | Iron Colossus · Hive Carrier · Siege Arachne |
-| 5 | **Encore · Main Stage** | 15 + boss | Ritim senkronu | **High-Co** |
+| 5 | **Breach · Hex Breach** | 50 | Her düşman hex mutasyonlu gelebilir, elitler hep öyle gelir; Cellmite sürüleri birleşip Cell Brute olur, Hex Bulwark mermiyi geri yollar | Corrupted Colossus · Corrupted Archon · Corrupted Arachne |
 
-- **Arena boyutları:** Masaüstünde odalar 26 birim geniş, iki yanda boş kaçış koridorları var. Telefonda okunabilirlik için 20 birim.
+- **Arena boyutları:** Bilgisayarda ve yan tutulan telefonda odalar 28 × 36 birim, iki yanda boş kaçış koridorları var. Dik telefonda okunabilirlik için 20 × 30.
+- **Zorluk eğrisi:** Düşmanların canı ve hasarı, o arenayı açmış bir pilotun gücünden hesaplanır; her arena bir öncekinden biraz daha zordur, düşman mermileri de arena arena hızlanır. Eski bir arenaya dönersen kolay gelir.
 - **Spawn kuralı:** Düşmanlar pilota en az 8 birim uzakta doğar. Pusu odalarında en az 6 birim arkada ya da yanda doğarlar ve önce kırmızı bir halka yanar.
-- **Tuzaklar:** Haritadaki `~` hücreleri. Outer City'de testere rayları, Night Harbor'da diken karoları, Heaven's Gate'te kutsal ışık sütunları, Fallen Sky'da hepsi karışık. Önce yanıp sönerler, sonra vururlar. Düşmanlara da zarar verirler.
+- **Tuzaklar:** Haritadaki `~` hücreleri. The Low City'de testere rayları, Night Harbor'da diken karoları, Heaven's Gate'te kutsal ışık sütunları, Fallen Sky'da hepsi karışık. Önce yanıp sönerler, sonra vururlar. Düşmanlara da zarar verirler.
 - **Tehlikeler:** 2. arenadan itibaren bazı odalarda ateş menfezleri ve çöken zeminler var.
 - **Farm kuralı:** En yüksek açık arenanın altındaki bir arenayı tekrar oynarsan ödüller azalır: bir alt arena %60, iki ve daha alt %30.
 
 ---
 
-## Main Stage ve High-Co
+## Main Stage ve High-Co (tester'a özel)
 
 <p align="center">
   <img src="test-shots/pr/d-f3-entrance.jpg" alt="High-Co'nun sinematik girişi" width="420">
@@ -103,7 +104,7 @@ Her frame'in kendi zırhı, hızı, imza silahı ve özel hareketi var. Özel ha
 
 High-Co'nun gece festivali: koyu sahne zemini, dev ekranlar, hoparlör kuleleri, pembe ve kehribar ışıklar, kenarda kalabalık. Robot yok, kadronun tamamı insan.
 
-- **Erişim:** Beta süresince kilitli. System ekranındaki *Main Stage access code* alanına kod girilince açılır. Kodu proje sahibinden iste; repoda sadece SHA-256 özeti var. Kod tester kodundan ayrı: sadece sahneyi açar.
+- **Erişim:** Main Stage hikayeden çıktı; sadece tester koduyla görünür (Hex Breach'ten sonra açılır). Kod proje sahibinde, repoda sadece SHA-256 özeti var.
 - **Dalga odaları:** 15 odanın hepsinde dalgalar kapılardan girer. Dalga sayısı 3'ten 7'ye çıkar.
   - İlk odalar *Sound check*: tek grup üyesi ve sahne ekibi.
   - Ortada *Moshpit* sürüleri.
@@ -219,12 +220,15 @@ Aynı anda sadece birkaç düşman saldırır (saldırı jetonları). Arena 1 sa
 | | 💎 **Elmas** | 🪙 **Altın** |
 |---|---|---|
 | Nereden | Bosslar, ilk temizleme bonusları, tekrar temizleme, nadir drop | Her kill, oda temizleme, boss |
-| Ne alır | **Yetenek ağacı** (Offense / Defense / Mobility), **6 silah**, **7 gadget**, **yeni frame'ler** | **Core** (Armor, Damage, Power regen; her biri 30 seviye), **kozmetik** |
+| Ne alır | **Yetenek ağacı** (Offense / Defense / Mobility), **6 silah**, **7 gadget**, **yeni frame'ler** | **Core** (Armor, Damage, Power regen; seviyeler katlanır), **kozmetik** |
 
+- **Kademe tavanı:** Açtığın her arena Core'un her satırını 4 seviye daha yükseltmene izin verir (1. arenada 4, 4. arenada 16) ve ağaçta yeni basamaklar açar. Sınırsız altın da tavanı aşamaz; tavanın üstünde aldığın seviyeler kaybolmaz, arena açınca geri gelir.
 - **Kozmetik:** Kozmetikler sadece görünüşü değiştirir, asla güç vermez. Frame'in kendi iki rengi bedava; paletteki her yeni renk **400 altın**, bir kez alınır ve iki slotta da kullanılır. Kozmetik mağazanın geri kalanı (mermi renkleri, özel efektler, arena temaları) yakında; Cephanelik'te önizlemesi var.
 - **Silahlar (💎):** Plasma Torch 90, Vibro Blade 100, Rail Lance 120, Arc Caster 160, Swarm Pod 220, Singularity Cannon 380.
 - **Gadget'lar (💎):** Grapple Hook 60, Proximity Mines 80, Jump Jets 90, Holo Decoy 110, EMP Burst 130, Combat Drone 150, Chrono Field 300.
 - **Kayıt:** Kayıt tarayıcıda tutulur, eski kayıtlar da açılır. Beta döneminden kalan kayıtlar **BETA TESTER** rozeti taşır ve o dönemde açtıkları her şeyi korur.
+- **Beta programı:** Hangarda pilot kartına dokun ve proje sahibinden aldığın beta kodunu gir: hesabın **BETA TESTER** rütbesi alır, koşuların cihazında kaydedilir ve "Beta raporunu indir" ile sahibine gönderebilirsin. İsim yok, sunucu yok.
+- **Güncelleme notları:** Büyük bir güncellemeden sonra oyun açılınca ne zayıfladığını, ne güçlendiğini ve ne yeni geldiğini anlatan bir pencere çıkar. System ekranından tekrar okunabilir.
 
 ---
 
@@ -235,13 +239,21 @@ Aynı anda sadece birkaç düşman saldırır (saldırı jetonları). Arena 1 sa
 | Tuş | İşlev |
 |---|---|
 | **WASD** | Hareket |
-| **Fare** | Nişan + ateş (nişangah düşman üstünde kırmızı, vuruşta X, Rail dolum halkası, Crimson saçılma genişliği) |
+| **Fare** | Nişan + ateş (nişangah düşman üstünde kırmızı, vuruşta X, Rail dolum halkası, Crimson saçılma genişliği). Hareket ederken ateş etmek seni %35 yavaşlatır. |
 | **Space** | Dash |
 | **Shift / sağ tık** | Altıgen kalkan |
 | **Q** | Özel hareket |
 | **E / R** | Gadget'lar |
 | **P / Esc** | Duraklat (tüm build detaylarıyla) |
 | **1 / 2 / 3, R** | Seçim ekranında kart seç, reroll |
+
+### Telefon (yan ekran)
+
+- **Hareket:** Ekranın sol yarısında herhangi bir yere dokun ve sürükle.
+- **Nişan ve ateş:** Sağ yarıda dokun ve sürükle: çubuğu ittiğin yöne nişan alır, basılı tuttukça ateş eder. Yakındaki düşmana hafif nişan yardımı var.
+- **Butonlar:** DASH sağ alt köşede; yanında özel hareket, kalkan (basılı tut) ve gadget'lar.
+- **Kurallar bilgisayarla aynı:** aynı oda, aynı kamera, hareket ederken ateşte aynı yavaşlama.
+- **Tam ekran:** Telefonu yan çevirince ilk dokunuşta oyun tam ekran olur (Android). iPhone'da tarayıcı çubuklarından kurtulmak için Safari'de *Paylaş → Ana Ekrana Ekle* ile aç.
 
 ### Telefon (dikey ekran)
 
@@ -252,7 +264,7 @@ Aynı anda sadece birkaç düşman saldırır (saldırı jetonları). Arena 1 sa
 - **Özel hareket:** Sağ alttaki büyük buton, dolunca parlar. Üstündeki iki küçük buton gadget'lar.
 - **Perfect dodge (iki modda da):** Bir mermi çarpmak üzereyken dash atarsan zaman yavaşlar ve özel hareket %15 dolar.
 
-Kontrol modu otomatik seçilir: dokunmatik cihaz telefon modunda açılır. System menüsünden elle değiştirebilirsin.
+Kontrol modu otomatik seçilir: dokunmatik cihaz telefon modunda açılır, telefonu yan çevirince yan ekran kontrollerine, dik tutunca dikey kontrollere geçer. System menüsünden elle değiştirebilirsin.
 
 ---
 
