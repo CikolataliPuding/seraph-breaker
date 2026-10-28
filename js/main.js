@@ -95,7 +95,7 @@ function tick(dt,now){
     if(b.delay>0){ b.delay-=bdt; b.vel.multiplyScalar(Math.pow(.03,bdt)); if(b.delay<=0&&player){ const T=tgt(); b.vel.set(T.x-b.m.position.x,0,T.z-b.m.position.z).setLength(b.after); } }
     else if(b.home>0&&player){ b.home-=bdt; const sp=b.vel.length(), T=tgt(); _tmp.set(T.x-b.m.position.x,0,T.z-b.m.position.z).setLength(sp); b.vel.lerp(_tmp,Math.min(1,bdt*b.turn)).setLength(sp); if(b.home<=0) b.vel.setLength(b.after); }
     else if(b.seek){ if(b.seek.dead) b.seek=nearestFoe(b.m.position,14); if(b.seek){ const sp=b.vel.length(); _tmp.set(b.seek.pos.x-b.m.position.x,0,b.seek.pos.z-b.m.position.z).setLength(sp); b.vel.lerp(_tmp,Math.min(1,bdt*b.turn)).setLength(sp); b.m.lookAt(b.m.position.clone().add(b.vel)); } }
-    const p=b.m.position, ox=p.x, oz=p.z;
+    const p=b.m.position; let ox=p.x, oz=p.z; if(b.sx!=null){ ox=b.sx; oz=b.sz; b.sx=null; } // first frame of a pilot shot: sweep from the body (shoot)
     p.addScaledVector(b.vel,bdt); if(b.fw&&Math.random()<bdt*40) sparks(p,b.fw,1,1.2); // firework trail
     // airborne shots (missiles, Censer orbs): height, shadow and landing marker; a missile that reaches the ground explodes
     if(b.air&&airStep(b,bdt)){ airLand(b); killBullet(i,b); continue; }
