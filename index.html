@@ -58,7 +58,12 @@
     <div class="tbar">
       <div class="brand" aria-hidden="true">AUTOCRAT</div>
       <div class="avatar" id="avatar">01</div>
-      <div class="who"><span>PILOT <em class="badge" id="betaBadge" hidden>BETA TESTER</em></span><b id="whoName">[CALLSIGN]</b></div>
+      <div class="who" id="whoBox" role="button" tabindex="0" aria-controls="betaPop" aria-expanded="false"><span>PILOT <em class="badge" id="betaBadge" hidden>BETA TESTER</em></span><b id="whoName">[CALLSIGN]</b></div>
+      <div class="betaPop" id="betaPop" hidden>
+        <div class="row tester" id="betaJoin"><input id="betaIn" maxlength="48" autocomplete="off" spellcheck="false" placeholder="Beta code" aria-label="Beta code"><button class="btn ghost" id="betaBtn">Join</button></div>
+        <p class="note" id="betaNote">Got a beta code? Enter it to join the beta.</p>
+        <button class="btn ghost" id="betaRep" hidden>Download beta report</button>
+      </div>
       <div class="chip cur gold" title="Gold: from every kill, spent on the Core and cosmetics"><i></i><span id="wGold">0</span></div>
       <div class="chip cur gem" title="Diamonds: from bosses and first clears, spent on the skill tree, the armory and new frames"><i></i><span id="wGems">0</span></div>
     </div>

@@ -5,7 +5,7 @@ const DICT_TR={
   // HUD
   'LEVEL READY':'SEVİYE HAZIR', 'Armor':'Zırh', 'Power':'Güç', 'Special':'Özel', 'Hubris':'Hubris', 'ROOM':'ODA', 'WAVE':'DALGA',
   // hangar
-  'AUTOCRAT':'AUTOCRAT', 'PILOT':'PİLOT', 'BETA TESTER':'BETA TESTÇİ', '[CALLSIGN]':'[ÇAĞRI ADI]',
+  'AUTOCRAT':'AUTOCRAT', 'PILOT':'PİLOT', 'BETA TESTER':'BETA TESTÇİ', 'Beta code':'Beta kodu', 'Join':'Katıl', 'Download beta report':'Beta raporunu indir', 'Got a beta code? Enter it to join the beta.':'Beta kodun var mı? Girip betaya katıl.', 'Beta tester: thank you! Your runs are logged on this device; download the report when asked.':'Beta testçi: teşekkürler! Koşuların bu cihazda kaydediliyor; istendiğinde raporu indir.', '[CALLSIGN]':'[ÇAĞRI ADI]',
   'Gold: from every kill, spent on the Core and cosmetics':'Altın: her öldürmeden gelir; Çekirdek ve kozmetiğe harcanır',
   'Diamonds: from bosses and first clears, spent on the skill tree, the armory and new frames':'Elmas: bosslardan ve ilk temizlemelerden gelir; yetenek ağacına, cephaneliğe ve yeni gövdelere harcanır',
   'Arena map':'Arena haritası', 'Frame':'Gövde', 'Continue run':'Koşuya devam et', 'Sortie ▸':'Göreve çık ▸', 'Back to hangar':'Hangara dön',

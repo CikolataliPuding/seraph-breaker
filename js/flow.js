@@ -21,6 +21,7 @@ function goNextRoom(){ if(state!=='fight') return; logRoomEnd('exit'); saveRun(s
 function showResult(win,bonusG=0,first=false){
   setState('result'); refreshControls(); resetTouch(); playTrack('menu');
   const A=ARENAS[sortie.a], reached=Math.min(sortie.ri+1,sortie.N);
+  betaLog({k:'end',a:sortie.a+1,win,reached,lv:sortie.lv,time:Math.round(playTime)});
   if(!win){ logRoomEnd('death'); clearRun(); if(reached>(P.bestRoom[sortie.a]||0)) P.bestRoom[sortie.a]=reached; }
   $('resEye').textContent=t('Arena {0}','0'+(sortie.a+1))+' · '+A.phase+' · '+A.name+(win?' · '+t('clear'):'');
   $('resTitle').innerHTML=win?t('Arena <em>Clear</em>'):t('Signal <em>Lost</em>');

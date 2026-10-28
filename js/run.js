@@ -39,6 +39,7 @@ function buildRule(){
   sortie.rule=r;
 }
 function launchArena(a,saved,retry){
+  betaLog({k:'run',a:a+1,saved:!!saved,retry:!!retry,unit:P.unit,weapon:P.weapon,gadgets:P.gadgets,core:P.core,tree:P.skills});
   if(!retry) bossSnap=null;
   audioInit(); clearWorld(); hideOverlays(); paused=false; $('vign').style.opacity=0;
   if(saved) restoreLoadout(saved);

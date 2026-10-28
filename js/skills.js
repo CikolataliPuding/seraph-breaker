@@ -33,7 +33,7 @@ function skillOptions(n,rarity,ctx=player,only){
 function applySkill(id,silent){
   const s=RSK[id]; if(!s) return; const rs=player.rs; rs[id]=(rs[id]||0)+1;
   recalcStats(); if(s.apply) s.apply(player,rs[id]);
-  if(!silent){ renderRunSkills(); sfx('lvup'); if(s.rarity==='legendary'){ popText(t('EVOLVED')); crossBlast(player.pos.clone(),0xffc83a,1); } }
+  if(!silent){ betaLog({k:'card',id,rank:rs[id],lv:sortie&&sortie.lv}); renderRunSkills(); sfx('lvup'); if(s.rarity==='legendary'){ popText(t('EVOLVED')); crossBlast(player.pos.clone(),0xffc83a,1); } }
 }
 function applyCurse(id,silent){ const c=CURSES[id]; if(!c||sortie.curses.includes(id)) return; sortie.curses.push(id); recalcStats(); if(c.apply) c.apply(player,silent); buildRule(); if(!silent) renderRunSkills(); }
 // skill + curse + item icons (HUD row and result screen)
