@@ -4,7 +4,8 @@ const _sv=new V3(),_sv2=new V3(),_lp=new V3(),_ld=new V3();
 // how far a straight line runs before a block or the mat edge
 function lineLen(x,z,dx,dz,max,pad=0){ let t=0; while(t<max){ t+=.4; const px=x+dx*t,pz=z+dz*t; if(Math.abs(px)>AX-1||Math.abs(pz)>AZ-1||inBlock(px,pz,pad,'block')) return Math.max(0,t-.4); } return max; }
 // ground telegraph strip (fades out on its own)
-function teleStrip(pos,dx,dz,len,w,color,life){ const g=new THREE.Group(), mat=addMat(color,.3), pl=new THREE.Mesh(new THREE.PlaneGeometry(w,len),mat); pl.rotation.x=-Math.PI/2; pl.position.z=len/2; g.add(pl); g.position.set(pos.x,.05,pos.z); g.rotation.y=Math.atan2(dx,dz); addFx(g,life,(f,dt,k)=>{ mat.opacity=.18+.22*Math.abs(Math.sin((1-k)*life*9)); }); return g; }
+// solid: normal blending, so a red strip stays red on the light floors (additive red turns pink there)
+function teleStrip(pos,dx,dz,len,w,color,life,solid){ const g=new THREE.Group(), mat=solid?new THREE.MeshBasicMaterial({color,transparent:true,opacity:.3,depthWrite:false}):addMat(color,.3), pl=new THREE.Mesh(new THREE.PlaneGeometry(w,len),mat); pl.rotation.x=-Math.PI/2; pl.position.z=len/2; g.add(pl); g.position.set(pos.x,.05,pos.z); g.rotation.y=Math.atan2(dx,dz); addFx(g,life,(f,dt,k)=>{ mat.opacity=.18+.22*Math.abs(Math.sin((1-k)*life*9)); }); return g; }
 // lobbed shell (howitzer, mine layers): visual arc with a ground shadow, then onLand. marker: a red landing ring (the Howitzer has its own).
 function lobShell(from,to,dur,color,onLand,marker){ const g=new THREE.Group(), m=new THREE.Mesh(G.orb,basic(color,false)); m.scale.setScalar(1.2); const sh=blob(.4); sh.position.y=.04; g.add(m,sh);
   let mk=null; if(marker){ mk=new THREE.Mesh(G.ring,addMat(0xff3a2a,.8)); mk.rotation.x=-Math.PI/2; mk.position.set(to.x,.07,to.z); mk.scale.setScalar(1.3); g.add(mk); }
@@ -19,6 +20,19 @@ function sparkBoom(e){ if(e.boomed) return; e.boomed=true; queueBlast(e.pos.x,e.
 function dropEMine(x,z,arm=.8){ if(emines.length>=14||room&&room.cleared) return; x=clamp(x,-AX+.6,AX-.6); z=clamp(z,-AZ+.6,AZ-.6);
   const g=new THREE.Group(); part(new THREE.CylinderGeometry(.4,.45,.16,8),toon(0x2a2632),g,0,.08,0,.05); const l=new THREE.Mesh(new THREE.SphereGeometry(.12,8,6),basic(0xff3a2a,false)); l.position.y=.2; g.add(l);
   const ring=new THREE.Mesh(G.ring,addMat(0xff3a2a,.3)); ring.rotation.x=-Math.PI/2; ring.position.y=.04; ring.scale.setScalar(1.5); g.add(ring); g.position.set(x,0,z); roomGroup.add(g); emines.push({g,l,x,z,arm,life:12}); }
+/* Coil's live fields: a red ring blinks where a stake will open one (flight + 1 s on the ground), then a field of r 2.2 stays live 4 s and
+   hurts 6 every .5 s inside; it blinks faster before it goes out, and every field dies with its Coil. 6 at most. */
+const FIELD={r:2.2,warn:1,live:4,dmg:6,tick:.5,max:6};
+function openField(e,x,z,warn){ if(efields.length>=FIELD.max||e.dead) return; const g=new THREE.Group(); g.position.set(x,0,z);
+  // normal blending: the warning stays red on the light floors
+  const ring=new THREE.Mesh(G.ring,new THREE.MeshBasicMaterial({color:0xff3a2a,transparent:true,opacity:.8,depthWrite:false})); ring.rotation.x=-Math.PI/2; ring.position.y=.06; ring.scale.setScalar(FIELD.r);
+  const disc=new THREE.Mesh(new THREE.CircleGeometry(FIELD.r,24),new THREE.MeshBasicMaterial({color:0xff7a2a,transparent:true,opacity:.22,depthWrite:false})); disc.rotation.x=-Math.PI/2; disc.position.y=.05; disc.visible=false; g.add(ring,disc); roomGroup.add(g);
+  efields.push({e,x,z,g,ring,disc,t:warn,live:false,cd:0}); }
+function updateEFields(dt,t){ for(let i=efields.length-1;i>=0;i--){ const f=efields[i]; f.t-=dt; f.cd-=dt;
+    if(f.e.dead||f.live&&f.t<=0){ sparks(new V3(f.x,.4,f.z),0xff8a40,3,3); roomGroup.remove(f.g); efields.splice(i,1); continue; }
+    if(!f.live){ f.ring.material.opacity=.35+.45*Math.abs(Math.sin(t*9)); if(f.t<=0){ f.live=true; f.t=FIELD.live; f.disc.visible=true; f.ring.material.color.setHex(0xff7a2a); sparks(new V3(f.x,.5,f.z),0xffa040,4,4); } continue; }
+    f.disc.material.opacity=f.t<.6?(Math.floor(t*14)%2?.1:.32):.2+.06*Math.sin(t*6);
+    if(player&&!player.dead&&f.cd<=0&&Math.hypot(player.pos.x-f.x,player.pos.z-f.z)<FIELD.r){ f.cd=FIELD.tick; hurt(FIELD.dmg); } } }
 function updateEMines(dt,t){ for(let i=emines.length-1;i>=0;i--){ const m=emines[i]; m.arm-=dt; m.life-=dt; m.l.visible=Math.floor(t*(m.arm>0?3:8))%2===0;
   const pd=player?Math.hypot(player.pos.x-m.x,player.pos.z-m.z):99; let boom=m.life<=0||(m.arm<=0&&!player.dead&&pd<1.4);
   if(boom){ if(m.life>0){ crossBlast(new V3(m.x,0,m.z),0xff5a2a,.6); if(pd<2.2) hurt(14); } roomGroup.remove(m.g); emines.splice(i,1); } } }
@@ -91,7 +105,14 @@ function fanShot(from,base,n,step,spd,dmg,color,o){ for(let i=-n;i<=n;i++){ cons
 // tele: wind-up seconds · rec: recovery · cd: cooldown range after it · need: checked at the end of the wind-up (else the attack is called off)
 // a Warden ring: n slow shots around it, turned by off (a fraction of one step)
 function wardenRing(e,n,off){ for(let i=0;i<n;i++){ const a=(i+off)/n*Math.PI*2; shoot('e',e.pos.clone().setY(1.8),new V3(Math.sin(a),0,Math.cos(a)),6.5*eSpd(),10,0xffc040,{life:4,r:.45}); } }
+// Coil stakes: one on your predicted path, two to the sides (4-6 units off, never within 3.5 of you); each opens a field (openField)
+const _ck=new V3();
+function coilSpot(e,T,i){ for(let k=0;k<12;k++){ let x,z; if(i===0){ x=T.x; z=T.z; } else { const a=Math.atan2(T.x-e.pos.x,T.z-e.pos.z)+(i===1?1:-1)*rand(.8,1.3), r=rand(4,6); x=player.pos.x+Math.sin(a)*r; z=player.pos.z+Math.cos(a)*r; }
+    x=clamp(x,-AX+1.5,AX-1.5); z=clamp(z,-AZ+1.5,AZ-1.5); if(!inBlock(x,z,.5)&&Math.hypot(x-player.pos.x,z-player.pos.z)>=3.5) return _ck.set(x,0,z); if(i===0) i=1+(k&1); } return null; }
 const ATK={
+  stakes:{tele:.5,rec:.4,cd:[3.2,4.2],fire(e){ const T=leadPoint(e.pos.x,e.pos.z,6,AIL().lead,_lp,2.5), fly=.9; e.model.tube.getWorldPosition(_tmp2); const from=_tmp2.clone().setY(1.6);
+    for(let i=0;i<3;i++){ const p=coilSpot(e,T,i); if(!p) continue; const x=p.x, z=p.z; openField(e,x,z,fly+FIELD.warn); lobShell(from,new V3(x,0,z),fly,0xc86a3a,()=>sparks(new V3(x,.3,z),0xffa040,3,3)); }
+    e.jz.rec.v+=4; sfx('zap'); }},
   // Drone rifle: a led two-round burst after a short glint (three rounds at T2)
   rifle:{tele:.38,rec:.35,cd:[1.1,1.8],need:e=>e.see,fire(e){ e.burst=e.tier>1?3:2; e.bT=0; },
     tick(e,dt){ if(e.ph!=='rec'||!e.burst) return; e.bT-=dt; if(e.bT>0) return; e.bT=.14; e.burst--; const mz=_muz(e), s=10.5*eSpd(); shoot('e',mz,leadDir(mz.x,mz.z,s,new V3()),s,9,0xff5a2a,{life:3,r:.45}); sparks(mz,0xff8a40,3,3); e.jz.rec.v+=3; }},
@@ -199,6 +220,38 @@ const AI={
     if(e.blocked>.45){ e.st='move'; e.stT=rand(1,1.6); m.laser.visible=false; dropToken(e); }
     else if(e.stT<=0){ m.muzzle.getWorldPosition(_tmp2); shoot('e',_tmp2.clone().setY(1.6),new V3(fx,0,fz),34*eSpd(),22,0xff3a3a,{life:1.2,r:.42,scale:.9}); e.jz.rec.v+=7; sparks(_tmp2,0xff3a3a,5,6); sfx('heavy'); e.st='move'; e.stT=rand(1.6,2.6); m.laser.visible=false; dropToken(e); } },
   /* support: stays behind the enemy closest to you (its tank), heals and shields everyone inside the green aura */
+  /* charger (machine): walks its band, then lowers the plow (.9 s); the last .3 s lock a red lane to the wall (14 units at most) with a ring at its
+     end, and it rams along it, ramping from 8 to 17. A block or wall at the end stuns it 1.4 s (+60% damage); a miss stops it 1 s. It cannot turn. */
+  ram(e,dt,to,d,pd,m){ e.stT-=dt;
+    if(e.st==='tele'){ e.vel.set(0,0,0); m.plow.rotation.x=-.3*(1-Math.min(1,(.9-e.stT)/.5));
+      if(e.stT>.3){ const ld=leadDir(e.pos.x,e.pos.z,17,_ld); e.yaw=lerpAngle(e.yaw,Math.atan2(ld.x,ld.z),Math.min(1,dt*8)); }
+      else if(!e.rush){ const dx=Math.sin(e.yaw), dz=Math.cos(e.yaw), wall=lineLen(e.pos.x,e.pos.z,dx,dz,14,e.r*.7), len=Math.max(2,Math.min(14,wall));
+        e.rush={x:dx,z:dz,len,done:0,wall:wall<14,hit:false}; teleStrip(e.pos,dx,dz,len,1.9,0xff3a2a,.3+.15,true); groundRing(new V3(e.pos.x+dx*len,0,e.pos.z+dz*len),0xff3a2a,1.2,.6); sfx('click'); }
+      if(e.stT<=0){ e.st='rush'; e.rt=0; e.jz.pop.v=4; } return; }
+    if(e.st==='rush'){ const r=e.rush; e.rt+=dt; const v=8+9*Math.min(1,e.rt/.4); e.vel.set(r.x*v,0,r.z*v); r.done+=v*dt*(e.slow>0?.55:1);
+      if(Math.random()<dt*20) sparks(e.pos.clone().setY(.5).addScaledVector(_tmp.set(r.x,0,r.z),-1),0xff7a2a,1,3);
+      if(pd<e.r+.6&&!player.dead&&!r.hit){ r.hit=true; contactHurt(e,16); }
+      if(r.done>=r.len){ e.vel.set(0,0,0); dropToken(e); if(r.wall){ e.st='stun'; e.stT=1.4; e.vulnT=1.4; shake=Math.max(shake,.22); sparks(e.pos.clone().setY(1).addScaledVector(_tmp.set(r.x,0,r.z),1.2),0xffd0a0,8,6); sfx('heavy'); } else { e.st='stop'; e.stT=1; } e.rush=null; } return; }
+    if(e.st==='stun'||e.st==='stop'){ e.vel.multiplyScalar(Math.pow(.02,dt)); m.plow.rotation.x=-.3; if(e.stT<=0){ e.st='walk'; e.cd=rand(2,3); } return; }
+    const [n,f]=e.def.band; steer(e,holdBand(e,dt,to,d,n,f),dt,2.2); faceAim(e,dt,to,4);
+    if(e.hold||player.dead) return; e.cd-=dt*cdRate(e);
+    if(e.cd<=0&&e.see&&d<15&&takeToken(e)){ e.st='tele'; e.stT=.9; e.rush=null; e.vel.set(0,0,0); } },
+  // denial (machine): backs off to its band (no line of sight needed) and drops stakes that open live fields (ATK.stakes)
+  coil(e,dt,to,d,pd,m){ const [n,f]=e.def.band; attackCycle(e,dt,holdBand(e,dt,to,d,n,f,{noLos:true}),()=>d<16?ATK.stakes:null,2); faceAim(e,dt,to,3); },
+  /* support (machine): hangs back behind the ally nearest you like the Cherub, then welds the most hurt ally: .5 s warning (its tip glows, an orange
+     ring under the target), then a beam for 3 s (repairs 9%/s, the target takes 40% less), then 2.5 s rest. A block between them breaks the beam. */
+  mender(e,dt,to,d,pd,m){ const T=tgt(); let front=null,fd=1e9;
+    for(const o of enemies){ if(o===e||o.dead||o===boss||o.def&&o.def.role==='support') continue; const od=Math.hypot(o.pos.x-T.x,o.pos.z-T.z); if(od<fd){ fd=od; front=o; } }
+    let gx,gz; if(front){ const ux=(front.pos.x-T.x)/(fd||1), uz=(front.pos.z-T.z)/(fd||1); gx=front.pos.x+ux*3; gz=front.pos.z+uz*3; } else { gx=e.pos.x-to.x*5; gz=e.pos.z-to.z*5; }
+    const want=seek(e,clamp(gx,-AX+1.5,AX-1.5),clamp(gz,-AZ+1.5,AZ-1.5),e.speed,_sv); if(pd<6) want.addScaledVector(to,-e.speed*.8); steer(e,want,dt,2.5);
+    e.yaw=lerpAngle(e.yaw,Math.atan2(-to.x,-to.z),Math.min(1,dt*3)); e.stT-=dt; const o=e.weld;
+    const clear=o&&!o.dead&&Math.hypot(o.pos.x-e.pos.x,o.pos.z-e.pos.z)<14&&lineLen(e.pos.x,e.pos.z,(o.pos.x-e.pos.x)/Math.max(.01,Math.hypot(o.pos.x-e.pos.x,o.pos.z-e.pos.z)),(o.pos.z-e.pos.z)/Math.max(.01,Math.hypot(o.pos.x-e.pos.x,o.pos.z-e.pos.z)),14,.1)>=Math.hypot(o.pos.x-e.pos.x,o.pos.z-e.pos.z)-.8;
+    if(e.st==='aim'){ if(!clear){ e.st='rest'; e.stT=1; e.weld=null; return; } if(e.stT<=0){ e.st='beam'; e.stT=3; sfx('zap'); } return; }
+    if(e.st==='beam'){ if(!clear||e.stT<=0){ if(o&&!o.dead) sparks(o.pos.clone().setY(1.6),0xffa040,4,4); e.st='rest'; e.stT=2.5; e.weld=null; return; }
+      o.hp=Math.min(o.maxHp,o.hp+o.maxHp*.09*dt); o.mendT=.15; if(Math.random()<dt*6) sparks(o.pos.clone().setY(1.8),0xffa040,1,2); return; }
+    if(e.stT>0) return; let best=null,bh=1;
+    for(const q of enemies){ if(q===e||q.dead||q===boss||q.def&&q.def.role==='support'||q.maxHp<=0) continue; const h=q.hp/q.maxHp; if(h<bh&&Math.hypot(q.pos.x-e.pos.x,q.pos.z-e.pos.z)<12){ bh=h; best=q; } }
+    if(best&&bh<.98){ e.weld=best; e.st='aim'; e.stT=.5; groundRing(best.pos,0xffa040,1.4,.5); } else e.stT=.6; },
   cherub(e,dt,to,d,pd,m){ const T=tgt(); let front=null,fd=1e9;
     for(const o of enemies){ if(o===e||o.dead||o===boss||o.def&&o.def.role==='support') continue; const od=Math.hypot(o.pos.x-T.x,o.pos.z-T.z); if(od<fd){ fd=od; front=o; } }
     let gx,gz; if(front){ const ux=(front.pos.x-T.x)/(fd||1), uz=(front.pos.z-T.z)/(fd||1); gx=front.pos.x+ux*3.2; gz=front.pos.z+uz*3.2; } else { gx=e.pos.x-to.x*5; gz=e.pos.z-to.z*5; }
@@ -439,6 +492,12 @@ const ANIM={
   howitzer(e,dt,m){ spring(e.jz.rec,0,dt,14,.4); m.mort.rotation.x=.55-e.jz.rec.x*.06+(e.cd<.5&&!e.shell?Math.sin(e.t*30)*.03:0); },
   bulwark(e,dt,m){ m.hex.rotation.z+=dt*1.2; m.hex.scale.setScalar(Math.max(1,m.hex.scale.x-dt*3)); },
   shardling(e,dt,m){ m.body.rotation.y+=dt*(1+(e.ph==='tele'?6:0)); m.body.position.y=1.7+Math.sin(e.t*2)*.2; m.subs.forEach((s,i)=>s.rotation.y+=dt*2.4*(i%2?1:-1)); },
+  ram(e,dt,m){ const on=e.st==='tele'||e.st==='rush'; m.glows.forEach(g=>g.scale.setScalar(on?1.25+Math.sin(e.t*40)*.2:1)); m.eye.visible=!(e.st==='tele'&&e.stT<.3&&Math.sin(e.t*60)>0); },
+  coil(e,dt,m){ m.rings.forEach((r,i)=>{ if(!r.userData.broken) r.rotation.z+=dt*(1.5+i)*(i%2?1:-1); }); m.orb.scale.setScalar(e.ph==='tele'?1.3+Math.sin(e.t*30)*.15:1+Math.sin(e.t*3)*.06); },
+  mender(e,dt,m){ m.body.position.y=2.1+Math.sin(e.t*3)*.15; m.rotors.forEach((p,i)=>{ if(!p.userData.broken) p.rotation.y+=dt*(22+i); }); m.tip.scale.setScalar(e.st==='aim'||e.st==='beam'?1.4+Math.sin(e.t*30)*.2:1);
+    const o=e.weld, on=e.st==='beam'&&o&&!o.dead; if(!m.beam){ m.beam=new THREE.Mesh(box(.08,.08,1),basic(0xffa040,true,.85)); m.beam.visible=false; roomGroup.add(m.beam); (e.props||(e.props=[])).push(m.beam); }
+    m.beam.visible=!!on; if(on){ m.tip.getWorldPosition(_tmp2); const ax=_tmp2.x, ay=_tmp2.y, az=_tmp2.z, bx=o.pos.x, by=1.5, bz=o.pos.z, L=Math.hypot(bx-ax,by-ay,bz-az)||1;
+      m.beam.position.set((ax+bx)/2,(ay+by)/2,(az+bz)/2); m.beam.scale.set(1,1,L); m.beam.lookAt(bx,by,bz); } },
   cherub(e,dt,m){ m.body.position.y=2.2+Math.sin(e.t*3)*.25; m.halo.rotation.z+=dt*2; const wa=wingBeat(e,dt,14); m.wings.forEach(p=>{ p.rotation.z=p.userData.s*(Math.sin(e.wph+p.userData.k)*(.4+wa*.25)); }); m.aura.scale.setScalar(2*(.95+Math.sin(e.t*2)*.05)); },
   censer(e,dt,m){ m.swing.rotation.z=Math.sin(e.t*1.6)*.28; m.swing.rotation.x=Math.cos(e.t*1.3)*.12; m.orbs.forEach((o,i)=>{ const a=e.t*.8+i*2.1; o.position.set(Math.cos(a)*1.9,-1.4+Math.sin(e.t*1.5+i)*.4,Math.sin(a)*1.9); }); m.glow.scale.setScalar((1+Math.sin(e.t*4)*.12)*(e.ph==='tele'?1.5:1)); },
   ophan(e,dt,m){ if(e.st==='roll') m.body.rotation.x+=e.speed*dt/1.6; else { m.body.rotation.x*=Math.pow(.05,dt); m.rings[0].rotation.z+=dt*(e.st==='tele'?5:1.2); m.rings[1].rotation.x+=dt*(e.st==='tele'?4:1); } m.core.rotation.y+=dt*2; },
@@ -473,7 +532,7 @@ function updateEnemies(dt){
     else e.born=Math.min(1,e.born+dt*3);
     // summoned minions hold their fire while their boss runs a heavy attack, then resume at staggered times
     e.hold=!!(e.minion&&bossHeavy()); if(e.hold&&e.ph==='pos') e.cd=Math.max(e.cd,rand(.35,.8));
-    e.standT=Math.max(0,e.standT-dt); if(e.vulnT>0) e.vulnT-=dt;
+    e.standT=Math.max(0,e.standT-dt); if(e.vulnT>0) e.vulnT-=dt; if(e.mendT>0) e.mendT-=dt;
     if(e.kx||e.kz){ e.pos.x+=e.kx*dt; e.pos.z+=e.kz*dt; const f=Math.exp(-9*dt); e.kx*=f; e.kz*=f; if(Math.abs(e.kx)+Math.abs(e.kz)<.02) e.kx=e.kz=0; }
     if(e.flash>0){e.flash-=dt;if(e.flash<=0)unflash(e);}
     const to=_tmp.subVectors(T,e.pos).setY(0); const d=to.length()||1; to.divideScalar(d);

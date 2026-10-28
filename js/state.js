@@ -3,7 +3,7 @@
 let state='menu',paused=false,player=null,unit=null,boss=null,sortie=null,room=null;
 const enemies=[],bullets=[],fx=[],pickups=[],shocks=[],mines=[],holes=[];
 let decoy=null,buddy=null,wingman=null,chrono=0,npc=null,obstacles=[],door=null,stage=0;
-const blasts=[],trails=[],emines=[],hazards=[];
+const blasts=[],trails=[],emines=[],hazards=[],efields=[]; // efields: Coil's live ground fields (enemy-ai.js)
 let stateT=0,spawnQ=[],score=0,kills=0,playTime=0,shake=0,toastT=0,choiceBack='fight';
 /* every state change goes through setState. Player death wins: once 'dying' or 'result' is set, only the result screen (from 'dying'),
    the menu or a new run (newRun=true: launchArena, debug jumps) can follow. Returns false when the change is refused. */

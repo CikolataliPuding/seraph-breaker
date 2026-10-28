@@ -93,6 +93,7 @@ function roomCleared(){ if(!room||room.cleared) return; room.cleared=true; room.
 // room clear: leftover enemy mines, floor hazards, enemy shots and pending enemy blasts fizzle out harmlessly
 function fizzleRoom(){
   emines.forEach(m=>{ sparks(m.g.position.clone().setY(.4),0xa79fae,3,3); roomGroup.remove(m.g); }); emines.length=0;
+  efields.forEach(f=>roomGroup.remove(f.g)); efields.length=0;
   hazards.forEach(h=>{ h.warn.visible=h.act.visible=false; }); hazards.length=0;
   for(let i=blasts.length-1;i>=0;i--){ const b=blasts[i]; if(!b.hurtP) continue; scene.remove(b.ring); blasts.splice(i,1); }
   for(let i=bullets.length-1;i>=0;i--){ const b=bullets[i]; if(b.from!=='e') continue; sparks(b.m.position,0xa79fae,1,3); killBullet(i); }
@@ -235,7 +236,7 @@ function clearEnemiesAndShots(){
   mines.forEach(m=>scene.remove(m.g)); mines.length=0;
   holes.forEach(h=>scene.remove(h.g)); holes.length=0;
   if(decoy){ scene.remove(decoy.m.g); decoy=null; }
-  hideBeams(); spawnQ=[]; resetAI(); $('bossHud').hidden=true; clearBlasts(); emines.forEach(m=>roomGroup.remove(m.g)); emines.length=0; hazards.length=0;
+  hideBeams(); spawnQ=[]; resetAI(); $('bossHud').hidden=true; clearBlasts(); emines.forEach(m=>roomGroup.remove(m.g)); emines.length=0; efields.forEach(f=>roomGroup.remove(f.g)); efields.length=0; hazards.length=0;
 }
 function spawnNpc(kind,pos){
   const m=kind==='angel'?buildSeraph(1.25):buildDevil();
