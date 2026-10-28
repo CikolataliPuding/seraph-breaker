@@ -18,7 +18,7 @@ function contactHurt(e,d){ d*=e.def.dmgK||1; const before=player.hp; hurt(d); if
 // Spark explosion: hurts you only when it detonates on its own; it always hurts other enemies (chain reactions are queued and capped)
 function sparkBoom(e){ if(e.boomed) return; e.boomed=true;
   if(e.tier>1) for(let i=0;i<4;i++){ const a=Math.PI/4+i*Math.PI/2; shoot('e',e.pos.clone().setY(.8),new V3(Math.sin(a),0,Math.cos(a)),6*eSpd(),6,0xff5a2a,{life:1.2,r:.4}); } // T2+: 4 diagonal shards
-  queueBlast(e.pos.x,e.pos.z,{t:.02,rad:2.6,dmg:10*ARENAS[stage].hpMul,hurtP:16,color:0xffa040,size:.8,skip:e,flat:true}); killEnemy(e,true); }
+  queueBlast(e.pos.x,e.pos.z,{t:.02,rad:2.6,dmg:10*arenaCurve(stage).hp,hurtP:16,color:0xffa040,size:.8,skip:e,flat:true}); killEnemy(e,true); }
 /* enemy mines (Crawler, Siege Arachne) */
 function dropEMine(x,z,arm=.8){ if(emines.length>=14||room&&room.cleared) return; x=clamp(x,-AX+.6,AX-.6); z=clamp(z,-AZ+.6,AZ-.6);
   const g=new THREE.Group(); part(new THREE.CylinderGeometry(.4,.45,.16,8),toon(0x2a2632),g,0,.08,0,.05); const l=new THREE.Mesh(new THREE.SphereGeometry(.12,8,6),basic(0xff3a2a,false)); l.position.y=.2; g.add(l);

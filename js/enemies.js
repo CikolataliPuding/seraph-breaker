@@ -129,13 +129,13 @@ function killEnemy(e,byProc){
   if(e===boss){ bossDeath(); return; }
   // Spark T3 shot down: two small Sparks (1 armor, .45 s fuse, no split) stand still .5 s where it was
   if(e.type==='spark'&&e.tier>=3&&!e.boomed&&!e.noLoot) for(const s of [-1,1]){ const c=spawnEnemy('spark',freeNear(e.pos.x+s*.9,e.pos.z,.6),false,{noDrop:true,force:true}); if(c){ c.hp=c.maxHp=1; c.fuseShort=true; c.wake=.5; c.model.g.scale.multiplyScalar(.6); c.r*=.6; c.gen=1; } }
-  if(e.type==='spark'&&!e.boomed){ e.boomed=true; queueBlast(e.pos.x,e.pos.z,{t:.12,rad:2.6,dmg:10*ARENAS[stage].hpMul,color:0xffa040,size:.8,skip:e,flat:true}); }
+  if(e.type==='spark'&&!e.boomed){ e.boomed=true; queueBlast(e.pos.x,e.pos.z,{t:.12,rad:2.6,dmg:10*arenaCurve(stage).hp,color:0xffa040,size:.8,skip:e,flat:true}); }
   if(e.ring) e.ring.visible=false;
   // Main Stage floor props (dance pad, follow spot, landing ring, flame jets) go with their owner
   if(e.props){ e.props.forEach(o=>roomGroup.remove(o)); e.props=null; }
   if(e.plate) dropPlate(e);
   // Volatile affix: a telegraphed blast where it died (hurts you and the other enemies)
-  if(e.volatile&&!e.noLoot) queueBlast(e.pos.x,e.pos.z,{t:.75,rad:3.4,dmg:10*ARENAS[stage].hpMul,hurtP:18,color:0xff3a2a,size:1,skip:e,flat:true});
+  if(e.volatile&&!e.noLoot) queueBlast(e.pos.x,e.pos.z,{t:.75,rad:3.4,dmg:10*arenaCurve(stage).hp,hurtP:18,color:0xff3a2a,size:1,skip:e,flat:true});
   // Shardlings split into two smaller copies, twice (capped per room)
   if(e.type==='shardling'&&(e.gen||0)<2&&!e.noLoot){ let n=0; for(const o of enemies) if(o.type==='shardling'&&!o.dead) n++; for(const s of e.tier>=3?[-1,0,1]:[-1,1]){ if(n++>=10) break; const c=spawnEnemy('shardling',freeNear(e.pos.x+s*.9,e.pos.z+(s?0:.9),.6),false,{gen:(e.gen||0)+1,noDrop:true}); if(c){ c.kx=s*7; c.kz=rand(-3,3); c.elite=false; } } }
   if(sortie.rule.volatile){ const o=rand(0,1); for(let i=0;i<6;i++){ const a=(i+o)/6*Math.PI*2; shoot('e',e.pos.clone().setY(1.6),new V3(Math.sin(a),0,Math.cos(a)),4*eSpd(),8,0xb070ff,{life:3,r:.42}); } }
@@ -156,11 +156,11 @@ function killEnemy(e,byProc){
   // Shardling splits and boss summons pay a reduced share, so one Shardling is not worth seven kills; Survive spawns pay e.rw; leftovers pay nothing
   if(e.noLoot) return;
   const rw=(e.gen||e.minion?SPLIT_REWARD:1)*(e.rw==null?1:e.rw);
-  const g=def.gold*ECON.killGold[stage]*mul*TIER.gold[(e.tier||1)-1]*(sortie.rule.goldMul||1)*rw*sortie.farm, gc=ECON.gemChance;
+  const g=def.gold*econAt('killGold',stage)*mul*TIER.gold[(e.tier||1)-1]*(sortie.rule.goldMul||1)*rw*sortie.farm, gc=ECON.gemChance;
   dropGold(e.pos,g,'kill');
   if(Math.random()<(e.elite?gc.elite:def.cost>=2.5?gc.big:gc.small)*rw*sortie.farm) dropPick(e.pos,'gem',1);
   if(e.elite&&Math.random()<.25) dropItem(e.pos);
-  if(Math.random()<ECON.healChance[stage]*rw) dropPick(e.pos,'heal',.14);
+  if(Math.random()<econAt('healChance',stage)*rw) dropPick(e.pos,'heal',.14);
   if(def.xp) gainXp(def.xp*mul*(1+sortie.a*.12)*rw);
 }
 function dropPick(pos,kind,v,src){
