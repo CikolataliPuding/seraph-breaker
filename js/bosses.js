@@ -241,6 +241,7 @@ const hcBump=(t,x,w=.3)=>Math.max(0,1-Math.abs(t-x)/w);
 // vertical light column: telegraph and impact flash
 // one shared unit column (pillars fire up to 8 in a row): scaled to the radius, only the per-beam material is freed when it ends
 const HC_BEAM_GEO=new THREE.CylinderGeometry(1,1,60,20,1,true);
+HC_BEAM_GEO.userData.shared=true;
 function hcBeam(pos,color,r,life){ const m=new THREE.Mesh(HC_BEAM_GEO,addMat(color,.55)); m.position.set(pos.x,30,pos.z);
   addFx(m,life,(f,dt,k)=>{ m.material.opacity=.55*Math.min(1,k*2); const w=(.5+.5*k)*r; m.scale.set(w,1,w); },'mat'); }
 function highcoStartAttack(b,a){
@@ -378,6 +379,7 @@ function hcFeathers(b,dt){ if(Math.random()<dt*(mobileMode?8:18)) sparks(new V3(
    armor per form, never runs while he is immune, and every live stream goes away when the form dies. HC_REGEN_ON: debug toggle. */
 let HC_REGEN_ON=true;
 const HC_STREAM_GEO=new THREE.CylinderGeometry(1,1,1,8,1,true);
+HC_STREAM_GEO.userData.shared=true;
 const hcRegenLeft=b=>b.def.regen.cap*b.maxHp-b.regenUsed;
 function hcDrainReady(b){ const f=b.def.forms[b.phase-1]; return f.regen&&HC_REGEN_ON&&!b.immune&&b.drainCd<=0&&hcRegenLeft(b)>b.maxHp*.02&&b.hp<b.maxHp*.92; }
 function hcStreamsStart(b){

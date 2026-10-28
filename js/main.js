@@ -69,7 +69,7 @@ function tick(dt,now){
     else if(state==='bossdeath'){ const b=boss; stateT-=dt;
       b.model.g.position.set(b.pos.x+rand(-.15,.15),b.y,b.pos.z+rand(-.15,.15));
       if(Math.random()<dt*7){ const p=bossCore(b).add(new V3(rand(-3,3),rand(-3,3),rand(-3,3))); crossBlast(p.setY(Math.max(.2,p.y-3)),Math.random()<.5?0xff2236:0xffd36a,rand(.6,1.1)); }
-      if(stateT<=.8&&!b.final){ b.final=true; crossBlast(b.pos.clone().setY(0),0xff2236,3); hitstop(110,true); shatter(b.model,b.pos,0,0,{max:mobileMode?10:22,spd:1.6,cy:b.y+2,crystal:b.def.angel?0xffd36a:0}); scene.remove(b.model.g,b.model.shadow); enemies.slice().forEach(e=>{ if(e!==b&&!e.dead) killEnemy(e,true); }); enemies.length=0; }
+      if(stateT<=.8&&!b.final){ b.final=true; crossBlast(b.pos.clone().setY(0),0xff2236,3); hitstop(110,true); shatter(b.model,b.pos,0,0,{max:mobileMode?10:22,spd:1.6,cy:b.y+2,crystal:b.def.angel?0xffd36a:0}); scene.remove(b.model.g,b.model.shadow); freeModel(b.model.g); enemies.slice().forEach(e=>{ if(e!==b&&!e.dead) killEnemy(e,true); }); enemies.length=0; }
       if(stateT<=0){ boss=null; $('bossHud').hidden=true; pickups.slice().forEach(q=>{ if(q.kind!=='heal'&&q.kind!=='item') collect(q); if(q.kind!=='item'){ scene.remove(q.m); q.gone=true; } }); for(let i=pickups.length-1;i>=0;i--) if(pickups[i].gone) pickups.splice(i,1);
         // the final boss ends the arena (queued level-ups no longer matter); earlier bosses clear the room: choices, then the door
         if(sortie.ri>=sortie.N-1){ logRoomEnd('clear'); arenaComplete(); } else if(setState('fight')){ roomCleared(); refreshControls(); } } }
@@ -112,7 +112,7 @@ function tick(dt,now){
     if(b.from==='p'){
       let gone=false;
       for(const e of enemies){ if(e.dead||e.born<.4||e.under)continue; if(b.hit&&b.hit.has(e))continue;
-        const shieldPad=e===boss&&boss.barrier>0?1.2:0, r=e.r+b.r*.5+shieldPad, dx=p.x-e.pos.x, dz=p.z-e.pos.z;
+        const shieldPad=e===boss&&boss.barrier>0?1.2:0, r=e.r*(HIT_K[e.kind]||1)+b.r*.5+shieldPad, dx=p.x-e.pos.x, dz=p.z-e.pos.z;
         if(segDist(ox,oz,p.x,p.z,e.pos.x,e.pos.z).d2<r*r){ if(b.grav){ makeHole(p); gone=true; break; }
           // Dominion: its turning plates stop plain shots while they are up
           if(e.type==='dominion'&&!b.pierce&&!b.bounce&&dominionBlocks(e,dx,dz)){ sparks(p,0xffd36a,3,4); sfx('shield'); e.jz.pop.v+=.4; gone=true; break; }

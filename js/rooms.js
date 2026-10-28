@@ -11,7 +11,7 @@ function pushOut(pos,r){
   }
 }
 function clearRoom(){
-  roomGroup.children.slice().forEach(c=>roomGroup.remove(c)); obstacles=[]; door=null;
+  roomGroup.children.slice().forEach(c=>{ roomGroup.remove(c); freeModel(c); }); obstacles=[]; door=null;
   if(npc){ scene.remove(npc.m.g); npc=null; }
 }
 function buildRoom(hx,hz,grid,withDoor){
@@ -237,7 +237,7 @@ function startRoom(i,force){
   refreshControls();
 }
 function clearEnemiesAndShots(){
-  enemies.forEach(e=>{ scene.remove(e.model.g,e.model.shadow); if(e.plate) dropPlate(e); }); enemies.length=0; boss=null; setDark(false);
+  enemies.forEach(e=>{ scene.remove(e.model.g,e.model.shadow); freeModel(e.model.g); if(e.plate) dropPlate(e); }); enemies.length=0; boss=null; setDark(false);
   bullets.forEach(freeBullet); bullets.length=0;
   pickups.forEach(p=>scene.remove(p.m)); pickups.length=0;
   shocks.forEach(s=>scene.remove(s.ring,s.wall)); shocks.length=0;

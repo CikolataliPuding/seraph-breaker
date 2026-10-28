@@ -32,6 +32,7 @@ const DBG={
   sim(o){ return simulate(o); },
   bot(on=!BOT.on){ BOT.on=on; toast(on?'Autopilot on':'Autopilot off'); return on; },
   measure(o){ return measureRun(o); },
+  frames(o){ return frameCompare(o); },
   immortal:false,
   // Main Stage: start it at room n · jump to wave n of the current wave room · force the BPM (0 = back to the music's own) · the wave/room curve
   stage(n=1){ DBG.go(ARENAS.findIndex(A=>A.stage),n); },
@@ -223,11 +224,13 @@ function botTick(dt){
   for(const f of efields) flee(f.x,f.z,FIELD.r+1.2,f.live?3:2); // Coil fields: step off the ring before it goes live
   for(const t of traps){ if(room&&room.cleared||!trapDanger(t)) continue; /* traps are off once the room is clear (a stopped saw would pin the bot) */ if(t.kind==='saw') flee(t.x,t.z,t.r+1.7,3); else for(const c of t.cells) flee(c.x,c.z,t.cw*.75+.9,3); }
   for(const h of hazards) if(h.ph>=1||h.t<.3&&h.ph===0) flee(h.x,h.z,2.4,2.5);
-  // spacing: circle the nearest enemy at 6-10 units, switch direction now and then
+  // spacing: circle the nearest enemy inside the weapon's reach (rifle and lance 5.5-10 units, Crimson's scatter cannon 3.5-7, torch 3-6.5,
+  // blade 2-4.5), switch direction now and then. At 6-10 units Crimson's pellets (about 9 units) mostly fell short, which skewed its measurements.
+  const BAND=P.weapon==='blade'?[2,4.5]:P.weapon==='torch'?[3,6.5]:P.weapon==='sig'&&P.unit==='crimson'?[3.5,7]:[5.5,10];
   BOT.sideT-=dt; if(BOT.sideT<=0){ BOT.sideT=rand(1.4,3); BOT.side=Math.random()<.5?-1:1; }
   const seen=autoTarget();
   if(tgtE&&!seen&&mv.lengthSq()<.3) botGo(tgtE.pos.x,tgtE.pos.z,add); // nothing in sight: walk around the blocks toward the nearest enemy
-  else if(tgtE){ const dx=tgtE.pos.x-p.pos.x, dz=tgtE.pos.z-p.pos.z, d=Math.hypot(dx,dz)||1; if(d<5.5) add(-dx,-dz,1); else if(d>10) add(dx,dz,.8); add(-dz*BOT.side,dx*BOT.side,.55); }
+  else if(tgtE){ const dx=tgtE.pos.x-p.pos.x, dz=tgtE.pos.z-p.pos.z, d=Math.hypot(dx,dz)||1; if(d<BAND[0]) add(-dx,-dz,1); else if(d>BAND[1]) add(dx,dz,.8); add(-dz*BOT.side,dx*BOT.side,.55); }
   if(seen){ const dx=seen.pos.x-p.pos.x, dz=seen.pos.z-p.pos.z, d=Math.hypot(dx,dz)||1; p.aim.set(dx/d,0,dz/d); BOT.fire=true; }
   else if(door&&door.open) botGo(0,-AZ-1,add);
   else if(npc&&!npc.used&&npc.kind==='angel') botGo(npc.pos.x,npc.pos.z,add);
@@ -316,6 +319,14 @@ Object.assign(DBG,{stageRun,hcFight,stageOdds,
       const rows=[]; for(let r=1;r<=15;r++){ const rs=runs.map(x=>x.find(y=>y.room===r)).filter(Boolean), av=key=>r2(rs.reduce((a,b)=>a+b[key],0)/Math.max(1,rs.length)); rows.push({room:r,lost:av('lost'),net:av('net'),deaths:av('deaths'),t:av('t'),lv:av('lv')}); }
       out[pf]={rows,runs,fights,odds:stageOdds(runs,fights,{hcK:pf==='avg'?.5:1})}; if(o.print!==false){ console.log('Main Stage · '+pf); console.table(rows); console.log(out[pf].odds); } }
     return out; }});
+// frame comparison (balance check): the bot plays the same arena with each frame on the same meta, runs times each (cards are random, so
+// use 3 or more). Per frame: average combat room time and armor lost, average boss time and armor lost. DBG.frames({arena:2,runs:3})
+async function frameCompare(o={}){ const a=o.arena!=null?o.arena:2, runs=o.runs||3, out={};
+  for(const u of ['azure','crimson','verdant']){ const rows=[];
+    for(let i=0;i<runs;i++){ await measureRun({arena:a,best:a,unit:u,meta:o.meta,maxMs:o.maxMs}); rows.push(...RUNLOG.rooms); }
+    const c=rows.filter(r=>r.type!=='boss'&&r.type!=='angel'), b=rows.filter(r=>r.type==='boss'), avg=(x,k)=>r2(x.reduce((s,r)=>s+(r[k]||0),0)/Math.max(1,x.length));
+    out[u]={combatTime:avg(c,'time'),combatDmg:avg(c,'dmgTaken'),bossTime:avg(b,'time'),bossDmg:avg(b,'dmgTaken'),rooms:rows.length}; }
+  if(o.print!==false) console.table(out); return out; }
 // per-arena summary of the run log: share of combat rooms cleared without damage, damage and time per room, gold per minute
 function summarizeLog(rows){ const by={};
   for(const r of rows){ const A=by[r.arena]||(by[r.arena]={arena:r.arena,rooms:0,combat:0,noDmg:0,time:0,gold:0,deaths:0,dmg:0,bossT:0,bosses:0});
