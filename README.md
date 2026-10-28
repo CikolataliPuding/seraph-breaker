@@ -299,6 +299,7 @@ Test araçları bir **tester koduyla** açılır (proje sahibinden iste). Kodu S
 | `DBG.level(30)`, `DBG.die()`, `DBG.bpm(140)` | Level ayarla, olduğun yerde öl, BPM'i zorla (`0` müziğe döner) |
 | `DBG.sim({arena:2})` | Arenayı çizim yapmadan sayısal hesaplar: güç ve düşman eğrisi, ekonomi |
 | `DBG.measure({arena:1})` | Otopilot arenayı hızlandırılmış ve çizimsiz oynar (60 Hz adım, 0.3 s tepki gecikmesi) |
+| `DBG.frames({arena:2,runs:3})` | Üç frame'i aynı arenada otopilotla oynatıp savaş ve boss odası sürelerini, kaybedilen zırhı tablo olarak verir (frame dengesi) |
 | `await DBG.stageCheck()` | Main Stage'i otopilotla ölçer: oda başına zırh kaybı, ölüm şansı, zorluk skoru |
 | `DBG.hcSim()`, `DBG.stageCurve()` | High-Co dövüş süresi tablosu, dalga ve oda eğrisi tablosu |
 

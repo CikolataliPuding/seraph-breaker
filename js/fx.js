@@ -1,9 +1,10 @@
 // Seraph Breaker · fx.js: Visual effects: sparks, rings, cross blasts, bolts, shockwaves, toasts.
 /* ================= FX ================= */
 const G={pB:box(.14,.14,1),pBig:box(.32,.32,1.6),pel:box(.16,.16,.6),mis:box(.16,.16,.5),orb:new THREE.SphereGeometry(.3,10,8),gorb:new THREE.SphereGeometry(.45,14,10),spark:box(.16,.16,.16),plane:new THREE.PlaneGeometry(1,1),ring:new THREE.RingGeometry(.86,1,48),disc:new THREE.CircleGeometry(1,48),wall:new THREE.CylinderGeometry(1,1,1,48,1,true),coin:new THREE.CylinderGeometry(.26,.26,.07,12),gem:new THREE.OctahedronGeometry(.3,0),puff:new THREE.SphereGeometry(.35,8,6),slash:new THREE.RingGeometry(1.9,3.6,22,1,-Math.PI/2-1.2,2.4),blade:box(.9,.1,.25)};
+Object.values(G).forEach(g=>g.userData.shared=true); // effect geometries are reused by every effect: fxDispose leaves them alone
 // dispose: true frees the effect's own geometry and material when it ends (both made for this one effect), 'mat' only the material (shared geometry)
 function addFx(obj,life,upd,dispose){ scene.add(obj); fx.push({obj,life,max:life,upd,dispose}); }
-function fxDispose(f){ if(!f.dispose) return; if(f.dispose!=='mat'&&f.obj.geometry) f.obj.geometry.dispose(); if(f.obj.material) f.obj.material.dispose(); }
+function fxDispose(f){ if(!f.dispose) return; if(f.dispose!=='mat'&&f.obj.geometry&&!f.obj.geometry.userData.shared) f.obj.geometry.dispose(); if(f.obj.material) f.obj.material.dispose(); }
 function sparks(pos,color,n=8,spd=7){
   if(mobileMode) n=Math.ceil(n*.6);
   for(let i=0;i<n;i++){ const m=new THREE.Mesh(G.spark,basic(color,true)); m.position.copy(pos); const v=new V3(rand(-1,1),rand(.2,1.4),rand(-1,1)).normalize().multiplyScalar(rand(.4,1)*spd);

@@ -421,6 +421,11 @@ const ENEMY={
   spot:{name:'Lighting Tech',tag:'focus',mass:1,role:'support',band:[8,12],spot:[2.4,6],hp:3,r:1,speed:3,sc:1.1,cost:1.2,xp:1.08,gold:9,score:160,build:()=>buildSpot()},
   diver:{name:'Stage Diver',tag:'move',mass:1.3,role:'charger',leap:[1.4,2.2],hp:10,r:1.15,speed:4.8,sc:1.2,cost:2,xp:1.8,gold:12,score:240,build:()=>buildDiver(),init:e=>{ e.st='enter'; e.cd=rand(.6,1.2); }},
 };
+/* shot hit radius as a factor of r, per mob (r itself stays the body: movement, touch damage, spacing). Measured against each model's widest
+   half extent so a shot that visibly hits counts and one that visibly misses does not: every listed mob now sits at 0.95-1.35 × that extent
+   (before: Seraph, Emissary and Dominion ~0.7, so clean hits passed through; Amp, Diver, Mosher, Censer ~1.7-1.9, so misses landed). */
+const HIT_K={seraph:1.37,emissary:1.32,dominion:1.32,cellbrute:1.28,borer:1.25,beacon:1.25,crawler:1.23,herald:1.19,ram:1.17,cherub:1.16,
+  pyro:.89,hopper:.84,dancer:.83,censer:.81,mosher:.81,diver:.76,amp:.72};
 /* enemy AI by arena (index = arena). react: seconds an enemy must see you before it fires · lead: how much of your movement its aim and charges
    predict (0 = where you are, 1 = perfect intercept; arena 1 barely leads) · aggr: how often flankers go for your back and tanks push in · read: attacks come faster while your dash is recharging (arena 3+ read the player). */
 const AI_LV=[

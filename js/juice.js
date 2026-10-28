@@ -43,12 +43,13 @@ function muzzleFlash(pos,color,size=1){ mFlash.position.copy(pos); mFlash.materi
 const debris=[];
 const debrisMax=()=>mobileMode?60:150;
 const shardGeo=new THREE.OctahedronGeometry(.22,0), shardPool=[];
+shardGeo.userData.shared=mFlash.geometry.userData.shared=true;
 function getShard(color){ const m=shardPool.pop()||new THREE.Mesh(shardGeo,null); m.material=basic(color,false); m.scale.set(1,1.8,1); return m; }
 function pushDebris(o,v,life,pooled){
   if(debris.length>=debrisMax()) dropDebris(0);
   scene.add(o); debris.push({o,v,s:new V3(rand(-9,9),rand(-9,9),rand(-9,9)),life,max:life,b:0,pooled,base:o.scale.clone()});
 }
-function dropDebris(i){ const d=debris[i]; scene.remove(d.o); if(d.pooled) shardPool.push(d.o); else if(d.o.geometry) d.o.geometry.dispose(); debris.splice(i,1); }
+function dropDebris(i){ const d=debris[i]; scene.remove(d.o); if(d.pooled) shardPool.push(d.o); else if(d.o.geometry&&!d.o.geometry.userData.shared) d.o.geometry.dispose(); debris.splice(i,1); }
 const _dbc=new V3(),_dbw=new V3(),_dbs=new THREE.Sphere();
 function shatter(model,pos,dx=0,dz=0,opt={}){
   const g=model.g; g.updateMatrixWorld(true);

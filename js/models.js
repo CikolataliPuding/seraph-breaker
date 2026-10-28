@@ -12,7 +12,7 @@ function buildMech(c1,c2,c3,eye,scale=1,frame=''){
   part(box(.36,.4,.5),M1,head,0,.12,0);
   part(box(.3,.18,.3),M3,head,0,-.06,.18,.05);
   const hl=frame==='verdant'?.9:.6;
-  const horn=part(new THREE.ConeGeometry(.07,hl,5),M2,head,0,.3+hl*.25,.22,.05); horn.rotation.x=.5;
+  const horn=part(geoC('Cone',THREE.ConeGeometry,.07,hl,5),M2,head,0,.3+hl*.25,.22,.05); horn.rotation.x=.5;
   if(frame==='crimson') [-1,1].forEach(s=>{ const f=part(box(.05,.4,.26),M2,head,s*.21,.32,0,.04); f.rotation.z=-s*.45; });
   const eyes=new THREE.Mesh(box(frame==='crimson'?.34:.3,.07,.06),ME); eyes.position.set(0,.14,.26); head.add(eyes);
   const sf=frame==='verdant'?1.15:frame==='crimson'?.9:1;
@@ -20,7 +20,7 @@ function buildMech(c1,c2,c3,eye,scale=1,frame=''){
   [-1,1].forEach(s=>{
     const sh=part(box(.5*sf,.72*sf,.85*sf),M1,torso,s*.88,1.02,0);
     part(box(.06,.5*sf,.6*sf),M2,sh,s*.26*sf,0,0,.04);
-    if(frame==='crimson'){ const sp=part(new THREE.ConeGeometry(.09,.5,4),M2,sh,0,.5,0,.04); sp.rotation.z=-s*.3; }
+    if(frame==='crimson'){ const sp=part(geoC('Cone',THREE.ConeGeometry,.09,.5,4),M2,sh,0,.5,0,.04); sp.rotation.z=-s*.3; }
     const arm=new THREE.Group(); arm.position.set(s*.86,.92,0); torso.add(arm);
     part(box(.28,.6,.28),M3,arm,0,-.38,0,.06);
     part(box(.36,.62,.4),M1,arm,0,-.92,0);
@@ -67,12 +67,12 @@ function stepMech(m,o,spd,dt,scale,dir=1){
 function buildSeraph(scale=1){
   const g=new THREE.Group(); const body=new THREE.Group(); body.position.y=2.1; g.add(body);
   const MW=toon(0xeee8f4),MD=toon(0x2a2232),MG=toon(0xd9c9ff);
-  const crystal=part(new THREE.OctahedronGeometry(.8,0),MW,body,0,0,0,.1); crystal.scale.y=1.6;
-  part(new THREE.OctahedronGeometry(.32,0),MD,body,0,-1.25,0,.06);
-  const lance=part(new THREE.ConeGeometry(.17,1.15,5),MD,body,0,-.15,.95,.05); lance.rotation.x=Math.PI/2;
-  const core=new THREE.Mesh(new THREE.SphereGeometry(.28,14,10),basic(0xff2a3a,false)); core.position.z=.55; body.add(core);
-  const ring=new THREE.Mesh(new THREE.TorusGeometry(.4,.045,6,20),basic(0xff5a6a,true,.85)); ring.position.z=.58; body.add(ring);
-  const halo=new THREE.Mesh(new THREE.TorusGeometry(.6,.05,6,32),basic(0xffd36a,false)); halo.rotation.x=Math.PI/2; halo.position.y=1.75; body.add(halo);
+  const crystal=part(geoC('Octahedron',THREE.OctahedronGeometry,.8,0),MW,body,0,0,0,.1); crystal.scale.y=1.6;
+  part(geoC('Octahedron',THREE.OctahedronGeometry,.32,0),MD,body,0,-1.25,0,.06);
+  const lance=part(geoC('Cone',THREE.ConeGeometry,.17,1.15,5),MD,body,0,-.15,.95,.05); lance.rotation.x=Math.PI/2;
+  const core=new THREE.Mesh(geoC('Sphere',THREE.SphereGeometry,.28,14,10),basic(0xff2a3a,false)); core.position.z=.55; body.add(core);
+  const ring=new THREE.Mesh(geoC('Torus',THREE.TorusGeometry,.4,.045,6,20),basic(0xff5a6a,true,.85)); ring.position.z=.58; body.add(ring);
+  const halo=new THREE.Mesh(geoC('Torus',THREE.TorusGeometry,.6,.05,6,32),basic(0xffd36a,false)); halo.rotation.x=Math.PI/2; halo.position.y=1.75; body.add(halo);
   const wings=[];
   [-1,1].forEach(s=>{ const w=part(box(1.5,.08,.5),MW,body,s*1.1,.3,-.2,.06); w.rotation.z=s*.5; wings.push(w);
     [0,1].forEach(k=>part(box(.42,.05,.28),MG,w,s*(.55+k*.32),-.02,-.28-k*.06,.03));
@@ -86,11 +86,11 @@ function buildSeraph(scale=1){
 function buildWarden(){
   const g=new THREE.Group(); const body=new THREE.Group(); body.position.y=2.6; g.add(body);
   const MW=toon(0xe8e2f0),MG=toon(0xd4a640),MD=toon(0x2a2232);
-  part(new THREE.SphereGeometry(.7,16,12),MW,body,0,0,0,.1);
-  const eye=new THREE.Mesh(new THREE.TorusGeometry(.3,.09,8,24),basic(0xff2a3a,false)); eye.position.z=.66; body.add(eye);
-  const iris=new THREE.Mesh(new THREE.TorusGeometry(.42,.03,6,24),basic(0xff5a3a,true,.7)); iris.position.z=.62; body.add(iris);
-  const pupil=new THREE.Mesh(new THREE.SphereGeometry(.12,10,8),basic(0x0a0610,false)); pupil.position.z=.7; body.add(pupil);
-  const r1=part(new THREE.TorusGeometry(1.1,.07,6,40),MG,body,0,0,0,.05), r2=part(new THREE.TorusGeometry(1.35,.05,6,40),MG,body,0,0,0,.04);
+  part(geoC('Sphere',THREE.SphereGeometry,.7,16,12),MW,body,0,0,0,.1);
+  const eye=new THREE.Mesh(geoC('Torus',THREE.TorusGeometry,.3,.09,8,24),basic(0xff2a3a,false)); eye.position.z=.66; body.add(eye);
+  const iris=new THREE.Mesh(geoC('Torus',THREE.TorusGeometry,.42,.03,6,24),basic(0xff5a3a,true,.7)); iris.position.z=.62; body.add(iris);
+  const pupil=new THREE.Mesh(geoC('Sphere',THREE.SphereGeometry,.12,10,8),basic(0x0a0610,false)); pupil.position.z=.7; body.add(pupil);
+  const r1=part(geoC('Torus',THREE.TorusGeometry,1.1,.07,6,40),MG,body,0,0,0,.05), r2=part(geoC('Torus',THREE.TorusGeometry,1.35,.05,6,40),MG,body,0,0,0,.04);
   const petals=[0,1,2,3].map(i=>{ const p=new THREE.Group(); p.rotation.z=i*Math.PI/2+Math.PI/4; body.add(p); const pl=part(box(.34,.5,.1),MW,p,0,.72,.18,.04); pl.rotation.x=-.35; part(box(.2,.08,.12),MG,pl,0,.2,.02,.02); return p; });
   const chains=[0,1,2].map(i=>{ const a=i/3*Math.PI*2, c=new THREE.Group(); c.position.set(Math.cos(a)*.35,-.6,Math.sin(a)*.35); body.add(c); for(let k=0;k<3;k++) part(box(.08,.22,.08),k%2?MG:MD,c,0,-.15-k*.24,0,.02); return c; });
   return {g,body,rings:[r1,r2],eye,iris,petals,chains,mats:[MW,MG,MD],shadow:blob(.9),breaks:[{o:petals[0],at:.5},{o:petals[2],at:.5},{o:r2,at:.25}]};
@@ -101,10 +101,10 @@ function buildDrone(){
   const m=buildMech(0x4c4658,0x9a2c42,0x24202c,0xff2a2a,.8), [M1,M2,M3]=m.mats, ME=basic(0xff3a2a,false);
   const pack=part(box(.8,.72,.42),M3,m.torso,0,.85,-.58); part(box(.6,.12,.3),M2,pack,0,.4,0,.04);
   const ant=new THREE.Group(); ant.position.set(-.25,.42,-.05); pack.add(ant); part(box(.06,1.15,.06),M3,ant,0,.57,0,.03); const tip=new THREE.Mesh(box(.13,.13,.13),ME); tip.position.y=1.16; ant.add(tip);
-  const dish=new THREE.Group(); dish.position.set(.28,.46,0); pack.add(dish); const dd=part(new THREE.CylinderGeometry(.28,.08,.12,10),M1,dish,0,.14,0,.04); dd.rotation.x=.6;
+  const dish=new THREE.Group(); dish.position.set(.28,.46,0); pack.add(dish); const dd=part(geoC('Cylinder',THREE.CylinderGeometry,.28,.08,.12,10),M1,dish,0,.14,0,.04); dd.rotation.x=.6;
   const vis=new THREE.Mesh(box(.42,.06,.04),ME); vis.position.set(0,.2,.27); m.head.add(vis);
   const lamp=new THREE.Mesh(box(.1,.1,.1),basic(0xffd06a,false)); lamp.position.set(0,-.25,.18); m.rifle.add(lamp);
-  const cab=part(new THREE.CylinderGeometry(.04,.04,1.1,6),M3,m.torso,.6,.6,-.38,0); cab.rotation.set(.9,0,-.5);
+  const cab=part(geoC('Cylinder',THREE.CylinderGeometry,.04,.04,1.1,6),M3,m.torso,.6,.6,-.38,0); cab.rotation.set(.9,0,-.5);
   m.ant=ant; m.dish=dish; m.breaks=[{o:ant,at:.5},{o:dish,at:.5},{o:pack,at:.25}]; return m;
 }
 /* Heavy (tank / slammer): wide pauldrons that swing with the stride, a slam fist on the left arm, a triple fan barrel on the right
@@ -118,7 +118,7 @@ function buildHeavy(){
   const glows=[-.3,0,.3].map(x=>{ const v=new THREE.Mesh(box(.18,.4,.05),MG); v.position.set(x,0,-.15); vents.add(v); return v; });
   m.pauls=pauls; m.glows=glows; m.breaks=[{o:pauls[0],at:.5},{o:vents,at:.25},{o:pauls[1],at:.25}]; return m;
 }
-function buildShield(size){ const sh=new THREE.Group(); for(let i=0;i<3;i++) sh.add(new THREE.Mesh(new THREE.RingGeometry(size+i*.6,size+.25+i*.6,6),addMat(0xff7a2a,.8))); sh.add(new THREE.Mesh(new THREE.CircleGeometry(size,6),addMat(0xff7a2a,.18))); sh.visible=false; return sh; }
+function buildShield(size){ const sh=new THREE.Group(); for(let i=0;i<3;i++) sh.add(new THREE.Mesh(geoC('Ring',THREE.RingGeometry,size+i*.6,size+.25+i*.6,6),addMat(0xff7a2a,.8))); sh.add(new THREE.Mesh(geoC('Circle',THREE.CircleGeometry,size,6),addMat(0xff7a2a,.18))); sh.visible=false; return sh; }
 function buildColossus(){
   const m=buildMech(0x3a3d48,0xd2382a,0x1c1d24,0xff2a2a,3); const MP=toon(0x2a2c34);
   [-1,1].forEach(s=>{ const pod=part(box(.62,.5,.9),MP,m.torso,s*1.0,1.68,-.1,.06); for(let i=0;i<3;i++){ const t=new THREE.Mesh(box(.12,.12,.06),basic(0xff3a2a,false)); t.position.set(-.18+i*.18,.08,.46); pod.add(t);} });
@@ -127,25 +127,25 @@ function buildColossus(){
 function buildPrism(){
   const g=new THREE.Group(); const body=new THREE.Group(); g.add(body);
   const MB=toon(0x3a78ff),MC=toon(0x9ad0ff);
-  const crystal=part(new THREE.OctahedronGeometry(2.6,0),MB,body,0,0,0,.18);
-  const core=new THREE.Mesh(new THREE.SphereGeometry(.7,18,12),basic(0xff2236,false)); core.position.z=1.6; body.add(core);
-  core.add(new THREE.Mesh(new THREE.SphereGeometry(1.05,18,12),basic(0xff3048,true,.3)));
-  const shards=[]; for(let i=0;i<6;i++){ const s=part(new THREE.OctahedronGeometry(.45,0),MC,body,0,0,0,.06); s.scale.y=1.8; const a=i/6*Math.PI*2; s.position.set(Math.cos(a)*4,0,Math.sin(a)*4); shards.push(s); }
-  const ring=new THREE.Mesh(new THREE.TorusGeometry(3.6,.05,6,64),basic(0x8ad8ff,true,.7)); ring.rotation.x=Math.PI/2; body.add(ring);
+  const crystal=part(geoC('Octahedron',THREE.OctahedronGeometry,2.6,0),MB,body,0,0,0,.18);
+  const core=new THREE.Mesh(geoC('Sphere',THREE.SphereGeometry,.7,18,12),basic(0xff2236,false)); core.position.z=1.6; body.add(core);
+  core.add(new THREE.Mesh(geoC('Sphere',THREE.SphereGeometry,1.05,18,12),basic(0xff3048,true,.3)));
+  const shards=[]; for(let i=0;i<6;i++){ const s=part(geoC('Octahedron',THREE.OctahedronGeometry,.45,0),MC,body,0,0,0,.06); s.scale.y=1.8; const a=i/6*Math.PI*2; s.position.set(Math.cos(a)*4,0,Math.sin(a)*4); shards.push(s); }
+  const ring=new THREE.Mesh(geoC('Torus',THREE.TorusGeometry,3.6,.05,6,64),basic(0x8ad8ff,true,.7)); ring.rotation.x=Math.PI/2; body.add(ring);
   const shield=buildShield(4.2); body.add(shield);
   return {g,body,crystal,core,shards,ring,shield,mats:[MB,MC],shadow:blob(2.8),kind:'prism'};
 }
 function buildSeraphBoss(){
   const g=new THREE.Group(); const body=new THREE.Group(); g.add(body);
   const MW=toon(0xf2eef8),MB=toon(0x1c1626),MG=toon(0xd9c9ff);
-  const crystal=part(new THREE.OctahedronGeometry(2,0),MW,body,0,0,0,.18); crystal.scale.set(1,1.7,1);
-  const inner=part(new THREE.OctahedronGeometry(1.2,0),MB,body,0,-2.6,0,.12); inner.scale.y=1.3;
-  const core=new THREE.Mesh(new THREE.SphereGeometry(.8,20,14),basic(0xff2236,false)); core.position.z=1.35; body.add(core);
-  core.add(new THREE.Mesh(new THREE.SphereGeometry(1.2,20,14),basic(0xff3048,true,.35)));
+  const crystal=part(geoC('Octahedron',THREE.OctahedronGeometry,2,0),MW,body,0,0,0,.18); crystal.scale.set(1,1.7,1);
+  const inner=part(geoC('Octahedron',THREE.OctahedronGeometry,1.2,0),MB,body,0,-2.6,0,.12); inner.scale.y=1.3;
+  const core=new THREE.Mesh(geoC('Sphere',THREE.SphereGeometry,.8,20,14),basic(0xff2236,false)); core.position.z=1.35; body.add(core);
+  core.add(new THREE.Mesh(geoC('Sphere',THREE.SphereGeometry,1.2,20,14),basic(0xff3048,true,.35)));
   const mask=part(box(.9,1.1,.15),MW,body,0,1.6,1.05,.08);
   [-1,1].forEach(s=>{ const h=new THREE.Mesh(box(.18,.26,.05),basic(0x0a0610,false)); h.position.set(s*.2,.12,.09); mask.add(h); });
-  const halo=new THREE.Mesh(new THREE.TorusGeometry(1.6,.1,8,48),basic(0xffd36a,false)); halo.rotation.x=Math.PI/2; halo.position.y=4; body.add(halo);
-  const rings=[0,1].map(i=>{ const r=new THREE.Mesh(new THREE.TorusGeometry(3.4+i*.7,.06,6,64),basic(i?0xff6a1a:0xffffff,true,.7)); body.add(r); return r; });
+  const halo=new THREE.Mesh(geoC('Torus',THREE.TorusGeometry,1.6,.1,8,48),basic(0xffd36a,false)); halo.rotation.x=Math.PI/2; halo.position.y=4; body.add(halo);
+  const rings=[0,1].map(i=>{ const r=new THREE.Mesh(geoC('Torus',THREE.TorusGeometry,3.4+i*.7,.06,6,64),basic(i?0xff6a1a:0xffffff,true,.7)); body.add(r); return r; });
   const wings=new THREE.Group(); wings.position.z=-.6; body.add(wings);
   for(let i=0;i<6;i++){ const s=i<3?-1:1,k=i%3; const piv=new THREE.Group(); piv.rotation.z=s*(.45+k*.42); wings.add(piv); part(box(.5,4.6-k*.8,.14),MG,piv,0,2.6-k*.3,0,.08); piv.userData.base=piv.rotation.z; piv.userData.s=s; }
   const shield=buildShield(3.8); body.add(shield);
@@ -154,9 +154,9 @@ function buildSeraphBoss(){
 function buildDevil(){
   const g=new THREE.Group(); const body=new THREE.Group(); body.position.y=2.2; g.add(body);
   const MK=toon(0x2a1430),MR=toon(0xd5352a);
-  const c=part(new THREE.OctahedronGeometry(.9,0),MK,body,0,0,0,.1); c.scale.y=1.5;
-  [-1,1].forEach(s=>{ const h=part(new THREE.ConeGeometry(.16,.9,5),MR,body,s*.45,1.2,0,.05); h.rotation.z=-s*.5; const e=new THREE.Mesh(box(.16,.07,.05),basic(0xff2a2a,false)); e.position.set(s*.2,.35,.62); body.add(e); });
-  const ring=new THREE.Mesh(new THREE.TorusGeometry(1.2,.05,6,40),basic(0xd5352a,true,.8)); ring.rotation.x=Math.PI/2; ring.position.y=-1.2; body.add(ring);
+  const c=part(geoC('Octahedron',THREE.OctahedronGeometry,.9,0),MK,body,0,0,0,.1); c.scale.y=1.5;
+  [-1,1].forEach(s=>{ const h=part(geoC('Cone',THREE.ConeGeometry,.16,.9,5),MR,body,s*.45,1.2,0,.05); h.rotation.z=-s*.5; const e=new THREE.Mesh(box(.16,.07,.05),basic(0xff2a2a,false)); e.position.set(s*.2,.35,.62); body.add(e); });
+  const ring=new THREE.Mesh(geoC('Torus',THREE.TorusGeometry,1.2,.05,6,40),basic(0xd5352a,true,.8)); ring.rotation.x=Math.PI/2; ring.position.y=-1.2; body.add(ring);
   return {g,body,mats:[MK,MR]};
 }
 /* ================= ARENA MOBS + BOSSES (ported from docs/bestiary.html) ================= */
@@ -174,7 +174,7 @@ function buildCrawler(scale=1,pal){
     const leg=new THREE.Group(); leg.position.set(sx*.75,0,sz*.75); leg.rotation.y=Math.atan2(-sz,sx); body.add(leg);
     const th=part(box(.95,.2,.22),M3,leg,.4,.28,0,.06); th.rotation.z=.55;
     const sh=part(box(.2,1.55,.22),M1,leg,.92,-.28,0,.06); sh.rotation.z=.12;
-    part(new THREE.ConeGeometry(.14,.3,4),M2,leg,1.0,-1.05,0,.04).rotation.z=Math.PI;
+    part(geoC('Cone',THREE.ConeGeometry,.14,.3,4),M2,leg,1.0,-1.05,0,.04).rotation.z=Math.PI;
     legs.push(leg); leg.userData.i=i; leg.userData.ry=leg.rotation.y;
   });
   g.scale.setScalar(scale);
@@ -198,10 +198,10 @@ function buildHowitzer(){
   part(box(1.3,.7,1.7),M1,body,0,.45,0); part(box(.8,.42,.6),M1,body,0,.98,.45,.06);
   const e=new THREE.Mesh(box(.5,.07,.05),ME); e.position.set(0,1.02,.76); body.add(e);
   const mort=new THREE.Group(); mort.position.set(0,.95,-.35); mort.rotation.x=.55; body.add(mort);
-  part(new THREE.CylinderGeometry(.3,.36,1.7,10),M3,mort,0,.8,0);
-  const mouth=new THREE.Mesh(new THREE.TorusGeometry(.32,.07,6,16),M2); mouth.rotation.x=Math.PI/2; mouth.position.y=1.65; mort.add(mouth);
+  part(geoC('Cylinder',THREE.CylinderGeometry,.3,.36,1.7,10),M3,mort,0,.8,0);
+  const mouth=new THREE.Mesh(geoC('Torus',THREE.TorusGeometry,.32,.07,6,16),M2); mouth.rotation.x=Math.PI/2; mouth.position.y=1.65; mort.add(mouth);
   part(box(.6,.4,.5),M2,body,0,.6,-1.05,.05);
-  const target=new THREE.Mesh(new THREE.RingGeometry(1.1,1.25,32),addMat(0xff3a2a,.7)); target.rotation.x=-Math.PI/2; target.position.set(0,.05,3.2); target.userData.nofit=1; target.visible=false; g.add(target);
+  const target=new THREE.Mesh(geoC('Ring',THREE.RingGeometry,1.1,1.25,32),addMat(0xff3a2a,.7)); target.rotation.x=-Math.PI/2; target.position.set(0,.05,3.2); target.userData.nofit=1; target.visible=false; g.add(target);
   return {g,body,mort,mouth,target,mats:[M1,M2,M3],shadow:blob(1.5)};
 }
 // Bulwark: mech with a huge front shield that stops shots. Needs pierce or a flank.
@@ -210,38 +210,38 @@ function buildBulwark(){
   const sh=new THREE.Group(); sh.position.set(0,.7,1.05); m.torso.add(sh);
   part(box(1.9,2.5,.2),toon(0x3a3d48),sh,0,-.3,0,.08); part(box(1.5,.18,.24),toon(0xc08a2a),sh,0,.55,0,.04);
   const slit=new THREE.Mesh(box(.8,.08,.06),basic(0xff3030,false)); slit.position.set(0,.2,.13); sh.add(slit);
-  const hex=new THREE.Mesh(new THREE.RingGeometry(.55,.68,6),addMat(0xff7a2a,.9)); hex.position.set(0,-.55,.13); hex.rotation.z=Math.PI/6; sh.add(hex);
+  const hex=new THREE.Mesh(geoC('Ring',THREE.RingGeometry,.55,.68,6),addMat(0xff7a2a,.9)); hex.position.set(0,-.55,.13); hex.rotation.z=Math.PI/6; sh.add(hex);
   m.hex=hex; m.shadow=blob(1.1); return m;
 }
 // Spark: small spiked kamikaze ball. Rolls in, blinks, explodes.
 function buildSpark(){
   const g=new THREE.Group(), body=new THREE.Group(); body.position.y=.75; g.add(body);
   const M1=toon(0x2a2632),M2=toon(0xd5352a);
-  part(new THREE.IcosahedronGeometry(.62,0),M1,body,0,0,0,.08);
-  [[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]].forEach(d=>{ const c=part(new THREE.ConeGeometry(.15,.5,4),M2,body,d[0]*.68,d[1]*.68,d[2]*.68,.04); c.lookAt(new V3(d[0]*3,d[1]*3,d[2]*3)); c.rotateX(Math.PI/2); });
-  const core=new THREE.Mesh(new THREE.SphereGeometry(.34,12,8),basic(0xffa040,true,.9)); body.add(core);
-  const warn=new THREE.Mesh(new THREE.RingGeometry(1.6,1.75,32),addMat(0xffa040,.6)); warn.rotation.x=-Math.PI/2; warn.position.y=.05; warn.userData.nofit=1; warn.visible=false; g.add(warn);
+  part(geoC('Icosahedron',THREE.IcosahedronGeometry,.62,0),M1,body,0,0,0,.08);
+  [[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]].forEach(d=>{ const c=part(geoC('Cone',THREE.ConeGeometry,.15,.5,4),M2,body,d[0]*.68,d[1]*.68,d[2]*.68,.04); c.lookAt(new V3(d[0]*3,d[1]*3,d[2]*3)); c.rotateX(Math.PI/2); });
+  const core=new THREE.Mesh(geoC('Sphere',THREE.SphereGeometry,.34,12,8),basic(0xffa040,true,.9)); body.add(core);
+  const warn=new THREE.Mesh(geoC('Ring',THREE.RingGeometry,1.6,1.75,32),addMat(0xffa040,.6)); warn.rotation.x=-Math.PI/2; warn.position.y=.05; warn.userData.nofit=1; warn.visible=false; g.add(warn);
   return {g,body,core,warn,mats:[M1,M2],shadow:blob(.6)};
 }
 // Shardling: crystal cluster. Splits into two smaller copies when it dies.
 function buildShardling(){
   const g=new THREE.Group(), body=new THREE.Group(); body.position.y=1.7; g.add(body);
   const MB=toon(0x3a78ff),MC=toon(0x9ad0ff);
-  const main=part(new THREE.OctahedronGeometry(.6,0),MB,body,0,0,0,.08); main.scale.y=1.7;
-  const subs=[]; for(let i=0;i<4;i++){ const a=i/4*Math.PI*2; const s=part(new THREE.OctahedronGeometry(.28,0),MC,body,Math.cos(a)*.75,(i%2?.3:-.3),Math.sin(a)*.75,.05); s.scale.y=1.8; s.rotation.z=(i%2?.4:-.4); subs.push(s); }
-  const core=new THREE.Mesh(new THREE.SphereGeometry(.18,10,8),basic(0xff2236,false)); core.position.z=.42; body.add(core);
+  const main=part(geoC('Octahedron',THREE.OctahedronGeometry,.6,0),MB,body,0,0,0,.08); main.scale.y=1.7;
+  const subs=[]; for(let i=0;i<4;i++){ const a=i/4*Math.PI*2; const s=part(geoC('Octahedron',THREE.OctahedronGeometry,.28,0),MC,body,Math.cos(a)*.75,(i%2?.3:-.3),Math.sin(a)*.75,.05); s.scale.y=1.8; s.rotation.z=(i%2?.4:-.4); subs.push(s); }
+  const core=new THREE.Mesh(geoC('Sphere',THREE.SphereGeometry,.18,10,8),basic(0xff2236,false)); core.position.z=.42; body.add(core);
   return {g,body,subs,mats:[MB,MC],shadow:blob(.8)};
 }
 // Cherub: small choir angel. Never attacks; heals and shields enemies in its aura. Priority target.
 function buildCherub(){
   const g=new THREE.Group(), body=new THREE.Group(); body.position.y=2.2; g.add(body);
   const MW=toon(0xf6f0e6),MG=toon(0xd9a520);
-  part(new THREE.SphereGeometry(.45,14,10),MW,body,0,0,0,.08);
-  const sk=part(new THREE.ConeGeometry(.42,.8,6),MW,body,0,-.62,0,.06); sk.rotation.x=Math.PI;
+  part(geoC('Sphere',THREE.SphereGeometry,.45,14,10),MW,body,0,0,0,.08);
+  const sk=part(geoC('Cone',THREE.ConeGeometry,.42,.8,6),MW,body,0,-.62,0,.06); sk.rotation.x=Math.PI;
   const band=new THREE.Mesh(box(.5,.08,.05),basic(0xffd36a,false)); band.position.set(0,.05,.44); body.add(band);
-  const halo=new THREE.Mesh(new THREE.TorusGeometry(.42,.05,6,28),basic(0xffd36a,false)); halo.rotation.x=Math.PI/2; halo.position.y=.75; body.add(halo);
+  const halo=new THREE.Mesh(geoC('Torus',THREE.TorusGeometry,.42,.05,6,28),basic(0xffd36a,false)); halo.rotation.x=Math.PI/2; halo.position.y=.75; body.add(halo);
   const wings=[]; [-1,1].forEach(s=>{ [0,1].forEach(k=>{ const piv=new THREE.Group(); piv.position.set(s*.3,.05-k*.25,-.2); body.add(piv); const w=part(box(.9-k*.25,.06,.32),k?MG:MW,piv,s*(.45-k*.1),0,0,.05); piv.userData.s=s; piv.userData.k=k; wings.push(piv); }); });
-  const aura=new THREE.Mesh(new THREE.RingGeometry(2.2,2.35,40),addMat(0x7dff9a,.55)); aura.rotation.x=-Math.PI/2; aura.position.y=.05; aura.userData.nofit=1; g.add(aura);
+  const aura=new THREE.Mesh(geoC('Ring',THREE.RingGeometry,2.2,2.35,40),addMat(0x7dff9a,.55)); aura.rotation.x=-Math.PI/2; aura.position.y=.05; aura.userData.nofit=1; g.add(aura);
   return {g,body,halo,wings,aura,mats:[MW,MG],shadow:blob(.6)};
 }
 // Ophan: two interlocked rings covered in eyes. Rolls in straight lines and leaves slow shots behind.
@@ -249,13 +249,13 @@ function buildOphan(scale=1,R=1.3,nr=2,ne=4){
   const g=new THREE.Group(), body=new THREE.Group(); body.position.y=(R+1.1); g.add(body);
   const MG=toon(0xd9a520),MW=toon(0xf2eef8);
   const rings=[], eyes=[];
-  for(let r=0;r<nr;r++){ const rr=R+r*.45; const ring=part(new THREE.TorusGeometry(rr,.13,8,40),MG,body,0,0,0,.06);
+  for(let r=0;r<nr;r++){ const rr=R+r*.45; const ring=part(geoC('Torus',THREE.TorusGeometry,rr,.13,8,40),MG,body,0,0,0,.06);
     if(r===1) ring.rotation.y=Math.PI/2; if(r===2) ring.rotation.x=Math.PI/2;
     for(let i=0;i<ne;i++){ const a=i/ne*Math.PI*2+r; const eg=new THREE.Group(); eg.position.set(Math.cos(a)*rr,Math.sin(a)*rr,0); ring.add(eg);
-      const w=part(new THREE.SphereGeometry(.2,10,8),MW,eg,0,0,0,.05); const p=new THREE.Mesh(new THREE.SphereGeometry(.09,8,6),basic(0xff2a3a,false)); p.position.z=.16; eg.add(p); eyes.push({g:eg,w,p,hp:0,alive:true}); }
+      const w=part(geoC('Sphere',THREE.SphereGeometry,.2,10,8),MW,eg,0,0,0,.05); const p=new THREE.Mesh(geoC('Sphere',THREE.SphereGeometry,.09,8,6),basic(0xff2a3a,false)); p.position.z=.16; eg.add(p); eyes.push({g:eg,w,p,hp:0,alive:true}); }
     rings.push(ring); }
-  const core=new THREE.Mesh(new THREE.OctahedronGeometry(.42,0),basic(0xff2236,false)); body.add(core);
-  core.add(new THREE.Mesh(new THREE.SphereGeometry(.7,14,10),basic(0xff6a3a,true,.25)));
+  const core=new THREE.Mesh(geoC('Octahedron',THREE.OctahedronGeometry,.42,0),basic(0xff2236,false)); body.add(core);
+  core.add(new THREE.Mesh(geoC('Sphere',THREE.SphereGeometry,.7,14,10),basic(0xff6a3a,true,.25)));
   g.scale.setScalar(scale);
   return {g,body,rings,core,eyes,mats:[MG,MW],shadow:blob(1.2*scale)};
 }
@@ -263,13 +263,13 @@ function buildOphan(scale=1,R=1.3,nr=2,ne=4){
 function buildCenser(){
   const g=new THREE.Group(), body=new THREE.Group(); body.position.y=3.6; g.add(body);
   const MG=toon(0xd9a520),MD=toon(0x2a2232);
-  const halo=part(new THREE.TorusGeometry(.55,.07,6,28),MG,body,0,0,0,.04); halo.rotation.x=Math.PI/2;
+  const halo=part(geoC('Torus',THREE.TorusGeometry,.55,.07,6,28),MG,body,0,0,0,.04); halo.rotation.x=Math.PI/2;
   const swing=new THREE.Group(); body.add(swing);
   [0,1,2].forEach(i=>{ const a=i/3*Math.PI*2; const c=part(box(.04,1.1,.04),MG,swing,Math.cos(a)*.35,-.55,Math.sin(a)*.35,0); c.rotation.z=Math.cos(a)*.25; c.rotation.x=-Math.sin(a)*.25; });
-  const cage=part(new THREE.OctahedronGeometry(.62,0),MD,swing,0,-1.5,0,.08); cage.scale.y=1.35;
-  const glow=new THREE.Mesh(new THREE.SphereGeometry(.42,12,8),basic(0xffd36a,true,.85)); glow.position.y=-1.5; swing.add(glow);
-  const cap=part(new THREE.ConeGeometry(.35,.4,6),MG,swing,0,-.75,0,.04);
-  const orbs=[]; for(let i=0;i<3;i++){ const o=new THREE.Mesh(new THREE.SphereGeometry(.22,10,8),basic(0xffe9a0,true,.8)); body.add(o); orbs.push(o); }
+  const cage=part(geoC('Octahedron',THREE.OctahedronGeometry,.62,0),MD,swing,0,-1.5,0,.08); cage.scale.y=1.35;
+  const glow=new THREE.Mesh(geoC('Sphere',THREE.SphereGeometry,.42,12,8),basic(0xffd36a,true,.85)); glow.position.y=-1.5; swing.add(glow);
+  const cap=part(geoC('Cone',THREE.ConeGeometry,.35,.4,6),MG,swing,0,-.75,0,.04);
+  const orbs=[]; for(let i=0;i<3;i++){ const o=new THREE.Mesh(geoC('Sphere',THREE.SphereGeometry,.22,10,8),basic(0xffe9a0,true,.8)); body.add(o); orbs.push(o); }
   return {g,body,swing,glow,orbs,mats:[MG,MD],shadow:blob(.7)};
 }
 
@@ -278,7 +278,7 @@ function buildCenser(){
 function buildHive(){
   const g=new THREE.Group(), body=new THREE.Group(); body.position.y=5; g.add(body);
   const M1=toon(0x3a3d48),M2=toon(0xd2382a),M3=toon(0x1c1d24);
-  part(box(3.6,1.2,5.6),M1,body,0,0,0,.14); part(new THREE.ConeGeometry(1.2,1.6,4),M1,body,0,0,3.4,.1).rotation.set(Math.PI/2,Math.PI/4,0);
+  part(box(3.6,1.2,5.6),M1,body,0,0,0,.14); part(geoC('Cone',THREE.ConeGeometry,1.2,1.6,4),M1,body,0,0,3.4,.1).rotation.set(Math.PI/2,Math.PI/4,0);
   part(box(1.6,.8,1.6),M3,body,0,.95,1.4,.08); const e=new THREE.Mesh(box(1.1,.12,.06),basic(0xff2a2a,false)); e.position.set(0,1.05,2.22); body.add(e);
   part(box(3.7,.22,.5),M2,body,0,.3,-1.8,.05);
   const bay=new THREE.Mesh(box(2.2,.08,3.2),basic(0xff6a1a,true,.8)); bay.position.y=-.64; body.add(bay);
@@ -286,7 +286,7 @@ function buildHive(){
   const rotors=[];
   [[1,1],[-1,1],[1,-1],[-1,-1]].forEach(([sx,sz])=>{ const arm=part(box(1.5,.25,.35),M3,body,sx*2.4,.2,sz*2.1,.05); arm.rotation.y=sx*sz*.6;
     const hub=new THREE.Group(); hub.position.set(sx*3.2,.35,sz*2.7); body.add(hub);
-    const ring=part(new THREE.TorusGeometry(1.15,.1,6,32),M1,hub,0,0,0,.05); ring.rotation.x=Math.PI/2;
+    const ring=part(geoC('Torus',THREE.TorusGeometry,1.15,.1,6,32),M1,hub,0,0,0,.05); ring.rotation.x=Math.PI/2;
     const bl=new THREE.Group(); hub.add(bl); part(box(2,.06,.26),M2,bl,0,0,0,.03); part(box(.26,.06,2),M2,bl,0,0,0,.03); rotors.push(bl); });
   return {g,body,rotors,bay,mats:[M1,M2,M3],shadow:blob(3.4)};
 }
@@ -294,10 +294,10 @@ function buildHive(){
 function buildArachne(){
   const m=buildCrawler(2.6,{c1:0x3a3d48,c2:0xd2382a,c3:0x1c1d24,eye:0xff2a2a});
   const M3=m.mats[2];
-  const can=part(new THREE.CylinderGeometry(.22,.3,1.3,10),M3,m.tur,0,.05,.95,.05); can.rotation.x=Math.PI/2;
-  const lens=new THREE.Mesh(new THREE.SphereGeometry(.2,12,8),basic(0xff2236,false)); lens.position.set(0,.05,1.62); m.tur.add(lens);
-  lens.add(new THREE.Mesh(new THREE.SphereGeometry(.34,12,8),basic(0xff3048,true,.35)));
-  [-1,0,1].forEach(i=>{ const sp=part(new THREE.ConeGeometry(.12,.55,4),m.mats[1],m.body,i*.4,.7,-.75,.03); sp.rotation.x=-.4; });
+  const can=part(geoC('Cylinder',THREE.CylinderGeometry,.22,.3,1.3,10),M3,m.tur,0,.05,.95,.05); can.rotation.x=Math.PI/2;
+  const lens=new THREE.Mesh(geoC('Sphere',THREE.SphereGeometry,.2,12,8),basic(0xff2236,false)); lens.position.set(0,.05,1.62); m.tur.add(lens);
+  lens.add(new THREE.Mesh(geoC('Sphere',THREE.SphereGeometry,.34,12,8),basic(0xff3048,true,.35)));
+  [-1,0,1].forEach(i=>{ const sp=part(geoC('Cone',THREE.ConeGeometry,.12,.55,4),m.mats[1],m.body,i*.4,.7,-.75,.03); sp.rotation.x=-.4; });
   m.lens=lens; m.shadow=blob(3.6); return m;
 }
 // Ophanim Throne: three eye-covered rings. Rotating bullet walls, aimed eye fire, a rolling charge.
@@ -306,31 +306,31 @@ function buildThrone(){
   const MW=toon(0xf2eef8);
   const wings=new THREE.Group(); wings.position.z=-.8; m.body.add(wings);
   for(let i=0;i<4;i++){ const s=i<2?-1:1,k=i%2; const piv=new THREE.Group(); piv.rotation.z=s*(.7+k*.6); wings.add(piv); part(box(.5,4.2-k*.9,.14),MW,piv,0,2.6,0,.07); piv.userData.base=piv.rotation.z; piv.userData.s=s; }
-  const halo=new THREE.Mesh(new THREE.TorusGeometry(1.1,.1,8,40),basic(0xffd36a,false)); halo.rotation.x=Math.PI/2; halo.position.y=4; m.body.add(halo);
+  const halo=new THREE.Mesh(geoC('Torus',THREE.TorusGeometry,1.1,.1,8,40),basic(0xffd36a,false)); halo.rotation.x=Math.PI/2; halo.position.y=4; m.body.add(halo);
   m.wings=wings; m.shadow=blob(3.2); return m;
 }
 // Archon: armored angel judge. Sword waves, a lunge, and a shield phase that reflects your shots.
 function buildArchon(){
   const g=new THREE.Group(), body=new THREE.Group(); body.position.y=4.6; g.add(body);
   const MW=toon(0xf2eef8),MG=toon(0xd9a520),MD=toon(0x1c1626),ML=toon(0xd9c9ff);
-  const tor=part(new THREE.OctahedronGeometry(1.3,0),MW,body,0,0,0,.14); tor.scale.set(1,1.4,.8);
+  const tor=part(geoC('Octahedron',THREE.OctahedronGeometry,1.3,0),MW,body,0,0,0,.14); tor.scale.set(1,1.4,.8);
   part(box(1.1,1,.5),MG,body,0,.35,.6,.08);
-  const core=new THREE.Mesh(new THREE.SphereGeometry(.28,12,8),basic(0xff2236,false)); core.position.set(0,.35,.9); body.add(core);
-  const sk=part(new THREE.ConeGeometry(1,2.4,6),MD,body,0,-2.2,0,.1); sk.rotation.x=Math.PI;
+  const core=new THREE.Mesh(geoC('Sphere',THREE.SphereGeometry,.28,12,8),basic(0xff2236,false)); core.position.set(0,.35,.9); body.add(core);
+  const sk=part(geoC('Cone',THREE.ConeGeometry,1,2.4,6),MD,body,0,-2.2,0,.1); sk.rotation.x=Math.PI;
   const head=new THREE.Group(); head.position.y=2.15; body.add(head);
   part(box(.85,1.05,.85),MW,head,0,0,0,.08); const vis=new THREE.Mesh(box(.6,.1,.06),basic(0xff2236,false)); vis.position.set(0,.05,.45); head.add(vis);
-  part(new THREE.ConeGeometry(.14,1,4),MG,head,0,.95,-.1,.04);
+  part(geoC('Cone',THREE.ConeGeometry,.14,1,4),MG,head,0,.95,-.1,.04);
   [-1,1].forEach(s=>part(box(.9,.5,1),MG,body,s*1.25,1.1,0,.07));
   const sword=new THREE.Group(); sword.position.set(1.75,.4,.6); sword.rotation.z=-.35; sword.rotation.x=-.25; body.add(sword);
-  part(box(.32,4.8,.12),ML,sword,0,2.6,0,.07); part(new THREE.ConeGeometry(.23,.6,4),ML,sword,0,5.3,0,.04);
+  part(box(.32,4.8,.12),ML,sword,0,2.6,0,.07); part(geoC('Cone',THREE.ConeGeometry,.23,.6,4),ML,sword,0,5.3,0,.04);
   part(box(1.1,.2,.3),MG,sword,0,.15,0,.05); part(box(.16,.8,.16),MD,sword,0,-.35,0,.04);
   const edge=new THREE.Mesh(box(.08,4.8,.14),basic(0xffd36a,true,.7)); edge.position.set(.18,2.6,0); sword.add(edge);
   const shield=new THREE.Group(); shield.position.set(-1.75,.1,.7); shield.rotation.y=-.4; body.add(shield);
   part(box(1.7,2.6,.2),MG,shield,0,0,0,.08);
-  const hx=new THREE.Mesh(new THREE.RingGeometry(.5,.62,6),addMat(0xffd36a,.9)); hx.position.z=.12; hx.rotation.z=Math.PI/6; shield.add(hx);
+  const hx=new THREE.Mesh(geoC('Ring',THREE.RingGeometry,.5,.62,6),addMat(0xffd36a,.9)); hx.position.z=.12; hx.rotation.z=Math.PI/6; shield.add(hx);
   const wings=new THREE.Group(); wings.position.set(0,.8,-.7); body.add(wings);
   for(let i=0;i<4;i++){ const s=i<2?-1:1,k=i%2; const piv=new THREE.Group(); piv.rotation.z=s*(.55+k*.55); wings.add(piv); part(box(.42,3.6-k*.8,.12),MW,piv,0,2.1,0,.06); piv.userData.base=piv.rotation.z; piv.userData.s=s; }
-  const halo=new THREE.Mesh(new THREE.TorusGeometry(.8,.07,6,32),basic(0xffd36a,false)); halo.rotation.x=Math.PI/2; halo.position.y=3.1; body.add(halo);
+  const halo=new THREE.Mesh(geoC('Torus',THREE.TorusGeometry,.8,.07,6,32),basic(0xffd36a,false)); halo.rotation.x=Math.PI/2; halo.position.y=3.1; body.add(halo);
   return {g,body,sword,shield,wings,halo,mats:[MW,MG,MD,ML],shadow:blob(2.2)};
 }
 /* ---- High-Co (rock frontman boss, Main Stage) ---- */
@@ -418,7 +418,7 @@ function buildHighCo(stage=1,scale=2.6){
   if(!s2){
     part(box(.26,.1,.46),MH,head,0,.35,-.01,.05);
     [[-.08,.12,.34],[0,.13,.42],[.08,.12,.34],[-.09,0,.4],[0,0,.5],[.09,0,.4],[-.07,-.14,.38],[0,-.15,.44],[.07,-.14,.38]].forEach(([x,z,l],i)=>{
-      const c=part(new THREE.ConeGeometry(.09,l,4),MH,head,x,.38+l*.4,z,.03); c.rotation.set(-.35-(z<0?.3:0),i*.7,-x*2); });
+      const c=part(geoC('Cone',THREE.ConeGeometry,.09,l,4),MH,head,x,.38+l*.4,z,.03); c.rotation.set(-.35-(z<0?.3:0),i*.7,-x*2); });
     part(box(.3,.34,.12),MH,head,0,.12,-.24,.04); // mullet root
     [[-.12,.75],[-.04,.9],[.05,.85],[.13,.7]].forEach(([x,l])=>strand(x,-.02,-.25,[[.1,.24,.08,MH],[.1,l,.08,MU]],.15,x*.4));
     strand(.16,0,-.14,[[.1,.2,.08,MH],[.1,.8,.08,MU]],-.25,.5); // blue lock falling over the shoulder
@@ -440,14 +440,14 @@ function buildHighCo(stage=1,scale=2.6){
     part(box(.25,.6,.27),MA,arm,0,-.9,0,.06);
     if(s2){ part(box(.28,.3,.3),MK,arm,0,-1.06,0,.03); // arm wrap
       part(box(.24,.26,.26),MK,arm,0,-1.33,0,.05); // claw glove
-      [-.07,0,.07].forEach(x=>{ const c=part(new THREE.ConeGeometry(.03,.12,4),MS,arm,x,-1.36,.15,0); c.rotation.x=Math.PI/2; }); }
+      [-.07,0,.07].forEach(x=>{ const c=part(geoC('Cone',THREE.ConeGeometry,.03,.12,4),MS,arm,x,-1.36,.15,0); c.rotation.x=Math.PI/2; }); }
     else { part(box(.28,.06,.3),MT,arm,0,-1.18,0,.02); part(box(.22,.24,.24),MF,arm,0,-1.33,0,.05); }
     arms.push(arm);
   });
   // hand mic with a cable; the laser beam comes out of its head
   const mic=new THREE.Group(); mic.position.set(0,-1.4,.08); arms[1].add(mic);
-  part(new THREE.CylinderGeometry(.045,.035,.42,8),MS,mic,0,-.15,0,.03);
-  part(new THREE.SphereGeometry(.085,10,8),MK,mic,0,-.4,0,.03);
+  part(geoC('Cylinder',THREE.CylinderGeometry,.045,.035,.42,8),MS,mic,0,-.15,0,.03);
+  part(geoC('Sphere',THREE.SphereGeometry,.085,10,8),MK,mic,0,-.4,0,.03);
   part(box(.02,.5,.02),MK,mic,0,.25,-.06,0);
   const muzzle=new THREE.Object3D(); muzzle.position.y=-.5; mic.add(muzzle);
   const lc=s2?0x4a9cff:0xff5a1a, laser=new THREE.Group(); laser.position.y=-.5; mic.add(laser);
@@ -491,7 +491,7 @@ function setHighCoRage(m,on){
 function buildHighCoChute(){
   const g=new THREE.Group(), canopy=new THREE.Group(); canopy.position.y=6.2; g.add(canopy);
   const cols=[0xd2382a,0xf2f0f4,0x1e1a24,0xf2f0f4], N=12;
-  for(let i=0;i<N;i++){ const geo=new THREE.SphereGeometry(3.4,3,4,i/N*Math.PI*2,Math.PI*2/N,0,Math.PI*.42);
+  for(let i=0;i<N;i++){ const geo=geoC('Sphere',THREE.SphereGeometry,3.4,3,4,i/N*Math.PI*2,Math.PI*2/N,0,Math.PI*.42);
     part(geo,toon(cols[i%4]),canopy,0,0,0,.08).scale.y=.6; }
   const lines=[]; for(let i=0;i<8;i++){ const a=i/8*Math.PI*2, x=Math.cos(a)*3.1, z=Math.sin(a)*3.1, top=new V3(x,6.2+1.6*.0+.9,z);
     const len=top.length(), l=new THREE.Mesh(box(.04,len,.04),basic(0x1e1a24,false)); l.position.copy(top).multiplyScalar(.5); l.lookAt(top); l.rotateX(Math.PI/2); g.add(l); lines.push(l); }
@@ -502,11 +502,11 @@ function buildHighCoChute(){
 function buildHighCoPole(){
   const g=new THREE.Group();
   const MS=toon(0xd8d4e0), MK=toon(0x1e1a24), MR=toon(0xd2382a), MF=toon(0xe0b89c), MH=toon(0x5a2a3a);
-  part(new THREE.CylinderGeometry(1.1,1.3,.3,16),MK,g,0,.15,0,.06);
-  const ringB=part(new THREE.TorusGeometry(1.15,.06,6,32),MR,g,0,.32,0,0); ringB.rotation.x=Math.PI/2;
-  const pole=part(new THREE.CylinderGeometry(.16,.16,9,10),MS,g,0,4.8,0,.05);
-  const cap=new THREE.Mesh(new THREE.SphereGeometry(.3,12,8),basic(0xff3048,false)); cap.position.y=9.4; g.add(cap);
-  cap.add(new THREE.Mesh(new THREE.SphereGeometry(.55,12,8),basic(0xff3048,true,.35)));
+  part(geoC('Cylinder',THREE.CylinderGeometry,1.1,1.3,.3,16),MK,g,0,.15,0,.06);
+  const ringB=part(geoC('Torus',THREE.TorusGeometry,1.15,.06,6,32),MR,g,0,.32,0,0); ringB.rotation.x=Math.PI/2;
+  const pole=part(geoC('Cylinder',THREE.CylinderGeometry,.16,.16,9,10),MS,g,0,4.8,0,.05);
+  const cap=new THREE.Mesh(geoC('Sphere',THREE.SphereGeometry,.3,12,8),basic(0xff3048,false)); cap.position.y=9.4; g.add(cap);
+  cap.add(new THREE.Mesh(geoC('Sphere',THREE.SphereGeometry,.55,12,8),basic(0xff3048,true,.35)));
   // dancer on a spinning collar, built small and blocky like the arena mobs
   const spin=new THREE.Group(); spin.position.y=4.2; g.add(spin);
   const d=new THREE.Group(); d.position.x=.7; spin.add(d); d.scale.setScalar(1.7);
@@ -527,8 +527,8 @@ function buildHighCoPole(){
   [-1,1].forEach(s=>{ const leg=new THREE.Group(); leg.position.set(s*.13,-.3,0); body.add(leg); leg.rotation.z=s*.6+.5;
     part(box(.18,.75,.2),MK,leg,0,-.38,0,.04); part(box(.2,.14,.3),MR,leg,0,-.78,.05,.03); });
   // damage aura on the floor
-  const aura=new THREE.Mesh(new THREE.RingGeometry(3.8,4.1,48),addMat(0xff3048,.7)); aura.rotation.x=-Math.PI/2; aura.position.y=.06; aura.userData.nofit=1; g.add(aura);
-  const fill=new THREE.Mesh(new THREE.CircleGeometry(3.8,48),addMat(0xff3048,.12)); fill.rotation.x=-Math.PI/2; fill.position.y=.05; fill.userData.nofit=1; g.add(fill);
+  const aura=new THREE.Mesh(geoC('Ring',THREE.RingGeometry,3.8,4.1,48),addMat(0xff3048,.7)); aura.rotation.x=-Math.PI/2; aura.position.y=.06; aura.userData.nofit=1; g.add(aura);
+  const fill=new THREE.Mesh(geoC('Circle',THREE.CircleGeometry,3.8,48),addMat(0xff3048,.12)); fill.rotation.x=-Math.PI/2; fill.position.y=.05; fill.userData.nofit=1; g.add(fill);
   return {g,pole,spin,dancer:d,body,tail,aura,fill,cap,shadow:blob(1.3)};
 }
 // High-Co boss room: a night concert. The stage sits behind the door edge (-z), the crowd behind the front edge (+z), so the
@@ -542,9 +542,9 @@ function buildHighCoArena(X,Z,covers,o={}){
   c2.fillStyle='#2e2836'; c2.fillRect(0,0,128,128); c2.fillStyle='#352e3e'; for(let i=0;i<8;i++) if(i%2) c2.fillRect(0,i*16,128,16);
   c2.strokeStyle='#241e2a'; c2.lineWidth=2; for(let i=0;i<=8;i++){ c2.beginPath(); c2.moveTo(0,i*16); c2.lineTo(128,i*16); c2.stroke(); }
   const tex=new THREE.CanvasTexture(cv); tex.wrapS=tex.wrapT=THREE.RepeatWrapping; tex.repeat.set(X/2,Z/2);
-  const floor=new THREE.Mesh(new THREE.PlaneGeometry(2*X,2*Z),new THREE.MeshToonMaterial({map:tex,gradientMap:grad})); floor.rotation.x=-Math.PI/2; floor.position.y=.015; floor.receiveShadow=true; g.add(floor);
+  const floor=new THREE.Mesh(geoC('Plane',THREE.PlaneGeometry,2*X,2*Z),new THREE.MeshToonMaterial({map:tex,gradientMap:grad})); floor.rotation.x=-Math.PI/2; floor.position.y=.015; floor.receiveShadow=true; g.add(floor);
   // light pools sweeping across the floor
-  const pools=[0,1,2,3].map(()=>{ const p=new THREE.Mesh(new THREE.CircleGeometry(2.6,32),addMat(0xff3048,.16)); p.rotation.x=-Math.PI/2; p.position.y=.04; g.add(p); return p; });
+  const pools=[0,1,2,3].map(()=>{ const p=new THREE.Mesh(geoC('Circle',THREE.CircleGeometry,2.6,32),addMat(0xff3048,.16)); p.rotation.x=-Math.PI/2; p.position.y=.04; g.add(p); return p; });
   // main stage behind the door: drum riser, amp walls, LED wall
   const st=new THREE.Group(); st.position.z=-Z-4.2; g.add(st);
   part(box(2*X+4,1.4,6),MD,st,0,.7,0,.1);
@@ -552,9 +552,9 @@ function buildHighCoArena(X,Z,covers,o={}){
   part(box(3,.7,2),MK,st,0,1.75,1.8,.06);
   part(box(4,.8,3),MW,st,0,1.8,-.8,.08);
   const kit=new THREE.Group(); kit.position.set(0,2.2,-.8); st.add(kit);
-  part(new THREE.CylinderGeometry(.75,.75,.6,14),MR,kit,0,.4,0,.05).rotation.x=Math.PI/2;
-  [[-1.1,.9,.35],[1.1,.9,.35],[-.6,1.1,-.4],[.6,1.1,-.4]].forEach(([x,y,r])=>part(new THREE.CylinderGeometry(r,r,.3,12),MK,kit,x,y-.4,.3,.04));
-  [-1.6,1.6].forEach(x=>{ part(box(.05,1.4,.05),MS,kit,x,.6,.2,0); part(new THREE.CylinderGeometry(.5,.5,.04,14),toon(0xd9a520),kit,x,1.3,.2,.03).rotation.z=.2; });
+  part(geoC('Cylinder',THREE.CylinderGeometry,.75,.75,.6,14),MR,kit,0,.4,0,.05).rotation.x=Math.PI/2;
+  [[-1.1,.9,.35],[1.1,.9,.35],[-.6,1.1,-.4],[.6,1.1,-.4]].forEach(([x,y,r])=>part(geoC('Cylinder',THREE.CylinderGeometry,r,r,.3,12),MK,kit,x,y-.4,.3,.04));
+  [-1.6,1.6].forEach(x=>{ part(box(.05,1.4,.05),MS,kit,x,.6,.2,0); part(geoC('Cylinder',THREE.CylinderGeometry,.5,.5,.04,14),toon(0xd9a520),kit,x,1.3,.2,.03).rotation.z=.2; });
   const amp=(parent,x,y,z,w=1.6,h=1.2,d=.9)=>{ const a=part(box(w,h,d),MK,parent,x,y,z,.06);
     const gr=new THREE.Mesh(box(w*.82,h*.7,.02),basic(0x0a0610,false)); gr.position.z=d/2+.01; a.add(gr);
     part(box(w,.1,d+.02),MS,a,0,h/2-.05,0,0); return a; };
@@ -563,18 +563,18 @@ function buildHighCoArena(X,Z,covers,o={}){
   sx.fillStyle='#120a16'; sx.fillRect(0,0,512,160); sx.font='bold 110px Impact, Arial Black, sans-serif'; sx.textAlign='center'; sx.textBaseline='middle';
   sx.fillStyle='#ff3048'; sx.fillText('HIGH-CO',256,84); sx.strokeStyle='#ffd0d6'; sx.lineWidth=3; sx.strokeText('HIGH-CO',256,84);
   part(box(13,4.6,.4),MK,st,0,6.6,-2.6,.1);
-  const screen=new THREE.Mesh(new THREE.PlaneGeometry(12.4,4),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(sc)})); screen.position.set(0,6.6,-2.38); st.add(screen);
+  const screen=new THREE.Mesh(geoC('Plane',THREE.PlaneGeometry,12.4,4),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(sc)})); screen.position.set(0,6.6,-2.38); st.add(screen);
   // lighting truss over the stage lip; moving heads throw light cones into the room
   const truss=new THREE.Group(); truss.position.z=-Z-2.2; g.add(truss);
   [-1,1].forEach(s=>part(box(.5,12,.5),MS,truss,s*(X+1.5),6,0,.05));
   part(box(2*X+3.5,.5,.5),MS,truss,0,12,0,.05);
   const heads=[], cones=[];
   for(let i=0;i<6;i++){ const h=new THREE.Group(); h.position.set(-X+1.5+i*(2*X-3)/5,11.6,0); truss.add(h); part(box(.5,.5,.5),MK,h,0,0,0,.04);
-    const cone=new THREE.Mesh(new THREE.ConeGeometry(2.2,12,20,1,true),addMat(0xff3048,.12)); cone.position.y=-6; h.add(cone); heads.push(h); cones.push(cone); }
+    const cone=new THREE.Mesh(geoC('Cone',THREE.ConeGeometry,2.2,12,20,1,true),addMat(0xff3048,.12)); cone.position.y=-6; h.add(cone); heads.push(h); cones.push(cone); }
   // pyro on the stage lip, bursting on the beat
   const pyro=[-1,1].map(s=>{ const p=new THREE.Group(); p.position.set(s*(X-1),1.4,-Z-1.8); g.add(p); part(box(.8,.3,.8),MK,p,0,0,0,.04);
-    const f=new THREE.Mesh(new THREE.ConeGeometry(.5,4,10,1,true),addMat(0xff8a2a,.8)); f.position.y=2.1; f.rotation.x=Math.PI; p.add(f);
-    const f2=new THREE.Mesh(new THREE.ConeGeometry(.28,3,10,1,true),addMat(0xffe08a,.9)); f2.position.y=1.6; f2.rotation.x=Math.PI; p.add(f2);
+    const f=new THREE.Mesh(geoC('Cone',THREE.ConeGeometry,.5,4,10,1,true),addMat(0xff8a2a,.8)); f.position.y=2.1; f.rotation.x=Math.PI; p.add(f);
+    const f2=new THREE.Mesh(geoC('Cone',THREE.ConeGeometry,.28,3,10,1,true),addMat(0xffe08a,.9)); f2.position.y=1.6; f2.rotation.x=Math.PI; p.add(f2);
     p.userData.flame=[f,f2]; return p; });
   // line-array speaker towers (none on the near +x/+z corner)
   [[-1,-Z*.45],[-1,Z*.45],[1,-Z*.45]].forEach(([s,z])=>{ const t=new THREE.Group(); t.position.set(s*(X+1.6),0,z); g.add(t);
@@ -625,7 +625,7 @@ function hypeHighCoArena(a,t,phase){
    springs drive it unchanged; POSE (enemy-ai.js) sets the arms after the walk. mats[0] is the shirt, so elites tint the clothes, not the skin.
    Telegraph meshes (dance pad, landing ring, spot circle) are userData.nofit and are moved onto the floor in game. */
 const ST={black:0x1a1418,red:0xc8243a,gold:0xe8b23a,chrome:0xc8c8d4,mag:0xff3aa8,amber:0xffb84a};
-const cyl=(a,b,h,s=16)=>new THREE.CylinderGeometry(a,b,h,s);
+const cyl=(a,b,h,s=16)=>geoC('Cylinder',THREE.CylinderGeometry,a,b,h,s);
 const SKIN=[0xf0c8a8,0xd8a07a,0xb07850,0x8a5a3a];
 function buildHuman(o={}){
   const skin=toon(o.skin||SKIN[1]), top=toon(o.top||0x1a1418), pants=toon(o.pants||0x22222a), shoe=toon(o.shoe||0x111014), hairM=toon(o.hair||0x1a1210);
@@ -641,8 +641,8 @@ function buildHuman(o={}){
   [-1,1].forEach(s=>{ const e=new THREE.Mesh(box(.07,.05,.03),basic(0x1a1012,false)); e.position.set(s*.1,.04,.215); head.add(e); });
   const hs=o.hairStyle||'short';
   if(hs==='long'){ part(box(.44,.14,.46),hairM,head,0,.27,0,.04); part(box(.46,.75,.14),hairM,head,0,-.18,-.22,.04); [-1,1].forEach(s=>part(box(.08,.6,.3),hairM,head,s*.23,-.1,-.06,.03)); }
-  else if(hs==='mohawk'){ part(box(.42,.06,.44),hairM,head,0,.24,0,.02); for(let i=0;i<5;i++) part(new THREE.ConeGeometry(.06,.32,4),hairM,head,0,.4,-.16+i*.08,.02); }
-  else if(hs==='bun'){ part(box(.44,.12,.46),hairM,head,0,.27,0,.04); part(new THREE.SphereGeometry(.14,10,8),hairM,head,0,.36,-.18,.03); part(box(.46,.45,.12),hairM,head,0,-.05,-.22,.03); }
+  else if(hs==='mohawk'){ part(box(.42,.06,.44),hairM,head,0,.24,0,.02); for(let i=0;i<5;i++) part(geoC('Cone',THREE.ConeGeometry,.06,.32,4),hairM,head,0,.4,-.16+i*.08,.02); }
+  else if(hs==='bun'){ part(box(.44,.12,.46),hairM,head,0,.27,0,.04); part(geoC('Sphere',THREE.SphereGeometry,.14,10,8),hairM,head,0,.36,-.18,.03); part(box(.46,.45,.12),hairM,head,0,-.05,-.22,.03); }
   else if(hs==='cap'){ part(box(.44,.14,.46),toon(o.capCol||ST.amber),head,0,.27,0,.04); part(box(.38,.04,.24),toon(o.capCol||ST.amber),head,0,.22,.3,.02); }
   else if(hs==='short') part(box(.44,.12,.46),hairM,head,0,.26,0,.04);
   if(o.beard) part(box(.36,.22,.12),hairM,head,0,-.2,.18,.03);
@@ -674,9 +674,9 @@ function buildDancer(){
   const skirt=new THREE.Group(); m.hips.add(skirt);
   for(let i=0;i<8;i++){ const a=i/8*Math.PI*2; const f=new THREE.Mesh(box(.16,.5,.01),addMat(i%2?ST.gold:ST.mag,.55)); f.position.set(Math.sin(a)*.3,-.2,Math.cos(a)*.2); f.rotation.y=a; skirt.add(f); }
   const belt=new THREE.Group(); belt.position.y=.02; m.torso.add(belt);
-  for(let i=0;i<12;i++){ const a=i/12*Math.PI*2; const c=new THREE.Mesh(new THREE.CircleGeometry(.05,8),basic(ST.gold,false)); c.position.set(Math.sin(a)*.34,0,Math.cos(a)*.22); c.rotation.y=a; belt.add(c); }
-  const ribbons=m.arms.map(a=>{ const r=new THREE.Group(); r.position.y=-.62; a.userData.fore.add(r); r.add(new THREE.Mesh(new THREE.SphereGeometry(.17,14,10),basic(0xffe0f4,false))); r.add(new THREE.Mesh(new THREE.SphereGeometry(.3,14,10),basic(ST.mag,true,.45))); return r; });
-  const pad=new THREE.Group(); pad.userData.nofit=1; const pr=new THREE.Mesh(new THREE.RingGeometry(1.25,1.6,32),addMat(ST.mag,.9)); pr.rotation.x=-Math.PI/2; pr.position.y=.06; pad.add(pr);
+  for(let i=0;i<12;i++){ const a=i/12*Math.PI*2; const c=new THREE.Mesh(geoC('Circle',THREE.CircleGeometry,.05,8),basic(ST.gold,false)); c.position.set(Math.sin(a)*.34,0,Math.cos(a)*.22); c.rotation.y=a; belt.add(c); }
+  const ribbons=m.arms.map(a=>{ const r=new THREE.Group(); r.position.y=-.62; a.userData.fore.add(r); r.add(new THREE.Mesh(geoC('Sphere',THREE.SphereGeometry,.17,14,10),basic(0xffe0f4,false))); r.add(new THREE.Mesh(geoC('Sphere',THREE.SphereGeometry,.3,14,10),basic(ST.mag,true,.45))); return r; });
+  const pad=new THREE.Group(); pad.userData.nofit=1; const pr=new THREE.Mesh(geoC('Ring',THREE.RingGeometry,1.25,1.6,32),addMat(ST.mag,.9)); pr.rotation.x=-Math.PI/2; pr.position.y=.06; pad.add(pr);
   const pf=new THREE.Mesh(G.disc,addMat(ST.mag,.4)); pf.rotation.x=-Math.PI/2; pf.position.y=.05; pf.scale.setScalar(1.4); pad.add(pf); pad.visible=false; m.g.add(pad);
   m.ribbons=ribbons; m.belt=belt; m.skirt=skirt; m.pad=pad; m.padFill=pf; m.breaks=[{o:ribbons[0],at:.5}]; m.shadow=blob(.8); return m;
 }
@@ -685,8 +685,8 @@ function buildDrummer(){
   const g=new THREE.Group(); const M2=toon(ST.red),M3=toon(ST.chrome),MG=toon(ST.gold);
   const kit=new THREE.Group(); g.add(kit);
   const kick=part(cyl(.9,.9,.7,20),M2,kit,0,.9,.95,.07); kick.rotation.x=Math.PI/2;
-  const kh=new THREE.Mesh(new THREE.CircleGeometry(.78,20),toon(0xeee8f4)); kh.position.set(0,.9,1.31); kit.add(kh);
-  const logo=new THREE.Mesh(new THREE.RingGeometry(.28,.38,6),basic(ST.amber,false)); logo.position.set(0,.9,1.32); kit.add(logo);
+  const kh=new THREE.Mesh(geoC('Circle',THREE.CircleGeometry,.78,20),toon(0xeee8f4)); kh.position.set(0,.9,1.31); kit.add(kh);
+  const logo=new THREE.Mesh(geoC('Ring',THREE.RingGeometry,.28,.38,6),basic(ST.amber,false)); logo.position.set(0,.9,1.32); kit.add(logo);
   [[-.65,1.75,.75],[.65,1.75,.75]].forEach(([x,y,z])=>{ const t=part(cyl(.32,.32,.3,14),M2,kit,x,y,z,.05); t.rotation.x=.4; });
   part(cyl(.42,.42,.4,14),M2,kit,1.15,1.0,.2,.05); part(cyl(.32,.32,.22,14),toon(0xd8d8e0),kit,-.95,1.25,.35,.04);
   const stands=[[-1.3,2.45,.5],[1.35,2.6,.3]].map(([x,y,z])=>{ const st=new THREE.Group(); kit.add(st); part(box(.05,y,.05),M3,st,x,y/2,z,0); const c=part(cyl(.55,.55,.04,20),MG,st,x,y,z,.03); c.rotation.z=x<0?.25:-.25; st.userData.c=c; return st; });
@@ -695,7 +695,7 @@ function buildDrummer(){
   part(cyl(.35,.4,1.25,8),toon(0x2a2632),g,0,.62,-.95,.05);
   h.legs.forEach(l=>{ l.rotation.x=-1.4; }); h.shins.forEach(s=>s.rotation.x=1.4);
   h.arms.forEach(a=>{ const st=part(box(.05,.7,.05),toon(0xd8c8a0),a.userData.fore,0,-.55,.3,.02); st.rotation.x=-1.1; });
-  const wave=new THREE.Mesh(new THREE.RingGeometry(2.4,2.6,40),addMat(ST.red,.6)); wave.rotation.x=-Math.PI/2; wave.position.y=.05; wave.userData.nofit=1; g.add(wave);
+  const wave=new THREE.Mesh(geoC('Ring',THREE.RingGeometry,2.4,2.6,40),addMat(ST.red,.6)); wave.rotation.x=-Math.PI/2; wave.position.y=.05; wave.userData.nofit=1; g.add(wave);
   const muzzle=new THREE.Object3D(); muzzle.position.set(0,2.4,.6); g.add(muzzle);
   g.scale.setScalar(1.1);
   return {g,kit,kick,cym:stands.map(s=>s.userData.c),h,head:h.head,wave,muzzle,mats:[h.mats[0],M2,M3],shadow:blob(1.9),breaks:[{o:stands[0],at:.5},{o:stands[1],at:.25}]};
@@ -703,7 +703,7 @@ function buildDrummer(){
 // Shredder: long-haired guitarist in a leather jacket with a red V guitar
 function buildShredder(){
   const m=buildHuman({skin:SKIN[0],top:0x141014,pants:0x1e1e26,hair:0x3a2414,hairStyle:'long',sleeves:true,belt:ST.chrome,scale:1.2});
-  [-1,1].forEach(s=>{ for(let i=0;i<3;i++){ const sp=part(new THREE.ConeGeometry(.04,.14,4),toon(ST.chrome),m.chest,s*(.18+i*.06),.3,-.19,0); sp.rotation.z=-s*.6; } });
+  [-1,1].forEach(s=>{ for(let i=0;i<3;i++){ const sp=part(geoC('Cone',THREE.ConeGeometry,.04,.14,4),toon(ST.chrome),m.chest,s*(.18+i*.06),.3,-.19,0); sp.rotation.z=-s*.6; } });
   const MG=toon(ST.red),MN=toon(0x3a2a1a);
   const gtr=new THREE.Group(); gtr.position.set(-.05,.25,.32); gtr.rotation.z=-.65; m.torso.add(gtr);
   [-1,1].forEach(s=>{ const w=part(box(.26,.85,.1),MG,gtr,s*.18,-.3,0,.04); w.rotation.z=s*.45; });
@@ -720,7 +720,7 @@ function buildBassist(){
   part(box(.55,.72,.13),MB,bass,0,-.3,0,.05); part(box(.4,.28,.13),MB,bass,.1,.12,0,.04);
   part(box(.1,1.55,.07),MN,bass,0,.9,0,.03); const hd=part(box(.22,.28,.08),MB,bass,0,1.75,0,.03);
   for(let i=0;i<4;i++){ const s=new THREE.Mesh(box(.01,2.1,.01),addMat(0x9ad0ff,.8)); s.position.set(-.035+i*.023,.7,.075); bass.add(s); }
-  const rip=new THREE.Group(); rip.userData.nofit=1; m.g.add(rip); for(let i=0;i<3;i++){ const r=new THREE.Mesh(new THREE.RingGeometry(1,1.12,40),addMat(0x6ad8ff,.5)); r.rotation.x=-Math.PI/2; r.position.y=.05; rip.add(r); }
+  const rip=new THREE.Group(); rip.userData.nofit=1; m.g.add(rip); for(let i=0;i<3;i++){ const r=new THREE.Mesh(geoC('Ring',THREE.RingGeometry,1,1.12,40),addMat(0x6ad8ff,.5)); r.rotation.x=-Math.PI/2; r.position.y=.05; rip.add(r); }
   m.bass=bass; m.rip=rip; m.breaks=[{o:hd,at:.35}]; m.shadow=blob(1); return m;
 }
 // Roadie: stage crew in a cap with a speaker cabinet on his back. He sets amps down (buildAmp) and never attacks himself.
@@ -728,15 +728,15 @@ function buildHauler(){
   const m=buildHuman({skin:SKIN[2],top:0x2a2a30,pants:0x3a3640,hairStyle:'cap',capCol:ST.amber,beard:true,hair:0x1a1210,scale:1.1});
   const shirtTxt=new THREE.Mesh(box(.4,.12,.02),basic(ST.amber,false)); shirtTxt.position.set(0,.65,.19); m.torso.add(shirtTxt);
   const cab=part(box(1.0,1.15,.6),toon(0x141016),m.torso,0,1.05,-.5,.07);
-  [-.27,.27].forEach(y=>{ const sp=new THREE.Mesh(new THREE.CircleGeometry(.27,18),basic(0x2a2226,false)); sp.position.set(0,y,.31); cab.add(sp); const ring=new THREE.Mesh(new THREE.RingGeometry(.27,.32,18),basic(ST.amber,false)); ring.position.set(0,y,.315); cab.add(ring); });
+  [-.27,.27].forEach(y=>{ const sp=new THREE.Mesh(geoC('Circle',THREE.CircleGeometry,.27,18),basic(0x2a2226,false)); sp.position.set(0,y,.31); cab.add(sp); const ring=new THREE.Mesh(geoC('Ring',THREE.RingGeometry,.27,.32,18),basic(ST.amber,false)); ring.position.set(0,y,.315); cab.add(ring); });
   m.cab=cab; m.shadow=blob(.7); return m;
 }
 // amp the Roadie sets down: one shot breaks it; it pulses a yellow sound burst on the beat for 10 s
 function buildAmp(){
   const g=new THREE.Group(), body=new THREE.Group(); g.add(body); const MK=toon(0x141016);
   part(box(.9,1,.6),MK,body,0,.5,0,.06); part(box(.92,.08,.62),toon(ST.chrome),body,0,1.02,0,0);
-  const cone=new THREE.Mesh(new THREE.CircleGeometry(.3,18),basic(0x2a2226,false)); cone.position.set(0,.55,.31); body.add(cone);
-  const lamp=new THREE.Mesh(new THREE.RingGeometry(.3,.36,18),basic(ST.amber,false)); lamp.position.set(0,.55,.315); body.add(lamp);
+  const cone=new THREE.Mesh(geoC('Circle',THREE.CircleGeometry,.3,18),basic(0x2a2226,false)); cone.position.set(0,.55,.31); body.add(cone);
+  const lamp=new THREE.Mesh(geoC('Ring',THREE.RingGeometry,.3,.36,18),basic(ST.amber,false)); lamp.position.set(0,.55,.315); body.add(lamp);
   const pulse=new THREE.Mesh(G.ring,addMat(ST.amber,.6)); pulse.rotation.x=-Math.PI/2; pulse.position.y=.05; pulse.userData.nofit=1; g.add(pulse);
   return {g,body,cone,lamp,pulse,mats:[MK],shadow:blob(.6)};
 }
@@ -744,7 +744,7 @@ function buildAmp(){
 function buildMosher(){
   const m=buildHuman({skin:pickOne(SKIN),top:0x101012,pants:0x2a2230,hair:pickOne([0x3aff7a,0xff3aa8,0x3ab0ff,0xffd23a]),hairStyle:'mohawk',belt:ST.chrome,scale:1.05});
   part(box(.68,.7,.4),toon(0x2a1e1a),m.chest,0,.02,0,.03);
-  [-1,1].forEach(s=>{ for(let i=0;i<3;i++){ const sp=part(new THREE.ConeGeometry(.045,.16,4),toon(ST.chrome),m.torso,s*(.22+i*.06),.95,-.05,0); sp.rotation.z=-s*.4; } });
+  [-1,1].forEach(s=>{ for(let i=0;i<3;i++){ const sp=part(geoC('Cone',THREE.ConeGeometry,.045,.16,4),toon(ST.chrome),m.torso,s*(.22+i*.06),.95,-.05,0); sp.rotation.z=-s*.4; } });
   const chain=new THREE.Mesh(box(.04,.04,.36),basic(ST.chrome,false)); chain.position.set(0,-.3,.12); chain.rotation.y=.4; m.arms[1].userData.fore.add(chain);
   m.chain=chain; m.shadow=blob(.6); return m;
 }
@@ -753,20 +753,20 @@ function buildPyro(){
   const m=buildHuman({skin:SKIN[1],top:0xc8b890,pants:0xb8a880,shoe:0x2a2420,hairStyle:'bald',sleeves:true,scale:1.1});
   part(box(.48,.52,.48),toon(0xc8b890),m.head,0,.02,-.02,.05); const visor=new THREE.Mesh(box(.36,.2,.03),addMat(0xffb84a,.75)); visor.position.set(0,.05,.25); m.head.add(visor);
   const tank=new THREE.Group(); tank.position.set(0,.6,-.3); m.torso.add(tank); part(cyl(.2,.2,.5,10),toon(0x2a2420),tank,0,0,0,.04);
-  [[-.1,0xff3a3a],[.1,0xffd23a],[0,0x3ad0ff]].forEach(([x,c],i)=>{ part(cyl(.07,.07,.7,8),toon(c),tank,x,.25,i===2?-.08:.05,.03); part(new THREE.ConeGeometry(.08,.16,8),toon(0xeeeeee),tank,x,.68,i===2?-.08:.05,.02); });
-  const fore=m.arms[1].userData.fore, rk=part(cyl(.08,.08,.75,8),toon(ST.red),fore,0,-.55,.12,.03); rk.rotation.x=Math.PI/2; part(new THREE.ConeGeometry(.09,.2,8),toon(0xffd23a),fore,0,-.55,.57,.02).rotation.x=Math.PI/2;
-  const flare=new THREE.Mesh(new THREE.SphereGeometry(.1,8,6),basic(0xff6a2a,false)); flare.position.set(0,-.55,-.28); fore.add(flare);
+  [[-.1,0xff3a3a],[.1,0xffd23a],[0,0x3ad0ff]].forEach(([x,c],i)=>{ part(cyl(.07,.07,.7,8),toon(c),tank,x,.25,i===2?-.08:.05,.03); part(geoC('Cone',THREE.ConeGeometry,.08,.16,8),toon(0xeeeeee),tank,x,.68,i===2?-.08:.05,.02); });
+  const fore=m.arms[1].userData.fore, rk=part(cyl(.08,.08,.75,8),toon(ST.red),fore,0,-.55,.12,.03); rk.rotation.x=Math.PI/2; part(geoC('Cone',THREE.ConeGeometry,.09,.2,8),toon(0xffd23a),fore,0,-.55,.57,.02).rotation.x=Math.PI/2;
+  const flare=new THREE.Mesh(geoC('Sphere',THREE.SphereGeometry,.1,8,6),basic(0xff6a2a,false)); flare.position.set(0,-.55,-.28); fore.add(flare);
   m.flare=flare; m.breaks=[{o:tank,at:.4}]; m.shadow=blob(.7); return m;
 }
 // Lighting tech: a follow spot on a tripod. The bright circle on the floor is where the light is; it follows you slowly.
 function buildSpot(){
   const m=buildHuman({skin:SKIN[0],top:0x1e1e26,pants:0x2a2a34,hair:0x8a5a2a,hairStyle:'bun',sleeves:true,scale:1.1});
-  const hp=new THREE.Mesh(new THREE.TorusGeometry(.24,.035,6,16,Math.PI),basic(0x2a2a2a,false)); hp.position.y=.12; m.head.add(hp);
+  const hp=new THREE.Mesh(geoC('Torus',THREE.TorusGeometry,.24,.035,6,16,Math.PI),basic(0x2a2a2a,false)); hp.position.y=.12; m.head.add(hp);
   const rig=new THREE.Group(); rig.position.set(.75,0,.55); m.g.add(rig);
   [0,1,2].forEach(i=>{ const a=i/3*Math.PI*2; const l=part(box(.05,1.7,.05),toon(0x2a2632),rig,Math.cos(a)*.3,.8,Math.sin(a)*.3,0); l.rotation.z=Math.cos(a)*.18; l.rotation.x=-Math.sin(a)*.18; });
   const lamp=new THREE.Group(); lamp.position.y=1.8; rig.add(lamp);
   const can=part(cyl(.22,.3,.8,14),toon(ST.chrome),lamp,0,0,.2,.05); can.rotation.x=Math.PI/2;
-  const lens=new THREE.Mesh(new THREE.CircleGeometry(.22,14),basic(0xfff0c0,false)); lens.position.z=.61; lamp.add(lens);
+  const lens=new THREE.Mesh(geoC('Circle',THREE.CircleGeometry,.22,14),basic(0xfff0c0,false)); lens.position.z=.61; lamp.add(lens);
   const spot=new THREE.Group(); spot.userData.nofit=1; const sd=new THREE.Mesh(G.disc,addMat(0xfff0c0,.28)); sd.rotation.x=-Math.PI/2; sd.position.y=.05; spot.add(sd);
   const sr=new THREE.Mesh(G.ring,addMat(0xfff0c0,.7)); sr.rotation.x=-Math.PI/2; sr.position.y=.06; spot.add(sr); spot.scale.setScalar(2); m.g.add(spot);
   m.rig=rig; m.lamp=lamp; m.spot=spot; m.spotFill=sd; m.spotRing=sr; m.breaks=[{o:rig,at:.34}]; m.shadow=blob(.7); return m;
@@ -785,19 +785,19 @@ function corruptModel(m,amt=.45){
   m.g.updateMatrixWorld(true); const bb=new THREE.Box3(); m.g.traverse(o=>{ if(o.isMesh&&!o.userData.nofit&&o.material!==outlineMat) bb.expandByObject(o); });
   const s=bb.getSize(new V3()), c=bb.getCenter(new V3()), sc=m.g.scale.x||1, host=m.torso||m.body||m.g, MV=basic(0xb070ff,false);
   host.updateMatrixWorld(true); const inv=new THREE.Matrix4().copy(host.matrixWorld).invert(), hs=host.getWorldScale(new V3()).x||1;
-  [[-.35,.95,-.5,.6],[.35,1,-.5,.7],[0,1.1,-.55,.9],[-.6,.8,-.4,.45],[.6,.8,-.4,.5]].forEach(([x,y,z,k])=>{ const w=new V3(c.x+x*s.x*.5,bb.min.y+y*s.y,c.z+z*s.z*.5).applyMatrix4(inv); const cr=part(new THREE.OctahedronGeometry(.22*k*Math.max(1,s.y/3)/hs,0),MV,host,w.x,w.y,w.z,.03); cr.scale.y=2.2; cr.rotation.x=-.5; });
-  const aura=new THREE.Mesh(new THREE.RingGeometry(1,1.08,40),addMat(0xb070ff,.55)); aura.rotation.x=-Math.PI/2; aura.position.y=.05; aura.scale.setScalar(Math.max(1.2,Math.max(s.x,s.z)/sc*.6)); aura.userData.nofit=1; m.g.add(aura);
+  [[-.35,.95,-.5,.6],[.35,1,-.5,.7],[0,1.1,-.55,.9],[-.6,.8,-.4,.45],[.6,.8,-.4,.5]].forEach(([x,y,z,k])=>{ const w=new V3(c.x+x*s.x*.5,bb.min.y+y*s.y,c.z+z*s.z*.5).applyMatrix4(inv); const cr=part(geoC('Octahedron',THREE.OctahedronGeometry,.22*k*Math.max(1,s.y/3)/hs,0),MV,host,w.x,w.y,w.z,.03); cr.scale.y=2.2; cr.rotation.x=-.5; });
+  const aura=new THREE.Mesh(geoC('Ring',THREE.RingGeometry,1,1.08,40),addMat(0xb070ff,.55)); aura.rotation.x=-Math.PI/2; aura.position.y=.05; aura.scale.setScalar(Math.max(1.2,Math.max(s.x,s.z)/sc*.6)); aura.userData.nofit=1; m.g.add(aura);
   m.corrupt=true; return m;
 }
 /* Hex Breach anomalies (docs/hex-breach.html): hexagonal cells in violet and slate with a teal glow */
 const HX={dark:0x231530,vio:0x7a3cff,slate:0x3a2a52,teal:0x2fd8c8,glow:0x3af0e0};
-const hexPrism=(r,h)=>{ const g=new THREE.CylinderGeometry(r,r,h,6); g.rotateX(Math.PI/2); g.rotateZ(Math.PI/6); return g; };
+const hexPrism=(r,h)=>{ const k='HexPrism|'+r+','+h; let g=_geoCache.get(k); if(!g){ g=new THREE.CylinderGeometry(r,r,h,6); g.rotateX(Math.PI/2); g.rotateZ(Math.PI/6); g.userData.shared=true; _geoCache.set(k,g); } return g; }; // rotated after it is made, so it gets its own cache key
 // Cellmite: three small cells; the ground ring lights up while three of them merge into a Cell Brute
 function buildCellmite(){
   const g=new THREE.Group(), body=new THREE.Group(); body.position.y=1; g.add(body);
   const MS=toon(HX.slate),MP=toon(HX.vio), cells=[];
   [[0,.32],[-.3,-.2],[.3,-.2]].forEach(([x,y])=>{ const c=new THREE.Group(); c.position.set(x,y,0); body.add(c); part(hexPrism(.32,.3),MS,c,0,0,0,.05); part(hexPrism(.24,.06),MP,c,0,0,.17,.02); const l=new THREE.Mesh(hexPrism(.14,.04),basic(HX.glow,false)); l.position.z=.21; c.add(l); cells.push(c); });
-  const link=new THREE.Mesh(new THREE.RingGeometry(1.35,1.45,6),addMat(HX.glow,.45)); link.rotation.x=-Math.PI/2; link.position.y=.05; link.userData.nofit=1; g.add(link);
+  const link=new THREE.Mesh(geoC('Ring',THREE.RingGeometry,1.35,1.45,6),addMat(HX.glow,.45)); link.rotation.x=-Math.PI/2; link.position.y=.05; link.userData.nofit=1; g.add(link);
   return {g,body,cells,link,mats:[MS,MP],shadow:blob(.5)};
 }
 // Cell Brute: seven cells around a red core, two heavy arms
@@ -811,8 +811,8 @@ function buildCellBrute(){
 // Hex Breach mutation (patch.md 36): teal tint, a hex lens over the body and a hexagonal ground ring
 function hexModel(m,amt=.4){
   const tint=new THREE.Color(0x36e8d8); m.g.traverse(o=>{ if(o.isMesh&&o.material&&o.material.isMeshToonMaterial) o.material.color.lerp(tint,amt); });
-  const host=m.torso||m.body||m.g, lens=new THREE.Mesh(new THREE.RingGeometry(.42,.55,6),addMat(0x36e8d8,.85)); lens.position.set(0,.2,.75); lens.rotation.z=Math.PI/6; lens.userData.nofit=1; host.add(lens);
-  const ring=new THREE.Mesh(new THREE.RingGeometry(1,1.1,6),addMat(0x36e8d8,.6)); ring.rotation.x=-Math.PI/2; ring.rotation.z=Math.PI/6; ring.position.y=.05; ring.scale.setScalar(1.3); ring.userData.nofit=1; m.g.add(ring);
+  const host=m.torso||m.body||m.g, lens=new THREE.Mesh(geoC('Ring',THREE.RingGeometry,.42,.55,6),addMat(0x36e8d8,.85)); lens.position.set(0,.2,.75); lens.rotation.z=Math.PI/6; lens.userData.nofit=1; host.add(lens);
+  const ring=new THREE.Mesh(geoC('Ring',THREE.RingGeometry,1,1.1,6),addMat(0x36e8d8,.6)); ring.rotation.x=-Math.PI/2; ring.rotation.z=Math.PI/6; ring.position.y=.05; ring.scale.setScalar(1.3); ring.userData.nofit=1; m.g.add(ring);
   m.hexed=true; return m;
 }
 // generalized bestiary buildCorrupted: any boss model + purple tint, crystal spikes and a void aura
@@ -825,7 +825,7 @@ function buildRam(){
   const M1=toon(0x5a5244),M2=toon(0xd5352a),M3=toon(0x2a2620),ME=basic(0xff3030,false),MH=basic(0xff7a2a,false);
   part(box(1.5,.8,1.9),M1,body,0,1.1,0);
   const plow=new THREE.Group(); plow.position.set(0,.8,1.05); body.add(plow); part(box(1.7,.9,.3),M2,plow,0,0,0,.08).rotation.x=-.3;
-  const teeth=[-1,1].map(s=>{ const t=part(new THREE.ConeGeometry(.16,.6,5),M3,body,s*.78,.65,1.2,.04); t.rotation.x=Math.PI/2; return t; });
+  const teeth=[-1,1].map(s=>{ const t=part(geoC('Cone',THREE.ConeGeometry,.16,.6,5),M3,body,s*.78,.65,1.2,.04); t.rotation.x=Math.PI/2; return t; });
   part(box(.7,.5,.6),M1,body,0,1.72,.7,.07);
   const eye=new THREE.Mesh(box(.5,.07,.05),ME); eye.position.set(0,1.75,1.02); body.add(eye);
   part(box(1.52,.14,1.2),M2,body,0,1.52,-.2,.04); part(box(1,.2,.7),M3,body,0,1.6,-.6,.05);
@@ -839,10 +839,10 @@ function buildCoil(){
   const M1=toon(0x4c4658),M2=toon(0xc86a3a),M3=toon(0x24202c),MG=basic(0xffa040,false);
   part(box(1.1,.45,1.1),M1,body,0,0,0);
   [0,1,2].forEach(i=>{ const a=i/3*Math.PI*2+Math.PI/6, l=part(box(.14,1,.14),M3,body,Math.cos(a)*.7,-.6,Math.sin(a)*.7,.04); l.rotation.z=Math.cos(a)*.35; l.rotation.x=-Math.sin(a)*.35; });
-  [[.9,.4],[.8,.75],[.7,1.1]].forEach(([k,y])=>part(new THREE.CylinderGeometry(.5*k*.9,.5*k,.35,10),M1,body,0,y,0,.05));
-  const rings=[[.24,.55],[.58,.45],[.93,.35]].map(([y,r])=>{ const t=part(new THREE.TorusGeometry(r,.05,5,18),M2,body,0,y,0,.04); t.rotation.x=Math.PI/2; return t; });
-  const cup=part(new THREE.CylinderGeometry(.32,.2,.2,8),M3,body,0,1.38,0,.04);
-  const orb=new THREE.Mesh(new THREE.SphereGeometry(.22,12,8),MG); orb.position.y=1.6; body.add(orb);
+  [[.9,.4],[.8,.75],[.7,1.1]].forEach(([k,y])=>part(geoC('Cylinder',THREE.CylinderGeometry,.5*k*.9,.5*k,.35,10),M1,body,0,y,0,.05));
+  const rings=[[.24,.55],[.58,.45],[.93,.35]].map(([y,r])=>{ const t=part(geoC('Torus',THREE.TorusGeometry,r,.05,5,18),M2,body,0,y,0,.04); t.rotation.x=Math.PI/2; return t; });
+  const cup=part(geoC('Cylinder',THREE.CylinderGeometry,.32,.2,.2,8),M3,body,0,1.38,0,.04);
+  const orb=new THREE.Mesh(geoC('Sphere',THREE.SphereGeometry,.22,12,8),MG); orb.position.y=1.6; body.add(orb);
   const tube=part(box(.2,.9,.2),M3,body,.62,.3,-.2,.05); tube.rotation.z=-.5;
   g.scale.setScalar(.95);
   return {g,body,rings,orb,tube,mats:[M1,M2,M3],shadow:blob(1),breaks:[{o:rings[0],at:.5},{o:rings[2],at:.5},{o:cup,at:.25}]};
@@ -852,7 +852,7 @@ function buildMender(){
   const M1=toon(0x6a6a78),M2=toon(0xe07a2a),M3=toon(0x2a2630),MG=basic(0xffa040,false);
   part(box(.9,.5,.9),M1,body,0,0,0,.08); part(box(.5,.1,.14),M2,body,0,.31,0,.03); part(box(.14,.1,.5),M2,body,0,.31,0,.03);
   const rotors=[[1,1],[-1,1],[1,-1],[-1,-1]].map(([sx,sz])=>{ part(box(.1,.2,.1),M3,body,sx*.62,.1,sz*.62,.03); const p=new THREE.Group(); p.position.set(sx*.62,.25,sz*.62); body.add(p); part(box(.7,.04,.18),M3,p,0,0,0,.02); return p; });
-  const arm=part(box(.12,.9,.12),M3,body,0,-.7,.1,.03); const tip=new THREE.Mesh(new THREE.SphereGeometry(.15,10,8),MG); tip.position.set(0,-1.2,.1); body.add(tip);
+  const arm=part(box(.12,.9,.12),M3,body,0,-.7,.1,.03); const tip=new THREE.Mesh(geoC('Sphere',THREE.SphereGeometry,.15,10,8),MG); tip.position.set(0,-1.2,.1); body.add(tip);
   const eye=new THREE.Mesh(box(.5,.07,.05),MG); eye.position.set(0,.05,.46); body.add(eye);
   g.scale.setScalar(.85);
   return {g,body,rotors,arm,tip,eye,mats:[M1,M2,M3],shadow:blob(.8),breaks:[{o:rotors[0],at:.5},{o:rotors[2],at:.5},{o:arm,at:.25}]};
@@ -861,25 +861,25 @@ function buildMender(){
 function buildBeacon(){
   const g=new THREE.Group(), body=new THREE.Group(); body.position.y=3; g.add(body);
   const MW=toon(0xeee8f4),MG=toon(0xd9a520),MD=toon(0x2a2232),MV=toon(0xd9c9ff);
-  const crystal=part(new THREE.OctahedronGeometry(.45,0),MW,body,0,0,0,.08); crystal.scale.y=2.4;
-  const tip=part(new THREE.OctahedronGeometry(.25,0),MD,body,0,-1.25,0,.05); tip.scale.y=1.6;
-  const lens=part(new THREE.TorusGeometry(.5,.07,8,28),MG,body,0,.15,.05,.05);
+  const crystal=part(geoC('Octahedron',THREE.OctahedronGeometry,.45,0),MW,body,0,0,0,.08); crystal.scale.y=2.4;
+  const tip=part(geoC('Octahedron',THREE.OctahedronGeometry,.25,0),MD,body,0,-1.25,0,.05); tip.scale.y=1.6;
+  const lens=part(geoC('Torus',THREE.TorusGeometry,.5,.07,8,28),MG,body,0,.15,.05,.05);
   [-1,1].forEach(s=>part(box(.14,.14,.14),MG,body,s*.5,.15,.05,.03));
-  const core=new THREE.Mesh(new THREE.SphereGeometry(.2,12,8),basic(0xff2a3a,false)); core.position.set(0,.15,.1); body.add(core);
-  part(new THREE.ConeGeometry(.16,.5,6),MD,body,0,.15,.38,.04).rotation.x=Math.PI/2;
+  const core=new THREE.Mesh(geoC('Sphere',THREE.SphereGeometry,.2,12,8),basic(0xff2a3a,false)); core.position.set(0,.15,.1); body.add(core);
+  part(geoC('Cone',THREE.ConeGeometry,.16,.5,6),MD,body,0,.15,.38,.04).rotation.x=Math.PI/2;
   const wings=[-1,1].map(s=>{ const w=part(box(1.1,.05,.3),MV,body,s*.9,.1,-.15,.04); w.rotation.z=s*.35; return w; });
-  const halo=new THREE.Mesh(new THREE.TorusGeometry(.5,.05,6,28),basic(0xffd36a,false)); halo.rotation.x=Math.PI/2; halo.position.y=1.55; body.add(halo);
+  const halo=new THREE.Mesh(geoC('Torus',THREE.TorusGeometry,.5,.05,6,28),basic(0xffd36a,false)); halo.rotation.x=Math.PI/2; halo.position.y=1.55; body.add(halo);
   const ribbons=[-1,0,1].map(i=>{ const p=new THREE.Group(); p.position.set(i*.2,-1.5,-.1); body.add(p); part(box(.08,.9,.04),MV,p,0,-.45,0,.03); return p; });
   return {g,body,lens,core,halo,wings,ribbons,mats:[MW,MG,MD,MV],shadow:blob(.7),breaks:[{o:wings[0],at:.5},{o:wings[1],at:.5},{o:lens,at:.25}]};
 }
 function buildHerald(){
   const g=new THREE.Group(), body=new THREE.Group(); body.position.y=2; g.add(body);
   const MW=toon(0xeee8f4),MD=toon(0x2a2232),MV=toon(0xd9c9ff);
-  const crystal=part(new THREE.OctahedronGeometry(.45,0),MW,body,0,0,0,.07); crystal.scale.set(.8,.75,2.1);
-  part(new THREE.ConeGeometry(.2,.8,5),MD,body,0,0,1.15,.04).rotation.x=Math.PI/2;
+  const crystal=part(geoC('Octahedron',THREE.OctahedronGeometry,.45,0),MW,body,0,0,0,.07); crystal.scale.set(.8,.75,2.1);
+  part(geoC('Cone',THREE.ConeGeometry,.2,.8,5),MD,body,0,0,1.15,.04).rotation.x=Math.PI/2;
   const wings=[-1,1].map(s=>{ const w=part(box(1,.05,.55),MV,body,s*.62,0,-.3,.04); w.rotation.y=s*.7; part(box(.5,.04,.3),MW,w,s*.5,0,-.2,.03); return w; });
-  const halo=new THREE.Mesh(new THREE.TorusGeometry(.3,.04,6,24),basic(0xffd36a,false)); halo.rotation.x=Math.PI/2; halo.position.y=.55; body.add(halo);
-  const core=new THREE.Mesh(new THREE.SphereGeometry(.12,10,8),basic(0xff2a3a,false)); core.position.set(0,.12,.5); body.add(core);
+  const halo=new THREE.Mesh(geoC('Torus',THREE.TorusGeometry,.3,.04,6,24),basic(0xffd36a,false)); halo.rotation.x=Math.PI/2; halo.position.y=.55; body.add(halo);
+  const core=new THREE.Mesh(geoC('Sphere',THREE.SphereGeometry,.12,10,8),basic(0xff2a3a,false)); core.position.set(0,.12,.5); body.add(core);
   const tails=[-1,1].map(s=>{ const p=new THREE.Group(); p.position.set(s*.15,0,-.95); body.add(p); part(box(.07,.04,.6),MV,p,0,0,-.3,.03); return p; });
   g.scale.setScalar(.8);
   return {g,body,wings,halo,core,tails,mats:[MW,MV,MD],shadow:blob(.6),breaks:[{o:wings[0],at:.5},{o:wings[1],at:.25}]};
@@ -890,13 +890,13 @@ function buildDominion(){
   [-1,1].forEach(s=>part(box(.45,1.2,.5),MW,body,s*.4,.6,0,.06));
   part(box(1.4,1.6,1),MW,body,0,2,0); part(box(.7,1,.1),MD,body,0,1.9,.55,.04);
   [-1,1].forEach(s=>part(box(.7,.5,.9),MG,body,s*1,2.65,0,.06));
-  const head=part(new THREE.OctahedronGeometry(.45,0),MD,body,0,3.2,0,.07); head.scale.y=1.2;
+  const head=part(geoC('Octahedron',THREE.OctahedronGeometry,.45,0),MD,body,0,3.2,0,.07); head.scale.y=1.2;
   const slit=new THREE.Mesh(box(.08,.38,.05),basic(0xff2a3a,false)); slit.position.set(0,3.22,.4); body.add(slit);
-  part(new THREE.CylinderGeometry(.12,.12,2.2,8),MD,body,1.25,2.2,.4,.04); part(new THREE.OctahedronGeometry(.3,0),MG,body,1.25,3.45,.4,.05);
-  const halo=new THREE.Mesh(new THREE.TorusGeometry(.5,.05,6,28),basic(0xffd36a,false)); halo.rotation.x=Math.PI/2; halo.position.y=3.95; body.add(halo);
+  part(geoC('Cylinder',THREE.CylinderGeometry,.12,.12,2.2,8),MD,body,1.25,2.2,.4,.04); part(geoC('Octahedron',THREE.OctahedronGeometry,.3,0),MG,body,1.25,3.45,.4,.05);
+  const halo=new THREE.Mesh(geoC('Torus',THREE.TorusGeometry,.5,.05,6,28),basic(0xffd36a,false)); halo.rotation.x=Math.PI/2; halo.position.y=3.95; body.add(halo);
   const plates=new THREE.Group(); plates.position.y=2.1; body.add(plates); const a=Math.PI*35/180;
   const pg=[0,1,2].map(i=>{ const p=new THREE.Group(); p.rotation.y=i*Math.PI*2/3; plates.add(p);
-    part(new THREE.CylinderGeometry(1.55,1.55,1.5,12,1,true,-a,a*2),MS,p,0,0,0,0); part(new THREE.CylinderGeometry(1.57,1.57,.14,12,1,true,-a,a*2),MG,p,0,.76,0,0); return p; });
+    part(geoC('Cylinder',THREE.CylinderGeometry,1.55,1.55,1.5,12,1,true,-a,a*2),MS,p,0,0,0,0); part(geoC('Cylinder',THREE.CylinderGeometry,1.57,1.57,.14,12,1,true,-a,a*2),MG,p,0,.76,0,0); return p; });
   g.scale.setScalar(1.3);
   return {g,body,halo,plates,pg,mats:[MW,MG,MD],shadow:blob(1.7),breaks:[{o:pg[0],at:.66},{o:pg[1],at:.33}]};
 }
@@ -904,7 +904,7 @@ function buildDominion(){
 function buildSentry(){
   const g=new THREE.Group();
   const M1=toon(0x5a5244),M2=toon(0xc08a2a),M3=toon(0x2a2620),ME=basic(0xff3030,false),ML=basic(0xff3a2a,false);
-  part(new THREE.CylinderGeometry(.9,.9,.35,14),M3,g,0,.175,0,.06);
+  part(geoC('Cylinder',THREE.CylinderGeometry,.9,.9,.35,14),M3,g,0,.175,0,.06);
   const drum=new THREE.Group(); drum.position.y=1.1; g.add(drum);
   part(box(1,.7,1),M1,drum,0,0,0,.07); part(box(1.04,.12,1.04),M2,drum,0,-.28,0,.03);
   const lamps=[], bars=[[0,1],[1,0],[0,-1],[-1,0]].map(([dx,dz])=>{ const b=new THREE.Group(); b.rotation.y=Math.atan2(dx,dz); drum.add(b); part(box(.14,.14,.5),M3,b,0,0,.75,.04); const l=new THREE.Mesh(box(.1,.1,.1),ML); l.position.set(0,.12,.98); b.add(l); lamps.push(l); return b; });
@@ -915,13 +915,13 @@ function buildSentry(){
 function buildBorer(){
   const g=new THREE.Group(), body=new THREE.Group(); g.add(body);
   const M1=toon(0x6a5848),M2=toon(0xc08a2a),M3=toon(0x2a2620),ME=basic(0xff3030,false);
-  part(new THREE.CylinderGeometry(.6,.6,1.6,12),M1,body,0,.85,0,.07).rotation.x=Math.PI/2;
+  part(geoC('Cylinder',THREE.CylinderGeometry,.6,.6,1.6,12),M1,body,0,.85,0,.07).rotation.x=Math.PI/2;
   const drill=new THREE.Group(); drill.position.set(0,.85,.8); body.add(drill);
-  part(new THREE.ConeGeometry(.5,.9,6),M2,drill,0,0,.45,.05).rotation.x=Math.PI/2;
-  [[.43,.28],[.3,.62]].forEach(([r,z])=>part(new THREE.TorusGeometry(r,.05,5,10),M3,drill,0,0,z,.03));
+  part(geoC('Cone',THREE.ConeGeometry,.5,.9,6),M2,drill,0,0,.45,.05).rotation.x=Math.PI/2;
+  [[.43,.28],[.3,.62]].forEach(([r,z])=>part(geoC('Torus',THREE.TorusGeometry,r,.05,5,10),M3,drill,0,0,z,.03));
   [-1,1].forEach(s=>{ part(box(.35,.6,1.4),M3,body,s*.78,.3,0,.06); part(box(.1,.5,1),M2,body,s*.62,.85,-.1,.04); });
   part(box(.5,.2,.5),M2,body,0,1.52,-.2,.04);
-  const tube=part(new THREE.CylinderGeometry(.22,.22,.9,8),M3,body,0,1.95,-.25,.05); tube.rotation.x=.6;
+  const tube=part(geoC('Cylinder',THREE.CylinderGeometry,.22,.22,.9,8),M3,body,0,1.95,-.25,.05); tube.rotation.x=.6;
   part(box(.5,.4,.3),M3,body,0,.95,-.95,.05); part(box(.3,.18,.3),M3,body,0,1.5,.35,.04);
   const eye=new THREE.Mesh(box(.4,.07,.05),ME); eye.position.set(0,1.5,.51); body.add(eye);
   g.scale.setScalar(1.1);
@@ -943,44 +943,44 @@ function buildHopper(){
 function buildEmissary(){
   const g=new THREE.Group(), body=new THREE.Group(); body.position.y=.4; g.add(body);
   const MW=toon(0xeee8f4),MG=toon(0xd9a520),MD=toon(0x2a2232),MV=toon(0xd9c9ff);
-  part(new THREE.ConeGeometry(.55,.9,6),MW,body,0,.45,0,.06);
+  part(geoC('Cone',THREE.ConeGeometry,.55,.9,6),MW,body,0,.45,0,.06);
   part(box(.9,1.4,.6),MW,body,0,1.4,0,.07); part(box(.92,.14,.62),MG,body,0,.95,0,.03);
   [-1,1].forEach(s=>part(box(.5,.3,.7),MG,body,s*.62,2,0,.05));
-  part(new THREE.OctahedronGeometry(.38,0),MD,body,0,2.5,0,.06);
+  part(geoC('Octahedron',THREE.OctahedronGeometry,.38,0),MD,body,0,2.5,0,.06);
   const eye=new THREE.Mesh(box(.3,.06,.05),basic(0xff2a3a,false)); eye.position.set(0,2.52,.3); body.add(eye);
   const arms=[-1,1].map(s=>part(box(.22,.9,.22),MW,body,s*.68,1.35,.05,.05));
   const spear=new THREE.Group(); spear.position.set(.68,1.1,.5); spear.rotation.x=1.35; body.add(spear);
-  spear.add(new THREE.Mesh(new THREE.CylinderGeometry(.06,.06,2.4,6),basic(0xffd36a,false))); part(new THREE.ConeGeometry(.14,.4,5),MG,spear,0,1.4,0,.03);
+  spear.add(new THREE.Mesh(geoC('Cylinder',THREE.CylinderGeometry,.06,.06,2.4,6),basic(0xffd36a,false))); part(geoC('Cone',THREE.ConeGeometry,.14,.4,5),MG,spear,0,1.4,0,.03);
   const wings=[-1,1].map(s=>{ const w=part(box(1.3,.05,.3),MV,body,s*.9,1.9,-.4,.04); w.rotation.z=s*.5; return w; });
   const cape=part(box(.8,1.2,.05),MD,body,0,1.35,-.38,.04);
-  const halo=new THREE.Mesh(new THREE.TorusGeometry(.38,.045,6,24),basic(0xffd36a,false)); halo.rotation.x=Math.PI/2; halo.position.y=3.1; body.add(halo);
+  const halo=new THREE.Mesh(geoC('Torus',THREE.TorusGeometry,.38,.045,6,24),basic(0xffd36a,false)); halo.rotation.x=Math.PI/2; halo.position.y=3.1; body.add(halo);
   g.scale.setScalar(1.1);
   return {g,body,arms,spear,wings,cape,halo,eye,mats:[MW,MG,MD,MV],shadow:blob(.8),breaks:[{o:cape,at:.5},{o:wings[0],at:.25},{o:wings[1],at:.25}]};
 }
 function buildAureole(){
   const g=new THREE.Group(), body=new THREE.Group(); body.position.y=2.6; g.add(body);
   const MW=toon(0xeee8f4),MG=toon(0xd9a520),MV=toon(0xd9c9ff);
-  part(new THREE.SphereGeometry(.5,16,12),MW,body,0,0,0,.08);
-  const ringA=part(new THREE.TorusGeometry(.8,.06,6,36),MG,body,0,0,0,.04); ringA.rotation.x=Math.PI/2;
-  const ringB=part(new THREE.TorusGeometry(.8,.06,6,36),MG,body,0,0,0,.04);
-  part(new THREE.TorusGeometry(.3,.04,6,24),MG,body,0,0,0,.03).rotation.y=Math.PI/2;
-  const core=new THREE.Mesh(new THREE.SphereGeometry(.22,12,8),basic(0xff2a3a,false)); core.position.z=.42; body.add(core);
+  part(geoC('Sphere',THREE.SphereGeometry,.5,16,12),MW,body,0,0,0,.08);
+  const ringA=part(geoC('Torus',THREE.TorusGeometry,.8,.06,6,36),MG,body,0,0,0,.04); ringA.rotation.x=Math.PI/2;
+  const ringB=part(geoC('Torus',THREE.TorusGeometry,.8,.06,6,36),MG,body,0,0,0,.04);
+  part(geoC('Torus',THREE.TorusGeometry,.3,.04,6,24),MG,body,0,0,0,.03).rotation.y=Math.PI/2;
+  const core=new THREE.Mesh(geoC('Sphere',THREE.SphereGeometry,.22,12,8),basic(0xff2a3a,false)); core.position.z=.42; body.add(core);
   const ribbons=[-1,0,1].map(i=>{ const p=new THREE.Group(); p.position.set(i*.3,-.55,-.2); body.add(p); part(box(.06,.8,.04),MV,p,0,-.4,0,.03); return p; });
   const wings=[-1,1].map(s=>{ const w=part(box(.8,.05,.28),MV,body,s*.62,-.3,-.2,.04); w.rotation.z=-s*.3; return w; });
-  part(new THREE.ConeGeometry(.12,.4,5),MG,body,0,.62,0,.03);
+  part(geoC('Cone',THREE.ConeGeometry,.12,.4,5),MG,body,0,.62,0,.03);
   g.scale.setScalar(.95);
   return {g,body,ringA,ringB,core,ribbons,wings,mats:[MW,MG,MV],shadow:blob(.8),breaks:[{o:wings[0],at:.5},{o:wings[1],at:.5},{o:ringB,at:.25}]};
 }
 function buildCantor(){
   const g=new THREE.Group(), body=new THREE.Group(); body.position.y=2.4; g.add(body);
   const MW=toon(0xf6f0e6),MG=toon(0xd9a520),MD=toon(0x2a2232),MV=toon(0xd9c9ff);
-  part(new THREE.ConeGeometry(.55,1.6,8),MW,body,0,-.7,0,.07);
-  part(new THREE.SphereGeometry(.32,12,10),MW,body,0,.55,0,.06);
+  part(geoC('Cone',THREE.ConeGeometry,.55,1.6,8),MW,body,0,-.7,0,.07);
+  part(geoC('Sphere',THREE.SphereGeometry,.32,12,10),MW,body,0,.55,0,.06);
   const band=new THREE.Mesh(box(.4,.07,.05),basic(0xff2a3a,false)); band.position.set(0,.58,.3); body.add(band);
-  part(new THREE.ConeGeometry(.4,.3,8),MG,body,0,.2,0,.04).rotation.x=Math.PI;
+  part(geoC('Cone',THREE.ConeGeometry,.4,.3,8),MG,body,0,.2,0,.04).rotation.x=Math.PI;
   const arms=[-1,1].map(s=>{ const a=part(box(.18,.7,.2),MW,body,s*.42,-.05,.28,.04); a.rotation.x=-.9; return a; });
   const book=part(box(.5,.08,.4),MG,body,0,.2,.55,.04); book.rotation.x=-.5;
-  const rings=[0,1,2,3].map(i=>part(new THREE.TorusGeometry(.5-i*.08,.04,6,28),MG,body,0,.55,-.35-i*.12,.03));
+  const rings=[0,1,2,3].map(i=>part(geoC('Torus',THREE.TorusGeometry,.5-i*.08,.04,6,28),MG,body,0,.55,-.35-i*.12,.03));
   const wings=[-1,1].map(s=>{ const w=part(box(.9,.05,.3),MV,body,s*.7,-.1,-.3,.04); w.rotation.z=s*.5; return w; });
   return {g,body,arms,book,rings,wings,band,mats:[MW,MG,MD,MV],shadow:blob(.7),breaks:[{o:book,at:.5},{o:rings[2],at:.25},{o:rings[3],at:.25}]};
 }

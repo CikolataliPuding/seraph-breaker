@@ -30,14 +30,20 @@ const outlineMat=new THREE.MeshBasicMaterial({color:0x0a0610,side:THREE.BackSide
 const basicCache={};
 function basic(c,add=true,op=1){ const k=c+'_'+add+'_'+op; return basicCache[k]||(basicCache[k]=new THREE.MeshBasicMaterial({color:c,transparent:op<1||add,opacity:op,blending:add?THREE.AdditiveBlending:THREE.NormalBlending,depthWrite:!add})); }
 const addMat=(c,op=1)=>new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:op,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide});
-const box=(x,y,z)=>new THREE.BoxGeometry(x,y,z);
+// geometries are cached by kind and size and flagged shared: every mob of a kind reuses the same GPU buffers instead of building its own on each
+// spawn (they were never freed, so a 50-room run piled up ~1400 buffers). A shared geometry must never be changed or disposed after it is made.
+const _geoCache=new Map();
+function geoC(kind,T,...a){ const k=kind+'|'+a.join(','); let g=_geoCache.get(k); if(!g){ g=new T(...a); g.userData.shared=true; _geoCache.set(k,g); } return g; }
+const box=(x,y,z)=>geoC('Box',THREE.BoxGeometry,x,y,z);
+// a removed model or room piece frees the GPU buffers of its own geometries; shared ones (cache, G, module-level) stay for the next user
+function freeModel(root){ if(root) root.traverse(o=>{ const g=o.geometry; if(g&&!g.userData.shared) g.dispose(); }); }
 let castShadows=true;
 function part(geo,mat,parent,x=0,y=0,z=0,t=.09){
   const m=new THREE.Mesh(geo,mat); m.position.set(x,y,z); m.castShadow=castShadows; parent.add(m);
   if(t){ geo.computeBoundingBox(); const s=new V3(); geo.boundingBox.getSize(s); const o=new THREE.Mesh(geo,outlineMat); o.scale.set((s.x+t)/(s.x||1),(s.y+t)/(s.y||1),(s.z+t)/(s.z||1)); m.add(o); }
   return m;
 }
-const blob=r=>{ const m=new THREE.Mesh(new THREE.CircleGeometry(r,18),new THREE.MeshBasicMaterial({color:0,transparent:true,opacity:.34,depthWrite:false})); m.rotation.x=-Math.PI/2; m.position.y=.03; return m; };
+const blob=r=>{ const m=new THREE.Mesh(geoC('Circle',THREE.CircleGeometry,r,18),new THREE.MeshBasicMaterial({color:0,transparent:true,opacity:.34,depthWrite:false})); m.rotation.x=-Math.PI/2; m.position.y=.03; return m; };
 
 /* world: ground + city ring */
 let AX=11, AZ=15, hazardMat=null; // half-width (x) and half-depth (z) of the current room; the door is at z=-AZ

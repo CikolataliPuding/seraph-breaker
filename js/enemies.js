@@ -155,7 +155,7 @@ function killEnemy(e,byProc){
   crossBlast(e.pos.clone().setY(.2),angel?0xffd36a:0xff5a2a,def.cost>=2||e.elite?1.3:.9);
   if(e.elite) hitstop(75,true);
   shatter(e.model,e.pos,e.hdx,e.hdz,{crystal:angel?0xffd36a:0,cy:angel?2.2:1.4});
-  scene.remove(e.model.g,e.model.shadow); enemies.splice(enemies.indexOf(e),1);
+  scene.remove(e.model.g,e.model.shadow); freeModel(e.model.g); enemies.splice(enemies.indexOf(e),1);
   // Shardling splits and boss summons pay a reduced share, so one Shardling is not worth seven kills; Survive spawns pay e.rw; leftovers pay nothing
   if(e.noLoot) return;
   const rw=(e.gen||e.minion?SPLIT_REWARD:1)*(e.rw==null?1:e.rw);

@@ -438,6 +438,7 @@ const cornered=()=>Math.abs(player.pos.x)>AX-2.2||Math.abs(player.pos.z)>AZ-2.2|
 // cone on the floor that fills during a wind-up (amber: Shredder riff, red: Bass Brute headbang)
 const CONE_GEO=new THREE.CircleGeometry(1,24,Math.PI/2-.45,.9); // a .9 rad slice of the unit disc around local -z once laid flat
 const coneGeo=arc=>new THREE.CircleGeometry(1,24,Math.PI/2-arc/2,arc), CONE_BASS=coneGeo(ENEMY.bass.cone[1]);
+CONE_GEO.userData.shared=CONE_BASS.userData.shared=true; // telegraph shapes reused by every mob
 function teleCone(e,dir,len,life,col=MS_COL.amber,geo=CONE_GEO){ const g=new THREE.Group(), mat=addMat(col,.25), m=new THREE.Mesh(geo,mat);
   m.rotation.x=-Math.PI/2; g.add(m); g.position.set(e.pos.x,.06,e.pos.z); g.rotation.y=Math.atan2(dir.x,dir.z)+Math.PI;
   const o=col===MS_COL.red?1.6:1; // the Bass Brute's red cone reads fainter on the dark mat, so it is drawn stronger
