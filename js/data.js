@@ -212,6 +212,12 @@ const SCALE={mob:2.2,hp:.058,dmg:.04,bossDmgK:1.4,bossRef:9,finalHp:1.5,finalDmg
 /* patch notes: shown once on the first boot after a big update (ui-hangar.js newsBoot), newest first; System > Patch notes shows them again.
    Plain player words: what got weaker (nerf), stronger (buff), what is new, what changed and what was fixed. A new pilot skips them. */
 const NEWS=[
+  {id:'balance-2',title:'The Power Curve Update',items:[
+    {k:'change',t:'Arenas now unlock your power. Every arena you open lets each Core stat go 4 levels higher and opens new skill tree ranks. Levels you bought above the limit are kept and come back as you open arenas.'},
+    {k:'change',t:'Core levels now multiply: every Armor or Damage level is +9% on top of the last, so late levels count as much as early ones.'},
+    {k:'nerf',t:'Enemies grow with you: every arena is a little harder than the last at the power it lets you have. Arena 1 hits softer to match the new Core limit, and later arenas get tougher.'},
+    {k:'nerf',t:'Enemy shots get a little faster in every arena.'},
+    {k:'change',t:"Gold follows the Core's price: each arena pays for its own Core levels in about one and a half runs."}]},
   {id:'balance-1',title:'The Balance Update',items:[
     {k:'nerf',t:'Run cards stop at rank 3, and cards you already own show up less often.'},
     {k:'change',t:'Angels offer two choices: one repair and one attack card.'},
