@@ -117,7 +117,10 @@ function tick(dt,now){
           if(e.type==='dominion'&&!b.pierce&&!b.bounce&&dominionBlocks(e,dx,dz)){ sparks(p,0xffd36a,3,4); sfx('shield'); e.jz.pop.v+=.4; gone=true; break; }
           // Bulwark: the front shield stops plain shots (pierce and ricochet get through, wall-bounce shots bounce off it)
           if(e.type==='bulwark'&&!b.pierce&&!b.bounce){ const fx=Math.sin(e.yaw),fz=Math.cos(e.yaw),l=Math.hypot(dx,dz)||1; if((dx*fx+dz*fz)/l>.3){ sparks(p,0xffa04a,3,4); sfx('shield'); e.model.hex.scale.setScalar(1.5); e.jz.pop.v+=.6;
-            if(b.wall>0){ b.wall--; const dn=b.vel.x*fx+b.vel.z*fz; b.vel.x-=2*dn*fx; b.vel.z-=2*dn*fz; p.x+=fx*.6; p.z+=fz*.6; b.m.lookAt(p.clone().add(b.vel)); } else gone=true; break; } }
+            if(b.wall>0){ b.wall--; const dn=b.vel.x*fx+b.vel.z*fz; b.vel.x-=2*dn*fx; b.vel.z-=2*dn*fz; p.x+=fx*.6; p.z+=fz*.6; b.m.lookAt(p.clone().add(b.vel)); } else gone=true;
+            // Hex Bulwark: the mirror sends the shot back the way it came, in its own teal
+            if(gone&&e.kind==='hexbulwark'&&e.t-(e.reflAt==null?-9:e.reflAt)>.3){ e.reflAt=e.t; shoot('e',p.clone().setY(1.2),_tmp.set(-b.vel.x,0,-b.vel.z).normalize(),8.5*eSpd(),11,0x3af0e0,{life:1.6,r:.45}); }
+            break; } }
           // Pulse Dancer: her spinning scarves swat 40% of plain shots away (not while she lands, nor piercing shots)
           if(e.type==='dancer'&&e.scarf&&!b.pierce&&Math.random()<.4){ sparks(p,0xff3aa8,3,5); gone=true; break; }
           // Archon shield phase: your shots fly back at you

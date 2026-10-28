@@ -813,7 +813,7 @@ function hexModel(m,amt=.4){
   const tint=new THREE.Color(0x36e8d8); m.g.traverse(o=>{ if(o.isMesh&&o.material&&o.material.isMeshToonMaterial) o.material.color.lerp(tint,amt); });
   const host=m.torso||m.body||m.g, lens=new THREE.Mesh(new THREE.RingGeometry(.42,.55,6),addMat(0x36e8d8,.85)); lens.position.set(0,.2,.75); lens.rotation.z=Math.PI/6; lens.userData.nofit=1; host.add(lens);
   const ring=new THREE.Mesh(new THREE.RingGeometry(1,1.1,6),addMat(0x36e8d8,.6)); ring.rotation.x=-Math.PI/2; ring.rotation.z=Math.PI/6; ring.position.y=.05; ring.scale.setScalar(1.3); ring.userData.nofit=1; m.g.add(ring);
-  m.hex=true; return m;
+  m.hexed=true; return m;
 }
 // generalized bestiary buildCorrupted: any boss model + purple tint, crystal spikes and a void aura
 const buildCorrupted=kind=>corruptModel(BOSS_BUILD[kind](),.45);
