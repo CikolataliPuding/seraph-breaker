@@ -229,13 +229,13 @@ const NEWS=[
 /* arena curve (patch.md 39, balance.js arenaCurve): every number an arena needs comes from its index a, so a new arena needs no table row.
    The reference pilot of arena a has the tree ranks open at tier a+1 and Core level tier*a + tier/2 (the last tier full, the new one half
    bought). His dps and ehp set the enemy armor and damage; press keeps each arena a little harder than the last at that power
-   (difficulty ratio 1 + press × ln(1+a): skill grows fast first, then slower). bossT: the boss fight gets this much longer per arena.
+   (difficulty ratio 1 + press × ln(1+a): skill grows fast first, then slower; .5 from the campaign: .25 left Azure at 72 min, .8 pushed Crimson to 199). bossT: the boss fight gets this much longer per arena.
    tempo: enemy shot speed per arena, capped for readability. treeFull: the tier where today's tree is complete; a tree node's rank k
    opens at tier ceil(k × treeFull / max), the same gate as the Core (a save's ranks above it wait).
    hp0 / dmg0: the whole enemy curve's anchor. Arena 1 used to be tuned for a pilot who farmed it to Core ~12-15; the tier gate stops at 4
    there, so the anchor brings Arena 1 to that power (A1-only campaigns: .35-.45 clear it in 2-4 tries, ~20-40 min; .6 walls Azure).
    An ARENAS row or ECON table that lists its own value keeps it. */
-const CURVE={hp0:.85,dmg0:.4,tier:4,treeFull:3,press:.25,bossT:1.06,tempo:.04,tempoMax:1.25,runs:1.5};
+const CURVE={hp0:.85,dmg0:.4,tier:4,treeFull:3,press:.5,bossT:1.06,tempo:.04,tempoMax:1.25,runs:1.5};
 // pilot xp per level: base + per × level (about one level every 1-2 rooms)
 const XP_NEED={base:6,per:.35}, XP_BOSS=10;
 /* economy: target earnings for one full run of each arena without gold bonuses (first-clear diamonds come on top, once).
