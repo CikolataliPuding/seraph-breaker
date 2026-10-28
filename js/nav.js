@@ -1,4 +1,4 @@
-// Seraph Breaker · nav.js: Enemy navigation: the room nav grid, a flow field toward the target, the line-of-sight map, A* paths, angle slots and attack tokens.
+// Seraph Breaker · nav.js: Enemy navigation: the room nav grid, a flow field toward the target, the line-of-sight map, A* paths and angle slots (attack tokens removed, patch.md 40).
 /* ================= NAV GRID ================= */
 /* one nav cell is about 1 × 1 unit (half a room cell). blk: 1 = block (or its margin). trap: >0 while a trap tile is armed: you can walk on it,
    enemies route around it (knockback can still throw them in). dist: flow field, path length from each cell to the target. los: the cell sees the target.
@@ -103,15 +103,11 @@ function coverSpot(e,rad){ if(!NAV.ok) return null; const c0=navCell(e.pos.x,e.p
   for(let r=((c0/w)|0)-R;r<=((c0/w)|0)+R;r++) for(let c=c0%w-R;c<=c0%w+R;c++){ if(c<0||r<0||c>=w||r>=NAV.h) continue; const i=r*w+c; if(!navFree(i)||NAV.los[i]||!isFinite(NAV.dist[i])) continue;
     const s=Math.hypot(navX(i)-e.pos.x,navZ(i)-e.pos.z); if(s<rad&&s<bs){ bs=s; best=i; } }
   return best>=0?{x:navX(best),z:navZ(best)}:null; }
-/* attack tokens: only AI_LV[arena].tokens enemies may run an attack (wind-up to recovery) at the same time; the rest keep repositioning */
-// waiting enemies queue up in request order, so a free token goes to whoever asked first (not to whoever updates first)
+/* attack tokens are gone (patch.md 40 [karar]): every enemy attacks on its own rhythm and role (a sniper keeps firing, a charger goes the moment
+   it sees you, a tank pushes in) instead of waiting for a free slot. takeToken / dropToken stay as the hooks the attack cycle calls. */
 const AIR={tok:new Set(),q:[],pv:new V3(),still:0,ready:true};
 const AIL=()=>AI_LV[clamp(stage|0,0,AI_LV.length-1)];
-function takeToken(e){ if(e.tok) return true;
-  for(const x of AIR.tok) if(x.dead||!enemies.includes(x)){ AIR.tok.delete(x); x.tok=false; }
-  AIR.q=AIR.q.filter(x=>!x.dead&&x.tokReq>playTime-.3); if(!AIR.q.includes(e)) AIR.q.push(e); e.tokReq=playTime;
-  const free=AIL().tokens+(e.elite?1:0)-AIR.tok.size; if(free<=0||AIR.q.indexOf(e)>=free) return false;
-  AIR.q.splice(AIR.q.indexOf(e),1); AIR.tok.add(e); e.tok=true; return true; }
+function takeToken(e){ e.tok=true; return true; }
 function dropToken(e){ if(e.tok){ AIR.tok.delete(e); e.tok=false; } }
 function resetAI(){ AIR.tok.clear(); AIR.q.length=0; AIR.pv.set(0,0,0); AIR.still=0; NAV.t=0; }
 // the player's smoothed velocity (dashes left out) and how long they have been standing still: enemy aim leads with it, artillery punishes stillness

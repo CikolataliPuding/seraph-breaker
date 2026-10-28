@@ -411,14 +411,13 @@ const ENEMY={
   diver:{name:'Stage Diver',tag:'move',mass:1.3,role:'charger',leap:[1.4,2.2],hp:10,r:1.15,speed:4.8,sc:1.2,cost:2,xp:1.8,gold:12,score:240,build:()=>buildDiver(),init:e=>{ e.st='enter'; e.cd=rand(.6,1.2); }},
 };
 /* enemy AI by arena (index = arena). react: seconds an enemy must see you before it fires · lead: how much of your movement its aim and charges
-   predict (0 = where you are, 1 = perfect intercept; arena 1 barely leads) · aggr: how often flankers go for your back and tanks push in · tokens: enemies that may attack at once
-   (the rest reposition) · read: attacks come faster while your dash is recharging (arena 3+ read the player). */
+   predict (0 = where you are, 1 = perfect intercept; arena 1 barely leads) · aggr: how often flankers go for your back and tanks push in · read: attacks come faster while your dash is recharging (arena 3+ read the player). */
 const AI_LV=[
-  {react:.45,lead:.2,aggr:.4,tokens:3,read:0},
-  {react:.35,lead:.45,aggr:.6,tokens:4,read:0},
-  {react:.27,lead:.7,aggr:.8,tokens:4,read:.4},
-  {react:.2,lead:.9,aggr:1,tokens:5,read:.8},
-  {react:.2,lead:.9,aggr:1,tokens:6,read:.8},
+  {react:.45,lead:.2,aggr:.4,read:0},
+  {react:.35,lead:.45,aggr:.6,read:0},
+  {react:.27,lead:.7,aggr:.8,read:.4},
+  {react:.2,lead:.9,aggr:1,read:.8},
+  {react:.2,lead:.9,aggr:1,read:.8},
 ];
 /* enemy movement feel (enemy-ai.js steer): accel = how fast a mass-1 enemy reaches the velocity it wants (units/s²), brake = stopping is this much
    faster, turn = how fast a mass-1 walker turns its body before it walks (rad/s). Every enemy divides both by its ENEMY mass (heavy = slow, light = agile).
