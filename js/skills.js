@@ -2,8 +2,8 @@
 /* ================= RUN SKILLS / XP ================= */
 // tuned for 30-50 room runs: frequent level-ups early, without maxing everything by mid-run
 const xpNeed=()=>xpNeedAt(sortie.lv);
-// the run's level cap (Main Stage: STAGE.lvCap, 0 = none); at the cap xp is dropped, so no more level-ups or cards
-const lvCap=a=>ARENAS[a]&&ARENAS[a].stage?STAGE.lvCap:0, atCap=()=>{ const c=lvCap(sortie.a); return !!c&&sortie.lv>=c; };
+// the run's level cap (Main Stage: STAGE.lvCap, other arenas XP_NEED.cap of their rooms); at the cap xp is dropped, so no more level-ups or cards
+const lvCap=a=>!ARENAS[a]?0:ARENAS[a].stage?STAGE.lvCap:Math.round(ARENAS[a].rooms*XP_NEED.cap), atCap=()=>{ const c=lvCap(sortie.a); return !!c&&sortie.lv>=c; };
 function gainXp(v){ if(!sortie) return; if(atCap()){ sortie.xp=0; return; } sortie.xp+=v;
   while(sortie.xp>=xpNeed()){ sortie.xp-=xpNeed(); sortie.lv++; sortie.pendingLv++; if(atCap()){ sortie.xp=0; break; } } }
 // a skill is offered while it can rank up; projectile and orbit skills stop at the hard cap (evolutions are trimmed instead, see pshot/buildOrbit)
