@@ -14,7 +14,7 @@ const DICT_TR={
   'Weapons replace your frame\'s signature gun. Gadgets add moves of their own: equip two.':'Silahlar gövdenin kendi silahının yerine geçer. Aparatlar kendi hareketlerini ekler: iki tane tak.',
   'Gold buys looks only, never power. Paint, shot colors and arena themes are on the way.':'Altın sadece görünüş alır, asla güç almaz. Boya, atış renkleri ve arena temaları yolda.',
   'Upgrades':'Geliştirmeler', 'Core':'Çekirdek', 'Skill tree':'Yetenek ağacı',
-  'Permanent upgrades for every frame. Core levels cost gold and never cap out early; tree nodes cost diamonds and open one after another.':'Her gövde için kalıcı geliştirmeler. Çekirdek seviyeleri altınla alınır ve erken tavan yapmaz; ağaç düğümleri elmasla alınır ve sırayla açılır.',
+  'Permanent upgrades for every frame. Core levels cost gold; every arena you open lets them go 4 levels higher. Tree nodes cost diamonds, open one after another, and their higher ranks open with the arenas.':'Her gövde için kalıcı geliştirmeler. Çekirdek seviyeleri altınla alınır; açtığın her arena 4 seviye daha yükseltmene izin verir. Ağaç düğümleri elmasla alınır, sırayla açılır ve üst kademeleri arenalarla açılır.',
   'Frames':'Gövdeler', 'Pilot callsign':'Pilot çağrı adı', 'Enter callsign':'Çağrı adını yaz',
   'Frame · sets your special move · new frames cost diamonds':'Gövde · özel hareketini belirler · yeni gövdeler elmasla alınır',
   'Primary paint':'Ana boya', 'Accent paint':'Vurgu boyası', 'Loadout':'Teçhizat',
