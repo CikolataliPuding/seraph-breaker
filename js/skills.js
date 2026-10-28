@@ -17,13 +17,14 @@ const skillOk=(id,rs=player.rs)=>{ const s=RSK[id]; if((rs[id]||0)>=s.max||(s.re
 // Lucky Coin pushes every roll one tier up
 function rarityWeights(l=player.luck||0){ return l?{common:Math.max(20,60-15*l),rare:28+5*l,epic:10+6*l,legendary:2+4*l}:{common:60,rare:28,epic:10,legendary:2}; }
 /* weighted pick: rarity weights 60/28/10/2 are shared by the skills of that rarity that can still be offered;
-   skills you own get x1.3 and unlocked evolutions x2.5. No card is forced to be an upgrade any more (patch.md 34: a card you
-   own used to come back almost every level, so Vampiric Core or Attack Boost maxed in the first rooms) */
+   unlocked evolutions get x2.5. A card you own comes back as rarely as a rarer card (patch.md 40 [karar]): its 2nd rank weighs like an
+   epic, its 3rd like a legendary, so the run spreads over more cards instead of maxing a few. */
+const RANK_R=['common','rare','epic','legendary'], RANK_N={}; for(const id in RSK) RANK_N[RSK[id].rarity]=(RANK_N[RSK[id].rarity]||0)+1; // a rank weighs like one card of that rarity
 // ctx defaults to the live player; the debug simulation passes its own {rs,luck}; only: limit the pool to these ids
 function skillOptions(n,rarity,ctx=player,only){
   const prs=ctx.rs, rw=rarityWeights(ctx.luck||0), ids=Object.keys(RSK).filter(id=>skillOk(id,prs)&&(!rarity||RSK[id].rarity===rarity)&&(!only||only.includes(id)));
   const cnt={}; ids.forEach(id=>cnt[RSK[id].rarity]=(cnt[RSK[id].rarity]||0)+1);
-  const w=id=>{ const r=RSK[id].rarity; return rw[r]/cnt[r]*(RSK[id].evo?2.5:prs[id]?1.3:1); };
+  const w=id=>{ const k=prs[id]||0, r=k?RANK_R[Math.max(RANK_R.indexOf(RSK[id].rarity),k>1?3:2)]:RSK[id].rarity; return rw[r]/(k?RANK_N[r]:cnt[r])*(RSK[id].evo?2.5:1); };
   const pick=list=>{ let t=0; list.forEach(id=>t+=w(id)); let x=Math.random()*t; for(const id of list){ x-=w(id); if(x<=0) return id; } return list[list.length-1]; };
   const out=[], pool=ids.slice();
   while(out.length<n&&pool.length){ const id=pick(pool); out.push(id); pool.splice(pool.indexOf(id),1); }
