@@ -464,17 +464,17 @@ const BOSSES={
   colossus:{name:'Iron Colossus',cls:'Class · War machine · Siege frame',epi:'Built to level cities. It walks straight through gunfire and shakes the ground apart.',threat:3,warn:'HOSTILE WAR MACHINE INBOUND',hp:470,r:3.2,fly:0,barrier:false,minion:'drone',gold:220,gems:25,angel:false,
     pool:[['burst','missiles','slam'],['burst','missiles','slam','summon'],['missiles','slam','burst','summon','slam']]},
   prism:{name:'Prism Angel',cls:'Class · Angel · Crystalline lattice',epi:'A floating crystal that bends light into a beam able to cut a harbor in half.',threat:4,warn:'HIGH-ENERGY SIGNAL APPROACHING',hp:640,r:3.0,fly:5,barrier:true,minion:'mini',gold:380,gems:40,angel:true,
-    pool:[['beam','shards','ring'],['beam','sweep','shards','ring'],['sweep','beam','shards','ring','summon']]},
+    pool:[['beam','shards','ring','smite'],['beam','sweep','shards','ring','smite','pulse'],['sweep','beam','shards','ring','summon','smite','pulse']]},
   seraph:{name:'The Last Seraph',cls:'Class · Angel · Seraph',epi:'The source of every signal. Six wings, one core, and nothing left to lose.',threat:5,warn:'HIGH-ENERGY SIGNAL DESCENDING',hp:860,r:3.0,fly:4.2,barrier:true,minion:'mini',gold:600,gems:60,angel:true,
-    pool:[['ring','beam','spiral','aimed'],['ring','beam','spiral','summon','aimed','sweep'],['ring','sweep','spiral','summon','aimed','beam','shards']]},
+    pool:[['ring','beam','spiral','aimed','smite'],['ring','beam','spiral','summon','aimed','sweep','smite','pulse'],['ring','sweep','spiral','summon','aimed','beam','shards','smite','pulse']]},
   hive:{name:'Hive Carrier',cls:'Class · War machine · Rotor carrier',epi:'A flying hangar with four rotors. It seeds the room with drones and bombs it in straight lines.',threat:3,warn:'ROTOR NOISE OVERHEAD',hp:540,r:3.6,fly:.01,coreY:5,barrier:false,minion:'drone',gold:240,gems:28,angel:false,
     pool:[['drones','bombline','missiles'],['drones','bombline','missiles','bombline'],['sparks','bombline','drones','missiles','bombline']]},
   arachne:{name:'Siege Arachne',cls:'Class · War machine · Siege walker',epi:'A Crawler grown to the size of a building. Its head laser sweeps half the room; the space under its belly is the only blind spot.',threat:4,warn:'SEISMIC SIGNATURE CLOSING',hp:600,r:3.4,fly:0,coreY:3.2,barrier:false,minion:'crawler',gold:300,gems:34,angel:false,
     pool:[['sweep180','mines','burst2'],['sweep180','mines','stomp','burst2'],['sweep180','stomp','mines','burst2','stomp']]},
   throne:{name:'Ophanim Throne',cls:'Class · Angel · Throne',epi:'Three rings and twenty-four eyes. Every open eye is a gun; shoot them out.',threat:5,warn:'THE THRONE IS WATCHING',hp:880,r:3.4,fly:.01,coreY:3.5,barrier:false,minion:'mini',gold:560,gems:56,angel:true,
-    pool:[['walls','eyes'],['walls','eyes','walls2'],['walls2','eyes','roll','walls','roll']]},
+    pool:[['walls','eyes','smite'],['walls','eyes','walls2','smite','pulse'],['walls2','eyes','roll','walls','roll','smite','pulse']]},
   archon:{name:'Archon',cls:'Class · Angel · Judge',epi:'An armored knight with a sword of light. Stay out of the lunge, punish the recovery, and stop firing into the shield.',threat:5,warn:'JUDGEMENT DESCENDS',hp:820,r:2.6,fly:.01,coreY:4.6,barrier:false,minion:'seraph',gold:560,gems:56,angel:true,
-    pool:[['wave','lunge','aimed'],['wave','lunge','shieldup','wave'],['lunge','wave','shieldup','lunge','ring']]},
+    pool:[['wave','lunge','aimed'],['wave','lunge','shieldup','wave','smite'],['lunge','wave','shieldup','lunge','ring','smite','pulse']]},
   // High-Co (Main Stage headliner): three forms killed one after another, each with its own armor bar (bosses.js, highcoFormDown).
   // Form I the white frontman (parachute drop), form II the black-winged angel (descends in a light column), form III red-winged rage.
   // Only form III's death is the boss kill (score, rewards, room clear). b.phase is the form number, so pool[n-1] is form n's attack set.

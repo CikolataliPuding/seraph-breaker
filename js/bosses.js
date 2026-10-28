@@ -63,6 +63,10 @@ function bossStartAttack(b){
   if(a==='stomp'){ const T=tgt(), tx=clamp(T.x,-AX+4,AX-4), tz=clamp(T.z,-AZ+4,AZ-4); b.stomp={from:b.pos.clone(),to:new V3(tx,0,tz)}; queueBlast(tx,tz,{t:1.1,rad:4.2,dmg:0,hurtP:20,hurtE:false,color:0xff2236,size:1.2,boss:true}); slamTele(b.stomp.to,8,1.1,.75); }
   if(a==='bombline'){ const T=tgt(), hz=Math.random()<.5, len=hz?2*AX:2*AZ, n=Math.round(len/2.2); teleStrip(new V3(hz?-AX:T.x,0,hz?T.z:-AZ),hz?1:0,hz?0:1,len,2.6,0xff3a2a,1.1+n*.05);
     for(let i=0;i<n;i++){ const u=-len/2+(i+.5)*len/n; queueBlast(hz?u:T.x,hz?T.z:u,{t:1.1+i*.05,rad:1.5,dmg:0,hurtP:16,hurtE:false,color:0xff5a2a,size:.55,boss:true}); } }
+  // cover breakers for the angel bosses (patch.md 34: hiding behind a block beat them): smite drops gold circles on you,
+  // pulse sends a gold ring wave across the whole room that only a dash goes through
+  if(a==='smite'){ b.smite={n:0,k:b.phase===3?4:3}; b.subT=.15; }
+  if(a==='pulse'){ groundRing(b.pos,0xffd36a,6,.8); groundRing(b.pos,0xffd36a,3.5,.6); b.subT=.8; sfx('beam'); }
   if(a==='lunge'){ const d=toDir(b), len=Math.max(3,Math.min(15,lineLen(b.pos.x,b.pos.z,d.x,d.z,15,1))); b.lunge={dir:d,len,done:0,hit:false}; teleStrip(b.pos,d.x,d.z,len,2.8,0xff2236,.7); }
   if(a==='roll'){ const d=toDir(b), len=Math.max(4,lineLen(b.pos.x,b.pos.z,d.x,d.z,30,2)-1); b.rollC={dir:d,len,done:0,hit:false,dropT:0}; teleStrip(b.pos,d.x,d.z,len,6,0xffd36a,1); }
   if(b.form==='highco') highcoStartAttack(b,a);
@@ -79,6 +83,9 @@ function bossTick(b,dt,to){
   switch(b.atk){
     case 'ring':{ const n=ph===1?20:ph===2?26:32,rings=ph===3?2:1; for(let r=0;r<rings;r++) for(let i=0;i<n;i++){ const a=i/n*Math.PI*2+r*(Math.PI/n)+b.t; shoot('e',o,new V3(Math.sin(a),0,Math.cos(a)),(7+r*2.2)*sp,12,0xff3a5a,{life:4,r:.5,scale:1.15}); } crossBlast(o.clone().setY(0),0xff3048,.6); return true; }
     case 'spiral': if(b.subT<=0){ b.subT=ph===3?.06:.09; b.spinA+=.27; const arms=ph===1?3:4; for(let k=0;k<arms;k++){ const a=b.spinA+k*Math.PI*2/arms; shoot('e',o,new V3(Math.sin(a),0,Math.cos(a)),7.5*sp,10,0xff8a3a,{life:4,r:.45}); } } return b.atkT>2.6;
+    case 'smite': if(b.subT<=0&&b.smite.n<b.smite.k){ b.subT=.45; const T=tgt(), x=clamp(T.x+(b.smite.n?player.vel.x*.35:0),-AX+2,AX-2), z=clamp(T.z+(b.smite.n?player.vel.z*.35:0),-AZ+2,AZ-2); b.smite.n++;
+        slamTele(new V3(x,0,z),3.2,.9,.12,0xffd36a); queueBlast(x,z,{t:.9,rad:3.2,dmg:0,hurtP:18,hurtE:false,color:0xffd36a,size:1,boss:true}); sfx('click'); } return b.smite.n>=b.smite.k&&b.subT<=-.5;
+    case 'pulse': if(b.subT<=0&&b.waved<(ph===3?2:1)){ b.waved++; b.subT=.9; shockwave(new V3(b.pos.x,0,b.pos.z),9,Math.hypot(AX,AZ)*2.2,0xffd36a); sfx('boom'); } return b.waved>=(ph===3?2:1)&&b.subT<=-.4;
     case 'aimed': if(b.subT<=0){ b.subT=.4; const base=Math.atan2(to.x,to.z); for(let i=-1;i<=1;i++){ const a=base+i*.16; shoot('e',o,new V3(Math.sin(a),0,Math.cos(a)),12*sp,12,0xff5a2a,{life:3,r:.45}); } } return b.atkT>1.6;
     // Iron Colossus gun: 3 groups of 3 at speed 10 (phase 3: 4 groups, speed 12, shorter gaps)
     case 'burst':{ const mzF=()=>b.model.muzzle.getWorldPosition(new V3());
