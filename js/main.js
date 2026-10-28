@@ -25,7 +25,8 @@ function roomUpdate(dt,edt){
   updateEnemies(edt); updateEMines(edt,performance.now()/1000); updateEFields(edt,performance.now()/1000); updateHazards(dt); updateTraps(dt);
   if(room.type!=='boss'&&room.type!=='angel'&&!room.cleared&&!enemies.length&&!spawnQ.length&&!room.ambush&&!(room.timer&&room.kind==='survive')){
     roomCleared();
-    if(!room.hurt&&Math.random()<.35&&arenaRoomType(sortie.ri+2)==='combat') spawnNpc('devil',new V3(rand(-3,3),0,-2));
+    // the devil: at most one per 10-room block, after any cleared combat room, so a struggling pilot faces the choice too (patch.md 40)
+    const blk=Math.floor(sortie.ri/10); if(sortie.devilB!==blk&&Math.random()<.12&&arenaRoomType(sortie.ri+2)==='combat'){ sortie.devilB=blk; spawnNpc('devil',new V3(rand(-3,3),0,-2)); }
   }
   // after the clear: pickups fly in, then queued level-ups and item swaps open one after another, then the door opens
   if(room.doorPending){ room.clearT+=dt; if(room.clearT>.6&&(room.clearT>3||!pickups.some(q=>q.kind==='item'))&&!pumpChoices()){ room.doorPending=false; openDoor(); saveRun(sortie.ri+1); } if(state!=='fight') return; }

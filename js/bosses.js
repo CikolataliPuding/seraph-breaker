@@ -216,6 +216,8 @@ function bossDeath(){
 function startCine(){
   const kind=room.boss, def=BOSSES[kind];
   spawnBoss(kind);
+  // Pride (devil): elites from the arena's own pool stand at the boss's side
+  for(let i=0;i<(sortie.rule.bossGuard||0);i++){ const pool=ARENAS[sortie.a].mobs.filter(t=>ENEMY[t]&&ENEMY[t].elite!==false); if(pool.length) spawnEnemy(pickOne(pool),freeSpot(4),true); }
   $('cineImg').src=PORTRAIT[kind]||''; $('cineName').textContent=def.name; $('cineClass').textContent=def.cls; $('cineEpi').textContent=def.epi; $('cinePas').hidden=!def.passive; $('cinePas').textContent=def.passive||'';
   $('cineThreat').textContent=t('THREAT')+' '+'■'.repeat(def.threat)+'□'.repeat(5-def.threat)+' · '+t('ROOM {0}/{1}',sortie.ri+1,sortie.N);
   const c=$('cine'); c.hidden=false; requestAnimationFrame(()=>c.classList.add('on'));

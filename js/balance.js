@@ -35,7 +35,7 @@ function recalcStats(){
   const p=player; if(!p) return;
   const items=sortie?sortie.items:[], curses=sortie?sortie.curses:[];
   const b=sumBonus(p.rs,items,curses,p.extra), st=deriveStats(metaStats(P,P.unit),b);
-  st.noHex=curses.some(c=>CURSES[c]&&CURSES[c].noHex);
+  st.noHex=curses.some(c=>CURSES[c]&&CURSES[c].noHex); st.noHeal=curses.some(c=>CURSES[c]&&CURSES[c].noHeal);
   const oldMax=p.maxHp; p.bonus=b; p.st=st; p.maxHp=st.maxHp; p.enMax=st.enMax;
   if(oldMax){ if(p.maxHp>oldMax) p.hp+=p.maxHp-oldMax; p.hp=Math.min(p.hp,p.maxHp); } else p.hp=p.maxHp;
   p.en=Math.min(p.en,p.enMax);

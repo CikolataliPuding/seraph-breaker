@@ -160,7 +160,7 @@ const RSK={
   trail:{name:'Dash Trail',d:'Dashing leaves a trail of fire.',rarity:'rare',max:2,icon:'trail'},
   dreset:{name:'Dash Reset',d:'Kills can reset your dash (phone: refill a charge).',rarity:'rare',max:2,icon:'dreset'},
   overload:{name:'Overload Special',d:'Your special hits 30% harder and lasts longer.',rarity:'rare',max:2,icon:'overload',bonus:{spPow:.3}},
-  grace:{name:"Angel's Grace",d:'Angels fully repair you and offer one more skill.',rarity:'rare',max:1,icon:'grace'},
+  grace:{name:"Angel's Grace",d:'Angels repair 15% more and offer one more skill.',rarity:'rare',max:1,icon:'grace'},
   // epic: elemental orbits and mechanic-specific
   orbit:{name:'Orbit Blades',d:'Two blades circle you and cut enemies.',rarity:'epic',max:3,icon:'orbit',orb:2,apply:()=>buildOrbit()},
   forb:{name:'Fire Orbit',d:'A fire orb circles you and burns what it touches.',rarity:'epic',max:2,icon:'forb',orb:1,apply:()=>buildOrbit()},
@@ -288,10 +288,12 @@ RARITY.common.drop=55; RARITY.rare.drop=32; RARITY.epic.drop=13;
 /* devil curses: power now, a lasting cost for the rest of the run. bonus:{} uses the same buckets as skills (so Glass Cannon obeys the damage
    soft cap), rule:{} merges into the arena rule, cost is the price shown in the build panel. */
 const CURSES={
-  glass:{name:'Glass Cannon',d:'+40% damage, -25% max armor.',cost:'-25% max armor',icon:'glass',bonus:{dmg:.4,hp:-.25}},
-  berserk:{name:'Berserk',d:'+30% fire rate. Your hex shield and barrier are gone.',cost:'No hex shield or barrier',icon:'berserk',bonus:{rate:.3},noHex:true},
-  greed:{name:'Greed',d:'+50% gold. Enemies get +15% armor.',cost:'Enemies +15% armor',icon:'greed',bonus:{gold:.5},rule:{hpMul:1.15}},
-  brittle:{name:'Brittle',d:'Take +20% damage. Gain a random epic skill.',cost:'+20% damage taken',icon:'brittle',bonus:{taken:.2},apply:(p,silent)=>{ if(!silent){ const o=skillOptions(1,'epic'); if(o[0]) applySkill(o[0]); } }},
+  // patch.md 40 [karar]: the price hits what you lean on and healing cannot undo it (the old ones cost what a strong pilot never misses)
+  crowd:{name:'The Crowd',d:'Enemies come in twice the numbers. Kills give double XP and gold.',cost:'Twice the enemies',icon:'greed',bonus:{gold:1},rule:{crowd:2,xpMul:2}},
+  dry:{name:'Dry Vein',d:'+50% damage. No repair of any kind for the rest of the run: no lifesteal, no angel, no pickups.',cost:'No repair at all',icon:'glass',bonus:{dmg:.5},noHeal:true},
+  pride:{name:'Pride',d:'+60% damage to bosses. Every boss comes with two elites at its side.',cost:'Two elites with every boss',icon:'berserk',rule:{bossBane:1.6,bossGuard:2}},
+  glass:{name:'Glass Heart',d:'Two skill picks right now. Your max armor is halved for good.',cost:'Max armor halved',icon:'brittle',bonus:{hp:-.5},apply:(p,silent)=>{ if(!silent) sortie.pendingLv+=2; }},
+  hunter:{name:"Hunter's Mark",d:'Elites pay double and drop items twice as often. An elite joins every room.',cost:'An elite in every room',icon:'rear',rule:{eliteEvery:1,eliteReward:2}},
 };
 
 /* arenas: one run each, a flat sequence of short rooms. The arena curve (CURVE, arenaCurve) multiplies the room curve (SCALE below); a row that lists hpMul / dmgMul / bossMul / tempo keeps its own (the Main Stage). The room schedule follows PACING

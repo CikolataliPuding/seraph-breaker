@@ -126,7 +126,8 @@ function rollTier(a,ri,t){ const mx=TIER.max[t]||1, f=TIER.from[a], L=TIER.late[
 function composeRoom(spec,a=sortie.a,ri=sortie.ri,rule=sortie.rule,cap=mobileMode?9:11){
   if(typeof spec!=='object') spec={type:spec?'elite':'combat',kind:'normal',k:1};
   const pool=arenaPool(a,ri), K=ROOM_KINDS[spec.kind]||ROOM_KINDS.normal, elite=spec.type==='elite', byTag=g=>pool.filter(t=>ENEMY[t].tag===g);
-  let budget=roomBudget(a,ri,elite||spec.kind==='hunt')*(spec.k||1)*(K.k||1), core;
+  if(rule.crowd) cap*=rule.crowd; // The Crowd (devil)
+  let budget=roomBudget(a,ri,elite||spec.kind==='hunt')*(spec.k||1)*(K.k||1)*(rule.crowd||1), core;
   // a boss's teaching room uses the teaching core's mobs that live in this arena (no other arena's mobs, patch.md 40)
   const tc=spec.teach&&(BOSS_TEACH[BOSSES[spec.teach].form||spec.teach]||[]).filter(t=>ARENAS[a].mobs.includes(t));
   if(tc&&tc.length) core=tc;
@@ -139,7 +140,7 @@ function composeRoom(spec,a=sortie.a,ri=sortie.ri,rule=sortie.rule,cap=mobileMod
   let guard=0; while(budget>.6&&list.length<cap&&guard++<60){ const t=pickOne(pool); if(ENEMY[t].cost<=budget+.4) add(t); }
   // the guarantee: one enemy that makes you move, one that demands attention
   for(const g of ['move','focus']) if(!list.some(t=>ENEMY[waveType(t).k].tag===g)&&byTag(g).length) list.push(pickOne(byTag(g)));
-  if(elite){ const ep=pool.filter(t=>ENEMY[t].elite!==false); const n=rule.elitePairs?2:1; for(let i=0;i<n;i++) list.unshift(pickOne(ep.length?ep:pool)+'*'); }
+  if(elite||rule.eliteEvery){ const ep=pool.filter(t=>ENEMY[t].elite!==false); const n=elite&&rule.elitePairs?2:1; for(let i=0;i<n;i++) list.unshift(pickOne(ep.length?ep:pool)+'*'); } // Hunter's Mark: an elite in every room
   if(spec.kind==='hunt'){ const hp=pool.filter(t=>HUNT_TYPES.includes(t)), mv=pool.filter(t=>ENEMY[t].speed>0); list.unshift(pickOne(hp.length?hp:mv.length?mv:pool)+'!'); }
   if(spec.kind==='reinforce'){ const w=[], n=K.waves||3, per=Math.ceil(list.length/n); for(let i=0;i<n;i++) w.push(list.slice(i*per,(i+1)*per)); return w.filter(x=>x.length); }
   const big=list.length>6&&!elite&&spec.kind!=='survive'&&spec.kind!=='ambush';
