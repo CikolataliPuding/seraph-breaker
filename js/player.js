@@ -187,7 +187,7 @@ function updatePlayer(dt,canAct){
     const mv=(canAct||state==='trans')&&!(p.stunT>0)?moveVec():_tmp2.set(0,0,0);
     // Bass Brute rings: 35% slower while you stand in them
     if(p.slowT>0){ p.slowT-=dt; if(Math.random()<dt*6) sparks(p.pos.clone().setY(.4),0x6ad8ff,1,2); }
-    const sp=unit.speed*p.st.spd*(p.shield?.45:1)*(p.od>0?1.2:1)*(p.lance>0?0:1)*(p.slowT>0?.65:1)*(fireIn&&!mobileMode?1-BAL.fireSlow:1);
+    const sp=unit.speed*(fireIn&&!mobileMode?Math.min(1,p.st.spd):p.st.spd)*(p.shield?.45:1)*(p.od>0?1.2:1)*(p.lance>0?0:1)*(p.slowT>0?.65:1)*(fireIn&&!mobileMode?1-BAL.fireSlow:1); // firing: speed cards do not count, the 35% slow always bites (patch.md 40)
     if(p.dashT>0){ p.dashT-=dt; p.vel.copy(p.dashDir).multiplyScalar(30);
       if(p.rs.trail){ p.trailT=(p.trailT||0)-dt; if(p.trailT<=0){ p.trailT=.04; dropTrail(p.pos); } }
       if(Math.random()<.6){ const ghost=new THREE.Mesh(box(.9,2.6,.6),addMat(unit.shot,.35)); ghost.position.copy(p.pos).setY(1.6); addFx(ghost,.25,(f,dt,k)=>{ghost.material.opacity=k*.35;}); } }
@@ -276,7 +276,9 @@ function weaponUpdate(dt,fireIn){
   const fired=(kick,size=1)=>{ p.jz.rec.v+=kick; muzzleFlash(mz,col,size); };
   if(wp!=='rail') chargeOrb.visible=false;
   switch(wp){
-    case 'azure': if(fireIn&&p.fireCd<=0){ p.fireCd=Math.max(0,p.fireCd+.1*rateM); const a=base+rand(-.025,.025); pshot(mz,new V3(Math.sin(a),0,Math.cos(a)),36,1*dmg,col,{life:.9,pierce:p.od>0}); sparks(mz,col,1,3); fired(1.6,.7); sfx('shot'); } break;
+    case 'azure': { const H=BAL.azHeat; if(p.gunLock>0){ p.gunLock-=dt; if(p.gunLock<=0) p.heat=0; break; } if(!fireIn||p.od>0) p.heat=Math.max(0,(p.heat||0)-H.cool*dt);
+      if(p.heat>.7&&Math.random()<dt*12) sparks(mz,0x9a9aa8,1,2); // smoke: the rifle is running hot
+      if(fireIn&&p.fireCd<=0){ if(p.od<=0){ p.heat=(p.heat||0)+H.shot; if(p.heat>=1){ p.gunLock=H.lock; popText(t('OVERHEAT')); sfx('hurt'); break; } } p.fireCd=Math.max(0,p.fireCd+.1*rateM); const a=base+rand(-.025,.025); pshot(mz,new V3(Math.sin(a),0,Math.cos(a)),36,1*dmg,col,{life:.9,pierce:p.od>0}); sparks(mz,col,1,3); fired(1.6,.7); sfx('shot'); } } break;
     case 'crimson': if(fireIn&&p.fireCd<=0){ p.fireCd=Math.max(0,p.fireCd+.6*rateM); for(let i=-2;i<=2;i++){ const mid=i===0; const a=base+i*.1+rand(-.025,.025); shoot('p',mz,new V3(Math.sin(a),0,Math.cos(a)),rand(28,33),1.05*dmg,col,{geo:G.pel,life:.3,pierce:mid&&p.rs.pierce>0,bounce:mid?(p.rs.ricochet||0):0,wall:mid?(p.rs.wall||0):0}); }
       // Pierce / Ricochet / Wall Bounce ride the centre pellet only; Twin and Storm add a straight slug (Diagonal, Side, Rear fan out from it)
       if(p.rs.twin||p.rs.storm) pshot(mz,dir,30,1.6*dmg,col,{geo:G.pel,life:.3}); shake=Math.max(shake,.08); fired(5,1.4); sfx('heavy'); } break;

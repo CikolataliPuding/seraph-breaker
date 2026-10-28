@@ -198,6 +198,9 @@ const BAL={
   // desktop: moving while the trigger is held costs this share of move speed (patch.md 34: holding fire and walking was free).
   // The phone already stops firing while you move.
   fireSlow:.35,
+  // Azure's rifle heats up (patch.md 40): each shot adds shot, heat drops cool per second when you let go, at 1 the gun locks for lock seconds.
+  // Base fire rate overheats in ~3 s of holding; fire-rate cards heat it faster. Overdrive (its special) never overheats.
+  azHeat:{shot:1/30,cool:.45,lock:1.5},
   thornCap:.3,
   // Twin Shot: damage of each parallel shot by rank (1 / 1.5 / 1.8 total), so multishot does not multiply everything else
   twin:[1,.75,.6],
