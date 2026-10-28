@@ -4,6 +4,7 @@ let state='menu',paused=false,player=null,unit=null,boss=null,sortie=null,room=n
 const enemies=[],bullets=[],fx=[],pickups=[],shocks=[],mines=[],holes=[];
 let decoy=null,buddy=null,wingman=null,chrono=0,npc=null,obstacles=[],door=null,stage=0;
 const blasts=[],trails=[],emines=[],hazards=[],efields=[]; // efields: Coil's live ground fields (enemy-ai.js)
+let aiSrc=null; // the enemy whose AI is running: its ENEMY dmgK scales the shots, blasts and touches it makes (patch.md 29)
 let stateT=0,spawnQ=[],score=0,kills=0,playTime=0,shake=0,toastT=0,choiceBack='fight';
 /* every state change goes through setState. Player death wins: once 'dying' or 'result' is set, only the result screen (from 'dying'),
    the menu or a new run (newRun=true: launchArena, debug jumps) can follow. Returns false when the change is refused. */

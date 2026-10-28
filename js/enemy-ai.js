@@ -14,7 +14,7 @@ function lobShell(from,to,dur,color,onLand,marker){ const g=new THREE.Group(), m
     if(k<=.02&&!done){ done=true; sh.visible=false; if(mk) mk.visible=false; onLand&&onLand(); } }); }
 // contact damage, with Thorn Plating paying it back
 // Thorn Plating hits back 3x, at most 30% of the rammer's max armor (patch.md 34: a diving Herald died on its first touch)
-function contactHurt(e,d){ const before=player.hp; hurt(d); if(player.thorn&&player.hp<before&&!e.dead) hitEnemy(e,Math.min(d*3*player.st.dmg,e.maxHp*BAL.thornCap),e.pos.clone().setY(2),false,true); }
+function contactHurt(e,d){ d*=e.def.dmgK||1; const before=player.hp; hurt(d); if(player.thorn&&player.hp<before&&!e.dead) hitEnemy(e,Math.min(d*3*player.st.dmg,e.maxHp*BAL.thornCap),e.pos.clone().setY(2),false,true); }
 // Spark explosion: hurts you only when it detonates on its own; it always hurts other enemies (chain reactions are queued and capped)
 function sparkBoom(e){ if(e.boomed) return; e.boomed=true;
   if(e.tier>1) for(let i=0;i<4;i++){ const a=Math.PI/4+i*Math.PI/2; shoot('e',e.pos.clone().setY(.8),new V3(Math.sin(a),0,Math.cos(a)),6*eSpd(),6,0xff5a2a,{life:1.2,r:.4}); } // T2+: 4 diagonal shards
@@ -678,7 +678,7 @@ function updateEnemies(dt){
     sense(e,dt); e.pathT-=dt;
     if(e.wake>0){ e.wake-=dt; e.vel.multiplyScalar(.8); }
     else if(e.stun>0){ if(!e.stunned){ e.stunned=true; interrupt(e); } e.stun-=dt; e.vel.multiplyScalar(e.frozen>0?0:.85); if(e.frozen>0){ e.frozen-=dt; if(e.frozen<=0) unflash(e); } if(Math.random()<dt*6) sparks(e.pos.clone().setY(2.6),0x5fe0ff,1,2); }
-    else { e.stunned=false; if(e.affix) affixTick(e,dt); if(e.hunt) huntAI(e,dt,to,d,pd,m); else if(AI[e.type]){ AI[e.type](e,dt,to,d,pd,m); if(e.dead) continue; } }
+    else { e.stunned=false; if(e.affix) affixTick(e,dt); if(e.hunt) huntAI(e,dt,to,d,pd,m); else if(AI[e.type]){ aiSrc=e; AI[e.type](e,dt,to,d,pd,m); aiSrc=null; if(e.dead) continue; } }
     if(ANIM[e.type]) ANIM[e.type](e,dt,m);
     if(e.stumps&&Math.random()<dt*2.5*e.stumps.length){ pickOne(e.stumps).getWorldPosition(_tmp2); sparks(_tmp2.clone(),0xffc070,1,3); }
     if(e.shieldT>0){ e.shieldT-=dt; if(!e.shM){ e.shM=new THREE.Mesh(new THREE.TorusGeometry(e.r*.9,.06,6,28),basic(0xffd36a,true,.8)); e.shM.rotation.x=Math.PI/2; e.shM.position.y=1.4; e.shM.userData.nofit=1; m.g.add(e.shM); } e.shM.visible=true; e.shM.rotation.z+=dt*3; } else if(e.shM) e.shM.visible=false;

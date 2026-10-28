@@ -294,7 +294,8 @@ const MODS={
    role (enemy-ai.js): kiter (holds band [near,far] with line of sight) · sniper (long lanes) · tank (pushes in to hold, slams or fans) ·
    charger (predicts you and locks a telegraphed charge) · flanker (commits to an orbit, goes for your side and back, hides between bursts) ·
    artillery (lobbed shots, punishes standing still) · denial (area fire) · support (stays behind the others) · rusher (Spark: fuse when close).
-   tag: 'move' = forces you to move (chargers, artillery, area denial, slams), 'focus' = demands attention (sniper, support). See COMPS. */
+   tag: 'move' = forces you to move (chargers, artillery, area denial, slams), 'focus' = demands attention (sniper, support). See COMPS.
+   dmgK: damage multiplier for everything the mob does (shots, blasts queued by its AI, touches), set from the standing-bot measure. */
 const ENEMY={
   drone:{name:'Drone',mass:.9,role:'kiter',band:[6,10.5],hp:5,r:1.15,speed:3.4,sc:.8,cost:1,xp:1,gold:6,score:100,build:()=>buildDrone(),elite:false},
   seraph:{name:'Seraph',tag:'move',mass:.7,role:'charger',band:[5,8],hp:7,r:1.45,speed:5,sc:1,fly:true,angel:true,cost:1.3,xp:1.3,gold:8,score:150,build:()=>buildSeraph(1)},
