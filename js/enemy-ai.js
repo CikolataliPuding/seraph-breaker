@@ -421,7 +421,7 @@ function affixTick(e,dt){
   if(e.blinkT!=null&&e.ph==='pos'){ if(!e.blinkTo){ e.blinkT-=dt; if(e.blinkT<=0){ const s=planSpot(e,6,11,{want:rand(-Math.PI,Math.PI),noLos:true}); e.blinkTo={x:s.x,z:s.z,t:.55}; groundRing(new V3(s.x,0,s.z),0xb070ff,1.8,.55); sfx('zap'); } }
     else { e.blinkTo.t-=dt; e.model.g.visible=Math.floor(e.t*24)%2===0; if(e.blinkTo.t<=0){ sparks(e.pos.clone().setY(1.5),0xb070ff,8,5); e.pos.set(e.blinkTo.x,0,e.blinkTo.z); e.vel.set(0,0,0); e.goal=null; e.path=null; e.blinkTo=null; e.blinkT=rand(3.5,5); e.model.g.visible=true; sparks(e.pos.clone().setY(1.5),0xb070ff,8,5); } } }
   if(e.sumT!=null){ e.sumT-=dt; if(e.sumT<=0){ e.sumT=rand(7,9); let n=0; for(const o of enemies) if(o.summoner===e&&!o.dead) n++;
-    for(let i=0;i<2&&n<4;i++,n++){ const a=rand(0,Math.PI*2), c=spawnEnemy(e.angel?'mini':ARENAS[stage].stage?'mosher':'spark',new V3(clamp(e.pos.x+Math.cos(a)*2,-AX+1.5,AX-1.5),0,clamp(e.pos.z+Math.sin(a)*2,-AZ+1.5,AZ-1.5)),false,{minion:true}); if(c) c.summoner=e; }
+    for(let i=0;i<2&&n<4;i++,n++){ const a=rand(0,Math.PI*2), c=spawnEnemy(ARENAS[stage].minion||(e.angel?'mini':ARENAS[stage].stage?'mosher':'spark'),new V3(clamp(e.pos.x+Math.cos(a)*2,-AX+1.5,AX-1.5),0,clamp(e.pos.z+Math.sin(a)*2,-AZ+1.5,AZ-1.5)),false,{minion:true}); if(c) c.summoner=e; }
     groundRing(e.pos,0xb070ff,3,.5); } }
   if(e.esh){ if(e.esh.hp<=0){ e.esh.cd-=dt; if(e.esh.cd<=0){ e.esh.hp=e.esh.max; e.esh.m.visible=true; groundRing(e.pos,0x5fe0ff,2.2,.4); } } else e.esh.m.scale.setScalar(Math.max(1,e.esh.m.scale.x-dt*.8)); }
 }

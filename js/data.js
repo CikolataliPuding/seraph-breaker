@@ -298,25 +298,28 @@ const CURSES={
    soft = rooms the first unlock waits on top; blockTypes = only that many unlocked types are active in each 10-room block, a window that moves on; pin = types always in it once unlocked); bosses are drawn from the pool, never twice in a row, and planned ahead so the rooms before a boss can
    teach it (firstBoss: the first block's boss). The arenas follow the story (patch.md 31): the pilot first fights what is far from his own form
    (angels invade the Low City), and his own kind, the machines, in Fallen Sky (with one corrupted angel boss, x_archon: patch.md 31). phase =
-   the story beat shown beside the name. */
+   the story beat shown beside the name.
+   Every mob and boss belongs to one arena (patch.md 40 [karar]): angels first (A1-A3), the machines, his own kind, last and hardest (A4),
+   the anomalies in Hex Breach. Until the owner's own bosses are built, corrupted variants (x_) fill the angel arenas' third slot. minion: the
+   arena's own summon for its bosses (bosses.js 'summon'), so a boss never calls in another arena's mob. */
 const ARENAS=[
-  {name:'The Low City', phase:'Siege', rooms:30, mobs:['shardling','warden','censer','seraph','ophan','herald','cherub','beacon'], soft:1, bosses:['prism','seraph','throne'], firstBoss:'throne', rule:{}, trap:'saw', ruleTxt:'Training ground: no special rule',
+  {name:'The Low City', phase:'Siege', rooms:30, mobs:['seraph','shardling','herald','cherub'], soft:1, bosses:['throne','prism'], firstBoss:'throne', rule:{}, trap:'saw', ruleTxt:'Training ground: no special rule',
    theme:{bg:0x1d1424,hemiS:0xffd6b8,hemiG:0x2a1d3a,ground:0x5a4c64,city:0xffffff,edge:0xff6a1a,rim:0xff7a40,win:0xffc47a,floor:0xa898b0,wall:0x3a3346,block:0x5e5468,water:0xff7a2a},
    colorCss:'#ff6a1a'},
-  {name:'Night Harbor', phase:'Undertow', rooms:40, mobs:['seraph','shardling','warden','drone','ram','lancer','hopper','coil','sentry','bulwark','borer','mender'], bosses:['prism','arachne','hive'], rule:{shotSpd:1.15,hazards:.35}, trap:'spike', ruleTxt:'Enemy shots fly 15% faster',
+  {name:'Night Harbor', phase:'Undertow', rooms:40, mobs:['warden','censer','ophan','aureole'], bosses:['seraph','x_prism','x_archon'], rule:{shotSpd:1.15,hazards:.35}, trap:'spike', ruleTxt:'Enemy shots fly 15% faster',
    theme:{bg:0x0b1726,hemiS:0xb8d4ff,hemiG:0x10203a,ground:0x3e5470,city:0x9ab4e0,edge:0x3ad0ff,rim:0x3a8aff,win:0x9ae4ff,floor:0x86a2c4,wall:0x22344a,block:0x2f5f9a,water:0x1a74e0},
    colorCss:'#3ad0ff'},
-  {name:"Heaven's Gate", phase:'Ascent', rooms:50, mobs:['seraph','cherub','warden','beacon','aureole','censer','dominion','emissary','ophan','cantor','herald'], bosses:['seraph','throne','archon'], rule:{elitePairs:true,hazards:.4}, trap:'pillar', ruleTxt:'Elites come in pairs',
+  {name:"Heaven's Gate", phase:'Ascent', rooms:50, mobs:['beacon','dominion','emissary','cantor'], bosses:['archon','x_throne','x_seraph'], rule:{elitePairs:true,hazards:.4}, trap:'pillar', ruleTxt:'Elites come in pairs',
    theme:{bg:0x2b1a26,hemiS:0xfff0d0,hemiG:0x3a2638,ground:0x7a6670,city:0xe2c8d8,edge:0xffd36a,rim:0xffb060,win:0xfff0b0,floor:0xd8c6cc,wall:0x8a7480,block:0xf0e8f2,water:0xffd36a},
    colorCss:'#ffd36a'},
-  {name:'Fallen Sky', phase:'Hubris', rooms:50, mixed:true, mobs:['drone','lancer','warden','spark','ram','censer','crawler','hopper','heavy','coil','cherub','sentry','howitzer','borer','bulwark','mender'], blockTypes:10, pin:['warden','censer','cherub'], bosses:['colossus','hive','arachne','x_archon'], rule:{hazards:.45,corruptElites:true}, trap:'mix', ruleTxt:'Both factions, corrupted elites, 2 random modifiers',
+  {name:'Fallen Sky', phase:'Hubris', rooms:50, mixed:true, mobs:['drone','spark','crawler','lancer','ram','coil','mender'], bosses:['colossus','hive','arachne'], rule:{hazards:.45,corruptElites:true}, trap:'mix', ruleTxt:'Both factions, corrupted elites, 2 random modifiers',
    theme:{bg:0x170e22,hemiS:0xe0c8ff,hemiG:0x22123a,ground:0x4a3a64,city:0xb8a0e0,edge:0xb070ff,rim:0xff4ad0,win:0xd8a0ff,floor:0x9a8ab8,wall:0x2e2244,block:0x5a3a8a,water:0xb070ff},
    colorCss:'#b070ff'},
   /* Hex Breach (patch.md 36, the owner's docs/hex-breach.html): the gap that opens when Hexarch's seal cracks; neither angel nor machine.
      Every earlier mob may come hex-mutated (rule.hexMut: 20%, elites always): teal tint, hex lenses, +15% armor (enemies.js hexMutate).
      The anomaly units, the shifting grid rule and Hexarch (the last room) come in later PRs; until then the corrupted bosses hold the pool.
      No hpMul / dmgMul: the arena curve (CURVE) sets its numbers, the first arena that needs no table row. */
-  {name:'Hex Breach', phase:'Breach', rooms:50, mixed:true, mobs:['hexdrone','cellmite','drone','seraph','warden','lancer','shardling','ram','censer','crawler','herald','coil','heavy','beacon','hopper','dominion','sentry','hexbulwark','emissary','howitzer'], blockTypes:10, pin:['warden','censer','beacon'], bosses:['x_colossus','x_archon','x_arachne'], rule:{hazards:.5,hexMut:.2}, trap:'mix', ruleTxt:'Hex breach: any enemy may come hex-mutated, elites always do',
+  {name:'Hex Breach', phase:'Breach', rooms:50, mixed:true, mobs:['cellmite','hexdrone','hexbulwark','cellbrute'], minion:'cellmite', bosses:['x_colossus','x_hive','x_arachne'], rule:{hazards:.5,hexMut:.2}, trap:'mix', ruleTxt:'Hex breach: the grid itself fights you',
    theme:{bg:0x120a22,hemiS:0xbff6ff,hemiG:0x1c1036,ground:0x3a2c5a,city:0x7ae8e0,edge:0x36e8d8,rim:0xb070ff,win:0x9ff4ee,floor:0x8a7ab0,wall:0x261c40,block:0x4a3a7a,water:0x36e8d8},
    colorCss:'#36e8d8'},
   /* Main Stage (High-Co's festival): unlocked by Hex Breach's first clear (it was Arena 4's), one notch above it. 15 wave rooms (STAGE) and High-Co after room 15
@@ -423,17 +426,20 @@ const MOVE={accel:30,brake:1.6,turn:10,fly:{f:6.5,z:.5}};
    that demands attention (tag 'focus': sniper, support). A template is its core: enemy types, or 'move' / 'focus' for any unlocked one of that tag.
    The room budget then fills up from the unlocked arena pool. Templates whose core is not unlocked yet are skipped. */
 const COMPS=[
-  [{name:'Splinter',core:['shardling','shardling','move']},{name:'Rings',core:['warden','shardling','focus']},{name:'Censure',core:['censer','warden','shardling']},
-   {name:'Strafe run',core:['seraph','seraph','shardling']},{name:'Wheel',core:['ophan','shardling','focus']},{name:'Flank',core:['herald','herald','focus']},{name:'Watch',core:['beacon','shardling','move']},{name:'Skirmish',core:['move','focus','shardling']}],
-  [{name:'Strafe run',core:['seraph','seraph','lancer']},{name:'Shield wall',core:['bulwark','lancer','drone']},{name:'Rings',core:['warden','lancer','drone']},
-   {name:'Splinter',core:['shardling','seraph','focus']},{name:'Halo',core:['warden','seraph','shardling']},{name:'Breach',core:['ram','drone','focus']},{name:'Grid',core:['coil','seraph','lancer']},{name:'Crossfire',core:['sentry','drone','focus']},{name:'Tunnels',core:['borer','seraph','lancer']},{name:'Skirmish',core:['move','focus','drone']}],
-  [{name:'Choir',core:['cherub','seraph','seraph']},{name:'Censure',core:['censer','cherub','warden']},{name:'Wheel',core:['ophan','cherub','seraph']},
-   {name:'Bastion',core:['dominion','cherub','warden']},{name:'Gaze',core:['beacon','warden','herald']},{name:'Hymn',core:['cantor','seraph','warden']},{name:'Halo throw',core:['aureole','ophan','focus']},{name:'Envoy',core:['emissary','beacon','cherub']},{name:'Skirmish',core:['move','focus','seraph']}],
-  [{name:'Lanes',core:['lancer','crawler','drone']},{name:'Medics',core:['cherub','heavy','spark','spark']},{name:'Siege line',core:['howitzer','bulwark','lancer']},
-   {name:'Hunters',core:['crawler','crawler','warden','censer']},{name:'Judgement',core:['warden','lancer','heavy']},{name:'Breach',core:['ram','crawler','lancer']},{name:'Grid',core:['coil','drone','lancer']},{name:'Field repair',core:['mender','heavy','drone','drone']},{name:'Turret line',core:['sentry','howitzer','crawler']},{name:'Dig',core:['borer','hopper','lancer']},{name:'Skirmish',core:['move','focus','move']}],
-  // Hex Breach: mixed squads from both factions; the hex mutation (rule.hexMut) does the rest
-  [{name:'Hive',core:['cellmite','cellmite','cellmite','hexdrone']},{name:'Breach',core:['ram','hexdrone','focus']},{name:'Lattice',core:['warden','coil','lancer']},{name:'Choir',core:['seraph','herald','beacon']},
-   {name:'Wall',core:['hexbulwark','sentry','move']},{name:'Siege',core:['howitzer','heavy','drone']},{name:'Swarm',core:['shardling','crawler','hopper']},{name:'Court',core:['dominion','emissary','focus']}],
+  // A1 · the Low City (angels, teaching)
+  [{name:'Strafe run',core:['seraph','seraph','shardling']},{name:'Splinter',core:['shardling','shardling','move']},{name:'Flank',core:['herald','herald','focus']},
+   {name:'Medics',core:['cherub','seraph','herald']},{name:'Wing',core:['seraph','herald','shardling']}],
+  // A2 · Night Harbor (angels)
+  [{name:'Rings',core:['warden','censer','move']},{name:'Wheel',core:['ophan','ophan','warden']},{name:'Halo',core:['aureole','aureole','censer']},
+   {name:'Censure',core:['censer','censer','ophan']},{name:'Choir',core:['warden','aureole','ophan']}],
+  // A3 · Heaven's Gate (angels, advanced)
+  [{name:'Watch',core:['beacon','beacon','dominion']},{name:'Court',core:['dominion','emissary','focus']},{name:'Hymn',core:['cantor','emissary','emissary']},
+   {name:'Judgement',core:['dominion','beacon','cantor']},{name:'Ambassadors',core:['emissary','emissary','beacon']}],
+  // A4 · Fallen Sky (machines, his own kind)
+  [{name:'Breach',core:['ram','drone','focus']},{name:'Lanes',core:['lancer','crawler','drone']},{name:'Swarm',core:['spark','spark','crawler']},
+   {name:'Grid',core:['coil','lancer','drone']},{name:'Field crew',core:['mender','ram','crawler']},{name:'Strike',core:['spark','ram','lancer']}],
+  // A5 · Hex Breach (anomalies)
+  [{name:'Hive',core:['cellmite','cellmite','cellmite','hexdrone']},{name:'Mirror wall',core:['hexbulwark','hexdrone','cellmite']},{name:'Brute',core:['cellbrute','cellmite','hexdrone']}],
   // Main Stage rooms are composed wave by wave from STAGE (composeStage); these only cover a forced plain room there
   [{name:'Sound check',core:['bass','roadie','spot']},{name:'Moshpit',core:['mosher','mosher','mosher','mosher','mosher','mosher']},{name:'Encore',core:['bass','dancer','shredder','drummer']}]
 ];
@@ -533,7 +539,7 @@ const BOSSES={
     pool:[['sweep180','mines','burst2'],['sweep180','mines','stomp','burst2'],['sweep180','stomp','mines','burst2','stomp']]},
   throne:{name:'Ophanim Throne',cls:'Class · Angel · Throne',epi:'Three rings and twenty-four eyes. Every open eye is a gun; shoot them out.',threat:5,warn:'THE THRONE IS WATCHING',hp:880,r:3.4,fly:.01,coreY:3.5,barrier:false,minion:'mini',gold:560,gems:56,angel:true,
     pool:[['walls','eyes','smite'],['walls','eyes','walls2','smite','pulse'],['walls2','eyes','roll','walls','roll','smite','pulse']]},
-  archon:{name:'Archon',cls:'Class · Angel · Judge',epi:'An armored knight with a sword of light. Stay out of the lunge, punish the recovery, and stop firing into the shield.',threat:5,warn:'JUDGEMENT DESCENDS',hp:820,r:2.6,fly:.01,coreY:4.6,barrier:false,minion:'seraph',gold:560,gems:56,angel:true,
+  archon:{name:'Archon',cls:'Class · Angel · Judge',epi:'An armored knight with a sword of light. Stay out of the lunge, punish the recovery, and stop firing into the shield.',threat:5,warn:'JUDGEMENT DESCENDS',hp:820,r:2.6,fly:.01,coreY:4.6,barrier:false,minion:'mini',gold:560,gems:56,angel:true,
     pool:[['wave','lunge','aimed'],['wave','lunge','shieldup','wave','smite'],['lunge','wave','shieldup','lunge','ring','smite','pulse']]},
   // High-Co (Main Stage headliner): three forms killed one after another, each with its own armor bar (bosses.js, highcoFormDown).
   // Form I the white frontman (parachute drop), form II the black-winged angel (descends in a light column), form III red-winged rage.
