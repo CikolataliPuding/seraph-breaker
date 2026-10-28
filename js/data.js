@@ -176,8 +176,8 @@ const RSK={
   // legendary: evolutions, offered only when both parents are maxed
   storm:{name:'Bullet Storm',d:'Evolution of Twin Shot + Rapid Cycle: +25% fire rate and every shot fans out.',rarity:'legendary',max:1,icon:'storm',evo:['twin','sig'],proj:2,bonus:{rate:.25}},
   inferno:{name:'Inferno Ring',d:'Evolution of Burn Rounds + Orbit Blades: blades become a wide ring of fire.',rarity:'legendary',max:1,icon:'inferno',evo:['torch','orbit'],orb:2,apply:()=>buildOrbit()},
-  halo:{name:'Storm Halo',d:'Evolution of Chain Spark + Bolt Orbit: lightning strikes 3 enemies every second.',rarity:'legendary',max:1,icon:'halo',evo:['arc','borb']},
-  blood:{name:'Blood Engine',d:'Evolution of Vampiric Core + Rage: kills repair 4% and Rage counts double.',rarity:'legendary',max:1,icon:'blood',evo:['vamp','rage']},
+  halo:{name:'Storm Halo',d:'Evolution of Chain Spark + Bolt Orbit: lightning strikes 2 enemies every 1.25 seconds.',rarity:'legendary',max:1,icon:'halo',evo:['arc','borb']},
+  blood:{name:'Blood Engine',d:'Evolution of Vampiric Core + Rage: kills repair 6% and Rage counts 2.5 times.',rarity:'legendary',max:1,icon:'blood',evo:['vamp','rage']},
 };
 // the angel's second card comes from these (patch.md 34): damage, fire rate and kill cards, never armor or utility
 const RSK_AGGRO=['atk','sig','crit','twin','diag','side','rear','pierce','ricochet','torch','poison','arc','nova','shard','rage','overload','orbit','forb','borb','meteor','headshot','storm','inferno','halo'];
