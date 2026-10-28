@@ -117,6 +117,10 @@ function hitEnemy(e,d,pos,dot,noProc,flat){
 }
 function aoe(pos,rad,dmg,stun=0,knock=0){ for(const e of enemies.slice()){ if(e.dead)continue; const d=Math.hypot(e.pos.x-pos.x,e.pos.z-pos.z); if(d<rad+e.r*.6){ if(stun&&e!==boss) e.stun=Math.max(e.stun,stun); if(knock&&e!==boss&&d>.01){ e.pos.x+=(e.pos.x-pos.x)/d*knock; e.pos.z+=(e.pos.z-pos.z)/d*knock; } hitEnemy(e,dmg,e.pos.clone().setY(2)); } } }
 // byProc: the kill came from a proc (or is a cleanup kill), so on-kill procs do not fire again
+// a split piece lands on the nearest free spot around (x,z), never inside a block (patch.md 34)
+function freeNear(x,z,r){ x=clamp(x,-AX+1,AX-1); z=clamp(z,-AZ+1,AZ-1); if(!inBlock(x,z,r)) return new V3(x,0,z);
+  for(let k=1;k<=6;k++) for(let i=0;i<8;i++){ const a=i/8*Math.PI*2, px=clamp(x+Math.sin(a)*k*.6,-AX+1,AX-1), pz=clamp(z+Math.cos(a)*k*.6,-AZ+1,AZ-1); if(!inBlock(px,pz,r)) return new V3(px,0,pz); }
+  return new V3(x,0,z); }
 function killEnemy(e,byProc){
   if(e.dead) return;
   // High-Co: forms I and II going down start the next form (bosses.js); only form III's death is the boss kill
@@ -124,7 +128,7 @@ function killEnemy(e,byProc){
   e.dead=true; dropToken(e);
   if(e===boss){ bossDeath(); return; }
   // Spark T3 shot down: two small Sparks (1 armor, .45 s fuse, no split) stand still .5 s where it was
-  if(e.type==='spark'&&e.tier>=3&&!e.boomed&&!e.noLoot) for(const s of [-1,1]){ const c=spawnEnemy('spark',new V3(clamp(e.pos.x+s*.9,-AX+1,AX-1),0,clamp(e.pos.z,-AZ+1,AZ-1)),false,{noDrop:true,force:true}); if(c){ c.hp=c.maxHp=1; c.fuseShort=true; c.wake=.5; c.model.g.scale.multiplyScalar(.6); c.r*=.6; c.gen=1; } }
+  if(e.type==='spark'&&e.tier>=3&&!e.boomed&&!e.noLoot) for(const s of [-1,1]){ const c=spawnEnemy('spark',freeNear(e.pos.x+s*.9,e.pos.z,.6),false,{noDrop:true,force:true}); if(c){ c.hp=c.maxHp=1; c.fuseShort=true; c.wake=.5; c.model.g.scale.multiplyScalar(.6); c.r*=.6; c.gen=1; } }
   if(e.type==='spark'&&!e.boomed){ e.boomed=true; queueBlast(e.pos.x,e.pos.z,{t:.12,rad:2.6,dmg:10*ARENAS[stage].hpMul,color:0xffa040,size:.8,skip:e,flat:true}); }
   if(e.ring) e.ring.visible=false;
   // Main Stage floor props (dance pad, follow spot, landing ring, flame jets) go with their owner
@@ -133,7 +137,7 @@ function killEnemy(e,byProc){
   // Volatile affix: a telegraphed blast where it died (hurts you and the other enemies)
   if(e.volatile&&!e.noLoot) queueBlast(e.pos.x,e.pos.z,{t:.75,rad:3.4,dmg:10*ARENAS[stage].hpMul,hurtP:18,color:0xff3a2a,size:1,skip:e,flat:true});
   // Shardlings split into two smaller copies, twice (capped per room)
-  if(e.type==='shardling'&&(e.gen||0)<2&&!e.noLoot){ let n=0; for(const o of enemies) if(o.type==='shardling'&&!o.dead) n++; for(const s of e.tier>=3?[-1,0,1]:[-1,1]){ if(n++>=10) break; const c=spawnEnemy('shardling',new V3(clamp(e.pos.x+s*.9,-AX+1,AX-1),0,clamp(e.pos.z+(s?0:.9),-AZ+1,AZ-1)),false,{gen:(e.gen||0)+1,noDrop:true}); if(c){ c.kx=s*7; c.kz=rand(-3,3); c.elite=false; } } }
+  if(e.type==='shardling'&&(e.gen||0)<2&&!e.noLoot){ let n=0; for(const o of enemies) if(o.type==='shardling'&&!o.dead) n++; for(const s of e.tier>=3?[-1,0,1]:[-1,1]){ if(n++>=10) break; const c=spawnEnemy('shardling',freeNear(e.pos.x+s*.9,e.pos.z+(s?0:.9),.6),false,{gen:(e.gen||0)+1,noDrop:true}); if(c){ c.kx=s*7; c.kz=rand(-3,3); c.elite=false; } } }
   if(sortie.rule.volatile){ const o=rand(0,1); for(let i=0;i<6;i++){ const a=(i+o)/6*Math.PI*2; shoot('e',e.pos.clone().setY(1.6),new V3(Math.sin(a),0,Math.cos(a)),4*eSpd(),8,0xb070ff,{life:3,r:.42}); } }
   const mul=e.elite?3:1, def=e.def||ENEMY.drone;
   score+=(def.score*(1+stage*.5)*mul)|0; kills++;
