@@ -808,6 +808,29 @@ function buildCellBrute(){
   [-1,1].forEach(s=>{ const arm=part(box(.5,1.6,.5),MD,body,s*1.75,-.4,0,.07); arm.rotation.z=s*.3; part(hexPrism(.42,.4),MP,arm,0,-.95,0,.04); });
   return {g,body,cells,mats:[MS,MP,MD],shadow:blob(1.6)};
 }
+// Hexarch (docs/hexarch.html): a 7-cell honeycomb core facing you, every cell with its own eye that opens and shuts, two hex frames, a hex
+// spike below and a halo above. The 6 orbit cells (sats) ride a ground-level ring that bosses.js keeps in world space (shoot an open eye);
+// seal is the hex shell of the seal attack.
+function buildHexarch(){
+  const g=new THREE.Group(), body=new THREE.Group(); body.position.y=5.6; g.add(body);
+  const MC=toon(HX.dark),MP=toon(HX.vio),MS=toon(HX.slate),MT=toon(HX.teal), core=new THREE.Group(), lenses=[]; body.add(core);
+  const cR=.78, dx=Math.sqrt(3)*(cR+.06), pos=[[0,0]]; for(let i=0;i<6;i++){ const a=i/6*Math.PI*2+Math.PI/6; pos.push([Math.cos(a)*dx,Math.sin(a)*dx]); }
+  pos.forEach(([x,y],i)=>{ part(hexPrism(cR,i?.7:.95),i?MS:MC,core,x,y,i?0:.12,.09); part(hexPrism(cR*.84,.12),MP,core,x,y,i?.36:.6,.03);
+    const lens=new THREE.Mesh(hexPrism(cR*.58,.1),basic(HX.glow,false)); lens.position.set(x,y,i?.44:.68); core.add(lens);
+    const lid=new THREE.Mesh(box(cR*1.1,.12,.06),basic(0x0a0610,false)); lid.position.set(x,y,i?.5:.74); core.add(lid); lenses.push({lens,lid,open:1,want:1,t:Math.random()*3}); });
+  part(hexPrism(2.9,.5),MC,core,0,0,-.55,.12);
+  const r1=part(geoC('Torus',THREE.TorusGeometry,3.6,.14,6,6),MP,body,0,0,0,.05), r2=part(geoC('Torus',THREE.TorusGeometry,4.15,.08,6,6),MT,body,0,0,0,.04); r2.rotation.x=Math.PI/2;
+  const spike=part(geoC('Cone',THREE.ConeGeometry,1.25,2.6,6),MC,body,0,-3.1,-.3,.1); spike.rotation.x=Math.PI;
+  const tip=new THREE.Mesh(geoC('Octahedron',THREE.OctahedronGeometry,.32,0),basic(HX.glow,false)); tip.position.set(0,-4.55,-.3); body.add(tip);
+  const halo=new THREE.Mesh(geoC('Torus',THREE.TorusGeometry,1.2,.09,6,6),basic(0x9a5cff,false)); halo.rotation.x=Math.PI/2; halo.position.set(0,3.55,-.2); body.add(halo);
+  const satG=new THREE.Group(), sats=[]; satG.position.y=2.4; g.add(satG);
+  for(let i=0;i<6;i++){ const s=new THREE.Group(); satG.add(s); part(hexPrism(.62,.28),MS,s,0,0,0,.06); part(hexPrism(.52,.08),MP,s,0,0,.17,.03);
+    const lm=new THREE.MeshBasicMaterial({color:HX.glow}), l=new THREE.Mesh(hexPrism(.3,.06),lm); l.position.z=.22; s.add(l); sats.push({g:s,lens:l,mat:lm}); }
+  const seal=new THREE.Group(); seal.visible=false; seal.userData.nofit=1; g.add(seal);
+  const shell=new THREE.Mesh(geoC('Cylinder',THREE.CylinderGeometry,4.4,4.4,9,6,1,true),addMat(0x9a5cff,.18)); shell.position.y=4.5; seal.add(shell);
+  [.1,9].forEach(y=>{ const r=new THREE.Mesh(geoC('Ring',THREE.RingGeometry,4.2,4.6,6),addMat(0x9a5cff,.75)); r.rotation.x=-Math.PI/2; r.rotation.z=Math.PI/6; r.position.y=y; seal.add(r); });
+  return {g,body,core,lenses,rings:[r1,r2],halo,tip,satG,sats,seal,mats:[MC,MP,MS,MT],shadow:blob(3.4)};
+}
 // Hex Breach mutation (patch.md 36): teal tint, a hex lens over the body and a hexagonal ground ring
 function hexModel(m,amt=.4){
   const tint=new THREE.Color(0x36e8d8); m.g.traverse(o=>{ if(o.isMesh&&o.material&&o.material.isMeshToonMaterial) o.material.color.lerp(tint,amt); });
@@ -817,7 +840,7 @@ function hexModel(m,amt=.4){
 }
 // generalized bestiary buildCorrupted: any boss model + purple tint, crystal spikes and a void aura
 const buildCorrupted=kind=>corruptModel(BOSS_BUILD[kind](),.45);
-const BOSS_BUILD={colossus:buildColossus,prism:buildPrism,seraph:buildSeraphBoss,hive:buildHive,arachne:buildArachne,throne:buildThrone,archon:buildArchon,highco:()=>buildHighCo(1)};
+const BOSS_BUILD={colossus:buildColossus,prism:buildPrism,seraph:buildSeraphBoss,hive:buildHive,arachne:buildArachne,throne:buildThrone,archon:buildArchon,highco:()=>buildHighCo(1),hexarch:buildHexarch};
 for(const k in BOSSES) if(BOSSES[k].form&&!BOSS_BUILD[k]) BOSS_BUILD[k]=()=>buildCorrupted(BOSSES[k].form);
 /* machine charger, denial and support (docs/mob-designs.html 1-3): Ram rams a locked lane, Coil drops live fields, Mender welds its allies */
 function buildRam(){

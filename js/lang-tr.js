@@ -124,7 +124,7 @@ const DICT_TR={
   'Door open':'Kapı açık', 'NEXT WAVE':'SONRAKİ DALGA', 'Wave clear':'Dalga temiz', 'Wave {0}/{1} next':'Sıradaki dalga {0}/{1}', 'Encore':'Bis', 'Wave {0}/{1}':'Dalga {0}/{1}',
   'The whole band is on stage':'Bütün grup sahnede', 'SURVIVE':'DAYAN', 'HUNT':'AV', 'Elite room':'Elit oda', 'Room {0}/{1}':'Oda {0}/{1}', 'Backstage repair':'Kulis tamiri', '+{0}% armor':'+%{0} zırh',
   'PERFECT':'KUSURSUZ', 'ON BEAT · PERFECT':'RİTİMDE · KUSURSUZ', 'AEGIS':'AEGIS', 'DODGE':'KAÇINDIN', 'EXTRA LIFE':'EKSTRA CAN', 'Out of bounds':'Alan dışı', 'Get back on the mat':'Zemine geri dön',
-  'PHASE {0}':'EVRE {0}', 'ROTOR DOWN':'ROTOR DÜŞTÜ', 'THREAT':'TEHDİT', 'ROOM {0}/{1}':'ODA {0}/{1}', 'STUNNED':'SERSEMLEDİN', 'COVERED':'SİPERDESİN', 'FORM {0}':'FORM {0}',
+  'PHASE {0}':'EVRE {0}', 'ROTOR DOWN':'ROTOR DÜŞTÜ', 'SEAL BROKEN':'MÜHÜR KIRILDI', 'THREAT':'TEHDİT', 'ROOM {0}/{1}':'ODA {0}/{1}', 'STUNNED':'SERSEMLEDİN', 'COVERED':'SİPERDESİN', 'FORM {0}':'FORM {0}',
   'ENCORE':'BİS', 'STREAM CUT':'YAYIN KESİLDİ', 'CHANNEL BROKEN':'KANAL KIRILDI', 'CORRUPTED':'BOZULMUŞ', 'HUNTED':'AVLANAN', 'ELITE':'ELİT', 'BARRIER DOWN':'BARİYER DÜŞTÜ',
 
   /* ---- game data (data.js tables, translated in place by langData) ---- */
@@ -229,7 +229,7 @@ const DICT_TR={
   // bosses (BOSSES): class line, intro, warning; corrupted variants add the two below
   'Class · War machine · Siege frame':'Sınıf · Savaş makinesi · Kuşatma gövdesi', 'Class · Angel · Crystalline lattice':'Sınıf · Melek · Kristal kafes', 'Class · Angel · Seraph':'Sınıf · Melek · Seraf',
   'Class · War machine · Rotor carrier':'Sınıf · Savaş makinesi · Rotorlu taşıyıcı', 'Class · War machine · Siege walker':'Sınıf · Savaş makinesi · Kuşatma yürüteci',
-  'Class · Angel · Throne':'Sınıf · Melek · Taht', 'Class · Angel · Judge':'Sınıf · Melek · Yargıç', 'Class · Frontman · Fallen angel':'Sınıf · Solist · Düşmüş melek',
+  'Class · Anomaly · Hex lattice':'Sınıf · Anomali · Altıgen kafes', 'Class · Angel · Throne':'Sınıf · Melek · Taht', 'Class · Angel · Judge':'Sınıf · Melek · Yargıç', 'Class · Frontman · Fallen angel':'Sınıf · Solist · Düşmüş melek',
   'Built to level cities. It walks straight through gunfire and shakes the ground apart.':'Şehirleri yerle bir etmek için yapıldı. Kurşun yağmurunun içinden yürür ve yeri sarsıp parçalar.',
   'A floating crystal that bends light into a beam able to cut a harbor in half.':'Işığı, bir limanı ikiye bölebilecek bir ışına büken yüzen bir kristal.',
   'The source of every signal. Six wings, one core, and nothing left to lose.':'Her sinyalin kaynağı. Altı kanat, tek çekirdek ve kaybedecek hiçbir şey.',
@@ -237,9 +237,10 @@ const DICT_TR={
   'A Crawler grown to the size of a building. Its head laser sweeps half the room; the space under its belly is the only blind spot.':'Bina boyutuna büyümüş bir Crawler. Kafa lazeri odanın yarısını tarar; karnının altı tek kör noktası.',
   'Three rings and twenty-four eyes. Every open eye is a gun; shoot them out.':'Üç halka ve yirmi dört göz. Açık her göz bir silah; vurup kapat.',
   'An armored knight with a sword of light. Stay out of the lunge, punish the recovery, and stop firing into the shield.':'Işıktan kılıçlı zırhlı bir şövalye. Hamlesinden uzak dur, toparlanırken cezalandır ve kalkana ateş etmeyi bırak.',
+  'The thing that made your shield first. Now it wants it back.':'Kalkanını ilk yapan şey. Şimdi onu geri istiyor.',
   'The headliner parachutes in, screams the room flat and comes back with wings. Hide behind the amps when he raises the mic.':'Manşet isim paraşütle iner, odayı çığlığıyla dümdüz eder ve kanatlarla geri döner. Mikrofonu kaldırınca amfilerin arkasına saklan.',
   'HOSTILE WAR MACHINE INBOUND':'DÜŞMAN SAVAŞ MAKİNESİ GELİYOR', 'HIGH-ENERGY SIGNAL APPROACHING':'YÜKSEK ENERJİ SİNYALİ YAKLAŞIYOR', 'HIGH-ENERGY SIGNAL DESCENDING':'YÜKSEK ENERJİ SİNYALİ İNİYOR',
-  'ROTOR NOISE OVERHEAD':'TEPEDE ROTOR SESİ', 'SEISMIC SIGNATURE CLOSING':'SİSMİK İZ YAKLAŞIYOR', 'THE THRONE IS WATCHING':'TAHT İZLİYOR', 'JUDGEMENT DESCENDS':'YARGI İNİYOR',
+  'ROTOR NOISE OVERHEAD':'TEPEDE ROTOR SESİ', 'SEISMIC SIGNATURE CLOSING':'SİSMİK İZ YAKLAŞIYOR', 'THE THRONE IS WATCHING':'TAHT İZLİYOR', 'SIGNAL INTEGRITY FAILING':'SİNYAL BÜTÜNLÜĞÜ ÇÖKÜYOR', 'JUDGEMENT DESCENDS':'YARGI İNİYOR',
   'THE HEADLINER IS DROPPING IN':'MANŞET İSİM İNİYOR',
   'Stage fatigue: the harder you hit him, the less of it lands.':'Sahne yorgunluğu: ona ne kadar sert vurursan, o kadar azı işler.', 'Fatigue':'Yorgunluk',
   'Corrupted':'Bozulmuş', 'CORRUPTED SIGNAL':'BOZULMUŞ SİNYAL', 'The void got inside it. Same frame, new tricks, more armor.':'Boşluk içine sızdı. Aynı gövde, yeni numaralar, daha fazla zırh.',

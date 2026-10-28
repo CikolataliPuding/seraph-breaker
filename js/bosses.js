@@ -1,4 +1,4 @@
-// Seraph Breaker · bosses.js: Boss spawning, attack patterns (bossTick), beams, boss parts (rotors, eyes), High-Co (three forms, stage attacks, crowd regen, entrance cinematics and game feel) and the cinematic intro.
+// Seraph Breaker · bosses.js: Boss spawning, attack patterns (bossTick), beams, boss parts (rotors, eyes), High-Co (three forms, stage attacks, crowd regen, entrance cinematics and game feel), Hexarch (hex floor, orbit cells, seal) and the cinematic intro.
 /* ================= BOSSES ================= */
 function spawnBoss(kind){
   const def=BOSSES[kind], m=BOSS_BUILD[kind](), form=def.form||kind;
@@ -13,6 +13,7 @@ function spawnBoss(kind){
   scene.add(m.g,m.shadow); enemies.push(boss);
   $('bossName').textContent=def.name.toUpperCase(); $('bossPh').textContent=t('PHASE {0}','I'); $('bossImg').src=PORTRAIT[kind]||''; $('bossBar').firstElementChild.style.background=''; $('bossBar').classList.remove('regen');
   if(form==='highco') highcoInit(boss);
+  if(form==='hexarch') hexarchInit(boss);
 }
 const toDir=b=>{ const T=tgt(); return new V3(T.x-b.pos.x,0,T.z-b.pos.z).normalize(); };
 const bossCore=b=>new V3(b.pos.x,b.y+(b.def.coreY!=null?b.def.coreY:b.form==='colossus'?6:0)+(b.jumpY||0),b.pos.z);
@@ -27,7 +28,7 @@ const LOCKED_ATK=['stomp','lunge','roll','hcslam','hcdescend','hcform','hcdrain'
 /* fairness: attacks never overlap. An attack is over when its own projectiles have resolved (missiles landed, shockwaves and boss
    blasts gone), then the boss takes a short breather (BOSS_BREATH by phase, plus BOSS_SETTLE for volleys that are still in the air).
    While a heavy attack runs, summoned minions hold their fire (bossHeavy). */
-const BOSS_BREATH=[.9,.7,.5], BOSS_SETTLE={ring:.5,spiral:.3,shards:.8,summon:.4,drones:.4,sparks:.4,mines:1.3,aimed:.2,eyes:.2,wave:.3,scream:.3,headbang:.3,pole:.3,pillars:.4,hcdescend:1.1,hcdrain:.3};
+const BOSS_BREATH=[.9,.7,.5], BOSS_SETTLE={ring:.5,spiral:.3,shards:.8,summon:.4,drones:.4,sparks:.4,mines:1.3,aimed:.2,eyes:.2,wave:.3,scream:.3,headbang:.3,pole:.3,pillars:.4,hcdescend:1.1,hcdrain:.3,honey:.3,volley:.2,seal:.3};
 const LIGHT_ATK=['idle','enter','summon','drones','sparks','aimed','eyes','shieldup'];
 const SLAM_T=1.15; // slam wind-up: the red ring shows the shockwave's reach and fills up as the countdown
 function bossPending(){ for(const x of bullets) if(x.tag==='bmis') return true; for(const s of shocks) if(!s.friendly) return true; for(const x of blasts) if(x.boss) return true; return false; }
@@ -71,6 +72,7 @@ function bossStartAttack(b){
   if(a==='lunge'){ const d=toDir(b), len=Math.max(3,Math.min(15,lineLen(b.pos.x,b.pos.z,d.x,d.z,15,1))); b.lunge={dir:d,len,done:0,hit:false}; teleStrip(b.pos,d.x,d.z,len,2.8,0xff2236,.7); }
   if(a==='roll'){ const d=toDir(b), len=Math.max(4,lineLen(b.pos.x,b.pos.z,d.x,d.z,30,2)-1); b.rollC={dir:d,len,done:0,hit:false,dropT:0}; teleStrip(b.pos,d.x,d.z,len,6,0xffd36a,1); }
   if(b.form==='highco') highcoStartAttack(b,a);
+  if(a==='honey') hexHoneyStart(b); if(a==='volley') b.hx.vol={n:0,cell:-1,t:0,shots:0,aim:0,used:0}; if(a==='seal') hexSealStart(b);
 }
 // Archon sword wave: a fan of light shots plus a big slash
 function swordWave(b,ph){
@@ -120,6 +122,9 @@ function bossTick(b,dt,to){
       if(L.done>=L.len-.01){ b.vuln=1.5; b.jz.pop.v=-7; shake=.4; crossBlast(b.pos.clone(),0xffd36a,.7); return true; } return false; }
     case 'shieldup':{ if(b.atkT<.35) return false; b.reflectT=Math.max(.01,3.35-b.atkT); if(b.atkT>3.35){ b.reflectT=0; return true; } return false; }
     case 'beam': case 'sweep': case 'sweep180': return updateBeam(b,dt);
+    case 'honey': return hexHoneyTick(b,dt);
+    case 'volley': return hexVolleyTick(b,dt);
+    case 'seal': return hexSealTick(b,dt);
     case 'hcslam': case 'scream': case 'headbang': case 'pole': case 'pillars': case 'hcdescend': case 'hcform': case 'hcdrain': return highcoTick(b,dt,ph);
   }
   return true;
@@ -154,7 +159,7 @@ function updateBoss(dt){
   const pd=Math.hypot(player.pos.x-b.pos.x,player.pos.z-b.pos.z);
   // High-Co has no thresholds: his phase is the form, changed by highcoFormDown when a form's armor runs out
   const newPh=def.forms?b.phase:b.hp<b.maxHp*.33?3:b.hp<b.maxHp*.66?2:1;
-  if(newPh!==b.phase&&b.atk!=='enter'){ b.phase=newPh; $('bossPh').textContent=t('PHASE {0}',['I','II','III'][newPh-1]); groundRing(b.pos,0xff2236,14,1); shake=.6; hitstop(85,true); b.jz.pop.v=-8; if(def.barrier) b.barrier=3; b.atk='idle'; b.atkT=.7; b.beam=null; b.jumpY=0; b.reflectT=0; b.vuln=0; hideBeams(); clearEnemyShots(); if(f==='highco') highcoPhase(b,newPh); }
+  if(newPh!==b.phase&&b.atk!=='enter'){ b.phase=newPh; $('bossPh').textContent=t('PHASE {0}',['I','II','III'][newPh-1]); groundRing(b.pos,0xff2236,14,1); shake=.6; hitstop(85,true); b.jz.pop.v=-8; if(def.barrier) b.barrier=3; b.atk='idle'; b.atkT=.7; b.beam=null; b.jumpY=0; b.reflectT=0; b.vuln=0; hideBeams(); clearEnemyShots(); if(f==='highco') highcoPhase(b,newPh); if(b.hx) hexarchClear(b); }
   b.vuln=Math.max(0,b.vuln-dt);
   // High-Co's parachute drop is slow and lands during the cinematic (hcDrop); he starts once the cinematic is over
   if(b.atk==='enter'&&def.forms){ hcDrop(b,dt); b.atkT-=dt; if(b.landed&&b.atkT<=0){ b.atk='idle'; b.atkT=1.2; } }
@@ -165,7 +170,7 @@ function updateBoss(dt){
     const locked=LOCKED_ATK.includes(b.atk);
     if(locked) b.vel.set(0,0,0);
     else if(f==='archon'){ b.y=b.base+Math.sin(b.t*1.6)*.2; const spd=b.phase===3?4.2:3.4; let want; if(d>7) want=to.clone().multiplyScalar(spd); else if(d<4.5) want=to.clone().multiplyScalar(-spd); else want=new V3(-to.z,0,to.x).multiplyScalar(spd*.6); if(b.vuln>0||b.atk==='wave'||b.atk==='shieldup') want.multiplyScalar(.1); b.vel.lerp(want,Math.min(1,dt*2.5)); }
-    else if(f==='throne'){ b.y=b.base+Math.sin(b.t*1.1)*.3; const want=new V3(Math.cos(b.t*.3)*3,0,Math.sin(b.t*.3)*3-3).sub(b.pos).multiplyScalar(.5); b.vel.lerp(want,Math.min(1,dt*1.5)); }
+    else if(f==='throne'||f==='hexarch'){ b.y=b.base+Math.sin(b.t*1.1)*.3; const want=new V3(Math.cos(b.t*.3)*3,0,Math.sin(b.t*.3)*3-3).sub(b.pos).multiplyScalar(.5); b.vel.lerp(want,Math.min(1,dt*1.5)); }
     else if(def.fly){ b.y=b.base+Math.sin(b.t*1.3)*.35; const orbit=new V3(Math.cos(b.t*.25)*7,0,Math.sin(b.t*.25)*7-2); const want=orbit.sub(b.pos).multiplyScalar(.6*b.spdK); if(d<7) want.addScaledVector(to,-4*b.spdK); if(b.beam&&b.beam.fire) want.multiplyScalar(.1); b.vel.lerp(want,Math.min(1,dt*1.5)); }
     else { const spd=(b.phase===3?3.6:2.6)*(f==='arachne'?.85:1)*(def.forms?def.forms[b.phase-1].spd:1); let want; if(d>10) want=to.clone().multiplyScalar(spd); else if(d<5.5) want=to.clone().multiplyScalar(-spd); else want=new V3(-to.z,0,to.x).multiplyScalar(spd*.5); if(b.atk==='burst'||b.atk==='burst2'||(b.beam&&b.beam.fire)) want.multiplyScalar(.1); if(b.atk==='slam') want.set(0,0,0); b.vel.lerp(want,Math.min(1,dt*2)); }
     b.pos.addScaledVector(b.vel,dt*(b.slow>0?.6:1)); b.pos.x=clamp(b.pos.x,-AX+3,AX-3); b.pos.z=clamp(b.pos.z,-AZ+3,AZ-3);
@@ -196,6 +201,7 @@ function updateBoss(dt){
     if(m.wings) m.wings.children.forEach((w,i)=>{ w.rotation.z=w.userData.base+Math.sin(b.t*1.8+i)*.1*w.userData.s; });
     if(b.atk==='roll'&&b.atkT>1) m.body.rotation.x+=dt*16/2.4; else m.body.rotation.x*=Math.pow(.05,dt); }
   else if(f==='highco') highcoAnim(b,m,dt);
+  else if(f==='hexarch') hexarchAnim(b,m,dt);
   else if(f==='archon'){ m.halo.rotation.z+=dt; m.wings.children.forEach((w,i)=>{ w.rotation.z=w.userData.base+Math.sin(b.t*2+i)*.1*w.userData.s; });
     // wind-ups: the sword rises before a wave, the knight crouches before the lunge and kneels while it is open
     let by=4.6,swx=-.25+Math.sin(b.t*1.1)*.15,swz=-.35;
@@ -209,6 +215,7 @@ function updateBoss(dt){
 function bossDeath(){
   if(!player||player.dead||state==='dying'||state==='result') return;
   if(boss.poles){ boss.poles.forEach(p=>roomGroup.remove(p.m.g)); boss.poles.length=0; hcStreamsEnd(boss,false); }
+  if(boss.hx) hexarchClear(boss);
   const def=boss.def; score+=[5000,8000,12000,16000,18000,20000][stage]; kills++; hideBeams(); fizzleRoom(); boss.jumpY=0; boss.reflectT=0;
   const gm=Math.round(def.gems*econAt('bossGems',sortie.a)*sortie.farm); P.gems+=gm; sortie.gems+=gm; logEarn('gems','boss',gm);
   setState('bossdeath'); stateT=3.2; boss.final=false; buzz(200); hitstop(120,true);
@@ -453,3 +460,66 @@ function highcoAnim(b,m,dt){
     if(P.t>HC_POLE_LIFE+.6){ roomGroup.remove(pm.g); b.poles.splice(i,1); } }
   if(hcArena&&hcArena.g.parent) animateHighCoArena(hcArena,b.t,b.phase);
 }
+/* ---- Hexarch (Hex Breach finale, docs/hexarch.html; numbers in BOSSES.hexarch.hx) ----
+   honey: hex floor tiles light up ring by ring from under him (phases II-III: sometimes a 3-arm spiral) and burst; a ring bursts just as the
+   next one starts its warning, so stepping back onto a burnt-out tile is always safe. volley: the closed orbit cell nearest you opens its eye
+   (red, with an aim line) and fires 3 shots down that line; hit the open eye for x2 and to shut it. seal: immune under a hex shell, two
+   opposite orbit cells glow; break both for a stun, or he drops it after sealT. */
+const HXA_COL=0xff3a5a, _hxp=new V3();
+// the orbit cells ride a ring in world space around him (the model counter-turns it): cell i sits at spin + i*60 deg
+const hxSatPos=(b,i,out)=>{ const a=b.hx.spin+i*Math.PI/3, R=b.def.hx.satR; return out.set(b.pos.x+Math.sin(a)*R,2.4,b.pos.z+Math.cos(a)*R); };
+// fractional axial hex coords -> the nearest hex (cube rounding)
+function hexRound(q,r){ const s=-q-r; let rq=Math.round(q), rr=Math.round(r), rs=Math.round(s); const dq=Math.abs(rq-q), dr=Math.abs(rr-r), ds=Math.abs(rs-s);
+  if(dq>dr&&dq>ds) rq=-rr-rs; else if(dr>ds) rr=-rq-rs; return [rq,rr]; }
+// the floor grid is built once per fight (pointy-top hexes over the whole room) and reused by every honey; normal blending, an additive tile vanishes on the light floors
+function hexarchInit(b){ const tr=b.def.hx.tile, w=Math.sqrt(3)*tr, n=Math.ceil(AZ/(1.5*tr))+1, qn=n+Math.ceil(AX/w)+1, tiles=[];
+  for(let r=-n;r<=n;r++) for(let q=-qn;q<=qn;q++){ const x=w*(q+r/2), z=1.5*tr*r; if(Math.abs(x)>AX+.3||Math.abs(z)>AZ+.3) continue;
+    const m=new THREE.Mesh(geoC('Circle',THREE.CircleGeometry,tr*.9,6),new THREE.MeshBasicMaterial({color:HX.glow,transparent:true,opacity:0,depthWrite:false})); m.rotation.x=-Math.PI/2; m.rotation.z=Math.PI/6; m.position.set(x,.05,z); m.visible=false; roomGroup.add(m); tiles.push({m,q,r,x,z,at:0,hit:0}); }
+  b.hx={spin:0,tiles,eye:-1,eyeHp:0,vol:null,honey:null,seal:null}; }
+function hexHoneyStart(b){ const H=b.def.hx, tr=H.tile, rz=b.pos.z/(1.5*tr), [bq,br]=hexRound(b.pos.x/(Math.sqrt(3)*tr)-rz/2,rz), spiral=b.phase>1&&Math.random()<.5; let last=0;
+  for(const T of b.hx.tiles){ const dq=T.q-bq, dr=T.r-br; let k=(Math.abs(dq)+Math.abs(dr)+Math.abs(dq+dr))/2;
+    if(spiral) k+=((Math.atan2(T.x-b.pos.x,T.z-b.pos.z)/(Math.PI*2)+.5)*3)%1;
+    T.at=k*H.ring; T.hit=0; last=Math.max(last,T.at); }
+  b.hx.honey={t:-.3,end:last+H.tele+.4,ring:-1}; groundRing(b.pos,HX.glow,6,.6); sfx('beam'); }
+function hexHoneyTick(b,dt){ const H=b.def.hx, Y=b.hx.honey, px=player.pos.x, pz=player.pos.z, R=H.tile*.85; Y.t+=dt;
+  for(const T of b.hx.tiles){ const u=Y.t-T.at; if(u<0||u>H.tele+.35){ if(T.m.visible) T.m.visible=false; continue; }
+    const M=T.m.material; T.m.visible=true;
+    if(u<H.tele){ const c=u/H.tele; M.color.setHex(HX.glow); M.opacity=.3+.35*c+.1*Math.sin(u*(10+c*24)); }
+    else { if(!T.hit){ T.hit=1; if(Math.hypot(px-T.x,pz-T.z)<R) hurt(H.dmg); if(Math.random()<(mobileMode?.1:.25)) sparks(T.m.position,HXA_COL,3,5); }
+      M.color.setHex(HXA_COL); M.opacity=.85*(1-(u-H.tele)/.35); } }
+  const ring=Math.floor((Y.t-H.tele)/H.ring); if(ring>Y.ring&&ring>=0){ Y.ring=ring; sfx('click'); }
+  return Y.t>Y.end; }
+function hexVolleyTick(b,dt){ const H=b.def.hx, V=b.hx.vol, n=b.phase===1?4:6; V.t-=dt;
+  if(V.cell<0){ if(V.t>0) return false; if(V.n>=n) return true;
+    let best=0,bd=1e9; for(let i=0;i<6;i++){ if(V.used&1<<i) continue; hxSatPos(b,i,_hxp); const d=Math.hypot(_hxp.x-player.pos.x,_hxp.z-player.pos.z); if(d<bd){ bd=d; best=i; } }
+    hxSatPos(b,best,_hxp); const T=tgt(); V.aim=Math.atan2(T.x-_hxp.x,T.z-_hxp.z); V.cell=best; V.used|=1<<best; V.n++; V.t=H.eyeOpen; V.shots=0;
+    b.hx.eye=best; b.hx.eyeHp=b.maxHp*H.eyeHp; teleStrip(_hxp,Math.sin(V.aim),Math.cos(V.aim),22,.35,HXA_COL,H.eyeOpen,true); sfx('click'); return false; }
+  if(b.hx.eye<0){ V.cell=-1; V.t=.3; return false; } // the eye was shot shut: this cell's shots are off
+  if(V.t<=0){ hxSatPos(b,V.cell,_hxp).setY(1.8); shoot('e',_hxp,new V3(Math.sin(V.aim),0,Math.cos(V.aim)),10*eSpd(),11,HXA_COL,{life:3,r:.45}); sparks(_hxp,HXA_COL,2,4);
+    if(++V.shots>=3){ b.hx.eye=-1; V.cell=-1; V.t=.25; } else V.t=.12; }
+  return false; }
+function hexSealStart(b){ const H=b.def.hx, a=(Math.random()*6)|0, hp=b.maxHp*H.sealHp; b.hx.seal={cells:[a,(a+3)%6],hp:[hp,hp],t:0,fan:.9}; b.model.seal.visible=true; groundRing(b.pos,0x9a5cff,5,.6); sfx('shield'); }
+function hexSealEnd(b){ b.hx.seal=null; b.model.seal.visible=false; }
+// under the shell he only answers with a slow 5-shot fan every 1.3 s
+function hexSealTick(b,dt){ const S=b.hx.seal; if(!S) return true; S.t+=dt; S.fan-=dt;
+  if(S.fan<=0){ S.fan=1.3; const T=tgt(), base=Math.atan2(T.x-b.pos.x,T.z-b.pos.z); for(let i=-2;i<=2;i++){ const a=base+i*.22; shoot('e',new V3(b.pos.x,1.8,b.pos.z),new V3(Math.sin(a),0,Math.cos(a)),5*eSpd(),9,HXA_COL,{life:4,r:.45}); } }
+  if(S.t>b.def.hx.sealT){ hexSealEnd(b); return true; } return false; }
+// a hit on him (enemies.js hitEnemy): under the seal only a glowing cell takes it (he takes nothing); an open eye takes x2 and shuts when its armor is gone
+function hexHit(b,pos,d,dot){ const S=b.hx.seal;
+  if(S){ if(dot||!pos) return 0;
+    for(let k=0;k<2;k++){ if(S.hp[k]<=0) continue; hxSatPos(b,S.cells[k],_hxp); if(Math.hypot(_hxp.x-pos.x,_hxp.z-pos.z)>2.4) continue;
+      S.hp[k]-=d; sparks(_hxp,0xb070ff,3,5); if(S.hp[k]<=0){ crossBlast(_hxp.clone().setY(0),0xb070ff,.7); sfx('hit'); }
+      if(S.hp[0]<=0&&S.hp[1]<=0){ hexSealEnd(b); b.atk='idle'; b.atkT=.6; b.stun=b.def.hx.stun; popText(t('SEAL BROKEN')); hitstop(90,true); shake=Math.max(shake,.5); }
+      return 0; }
+    sparks(pos,0xb070ff,2,4); return 0; }
+  if(b.hx.eye>=0&&!dot&&pos){ hxSatPos(b,b.hx.eye,_hxp); if(Math.hypot(_hxp.x-pos.x,_hxp.z-pos.z)<2){ d*=2; b.hx.eyeHp-=d; if(b.hx.eyeHp<=0){ b.hx.eye=-1; sparks(_hxp,HXA_COL,8,6); sfx('hit'); } } }
+  return d; }
+function hexarchClear(b){ const H=b.hx; H.eye=-1; H.vol=null; H.honey=null; if(H.seal) hexSealEnd(b); for(const T of H.tiles) T.m.visible=false; }
+function hexarchAnim(b,m,dt){ const H=b.hx, R=b.def.hx.satR; H.spin+=dt*(H.seal?1.4:.35);
+  m.body.position.y=5.6+Math.sin(b.t*1.2)*.3; m.core.rotation.z=Math.sin(b.t*.4)*.2; m.rings[0].rotation.z+=dt*.6; m.rings[0].rotation.y=Math.sin(b.t*.7)*.35; m.rings[1].rotation.z-=dt*.85; m.halo.rotation.z+=dt*1.2; m.tip.rotation.y+=dt*3;
+  for(const L of m.lenses){ L.t-=dt; if(L.t<=0){ L.want=Math.random()<.75?1:0; L.t=rand(1,3.5); } L.open+=(L.want-L.open)*Math.min(1,dt*9); L.lid.visible=L.open<.92; L.lid.scale.y=.2+(1-L.open)*6; L.lens.scale.y=Math.max(.08,L.open); }
+  m.satG.rotation.y=-b.yaw; // keeps the orbit ring in world space (hxSatPos)
+  m.sats.forEach((s,i)=>{ const a=H.spin+i*Math.PI/3, open=H.eye===i, k=H.seal?H.seal.cells.indexOf(i):-1, glow=k>=0&&H.seal.hp[k]>0;
+    s.g.position.set(Math.sin(a)*R,Math.sin(b.t*2+i)*.2,Math.cos(a)*R); s.g.rotation.y=a;
+    s.mat.color.setHex(open?HXA_COL:glow?0xe0c8ff:HX.glow); s.lens.scale.setScalar(open?1.6+Math.sin(b.t*30)*.2:glow?1.4+Math.sin(b.t*12)*.15:1); });
+  if(H.seal){ m.seal.rotation.y+=dt*.8; m.seal.children[0].material.opacity=.14+Math.sin(b.t*10)*.05; } }

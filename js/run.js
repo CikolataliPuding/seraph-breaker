@@ -5,8 +5,8 @@ const RUN_KEY='seraph-breaker-run-v1';
 const roomsLabel=A=>A.roomsTxt||t('{0} ROOMS',A.rooms);
 // room n (1-based): from the run plan when there is one, else the PACING slot (boss, angel, elite or combat)
 const arenaRoomType=n=>{ const p=sortie&&sortie.plan&&sortie.plan[n-1]; if(p) return p.type; const c=PACING[((n-1)%10)+1]; return c.boss?'boss':c.angel?'angel':c.elite?'elite':'combat'; };
-// 'all' (Arena 4) is every boss and corrupted variant except an arena's own headliner (stageOnly: High-Co belongs to the Main Stage)
-function arenaBossPool(a){ const A=ARENAS[a]; return (A.bosses==='all'?Object.keys(BOSSES).filter(k=>!BOSSES[k].stageOnly):A.bosses).filter(k=>BOSSES[k]); }
+// 'all' is every boss and corrupted variant except an arena's own headliner (stageOnly: High-Co belongs to the Main Stage; finale: Hexarch ends Hex Breach)
+function arenaBossPool(a){ const A=ARENAS[a]; return (A.bosses==='all'?Object.keys(BOSSES).filter(k=>!BOSSES[k].stageOnly&&!BOSSES[k].finale):A.bosses).filter(k=>BOSSES[k]); }
 // seeded random: the same run seed always gives the same plan, so a continued run keeps its rooms and bosses
 function seeded(seed){ let t=seed>>>0; return ()=>{ t=(t+0x6D2B79F5)>>>0; let r=Math.imul(t^t>>>15,1|t); r^=r+Math.imul(r^r>>>7,61|r); return ((r^r>>>14)>>>0)/4294967296; }; }
 /* the arena plan, one entry per room: {type:'combat'|'elite'|'angel'|'boss', kind (ROOM_KINDS), k (budget multiplier from PACING), boss (the boss
@@ -18,7 +18,8 @@ function arenaPlan(a,seed,lastBoss=''){
   if(A.stage){ for(let n=1;n<=N;n++) plan.push(n===N?{n,boss:pool[0],k:1,type:'boss',kind:'boss'}:{n,boss:pool[0],k:1,type:'combat',kind:'stage'}); return plan; }
   for(let n=1;n<=N;n++){ const pos=n===N?10:((n-1)%10)+1, pc=PACING[pos];
     // a boss comes back in the same arena only once the pool has run out (patch.md 34: the Low City opened and closed on Throne)
-    if((n-1)%10===0||!bb){ const f=pool.filter(k=>k!==last&&!used.includes(k)), c=f.length?f:pool.filter(k=>k!==last); bb=n===1&&A.firstBoss&&pool.includes(A.firstBoss)?A.firstBoss:c.length?c[(rnd()*c.length)|0]:pool[0]; last=bb; used.push(bb); }
+    if((n-1)%10===0||!bb){ const f=pool.filter(k=>k!==last&&!used.includes(k)), c=f.length?f:pool.filter(k=>k!==last); bb=n===1&&A.firstBoss&&pool.includes(A.firstBoss)?A.firstBoss:c.length?c[(rnd()*c.length)|0]:pool[0]; last=bb; used.push(bb);
+      if(A.finale&&BOSSES[A.finale]&&N-n<10) bb=last=A.finale; } // the last block ends on the arena's finale (Hexarch)
     const r={n,boss:bb,k:pc.k||1};
     if(pc.boss){ r.type='boss'; r.kind='boss'; }
     else if(pc.angel){ r.type='angel'; r.kind='angel'; }
