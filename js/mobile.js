@@ -77,12 +77,12 @@ function resetTouch(){ mShieldHeld=false; joy.arm=0; const sh=$('tSH'); if(sh) s
 function joyVec(out){ if(joy.id===null||Math.hypot(joy.x,joy.y)<.18) return out.set(0,0,0); return out.set(joy.x,0,joy.y); }
 
 /* ================= AUTO-AIM ================= */
-// segment vs block test (blocks stop shots, canals do not)
-function losClear(ax,az,bx,bz){
+// segment vs block test (blocks stop shots, canals do not); pad grows each block (negative shrinks it, the default)
+function losClear(ax,az,bx,bz,pad=-.15){
   for(const o of obstacles){ if(o.kind!=='block') continue;
     let t0=0,t1=1; const dx=bx-ax,dz=bz-az;
     const ok=(p,q)=>{ if(Math.abs(p)<1e-9) return q>=0; const r=q/p; if(p<0){ if(r>t1) return false; if(r>t0) t0=r; } else { if(r<t0) return false; if(r<t1) t1=r; } return true; };
-    if(ok(-dx,ax-(o.x0+.15))&&ok(dx,(o.x1-.15)-ax)&&ok(-dz,az-(o.z0+.15))&&ok(dz,(o.z1-.15)-az)) return false; }
+    if(ok(-dx,ax-(o.x0-pad))&&ok(dx,(o.x1+pad)-ax)&&ok(-dz,az-(o.z0-pad))&&ok(dz,(o.z1+pad)-az)) return false; }
   return true;
 }
 // nearest visible enemy; near-ties (within 1.5 units) go to the one with the lowest HP
@@ -90,7 +90,7 @@ function autoTarget(){
   const p=player; let best=null,bd=1e9;
   for(const e of enemies){ if(e.dead||e.born<.4||e.dropY>0||e.under) continue; if(e===boss&&(boss.atk==='enter'||boss.immune||state==='cine')) continue;
     const d=Math.hypot(e.pos.x-p.pos.x,e.pos.z-p.pos.z)-e.r*.5; if(d>bd+1.5) continue;
-    if(!losClear(p.pos.x,p.pos.z,e.pos.x,e.pos.z)) continue;
+    if(!losClear(p.pos.x,p.pos.z,e.pos.x,e.pos.z,.3)) continue; // grown by most of a shot's radius: a line grazing a corner would only feed the block
     if(!best||d<bd-1.5||(Math.abs(d-bd)<=1.5&&e.hp<best.hp)){ if(d<bd) bd=d; best=e; } }
   return best;
 }

@@ -13,7 +13,8 @@ function lobShell(from,to,dur,color,onLand,marker){ const g=new THREE.Group(), m
     sh.position.x=m.position.x; sh.position.z=m.position.z; sh.scale.setScalar(1.1-clamp(y/10,0,.6)); if(mk) mk.material.opacity=.35+.45*Math.abs(Math.sin(u*u*18));
     if(k<=.02&&!done){ done=true; sh.visible=false; if(mk) mk.visible=false; onLand&&onLand(); } }); }
 // contact damage, with Thorn Plating paying it back
-function contactHurt(e,d){ const before=player.hp; hurt(d); if(player.thorn&&player.hp<before&&!e.dead) hitEnemy(e,d*3*player.st.dmg,e.pos.clone().setY(2),false,true); }
+// Thorn Plating hits back 3x, at most 30% of the rammer's max armor (patch.md 34: a diving Herald died on its first touch)
+function contactHurt(e,d){ const before=player.hp; hurt(d); if(player.thorn&&player.hp<before&&!e.dead) hitEnemy(e,Math.min(d*3*player.st.dmg,e.maxHp*BAL.thornCap),e.pos.clone().setY(2),false,true); }
 // Spark explosion: hurts you only when it detonates on its own; it always hurts other enemies (chain reactions are queued and capped)
 function sparkBoom(e){ if(e.boomed) return; e.boomed=true;
   if(e.tier>1) for(let i=0;i<4;i++){ const a=Math.PI/4+i*Math.PI/2; shoot('e',e.pos.clone().setY(.8),new V3(Math.sin(a),0,Math.cos(a)),6*eSpd(),6,0xff5a2a,{life:1.2,r:.4}); } // T2+: 4 diagonal shards

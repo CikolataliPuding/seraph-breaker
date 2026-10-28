@@ -13,11 +13,12 @@ function seeded(seed){ let t=seed>>>0; return ()=>{ t=(t+0x6D2B79F5)>>>0; let r=
    that ends this 10-room block, planned ahead), teach (that boss, on its teaching room)}. Bosses never repeat back to back. Pure: the debug
    simulation and the arena preview use it too. */
 function arenaPlan(a,seed,lastBoss=''){
-  const A=ARENAS[a], N=A.rooms, rnd=seeded((seed|0)*7919+a*104729+1), pool=arenaBossPool(a), plan=[]; let last=lastBoss, bb='';
+  const A=ARENAS[a], N=A.rooms, rnd=seeded((seed|0)*7919+a*104729+1), pool=arenaBossPool(a), plan=[], used=[]; let last=lastBoss, bb='';
   // Main Stage: every room is a wave room (STAGE), the boss comes after the last one
   if(A.stage){ for(let n=1;n<=N;n++) plan.push(n===N?{n,boss:pool[0],k:1,type:'boss',kind:'boss'}:{n,boss:pool[0],k:1,type:'combat',kind:'stage'}); return plan; }
   for(let n=1;n<=N;n++){ const pos=n===N?10:((n-1)%10)+1, pc=PACING[pos];
-    if((n-1)%10===0||!bb){ const c=pool.filter(k=>k!==last); bb=n===1&&A.firstBoss&&pool.includes(A.firstBoss)?A.firstBoss:c.length?c[(rnd()*c.length)|0]:pool[0]; last=bb; }
+    // a boss comes back in the same arena only once the pool has run out (patch.md 34: the Low City opened and closed on Throne)
+    if((n-1)%10===0||!bb){ const f=pool.filter(k=>k!==last&&!used.includes(k)), c=f.length?f:pool.filter(k=>k!==last); bb=n===1&&A.firstBoss&&pool.includes(A.firstBoss)?A.firstBoss:c.length?c[(rnd()*c.length)|0]:pool[0]; last=bb; used.push(bb); }
     const r={n,boss:bb,k:pc.k||1};
     if(pc.boss){ r.type='boss'; r.kind='boss'; }
     else if(pc.angel){ r.type='angel'; r.kind='angel'; }
