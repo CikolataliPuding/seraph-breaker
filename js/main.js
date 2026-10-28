@@ -107,12 +107,14 @@ function tick(dt,now){
       else if(Math.abs(p.x)>AX){ p.x=Math.sign(p.x)*AX; b.vel.x*=-1; hitW=true; } else if(Math.abs(p.z)>AZ){ p.z=Math.sign(p.z)*AZ; b.vel.z*=-1; hitW=true; }
       if(hitW){ b.wall--; b.life=Math.max(b.life,.5); b.m.lookAt(p.clone().add(b.vel)); sparks(p,unit.shot,2,3); if(b.hit) b.hit.clear(); } }
     if(b.life<=0||Math.abs(p.x)>AX+OUTW||Math.abs(p.z)>AZ+OUTW){ if(b.grav) makeHole(p); else if(b.life>0) sparks(p,b.from==='p'?unit.shot:0xff8a40,2,3); killBullet(i,b); continue; }
-    if(low&&obstacles.length){ const h=sweepBlock(ox,oz,p.x,p.z,rr); if(h){ p.x=ox+(p.x-ox)*h.t; p.z=oz+(p.z-oz)*h.t; if(b.grav) makeHole(p); sparks(p,b.from==='p'?unit.shot:0xff8a40,3,4); killBullet(i,b); continue; } }
+    if(low&&obstacles.length&&!b.ghost){ const h=sweepBlock(ox,oz,p.x,p.z,rr); if(h){ p.x=ox+(p.x-ox)*h.t; p.z=oz+(p.z-oz)*h.t; if(b.grav) makeHole(p); sparks(p,b.from==='p'?unit.shot:0xff8a40,3,4); killBullet(i,b); continue; } }
     if(b.from==='p'){
       let gone=false;
       for(const e of enemies){ if(e.dead||e.born<.4)continue; if(b.hit&&b.hit.has(e))continue;
         const shieldPad=e===boss&&boss.barrier>0?1.2:0, r=e.r+b.r*.5+shieldPad, dx=p.x-e.pos.x, dz=p.z-e.pos.z;
         if(segDist(ox,oz,p.x,p.z,e.pos.x,e.pos.z).d2<r*r){ if(b.grav){ makeHole(p); gone=true; break; }
+          // Dominion: its turning plates stop plain shots while they are up
+          if(e.type==='dominion'&&!b.pierce&&!b.bounce&&dominionBlocks(e,dx,dz)){ sparks(p,0xffd36a,3,4); sfx('shield'); e.jz.pop.v+=.4; gone=true; break; }
           // Bulwark: the front shield stops plain shots (pierce and ricochet get through, wall-bounce shots bounce off it)
           if(e.type==='bulwark'&&!b.pierce&&!b.bounce){ const fx=Math.sin(e.yaw),fz=Math.cos(e.yaw),l=Math.hypot(dx,dz)||1; if((dx*fx+dz*fz)/l>.3){ sparks(p,0xffa04a,3,4); sfx('shield'); e.model.hex.scale.setScalar(1.5); e.jz.pop.v+=.6;
             if(b.wall>0){ b.wall--; const dn=b.vel.x*fx+b.vel.z*fz; b.vel.x-=2*dn*fx; b.vel.z-=2*dn*fz; p.x+=fx*.6; p.z+=fz*.6; b.m.lookAt(p.clone().add(b.vel)); } else gone=true; break; } }

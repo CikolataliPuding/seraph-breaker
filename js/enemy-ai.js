@@ -109,7 +109,27 @@ function wardenRing(e,n,off){ for(let i=0;i<n;i++){ const a=(i+off)/n*Math.PI*2;
 const _ck=new V3();
 function coilSpot(e,T,i){ for(let k=0;k<12;k++){ let x,z; if(i===0){ x=T.x; z=T.z; } else { const a=Math.atan2(T.x-e.pos.x,T.z-e.pos.z)+(i===1?1:-1)*rand(.8,1.3), r=rand(4,6); x=player.pos.x+Math.sin(a)*r; z=player.pos.z+Math.cos(a)*r; }
     x=clamp(x,-AX+1.5,AX-1.5); z=clamp(z,-AZ+1.5,AZ-1.5); if(!inBlock(x,z,.5)&&Math.hypot(x-player.pos.x,z-player.pos.z)>=3.5) return _ck.set(x,0,z); if(i===0) i=1+(k&1); } return null; }
+// Dominion: is a shot coming in at (dx,dz) from its center stopped by one of the three plates (70° each)? Not while they are down.
+const _dq=new V3();
+function dominionBlocks(e,dx,dz){ if(e.downT>0) return false; const f=Math.atan2(dx,dz);
+  for(const p of e.model.pg){ if(p.userData.broken) continue; p.getWorldDirection(_dq); if(Math.abs(angDiff(f,Math.atan2(_dq.x,_dq.z)))<.61) return true; } return false; }
+// Beacon: distance from (x,z) along (dx,dz) to the room edge (its arrow ignores blocks)
+function edgeLen(x,z,dx,dz){ const tx=dx>1e-3?(AX-1-x)/dx:dx<-1e-3?(-AX+1-x)/dx:1e9, tz=dz>1e-3?(AZ-1-z)/dz:dz<-1e-3?(-AZ+1-z)/dz:1e9; return Math.max(1,Math.min(tx,tz)); }
 const ATK={
+  // Beacon: a gold lane to the room edge tracks you (.6 s), then locks white and wider (.45 s); the arrow (38 u/s, 20) passes through blocks
+  beam:{tele:1.05,rec:.5,cd:[2.6,3.6],start(e){ const T=tgt(); e.aim=new V3(T.x-e.pos.x,0,T.z-e.pos.z).normalize();
+      if(!e.lane){ const g=new THREE.Group(), mat=new THREE.MeshBasicMaterial({color:0xffd36a,transparent:true,opacity:.4,depthWrite:false}), pl=new THREE.Mesh(new THREE.PlaneGeometry(1,1),mat); pl.rotation.x=-Math.PI/2; g.add(pl); roomGroup.add(g); (e.props||(e.props=[])).push(g); e.lane={g,pl,mat}; }
+      e.lane.g.visible=true; sfx('click'); },
+    tick(e,dt){ const L=e.lane; if(!L) return; if(e.ph!=='tele'){ L.g.visible=false; return; } const lock=e.phT<=.45;
+      if(!lock){ const T=tgt(); e.aim.set(T.x-e.pos.x,0,T.z-e.pos.z).normalize(); }
+      const len=edgeLen(e.pos.x,e.pos.z,e.aim.x,e.aim.z), w=lock?.9:.5; L.g.position.set(e.pos.x,.05,e.pos.z); L.g.rotation.y=Math.atan2(e.aim.x,e.aim.z);
+      L.pl.scale.set(w,len,1); L.pl.position.z=len/2; L.mat.color.setHex(lock?0xfff6e0:0xffd36a); L.mat.opacity=lock?(Math.floor(e.t*16)%2?.35:.7):.35; e.model.lens.scale.setScalar(lock?.7:1-.3*(1-(e.phT-.45)/.6)); },
+    fire(e){ if(e.lane) e.lane.g.visible=false; const o=e.pos.clone().setY(1.6); shoot('e',o,e.aim.clone(),38*eSpd(),20,0xffe9a0,{life:1.2,r:.5,ghost:true}); sparks(o,0xffe9a0,4,4); e.model.lens.scale.setScalar(1); sfx('zap'); }},
+  // Dominion's Judgement: the plates stop, a gold ring fills (1 s), a light pillar bursts to r 4.4 (14), then the plates sink for 1 s (no shield, +60%)
+  judge:{tele:1,rec:1,cd:[3.8,4.8],start(e){ slamTele(e.pos,e.def.slam,1,.3,0xffd36a); e.judging=true; sfx('click'); },
+    fire(e){ e.judging=false; crossBlast(e.pos.clone(),0xffe9a0,1.4); sparks(e.pos.clone().setY(1),0xffe9a0,10,8); shake=Math.max(shake,.2); e.downT=1; e.vulnT=1; sfx('heavy');
+      if(player&&!player.dead&&Math.hypot(player.pos.x-e.pos.x,player.pos.z-e.pos.z)<e.def.slam) hurt(14); },
+    tick(e,dt){ if(e.downT>0) e.downT-=dt; }},
   stakes:{tele:.5,rec:.4,cd:[3.2,4.2],fire(e){ const T=leadPoint(e.pos.x,e.pos.z,6,AIL().lead,_lp,2.5), fly=.9; e.model.tube.getWorldPosition(_tmp2); const from=_tmp2.clone().setY(1.6);
     for(let i=0;i<3;i++){ const p=coilSpot(e,T,i); if(!p) continue; const x=p.x, z=p.z; openField(e,x,z,fly+FIELD.warn); lobShell(from,new V3(x,0,z),fly,0xc86a3a,()=>sparks(new V3(x,.3,z),0xffa040,3,3)); }
     e.jz.rec.v+=4; sfx('zap'); }},
@@ -252,6 +272,27 @@ const AI={
     if(e.stT>0) return; let best=null,bh=1;
     for(const q of enemies){ if(q===e||q.dead||q===boss||q.def&&q.def.role==='support'||q.maxHp<=0) continue; const h=q.hp/q.maxHp; if(h<bh&&Math.hypot(q.pos.x-e.pos.x,q.pos.z-e.pos.z)<12){ bh=h; best=q; } }
     if(best&&bh<.98){ e.weld=best; e.st='aim'; e.stT=.5; groundRing(best.pos,0xffa040,1.4,.5); } else e.stT=.6; },
+  // sniper (angel): holds a long band and fires the Beacon lane (ATK.beam); it needs to see you to start (blind for 3 s, it fires through the blocks anyway)
+  beacon(e,dt,to,d,pd,m){ const [n,f]=e.def.band; attackCycle(e,dt,holdBand(e,dt,to,d,n,f),()=>(canFire(e)||e.cd<-3&&!player.dead)&&d<f*1.5?ATK.beam:null,2); if(e.ph==='pos'){ faceAim(e,dt,to,4); if(e.lane) e.lane.g.visible=false; } else if(e.aim) faceAim(e,dt,e.aim,8); },
+  /* flanker (angel): circles you in its band, drifting to your side or back; there it stops and folds its wings (.6 s; the last .2 s lock a gold
+     lane) and dives along it (20 u/s, up to 15 units, contact 12), flies on and comes back round. The attack token keeps two from diving at once. */
+  herald(e,dt,to,d,pd,m){ e.stT=(e.stT||0)-dt;
+    if(e.st==='tele'){ e.vel.multiplyScalar(Math.pow(.01,dt));
+      if(e.stT>.2){ const ld=leadDir(e.pos.x,e.pos.z,20,_ld); e.yaw=lerpAngle(e.yaw,Math.atan2(ld.x,ld.z),Math.min(1,dt*10)); }
+      else if(!e.dive){ const dx=Math.sin(e.yaw), dz=Math.cos(e.yaw), len=Math.max(4,Math.min(15,lineLen(e.pos.x,e.pos.z,dx,dz,15,.3))); e.dive={x:dx,z:dz,len,done:0,hit:false}; teleStrip(e.pos,dx,dz,len,1.3,0xffd36a,.2+.35,true); }
+      if(e.stT<=0){ e.st='dive'; e.jz.pop.v=3; } return; }
+    if(e.st==='dive'){ const r=e.dive; e.vel.set(r.x*20,0,r.z*20); r.done+=20*dt; if(pd<e.r+.5&&!player.dead&&!r.hit){ r.hit=true; contactHurt(e,12); }
+      if(r.done>=r.len){ e.st='out'; e.stT=.9; dropToken(e); e.dive=null; } return; }
+    if(e.st==='out'){ e.vel.multiplyScalar(Math.pow(.2,dt)); if(e.stT<=0){ e.st='orbit'; e.cd=rand(2.4,3.4); } return; }
+    const T=tgt(), [n,f]=e.def.band, R=(n+f)/2, a=Math.atan2(e.pos.x-T.x,e.pos.z-T.z)+e.orb*dt*1.2, gx=T.x+Math.sin(a)*R, gz=T.z+Math.cos(a)*R;
+    if(Math.abs(gx)>AX-2||Math.abs(gz)>AZ-2) e.orb=-e.orb; // a wall turns the orbit round
+    steer(e,seek(e,clamp(gx,-AX+1.5,AX-1.5),clamp(gz,-AZ+1.5,AZ-1.5),e.speed,_sv),dt,3); faceAim(e,dt,to,6);
+    if(e.hold||player.dead) return; e.cd-=dt*cdRate(e);
+    const side=Math.abs(angDiff(a,Math.atan2(player.aim.x,player.aim.z)))>1; // beside or behind you (or it has waited long enough)
+    if(e.cd<=0&&(side||e.cd<-1.5)&&e.see&&d<11&&takeToken(e)){ e.st='tele'; e.stT=.6; e.dive=null; } },
+  // tank (angel): walks in and holds at 4, plates turning; Judgement (ATK.judge) when you are close
+  dominion(e,dt,to,d,pd,m){ const want=d>e.def.hold?chase(e,e.speed,_sv):_sv.set(0,0,0); attackCycle(e,dt,want,()=>d<e.def.slam+2.5?ATK.judge:null,2); faceAim(e,dt,to,3);
+    if(e.ph==='pos'){ e.judging=false; if(e.downT>0) e.downT-=dt; } },
   cherub(e,dt,to,d,pd,m){ const T=tgt(); let front=null,fd=1e9;
     for(const o of enemies){ if(o===e||o.dead||o===boss||o.def&&o.def.role==='support') continue; const od=Math.hypot(o.pos.x-T.x,o.pos.z-T.z); if(od<fd){ fd=od; front=o; } }
     let gx,gz; if(front){ const ux=(front.pos.x-T.x)/(fd||1), uz=(front.pos.z-T.z)/(fd||1); gx=front.pos.x+ux*3.2; gz=front.pos.z+uz*3.2; } else { gx=e.pos.x-to.x*5; gz=e.pos.z-to.z*5; }
@@ -498,6 +539,9 @@ const ANIM={
     const o=e.weld, on=e.st==='beam'&&o&&!o.dead; if(!m.beam){ m.beam=new THREE.Mesh(box(.08,.08,1),basic(0xffa040,true,.85)); m.beam.visible=false; roomGroup.add(m.beam); (e.props||(e.props=[])).push(m.beam); }
     m.beam.visible=!!on; if(on){ m.tip.getWorldPosition(_tmp2); const ax=_tmp2.x, ay=_tmp2.y, az=_tmp2.z, bx=o.pos.x, by=1.5, bz=o.pos.z, L=Math.hypot(bx-ax,by-ay,bz-az)||1;
       m.beam.position.set((ax+bx)/2,(ay+by)/2,(az+bz)/2); m.beam.scale.set(1,1,L); m.beam.lookAt(bx,by,bz); } },
+  beacon(e,dt,m){ m.body.position.y=3+Math.sin(e.t*2)*.15; m.halo.rotation.z+=dt*1.5; m.ribbons.forEach((p,i)=>{ p.rotation.x=Math.sin(e.t*3+i)*.25; }); m.core.scale.setScalar(e.ph==='tele'?1.3+Math.sin(e.t*30)*.15:1); },
+  herald(e,dt,m){ m.body.position.y=2+Math.sin(e.t*4)*.12; const fold=e.st==='tele'||e.st==='dive'; m.wings.forEach((w,i)=>{ if(!w.userData.broken) w.rotation.y=(i?1:-1)*(fold?.25:.7+Math.sin(e.t*12)*.15); }); },
+  dominion(e,dt,m){ if(!e.judging&&!(e.downT>0)) m.plates.rotation.y+=dt*.7; m.plates.position.y+=((e.downT>0?.6:2.1)-m.plates.position.y)*Math.min(1,dt*10); m.halo.rotation.z+=dt; },
   cherub(e,dt,m){ m.body.position.y=2.2+Math.sin(e.t*3)*.25; m.halo.rotation.z+=dt*2; const wa=wingBeat(e,dt,14); m.wings.forEach(p=>{ p.rotation.z=p.userData.s*(Math.sin(e.wph+p.userData.k)*(.4+wa*.25)); }); m.aura.scale.setScalar(2*(.95+Math.sin(e.t*2)*.05)); },
   censer(e,dt,m){ m.swing.rotation.z=Math.sin(e.t*1.6)*.28; m.swing.rotation.x=Math.cos(e.t*1.3)*.12; m.orbs.forEach((o,i)=>{ const a=e.t*.8+i*2.1; o.position.set(Math.cos(a)*1.9,-1.4+Math.sin(e.t*1.5+i)*.4,Math.sin(a)*1.9); }); m.glow.scale.setScalar((1+Math.sin(e.t*4)*.12)*(e.ph==='tele'?1.5:1)); },
   ophan(e,dt,m){ if(e.st==='roll') m.body.rotation.x+=e.speed*dt/1.6; else { m.body.rotation.x*=Math.pow(.05,dt); m.rings[0].rotation.z+=dt*(e.st==='tele'?5:1.2); m.rings[1].rotation.x+=dt*(e.st==='tele'?4:1); } m.core.rotation.y+=dt*2; },

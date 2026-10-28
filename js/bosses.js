@@ -32,8 +32,8 @@ const SLAM_T=1.15; // slam wind-up: the red ring shows the shockwave's reach and
 function bossPending(){ for(const x of bullets) if(x.tag==='bmis') return true; for(const s of shocks) if(!s.friendly) return true; for(const x of blasts) if(x.boss) return true; return false; }
 const bossHeavy=()=>!!(boss&&!boss.dead&&state==='fight'&&(!LIGHT_ATK.includes(boss.atk)||bossPending()));
 // ground telegraph for a shockwave: the ring is its full reach, the disc fills up during the wind-up, then the ring stays until the wave is out
-function slamTele(pos,R,wind,hold){
-  const g=new THREE.Group(), ring=new THREE.Mesh(G.ring,addMat(0xff2236,.9)), fill=new THREE.Mesh(G.disc,addMat(0xff2236,.2)), life=wind+hold;
+function slamTele(pos,R,wind,hold,col=0xff2236){
+  const g=new THREE.Group(), ring=new THREE.Mesh(G.ring,addMat(col,.9)), fill=new THREE.Mesh(G.disc,addMat(col,.2)), life=wind+hold;
   ring.rotation.x=fill.rotation.x=-Math.PI/2; ring.scale.setScalar(R); fill.position.y=-.01; g.add(ring,fill); g.position.set(pos.x,.07,pos.z);
   addFx(g,life,(f,dt,k)=>{ const t=life*(1-k), c=Math.min(1,t/wind); fill.visible=t<wind; fill.scale.setScalar(Math.max(.01,R*c)); fill.material.opacity=.1+.22*c;
     ring.material.opacity=t<wind?.5+.45*Math.abs(Math.sin(t*(5+c*22))):.9*Math.max(0,(life-t)/Math.max(.01,hold)); });
