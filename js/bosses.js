@@ -2,8 +2,9 @@
 /* ================= BOSSES ================= */
 function spawnBoss(kind){
   const def=BOSSES[kind], m=BOSS_BUILD[kind](), form=def.form||kind;
-  // boss armor follows the same room curve as the mobs (enemyScale in balance.js), normalized to the room 10 boss
-  const hp=Math.round(def.hp*enemyScale(stage,sortie.ri,sortie.rule).boss);
+  // boss armor follows the same room curve as the mobs (enemyScale in balance.js), normalized to the room 10 boss, and then half of how far
+  // the pilot's real damage (cards included) outruns the pilot the curve expects here (bossPower): a strong build still wins faster, never in seconds
+  const hp=Math.round(def.hp*enemyScale(stage,sortie.ri,sortie.rule).boss*bossPower(stage,sortie.ri));
   boss={kind,form,def,model:m,pos:new V3(0,0,-6),vel:new V3(),hp,maxHp:hp,r:def.r,t:0,flash:0,atk:'enter',atkT:99,phase:1,barrier:0,barrierCd:9,y:32,base:def.fly||0,spinA:0,beam:null,yaw:0,walk:0,lastAtk:'',stun:0,born:1,burn:0,slow:0,jz:juiceState(),dropY:0,sc:m.g.scale.x,jumpY:0,vuln:0,reflectT:0,spdK:1,wallA:[0,0,0]};
   // Hive Carrier rotors and Ophanim Throne eyes are parts you can shoot out
   if(form==='hive'){ boss.rotors=m.rotors.map(r=>({m:r,hp:hp*.1,alive:true})); m.bay.material=m.bay.material.clone(); }

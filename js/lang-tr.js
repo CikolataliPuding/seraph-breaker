@@ -35,6 +35,15 @@ const DICT_TR={
   'Fullscreen':'Tam ekran', 'Reset my progress':'İlerlememi sıfırla', 'Replay story':'Hikayeyi yeniden oynat',
   // story, cards, pause, report
   // patch notes (NEWS)
+  'The Real Fight Update':'Gerçek Dövüş Güncellemesi',
+  'Every arena has its own enemies and bosses now: angels first, the machines last and hardest.':"Her arenanın artık kendi düşmanları ve boss'ları var: önce melekler, makineler en son ve en zor.",
+  'Each arena has a level cap (a 50-room arena stops at level 40). Past it there are no more cards, only the angel and the devil.':'Her arenanın bir seviye tavanı var (50 odalık arena 40. seviyede durur). Tavandan sonra kart yok, sadece melek ve şeytan.',
+  'Cards you already own come back rarely: a second rank is as rare as an epic, a third as a legendary. Try new combos.':'Elindeki kartlar artık seyrek gelir: ikinci kademe bir epic kadar, üçüncüsü bir efsanevi kadar nadir. Yeni kombolar dene.',
+  'The angel repairs 25% of your armor, not all of it.':"Melek zırhının %25'ini onarır, tamamını değil.",
+  "New devil deals with a real price: The Crowd, Dry Vein, Pride, Glass Heart, Hunter's Mark. The devil can visit anyone now, not only a flawless pilot.":'Bedeli gerçek yeni şeytan anlaşmaları: Kalabalık, Kurumuş Damar, Kibir, Cam Kalp, Avcı İşareti. Şeytan artık sadece kusursuz oynayana değil, herkese gelebilir.',
+  'Enemies no longer wait for their turn: snipers keep firing, chargers come at you the moment they see you.':'Düşmanlar artık sıra beklemiyor: keskin nişancılar sürekli ateş eder, atılanlar seni gördükleri an saldırır.',
+  "Azure's rifle overheats after about 3 seconds of holding fire. While shooting, speed cards no longer cancel the slowdown.":"Azure'un tüfeği yaklaşık 3 saniye basılı tutunca aşırı ısınır. Ateş ederken hız kartları artık yavaşlamayı silmiyor.",
+  'Bosses grow with your build: a strong build still wins faster, but no boss melts in seconds.':"Boss'lar build'inle birlikte güçlenir: güçlü build yine daha hızlı kazanır ama hiçbir boss saniyeler içinde erimez.",
   'The Sideways Update':'Yan Tutuş Güncellemesi',
   'Phones held sideways: left thumb moves, right thumb aims and fires, DASH and SP sit on the right. The game goes fullscreen on the first touch (on iPhone, add it to the Home Screen).':"Yan tutulan telefon: sol başparmak hareket ettirir, sağ başparmak nişan alıp ateş eder, DASH ve SP sağda. Oyun ilk dokunuşta tam ekran olur (iPhone'da Ana Ekrana ekle).",
   'Bigger rooms on desktop and sideways phones: one column wider and three rows longer.':'Masaüstünde ve yan tutulan telefonda odalar büyüdü: bir sütun daha geniş, üç sıra daha uzun.',

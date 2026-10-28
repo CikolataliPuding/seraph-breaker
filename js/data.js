@@ -215,6 +215,15 @@ const SCALE={mob:2.2,hp:.058,dmg:.04,bossDmgK:1.4,bossRef:9,finalHp:1.5,finalDmg
 /* patch notes: shown once on the first boot after a big update (ui-hangar.js newsBoot), newest first; System > Patch notes shows them again.
    Plain player words: what got weaker (nerf), stronger (buff), what is new, what changed and what was fixed. A new pilot skips them. */
 const NEWS=[
+  {id:'balance-3',title:'The Real Fight Update',items:[
+    {k:'change',t:'Every arena has its own enemies and bosses now: angels first, the machines last and hardest.'},
+    {k:'nerf',t:'Each arena has a level cap (a 50-room arena stops at level 40). Past it there are no more cards, only the angel and the devil.'},
+    {k:'nerf',t:'Cards you already own come back rarely: a second rank is as rare as an epic, a third as a legendary. Try new combos.'},
+    {k:'nerf',t:'The angel repairs 25% of your armor, not all of it.'},
+    {k:'new',t:"New devil deals with a real price: The Crowd, Dry Vein, Pride, Glass Heart, Hunter's Mark. The devil can visit anyone now, not only a flawless pilot."},
+    {k:'nerf',t:'Enemies no longer wait for their turn: snipers keep firing, chargers come at you the moment they see you.'},
+    {k:'nerf',t:"Azure's rifle overheats after about 3 seconds of holding fire. While shooting, speed cards no longer cancel the slowdown."},
+    {k:'change',t:'Bosses grow with your build: a strong build still wins faster, but no boss melts in seconds.'}]},
   {id:'controls-1',title:'The Sideways Update',items:[
     {k:'new',t:'Phones held sideways: left thumb moves, right thumb aims and fires, DASH and SP sit on the right. The game goes fullscreen on the first touch (on iPhone, add it to the Home Screen).'},
     {k:'change',t:'Bigger rooms on desktop and sideways phones: one column wider and three rows longer.'},
@@ -248,8 +257,10 @@ const NEWS=[
    opens at tier ceil(k × treeFull / max), the same gate as the Core (a save's ranks above it wait).
    hp0 / dmg0: the whole enemy curve's anchor. Arena 1 used to be tuned for a pilot who farmed it to Core ~12-15; the tier gate stops at 4
    there, so the anchor brings Arena 1 to that power (A1-only campaigns: .35-.45 clear it in 2-4 tries, ~20-40 min; .6 walls Azure).
+   bossRun: run cards are not in the curve, so a boss also follows half of the pilot's real lead over base + room × ri times the reference
+   damage (balance.js bossPower, at most max).
    An ARENAS row or ECON table that lists its own value keeps it. */
-const CURVE={hp0:.85,dmg0:.4,tier:4,treeFull:3,press:.5,bossT:1.06,tempo:.04,tempoMax:1.25,runs:1.5};
+const CURVE={bossRun:{base:1.5,room:.05,k:.5,max:4},hp0:.85,dmg0:.4,tier:4,treeFull:3,press:.5,bossT:1.06,tempo:.04,tempoMax:1.25,runs:1.5};
 // pilot xp per level: base + per × level. cap: the arena's level cap is this share of its rooms (patch.md 40 [karar]: 50 rooms → level 40),
 // reached around room 45; past it there are no more cards, only the angel and the devil. The curve was ~1 level a room (level 54 in 50 rooms).
 const XP_NEED={base:8.5,per:.5,cap:.8}, XP_BOSS=10;
