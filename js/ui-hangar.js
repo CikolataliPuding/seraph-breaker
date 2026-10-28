@@ -45,11 +45,11 @@ function renderMenu(){
   $('whoName').textContent=P.pilot||t('[CALLSIGN]'); $('avatar').textContent=String(P.arenas).padStart(2,'0'); $('betaBadge').hidden=!P.beta;
   if(view==='home'){ renderHome(); hangarFocus(); } if(view==='map') renderMap(); if(view==='armory') renderArmory(); if(view==='skills') renderTree($('treeHangar')); if(view==='frames') renderFrames(); if(view==='system') renderSystem();
 }
-// holo map (wide hangar, right panel): a route from Arena 1 (bottom) to the Main Stage (top); a node picks the arena, the hangar lights follow
+// holo map (wide hangar, right panel): a route from Arena 1 (bottom) up through the arenas this pilot can see; a node picks the arena, the hangar lights follow
 const HOLO=[[18,86],[70,68],[22,50],[72,32],[26,13]];
-function renderHolo(sel){ const box=$('holoNodes'); if(!box) return; box.innerHTML=''; const pts=HOLO.slice(0,ARENAS.length).map(p=>p.join(',')).join(' ');
+function renderHolo(sel){ const box=$('holoNodes'); if(!box) return; box.innerHTML=''; const sh=shownArenas(), pts=sh.map((i,k)=>(HOLO[k]||[50,50]).join(',')).join(' ');
   $('holoPath').setAttribute('points',pts); $('holoGlow').setAttribute('points',pts);
-  ARENAS.forEach((A,i)=>{ const [x,y]=HOLO[i]||[50,50], open=arenaOpen(i), best=P.bestRoom[i]||0, done=best>=A.rooms, b=document.createElement('button');
+  sh.forEach((i,k)=>{ const A=ARENAS[i], [x,y]=HOLO[k]||[50,50], open=arenaOpen(i), best=P.bestRoom[i]||0, done=best>=A.rooms, b=document.createElement('button');
     b.className='hn'+(x>50?' r':'')+(i===sel?' sel':'')+(open?'':' lock')+(done?' done':''); b.style.left=x+'%'; b.style.top=y+'%'; b.style.setProperty('--c',CSS(A.theme.edge)); b.disabled=!open;
     const st=!open?t('Locked'):done?t('Cleared'):best?t('Best room {0}/{1}',best,A.rooms):t('{0} rooms',A.rooms);
     b.setAttribute('aria-label',t('Arena {0}: {1}, {2}',i+1,A.name,st));
@@ -59,13 +59,13 @@ function renderHome(){
   const a=openSel(P.selArena), A=ARENAS[a];
   $('hEye').textContent=t('ARENA {0}','0'+(a+1))+' · '+A.phase.toLocaleUpperCase(LANG)+' · '+roomsLabel(A)+((P.bestRoom[a]||0)>=A.rooms?' · '+t('CLEARED'):'');
   $('hStage').textContent=A.name; hangarTheme(a); renderHolo(a);
-  const pips=$('hPips'); pips.innerHTML=''; ARENAS.forEach((x,i)=>{ const p=document.createElement('i'); if((P.bestRoom[i]||0)>=x.rooms) p.className='f'; else if(arenaOpen(i)) p.className='c'; pips.appendChild(p); });
+  const pips=$('hPips'); pips.innerHTML=''; shownArenas().forEach(i=>{ const x=ARENAS[i], p=document.createElement('i'); if((P.bestRoom[i]||0)>=x.rooms) p.className='f'; else if(arenaOpen(i)) p.className='c'; pips.appendChild(p); });
   const hb=$('hBosses'); hb.innerHTML=''; arenaBossPool(a).slice(0,3).forEach(k=>{ const img=document.createElement('img'); img.src=PORTRAIT[k]||''; img.alt=BOSSES[k].name; img.title=BOSSES[k].name; hb.appendChild(img); }); const bl=document.createElement('span'); bl.textContent=t('BOSSES'); hb.appendChild(bl);
   $('pvUnit').textContent=UNITS[P.unit].name; $('pvSp').textContent=`SP · ${SPECIALS[P.unit].name} · ${SPECIALS[P.unit].cd} s`;
   const run=loadRun(), cb=$('contBtn'); cb.hidden=!run; if(run) cb.textContent=t('Continue · {0} · room {1}/{2}',ARENAS[run.a].name,run.ri+1,ARENAS[run.a].rooms);
   // personal record: the furthest arena you reached and your best room there
-  let ra=-1; P.bestRoom.forEach((r,i)=>{ if(r>0&&i<ARENAS.length) ra=i; });
-  $('bestTxt').textContent=(ra<0?t('Record: no runs yet'):t('Record: Arena {0} · Room {1}/{2}',ra+1,P.bestRoom[ra],ARENAS[ra].rooms))+' · '+t('{0}/{1} arenas open',openArenaCount(),ARENAS.length);
+  let ra=-1; P.bestRoom.forEach((r,i)=>{ if(r>0&&arenaShown(i)) ra=i; });
+  $('bestTxt').textContent=(ra<0?t('Record: no runs yet'):t('Record: Arena {0} · Room {1}/{2}',ra+1,P.bestRoom[ra],ARENAS[ra].rooms))+' · '+t('{0}/{1} arenas open',openArenaCount(),shownArenas().length);
 }
 $('sortieBtn').onclick=()=>{ sfx('click'); openView('map'); };
 $('contBtn').onclick=()=>{ const r=loadRun(); if(r){ sfx('click'); launchArena(r.a,r); } else renderHome(); };

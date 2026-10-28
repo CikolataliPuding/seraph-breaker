@@ -32,7 +32,7 @@ function showResult(win,bonusG=0,first=false){
     [t('Run score'),rs.total.toLocaleString()],['',t(rs.rooms===1?'{0} room × {1} · speed +{2} · damage −{3}':'{0} rooms × {1} · speed +{2} · damage −{3}',rs.rooms,RUN_SCORE.room,rs.speed,rs.dmg)]].forEach(([a,b],i,arr)=>{ const s=document.createElement('span'); s.textContent=a; const v=document.createElement('b'); v.textContent=b; if(i>=arr.length-2){ s.className=v.className='rsc'; } st.append(s,v); });
   const kit=$('resKit'); kit.innerHTML=''; kit.append(...runIcons());
   const nb=$('resNext'), a=sortie.a, retry=!win&&canRetryBoss();
-  if(win&&a+1<ARENAS.length){ nb.textContent=t('Next arena ▸'); nb.onclick=()=>launchArena(a+1); }
+  if(win&&arenaOpen(a+1)){ nb.textContent=t('Next arena ▸'); nb.onclick=()=>launchArena(a+1); }
   else { nb.textContent=t(win?'Run it again':'Retry arena'); nb.onclick=()=>launchArena(a); }
   // down in a boss room: Retry boss (run.js retryBoss) or Return to base
   $('resRetry').hidden=!retry; nb.hidden=retry; $('resHome').textContent=t(retry?'Return to base':'Hangar');

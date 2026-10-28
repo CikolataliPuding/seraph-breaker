@@ -25,9 +25,13 @@ const testerOK=()=>!!P.testerCode&&sha256(normCode(P.testerCode))===TESTER_HASH;
 function unlockTester(code){ if(sha256(normCode(code))!==TESTER_HASH) return false; P.testerCode=normCode(code); P.testerSave=true; persist(); return true; }
 function lockTester(){ P.testerCode=''; P.testerTools=false; persist(); }
 
-// arenas the pilot can start: the normal unlocks (the Main Stage opens with Arena 4's first clear; its beta access code is gone, patch.md 31)
-const arenaOpen=i=>!!ARENAS[i]&&i<P.arenas;
+// the Main Stage (High-Co) is a tester-only arena: it nods to a real artist and stays private until he answers (patch.md 35);
+// other pilots never see it on the map, in the hangar or on the result screen
+const arenaShown=i=>!!ARENAS[i]&&(!ARENAS[i].stage||testerOK());
+// arenas the pilot can start: the normal unlocks (for a tester the Main Stage opens with Arena 4's first clear)
+const arenaOpen=i=>arenaShown(i)&&i<P.arenas;
 const openArenaCount=()=>ARENAS.filter((A,i)=>arenaOpen(i)).length;
+const shownArenas=()=>ARENAS.map((A,i)=>i).filter(arenaShown);
 // the selected arena, moved down to the nearest open one
 const openSel=i=>{ for(let k=clamp(i|0,0,ARENAS.length-1);k>=0;k--) if(arenaOpen(k)) return k; return 0; };
 
