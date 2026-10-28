@@ -170,7 +170,7 @@ function updatePlayer(dt,canAct){
     const mv=(canAct||state==='trans')&&!(p.stunT>0)?moveVec():_tmp2.set(0,0,0);
     // Bass Brute rings: 35% slower while you stand in them
     if(p.slowT>0){ p.slowT-=dt; if(Math.random()<dt*6) sparks(p.pos.clone().setY(.4),0x6ad8ff,1,2); }
-    const sp=unit.speed*p.st.spd*(p.shield?.45:1)*(p.od>0?1.2:1)*(p.lance>0?0:1)*(p.slowT>0?.65:1);
+    const sp=unit.speed*p.st.spd*(p.shield?.45:1)*(p.od>0?1.2:1)*(p.lance>0?0:1)*(p.slowT>0?.65:1)*(fireIn&&!mobileMode?1-BAL.fireSlow:1);
     if(p.dashT>0){ p.dashT-=dt; p.vel.copy(p.dashDir).multiplyScalar(30);
       if(p.rs.trail){ p.trailT=(p.trailT||0)-dt; if(p.trailT<=0){ p.trailT=.04; dropTrail(p.pos); } }
       if(Math.random()<.6){ const ghost=new THREE.Mesh(box(.9,2.6,.6),addMat(unit.shot,.35)); ghost.position.copy(p.pos).setY(1.6); addFx(ghost,.25,(f,dt,k)=>{ghost.material.opacity=k*.35;}); } }

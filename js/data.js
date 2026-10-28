@@ -193,6 +193,9 @@ const SPLIT_REWARD=.3;
 const BAL={
   soft:1, softRate:.5,
   cap:{crit:.5,dodge:.3,rate:1,spd:.4,proj:6,orbit:6,headshot:.03},
+  // desktop: moving while the trigger is held costs this share of move speed (patch.md 34: holding fire and walking was free).
+  // The phone already stops firing while you move.
+  fireSlow:.35,
   // Twin Shot: damage of each parallel shot by rank (1 / 1.5 / 1.8 total), so multishot does not multiply everything else
   twin:[1,.75,.6],
   proc:{arc:{rate:6,burst:3},meteor:{rate:.8,burst:1},nova:{rate:4,burst:4},shard:{rate:3,burst:3},poison:{stacks:[5,7,9]},ricochet:{falloff:.75}},
