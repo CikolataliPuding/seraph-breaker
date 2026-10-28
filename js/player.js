@@ -221,7 +221,7 @@ function updatePlayer(dt,canAct){
   let sx=1,sy=1,sz=1; if(p.dashT>0){ const f=Math.abs(p.dashDir.x*Math.sin(p.yaw)+p.dashDir.z*Math.cos(p.yaw)); sz=1+.34*f; sx=1+.34*(1-f); sy=.84; } else if(air>0){ sy=1.08; sx=sz=.95; }
   const q=clamp(p.jz.sq.x,-.5,.5); m.g.scale.set(sx*(1-q*.5),sy*(1+q),sz*(1-q*.5)); m.g.rotation.order='YXZ'; m.g.rotation.x=p.jz.lean.x; m.g.rotation.z=p.jz.roll.x;
   m.g.visible=!(p.inv>0&&Math.floor(p.inv*30)%2===0);
-  if(!busy()&&!p.shield) weaponUpdate(dt,fireIn); else { chargeOrb.visible=false; p.charge=0; p.prevFire=fireIn; }
+  if(!busy()&&!p.shield){ shotSrc=p.pos; weaponUpdate(dt,fireIn); shotSrc=null; } else { chargeOrb.visible=false; p.charge=0; p.prevFire=fireIn; }
   if(p.lance>0){
     p.lance-=dt; m.muzzle.getWorldPosition(_mz);
     const from=_mz.clone().setY(2.2), end=from.clone().addScaledVector(p.lanceDir,32);
