@@ -192,7 +192,7 @@ function updatePlayer(dt,canAct){
   // the mat has no walls: past the boundary line the hazard zone drains armor every second
   p.pos.x=clamp(p.pos.x,-AX-OUTW,AX+OUTW); p.pos.z=clamp(p.pos.z,-AZ-OUTW,AZ+OUTW);
   const outside=Math.abs(p.pos.x)>AX||Math.abs(p.pos.z)>AZ, atDoor=door&&door.open&&Math.abs(p.pos.x)<1.6&&p.pos.z<0;
-  if(outside&&!atDoor&&air===0&&canAct){
+  if(outside&&!atDoor&&air===0&&canAct&&!(room&&room.cleared)){ // a cleared room no longer drains
     p.hp-=OUT_DPS*p.st.armor*dt; if(sortie) sortie.dmgTaken=(sortie.dmgTaken||0)+OUT_DPS*p.st.armor*dt; if(room) room.hurt=true;
     if(!p.outWarn){ p.outWarn=true; toast(t('Out of bounds'),t('Get back on the mat')); sfx('hurt'); buzz(60); }
     $('vign').style.opacity=.85; if(Math.random()<dt*10) sparks(p.pos.clone().setY(.4),0xe8243c,1,4);

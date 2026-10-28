@@ -7,7 +7,7 @@ function clearWorld(){
   if(player){ scene.remove(player.model.g,player.model.shadow); player=null; }
   orbitG.children.slice().forEach(c=>orbitG.remove(c));
   shieldG.visible=false; pBeamO.visible=pBeamC.visible=false; chargeOrb.visible=false; odRing.visible=false; hookLine.visible=hookHead.visible=false; dashArrow.visible=barRing.visible=false; setCrosshair(false);
-  HC_CAM.t=0; camZoom=1; cam.zoom=1; cam.updateProjectionMatrix(); AX=roomHalfX(); AZ=ROOM_Z; room=null;
+  HC_CAM.t=0; camZoom=1; cam.zoom=1; cam.updateProjectionMatrix(); AX=roomHalfX(); AZ=roomHalfZ(); room=null;
 }
 function refreshControls(){
   const on=playing()&&state!=='cine'&&state!=='choice';
