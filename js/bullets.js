@@ -3,6 +3,7 @@
 // o.air: 'arc' (homing missile: climbs, commits to a landing point with a ground marker, then comes down and explodes)
 //        'float' (Censer orb: hovers above blocks and dives at you). Airborne shots cast a ground shadow and only hit blocks while low.
 function shoot(from,pos,dir,speed,dmg,color,o={}){
+  if(from==='e'&&aiSrc&&aiSrc.def.dmgK) dmg*=aiSrc.def.dmgK;
   const geo=from==='p'?(o.geo||G.pB):G.orb;
   const m=new THREE.Mesh(geo,basic(color,from==='p'));
   m.position.copy(pos);
