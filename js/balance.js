@@ -104,7 +104,7 @@ function powerEstimate(st,rs,o={}){
   // on-hit procs scale with the gun (their own rate caps keep them in check)
   const onHit=1+.15*r('torch')+.1*r('poison')+.08*r('arc')+.12*r('meteor')+.06*r('nova')+.05*r('shard')+.04*r('cryo')+.02*r('freeze');
   // independent hitters, in base-gun units: orbits, wingman, Storm Halo, Dash Trail
-  const orb=Math.min(BAL.cap.orbit,orbCount(rs)), indep=orb*.15+(r('inferno')?.45:0)+.25*r('wing')+(r('halo')?.4:0)+.05*r('trail');
+  const orb=Math.min(BAL.cap.orbit,orbCount(rs)), indep=orb*.15+(r('inferno')?.6:0)+.25*r('wing')+(r('halo')?.4:0)+.05*r('trail');
   const dps=gun*onHit+dm*crit*indep;
   const sustain=1+.05*r('vamp')+(r('blood')?.12:0)+.08*r('sorb')+(r('reflect')?.05:0)+.4*(o.lives||r('life'))+(o.aegis?.08:0)+(st.second?.15:0);
   const ehp=st.maxHp/base.maxHp/(st.armor/base.armor)/(1-st.dodge)*sustain;

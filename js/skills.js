@@ -71,9 +71,9 @@ function updateOrbits(dt,canAct){
   if(!canAct) return;
   for(const b of ch){ const k=b.userData.k; if(k==='shield') continue;
     if(k==='bolt'){ b.userData.zap-=dt; if(b.userData.zap<=0){ const t=nearestFoe(b.position,5.5); if(t){ b.userData.zap=.7; bolt(b.position.clone(),t.pos.clone().setY(2),0xd8f4ff); hitEnemy(t,5*p.st.dmg,t.pos.clone().setY(2),false,true); } } continue; }
-    const rad=k==='blade'?(inf?.9:.4):.55;
+    const rad=k==='blade'?(inf?1:.4):.55;
     for(const e of enemies){ if(e.dead||e.dropY>0) continue; if(Math.hypot(e.pos.x-b.position.x,e.pos.z-b.position.z)<e.r*.7+rad){
-      if(k==='blade'){ hitEnemy(e,(inf?40:16)*p.st.dmg*dt,e.pos,true); if(inf) e.burn=Math.max(e.burn,2.5); }
+      if(k==='blade'){ hitEnemy(e,(inf?55:16)*p.st.dmg*dt,e.pos,true); if(inf) e.burn=Math.max(e.burn,2.5); }
       else if(k==='fire'){ hitEnemy(e,10*p.st.dmg*dt,e.pos,true); e.burn=Math.max(e.burn,2); }
       else { hitEnemy(e,8*p.st.dmg*dt,e.pos,true); e.slow=Math.max(e.slow,1.2); }
       if(Math.random()<dt*10) sparks(b.position,k==='ice'?0x9fe8ff:k==='blade'&&!inf?unit.shot:0xff7a2a,1,3); break; } } }
