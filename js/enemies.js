@@ -84,7 +84,7 @@ function hitEnemy(e,d,pos,dot,noProc,flat){
   if(e.under) return; // a Borer under the floor
   // player death wins: DoTs, queued blasts, orbits and procs stop dealing damage once the pilot is down
   if(!e||e.dead||!player||player.dead) return;
-  if(e===boss){ if(boss.atk==='enter'||boss.immune||state==='cine') return; if(boss.barrier>0){ if(!dot) sparks(pos,0xffa04a,3,5); return; } if(!flat) d*=player.st.boss; if(boss.vuln>0) d*=1.6; if(boss.reflectT>0) d*=.3; }
+  if(e===boss){ if(boss.atk==='enter'||boss.immune||state==='cine') return; if(boss.barrier>0){ if(!dot) sparks(pos,0xffa04a,3,5); return; } if(!flat) d*=player.st.boss*(sortie&&sortie.rule.bossBane||1); if(boss.vuln>0) d*=1.6; if(boss.reflectT>0) d*=.3; }
   const rs=player.rs;
   let crit=false; if(!dot&&!flat&&Math.random()<player.st.crit){ d*=player.critMul||2; crit=true; }
   // Rage (doubled by Blood Engine): more damage as your armor drops
@@ -159,12 +159,12 @@ function killEnemy(e,byProc){
   // Shardling splits and boss summons pay a reduced share, so one Shardling is not worth seven kills; Survive spawns pay e.rw; leftovers pay nothing
   if(e.noLoot) return;
   const rw=(e.gen||e.minion?SPLIT_REWARD:1)*(e.rw==null?1:e.rw);
-  const g=def.gold*econAt('killGold',stage)*mul*TIER.gold[(e.tier||1)-1]*(sortie.rule.goldMul||1)*rw*sortie.farm, gc=ECON.gemChance;
+  const g=def.gold*econAt('killGold',stage)*mul*TIER.gold[(e.tier||1)-1]*(sortie.rule.goldMul||1)*(e.elite&&sortie.rule.eliteReward||1)*rw*sortie.farm, gc=ECON.gemChance;
   dropGold(e.pos,g,'kill');
   if(Math.random()<(e.elite?gc.elite:def.cost>=2.5?gc.big:gc.small)*rw*sortie.farm) dropPick(e.pos,'gem',1);
-  if(e.elite&&Math.random()<.25) dropItem(e.pos);
+  if(e.elite&&Math.random()<.25*(sortie.rule.eliteReward||1)) dropItem(e.pos);
   if(Math.random()<econAt('healChance',stage)*rw) dropPick(e.pos,'heal',.14);
-  if(def.xp) gainXp(def.xp*mul*(1+sortie.a*.12)*rw);
+  if(def.xp) gainXp(def.xp*mul*(1+sortie.a*.12)*rw*(sortie.rule.xpMul||1));
 }
 function dropPick(pos,kind,v,src){
   let m;

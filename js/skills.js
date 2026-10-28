@@ -181,12 +181,11 @@ function showLevelUp(){
   cfg.reroll=()=>{ cfg.options=roll(); openChoice(cfg); };
   openChoice(cfg);
 }
+// the angel repairs a little, never all of it (patch.md 40 [karar]): 25% of max armor (Field repair and Grace add to it)
 function angelChoice(){
-  const grace=player.rs.grace>0;
-  if(grace){ player.hp=player.maxHp; sparks(player.pos.clone().setY(2),0x7dff9a,14,6); }
-  const heal=Math.round(40*player.st.heal);
-  const opts=[{icon:'heal',name:t('Repair'),desc:grace?t('Grace already repaired you. Take 15 extra max armor instead.'):t('Restore {0}% of your armor.',heal),tag:t('{0}/{1} now',Math.ceil(player.hp),player.maxHp),color:'#7dff9a',static:true,
-    act:()=>{ if(grace){ player.extra.hpFlat=(player.extra.hpFlat||0)+15; recalcStats(); } else player.hp=Math.min(player.maxHp,player.hp+player.maxHp*heal/100); sparks(player.pos.clone().setY(2),0x7dff9a,12,6); npcGone(); }}];
+  const grace=player.rs.grace>0, heal=Math.round((25+(grace?15:0))*player.st.heal);
+  const opts=[{icon:'heal',name:t('Repair'),desc:t('Restore {0}% of your armor.',heal),tag:t('{0}/{1} now',Math.ceil(player.hp),player.maxHp),color:'#7dff9a',static:true,
+    act:()=>{ player.hp=Math.min(player.maxHp,player.hp+player.maxHp*heal/100); sparks(player.pos.clone().setY(2),0x7dff9a,12,6); npcGone(); }}];
   // Repair or one aggressive card (patch.md 34); Grace adds a second card from the whole pool
   const ag=skillOptions(1,null,player,RSK_AGGRO), more=grace?skillOptions(2).filter(id=>!ag.includes(id)).slice(0,1):[];
   [...ag,...more].forEach(id=>opts.push({...skillCard(id),act:()=>{ applySkill(id); npcGone(); }}));
@@ -197,7 +196,7 @@ function devilChoice(){
   while(opts.length<2&&free.length){ const id=free.splice((Math.random()*free.length)|0,1)[0], c=CURSES[id];
     opts.push({icon:c.icon,name:c.name,desc:c.d,tag:t('Curse · whole run'),color:'#e8243c',pv:bonusPreview(c.bonus),act:()=>{ applyCurse(id); sfx('lvup'); crossBlast(player.pos.clone(),0xe8243c,.8); npcGone(); }}); }
   opts.push({icon:'rear',name:t('Walk away'),desc:t('Keep things as they are. The offer is gone for good.'),tag:t('Decline'),color:'#a79fae',act:()=>npcGone()});
-  openChoice({eyebrow:t('A flawless room draws attention'),title:t('The devil makes an offer'),note:t('Power now, at a price you pay until the run ends.'),options:opts});
+  openChoice({eyebrow:t('Something has been watching you'),title:t('The devil makes an offer'),note:t('Power now, at a price you pay until the run ends.'),options:opts});
 }
 
 /* ================= BUILD PANEL ================= */

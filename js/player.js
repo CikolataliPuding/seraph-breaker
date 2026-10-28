@@ -125,8 +125,8 @@ function zeroHp(){
   const p=player; if(godMode){ p.hp=1; return; }
   // debug measurement runs: the pilot is refilled and the room counts a death
   if(DBG.immortal){ p.hp=p.maxHp; p.inv=1; if(RUNLOG.cur) RUNLOG.cur.deaths++; return; }
-  if(p.lives>0){ p.lives--; p.hp=p.maxHp*.5; p.inv=2; crossBlast(p.pos.clone(),0xffd36a,1.3); clearEnemyShots(p.pos,10); popText(t('EXTRA LIFE')); return; }
-  if(p.st.second&&!p.secondUsed){ p.secondUsed=true; p.hp=p.maxHp*.3; p.inv=1.6; crossBlast(p.pos.clone(),0x7dff9a,1); clearEnemyShots(p.pos,8); return; }
+  if(p.lives>0){ p.lives--; p.hp=p.maxHp*.5; p.hpLow=p.hp; p.inv=2; crossBlast(p.pos.clone(),0xffd36a,1.3); clearEnemyShots(p.pos,10); popText(t('EXTRA LIFE')); return; }
+  if(p.st.second&&!p.secondUsed){ p.secondUsed=true; p.hp=p.maxHp*.3; p.hpLow=p.hp; p.inv=1.6; crossBlast(p.pos.clone(),0x7dff9a,1); clearEnemyShots(p.pos,8); return; }
   p.hp=0; p.dead=true; p.stunT=0; p.slowT=0; dashArrow.visible=barRing.visible=false; crossBlast(p.pos.clone(),unit.shot,1.6); hitstop(120,true); shatter(p.model,p.pos,0,0,{max:14,spd:1.2}); scene.remove(p.model.g,p.model.shadow); setState('dying'); stateT=1.8; shieldG.visible=false; pBeamO.visible=pBeamC.visible=false; chargeOrb.visible=false; buzz(300);
 }
 const _tmp=new V3(),_tmp2=new V3(),_mz=new V3();
@@ -135,6 +135,8 @@ function shotDir(mz){ const p=player; let d=p.aim.clone(); if(p.aimOk&&!mobileMo
   if(p.aimDrift){ const c=Math.cos(p.aimDrift), s=Math.sin(p.aimDrift), x=d.x*c+d.z*s; d.z=d.z*c-d.x*s; d.x=x; } return d; }
 function updatePlayer(dt,canAct){
   const p=player; if(p.dead) return;
+  // Dry Vein (devil): armor never climbs back above its lowest point, whatever tries to repair it
+  if(p.st.noHeal){ if(p.hpLow==null||p.hp<p.hpLow) p.hpLow=p.hp; else if(p.hp>p.hpLow) p.hp=p.hpLow; }
   p.inv=Math.max(0,p.inv-dt); p.dashCd=Math.max(0,p.dashCd-dt); p.gcd[0]=Math.max(0,p.gcd[0]-dt); p.gcd[1]=Math.max(0,p.gcd[1]-dt);
   p.overheat=Math.max(0,p.overheat-dt); p.regenDelay=Math.max(0,p.regenDelay-dt);
   if(state==='fight') hubrisTick(p,dt);
