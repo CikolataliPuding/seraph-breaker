@@ -203,7 +203,7 @@ const BAL={
   twin:[1,.75,.6],
   proc:{arc:{rate:6,burst:3},meteor:{rate:.8,burst:1},nova:{rate:4,burst:4},shard:{rate:3,burst:3},poison:{stacks:[5,7,9]},ricochet:{falloff:.75}},
 };
-/* enemy scaling inside an arena: armor and damage grow exponentially with the room index (on top of the arena's hpMul / dmgMul),
+/* enemy scaling inside an arena: armor and damage grow exponentially with the room index (on top of the arena curve, CURVE below),
    the room budget (how many enemies) grows slowly. Bosses use the same curve, normalized so the room 10 boss keeps its listed armor and damage;
    the arena's final boss gets finalHp / finalDmg on top. mob: extra armor for every room mob (not bosses), so enemies live long enough to attack.
    bossDmgK: every boss hits harder by this much. A tougher start and a gentler climb (mob 2.2, hp .058, dmg .04) keep the late rooms from
@@ -229,11 +229,13 @@ const NEWS=[
 /* arena curve (patch.md 39, balance.js arenaCurve): every number an arena needs comes from its index a, so a new arena needs no table row.
    The reference pilot of arena a has the tree ranks open at tier a+1 and Core level tier*a + tier/2 (the last tier full, the new one half
    bought). His dps and ehp set the enemy armor and damage; press keeps each arena a little harder than the last at that power
-   (difficulty ratio 1 + press × ln(1+a): skill grows fast first, then slower). bossT: the boss fight gets this much longer per arena.
+   (difficulty ratio 1 + press × ln(1+a): skill grows fast first, then slower; .5 from the campaign: .25 left Azure at 72 min, .8 pushed Crimson to 199). bossT: the boss fight gets this much longer per arena.
    tempo: enemy shot speed per arena, capped for readability. treeFull: the tier where today's tree is complete; a tree node's rank k
    opens at tier ceil(k × treeFull / max), the same gate as the Core (a save's ranks above it wait).
+   hp0 / dmg0: the whole enemy curve's anchor. Arena 1 used to be tuned for a pilot who farmed it to Core ~12-15; the tier gate stops at 4
+   there, so the anchor brings Arena 1 to that power (A1-only campaigns: .35-.45 clear it in 2-4 tries, ~20-40 min; .6 walls Azure).
    An ARENAS row or ECON table that lists its own value keeps it. */
-const CURVE={tier:4,treeFull:3,press:.25,bossT:1.06,tempo:.04,tempoMax:1.25,runs:1.5};
+const CURVE={hp0:.85,dmg0:.4,tier:4,treeFull:3,press:.5,bossT:1.06,tempo:.04,tempoMax:1.25,runs:1.5};
 // pilot xp per level: base + per × level (about one level every 1-2 rooms)
 const XP_NEED={base:6,per:.35}, XP_BOSS=10;
 /* economy: target earnings for one full run of each arena without gold bonuses (first-clear diamonds come on top, once).
@@ -279,23 +281,23 @@ const CURSES={
   brittle:{name:'Brittle',d:'Take +20% damage. Gain a random epic skill.',cost:'+20% damage taken',icon:'brittle',bonus:{taken:.2},apply:(p,silent)=>{ if(!silent){ const o=skillOptions(1,'epic'); if(o[0]) applySkill(o[0]); } }},
 };
 
-/* arenas: one run each, a flat sequence of short rooms. hpMul/dmgMul/bossMul multiply the room curve (SCALE below). The room schedule follows PACING
+/* arenas: one run each, a flat sequence of short rooms. The arena curve (CURVE, arenaCurve) multiplies the room curve (SCALE below); a row that lists hpMul / dmgMul / bossMul / tempo keeps its own (the Main Stage). The room schedule follows PACING
    (see roomSpec in run.js): every 10-room block ends with a boss. mobs unlock in list order as the run goes on (3 at first, one more every 4 rooms,
    soft = rooms the first unlock waits on top; blockTypes = only that many unlocked types are active in each 10-room block, a window that moves on; pin = types always in it once unlocked); bosses are drawn from the pool, never twice in a row, and planned ahead so the rooms before a boss can
    teach it (firstBoss: the first block's boss). The arenas follow the story (patch.md 31): the pilot first fights what is far from his own form
    (angels invade the Low City), and his own kind, the machines, in Fallen Sky (with one corrupted angel boss, x_archon: patch.md 31). phase =
    the story beat shown beside the name. */
 const ARENAS=[
-  {name:'The Low City', phase:'Siege', rooms:30, hpMul:1, dmgMul:1, bossMul:1, mobs:['shardling','warden','censer','seraph','ophan','herald','cherub','beacon'], soft:1, bosses:['prism','seraph','throne'], firstBoss:'throne', rule:{}, trap:'saw', ruleTxt:'Training ground: no special rule',
+  {name:'The Low City', phase:'Siege', rooms:30, mobs:['shardling','warden','censer','seraph','ophan','herald','cherub','beacon'], soft:1, bosses:['prism','seraph','throne'], firstBoss:'throne', rule:{}, trap:'saw', ruleTxt:'Training ground: no special rule',
    theme:{bg:0x1d1424,hemiS:0xffd6b8,hemiG:0x2a1d3a,ground:0x5a4c64,city:0xffffff,edge:0xff6a1a,rim:0xff7a40,win:0xffc47a,floor:0xa898b0,wall:0x3a3346,block:0x5e5468,water:0xff7a2a},
    colorCss:'#ff6a1a'},
-  {name:'Night Harbor', phase:'Undertow', rooms:40, hpMul:1.3, dmgMul:1.15, bossMul:1.25, mobs:['seraph','shardling','warden','drone','ram','lancer','hopper','coil','sentry','bulwark','borer','mender'], bosses:['prism','arachne','hive'], rule:{shotSpd:1.15,hazards:.35}, trap:'spike', ruleTxt:'Enemy shots fly 15% faster',
+  {name:'Night Harbor', phase:'Undertow', rooms:40, mobs:['seraph','shardling','warden','drone','ram','lancer','hopper','coil','sentry','bulwark','borer','mender'], bosses:['prism','arachne','hive'], rule:{shotSpd:1.15,hazards:.35}, trap:'spike', ruleTxt:'Enemy shots fly 15% faster',
    theme:{bg:0x0b1726,hemiS:0xb8d4ff,hemiG:0x10203a,ground:0x3e5470,city:0x9ab4e0,edge:0x3ad0ff,rim:0x3a8aff,win:0x9ae4ff,floor:0x86a2c4,wall:0x22344a,block:0x2f5f9a,water:0x1a74e0},
    colorCss:'#3ad0ff'},
-  {name:"Heaven's Gate", phase:'Ascent', rooms:50, hpMul:1.6, dmgMul:1.3, bossMul:1.5, mobs:['seraph','cherub','warden','beacon','aureole','censer','dominion','emissary','ophan','cantor','herald'], bosses:['seraph','throne','archon'], rule:{elitePairs:true,hazards:.4}, trap:'pillar', ruleTxt:'Elites come in pairs',
+  {name:"Heaven's Gate", phase:'Ascent', rooms:50, mobs:['seraph','cherub','warden','beacon','aureole','censer','dominion','emissary','ophan','cantor','herald'], bosses:['seraph','throne','archon'], rule:{elitePairs:true,hazards:.4}, trap:'pillar', ruleTxt:'Elites come in pairs',
    theme:{bg:0x2b1a26,hemiS:0xfff0d0,hemiG:0x3a2638,ground:0x7a6670,city:0xe2c8d8,edge:0xffd36a,rim:0xffb060,win:0xfff0b0,floor:0xd8c6cc,wall:0x8a7480,block:0xf0e8f2,water:0xffd36a},
    colorCss:'#ffd36a'},
-  {name:'Fallen Sky', phase:'Hubris', rooms:50, hpMul:1.9, dmgMul:1.45, bossMul:1.8, mixed:true, mobs:['drone','lancer','warden','spark','ram','censer','crawler','hopper','heavy','coil','cherub','sentry','howitzer','borer','bulwark','mender'], blockTypes:10, pin:['warden','censer','cherub'], bosses:['colossus','hive','arachne','x_archon'], rule:{hazards:.45,corruptElites:true}, trap:'mix', ruleTxt:'Both factions, corrupted elites, 2 random modifiers',
+  {name:'Fallen Sky', phase:'Hubris', rooms:50, mixed:true, mobs:['drone','lancer','warden','spark','ram','censer','crawler','hopper','heavy','coil','cherub','sentry','howitzer','borer','bulwark','mender'], blockTypes:10, pin:['warden','censer','cherub'], bosses:['colossus','hive','arachne','x_archon'], rule:{hazards:.45,corruptElites:true}, trap:'mix', ruleTxt:'Both factions, corrupted elites, 2 random modifiers',
    theme:{bg:0x170e22,hemiS:0xe0c8ff,hemiG:0x22123a,ground:0x4a3a64,city:0xb8a0e0,edge:0xb070ff,rim:0xff4ad0,win:0xd8a0ff,floor:0x9a8ab8,wall:0x2e2244,block:0x5a3a8a,water:0xb070ff},
    colorCss:'#b070ff'},
   /* Main Stage (High-Co's festival): unlocked by Arena 4's first clear, one notch above it. 15 wave rooms (STAGE) and High-Co after room 15
@@ -304,7 +306,7 @@ const ARENAS=[
      damage curve, [start, growth per room up to knee, growth after] (balance.js kneeCurve): the knee is where the pilot hits the level cap, so the
      mobs stop outgrowing him there. Tuned with the autopilot (DBG.stageCheck): an average pilot loses 15-25% armor per room early,
      30-45% late. par: seconds per room for the run score's speed bonus. */
-  {name:'Main Stage', phase:'Encore', rooms:16, roomsTxt:'15 ROOMS + BOSS', hpMul:2.2, dmgMul:1.6, bossMul:1.7, roomK:3.3, mobCurve:{hp:[4,1.12,1.04],dmg:[3.4,1.075,1.07],knee:11}, par:95, stage:true, mobs:['roadie','bass','spot','mosher','dancer','pyro','shredder','diver','drummer'], bosses:['highco'], rule:{beatSync:true}, trap:'spike', ruleTxt:'Beat sync: attacks lock to the music, a dash on the beat dodges twice as wide',
+  {name:'Main Stage', phase:'Encore', rooms:16, roomsTxt:'15 ROOMS + BOSS', hpMul:2.2, dmgMul:1.6, bossMul:1.7, tempo:1, roomK:3.3, mobCurve:{hp:[4,1.12,1.04],dmg:[3.4,1.075,1.07],knee:11}, par:95, stage:true, mobs:['roadie','bass','spot','mosher','dancer','pyro','shredder','diver','drummer'], bosses:['highco'], rule:{beatSync:true}, trap:'spike', ruleTxt:'Beat sync: attacks lock to the music, a dash on the beat dodges twice as wide',
    theme:{bg:0x120a1c,hemiS:0xf0d0e4,hemiG:0x1c1028,ground:0x2a2032,city:0x5a3e68,edge:0xff3aa8,rim:0xffb84a,win:0xffb84a,floor:0x4a4054,wall:0x1e1826,block:0x1e1826,water:0xff3aa8},
    colorCss:'#ff3aa8'},
 ];

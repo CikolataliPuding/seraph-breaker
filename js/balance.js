@@ -79,10 +79,12 @@ const kneeCurve=(c,xr,knee)=>c[0]*Math.pow(c[1],Math.min(xr,knee))*Math.pow(c[2]
 const treeRankAt=(n,t)=>{ let k=0; while(k<n.max&&Math.ceil((k+1)*CURVE.treeFull/n.max)<=t) k++; return k; }, treeOpenAt=(n,k)=>Math.ceil(k*CURVE.treeFull/n.max);
 function refMeta(a){ const sk={}, lv=CURVE.tier*a+CURVE.tier/2; TREE.forEach(b=>b.nodes.forEach(n=>sk[n.id]=treeRankAt(n,a+1))); return {skills:sk,core:{armor:lv,dmg:lv,regen:lv}}; }
 function refPower(a){ const m=metaStats(refMeta(a),'azure'); return {dps:m.dmg/m.rate*(1+m.crit),ehp:m.maxHp/m.armor}; }
-// arena multipliers: enemy armor follows the reference dps, damage the reference ehp, both × √pressure; crowd growth comes off the armor
+// arena multipliers: enemy armor follows the reference dps, damage the reference ehp, both × √pressure; crowd growth comes off the armor.
+// The boss shares the crowd cut, so boss and mob armor keep the ratio they had before the curve (without it the Arena 3 bosses were
+// ~1.5× tougher than their rooms: 264 of 279 deaths in boss rooms, A3-only runs from real entry states); bossT then lengthens the fight.
 const _curve=[];
 function arenaCurve(a){ if(_curve[a]) return _curve[a]; const A=ARENAS[a]||{}, r0=refPower(0), r=refPower(a), z=Math.sqrt(1+CURVE.press*Math.log(1+a)), crowd=roomBudget(a,0,false)/roomBudget(0,0,false), own=(k,v)=>A[k]!=null?A[k]:v;
-  return _curve[a]={hp:own('hpMul',r.dps/r0.dps*z/crowd),dmg:own('dmgMul',r.ehp/r0.ehp*z),boss:own('bossMul',r.dps/r0.dps*Math.pow(CURVE.bossT,a)),tempo:own('tempo',Math.min(CURVE.tempoMax,1+CURVE.tempo*a))}; }
+  return _curve[a]={hp:own('hpMul',CURVE.hp0*r.dps/r0.dps*z/crowd),dmg:own('dmgMul',CURVE.dmg0*r.ehp/r0.ehp*z),boss:own('bossMul',CURVE.hp0*r.dps/r0.dps*Math.pow(CURVE.bossT,a)/crowd),tempo:own('tempo',Math.min(CURVE.tempoMax,1+CURVE.tempo*a))}; }
 function enemyScale(a,ri,rule,wf){ const A=ARENAS[a], K=arenaCurve(a), hm=rule&&rule.hpMul||1, dm=K.dmg, fin=ri>=A.rooms-1, x=A.roomK?(ri+(wf||0))*A.roomK:ri, mc=A.mobCurve, xr=ri+(wf||0);
   return {hp:(mc?kneeCurve(mc.hp,xr,mc.knee):K.hp*growth(SCALE.hp,x))*hm, dmg:mc?kneeCurve(mc.dmg,xr,mc.knee):dm*growth(SCALE.dmg,x),
     boss:K.boss*growth(SCALE.hp,x)/growth(SCALE.hp,SCALE.bossRef)*hm*(fin?SCALE.finalHp:1), bossDmg:dm*growth(SCALE.dmg,x)/growth(SCALE.dmg,SCALE.bossRef)*(fin?SCALE.finalDmg:1)*SCALE.bossDmgK}; }
