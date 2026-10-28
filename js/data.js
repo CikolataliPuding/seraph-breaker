@@ -212,6 +212,10 @@ const SCALE={mob:2.2,hp:.058,dmg:.04,bossDmgK:1.4,bossRef:9,finalHp:1.5,finalDmg
 /* patch notes: shown once on the first boot after a big update (ui-hangar.js newsBoot), newest first; System > Patch notes shows them again.
    Plain player words: what got weaker (nerf), stronger (buff), what is new, what changed and what was fixed. A new pilot skips them. */
 const NEWS=[
+  {id:'controls-1',title:'The Sideways Update',items:[
+    {k:'new',t:'Phones held sideways: left thumb moves, right thumb aims and fires, DASH and SP sit on the right. The game goes fullscreen on the first touch (on iPhone, add it to the Home Screen).'},
+    {k:'change',t:'Bigger rooms on desktop and sideways phones: one column wider and three rows longer.'},
+    {k:'fix',t:'Once a room is clear, the red zone outside the mat no longer hurts.'}]},
   {id:'balance-2',title:'The Power Curve Update',items:[
     {k:'new',t:'New arena 5: Hex Breach. The grid itself has come alive: any enemy may come hex-mutated and tougher, elites always do. Clear Fallen Sky to open it.'},
     {k:'change',t:'Arenas now unlock your power. Every arena you open lets each Core stat go 4 levels higher and opens new skill tree ranks. Levels you bought above the limit are kept and come back as you open arenas.'},

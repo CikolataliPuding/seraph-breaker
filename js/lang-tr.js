@@ -35,6 +35,10 @@ const DICT_TR={
   'Fullscreen':'Tam ekran', 'Reset my progress':'İlerlememi sıfırla', 'Replay story':'Hikayeyi yeniden oynat',
   // story, cards, pause, report
   // patch notes (NEWS)
+  'The Sideways Update':'Yan Tutuş Güncellemesi',
+  'Phones held sideways: left thumb moves, right thumb aims and fires, DASH and SP sit on the right. The game goes fullscreen on the first touch (on iPhone, add it to the Home Screen).':"Yan tutulan telefon: sol başparmak hareket ettirir, sağ başparmak nişan alıp ateş eder, DASH ve SP sağda. Oyun ilk dokunuşta tam ekran olur (iPhone'da Ana Ekrana ekle).",
+  'Bigger rooms on desktop and sideways phones: one column wider and three rows longer.':'Masaüstünde ve yan tutulan telefonda odalar büyüdü: bir sütun daha geniş, üç sıra daha uzun.',
+  'Once a room is clear, the red zone outside the mat no longer hurts.':'Oda temizlenince zeminin dışındaki kırmızı alan artık hasar vermiyor.',
   'The Power Curve Update':'Güç Eğrisi Güncellemesi',
   'New arena 5: Hex Breach. The grid itself has come alive: any enemy may come hex-mutated and tougher, elites always do. Clear Fallen Sky to open it.':"Yeni 5. arena: Hex Gediği. Izgaranın kendisi canlandı: her düşman hex mutasyonlu ve daha dayanıklı gelebilir, elitler hep öyle gelir. Açmak için Düşen Gök'ü bitir.",
   'Arenas now unlock your power. Every arena you open lets each Core stat go 4 levels higher and opens new skill tree ranks. Levels you bought above the limit are kept and come back as you open arenas.':'Arenalar artık gücünün kilidini açıyor. Açtığın her arena, Çekirdeğin her statını 4 seviye daha yükseltmene ve ağaçta yeni kademelere izin verir. Sınırın üstünde aldığın seviyeler kaybolmaz, arena açtıkça geri gelir.',
@@ -55,7 +59,7 @@ const DICT_TR={
   'The same boss never comes twice in one arena.':'Aynı boss bir arenada iki kez gelmez.',
   'Crystal shards no longer spawn inside blocks.':'Kristal parçaları artık blokların içinde doğmuyor.',
   "Phone: auto-aim no longer fires into corners, and Crimson's Nova lands on the crowd, not at the boss's feet.":"Telefon: otomatik nişan köşelere boşa ateş etmiyor; Crimson'un Nova'sı boss'un dibine değil kalabalığa iniyor.",
-  'Skip ▸▸':'Geç ▸▸', 'Next ▸':'İleri ▸', 'Skip ▸':'Geç ▸', 'WARNING':'UYARI',
+  'Skip ▸▸':'Geç ▸▸', 'Left thumb: move · right thumb: aim and fire · DASH and SP on the right':'Sol başparmak: hareket · sağ başparmak: nişan ve ateş · DASH ve SP sağda', 'Next ▸':'İleri ▸', 'Skip ▸':'Geç ▸', 'WARNING':'UYARI',
   'Level up':'Seviye atladın', 'Choose a skill':'Bir yetenek seç', 'Reroll':'Yeniden çek',
   'Build':'Yapı', 'Paused':'Duraklatıldı', 'Resume':'Devam et', 'Save & exit':'Kaydet ve çık', 'Abandon run':'Koşuyu bırak',
   'Save & exit continues from the last cleared room. Gold and diamonds you already picked up are always kept.':'Kaydet ve çık, son temizlenen odadan devam eder. Topladığın altın ve elmaslar her zaman sende kalır.',

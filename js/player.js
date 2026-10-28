@@ -99,6 +99,7 @@ function moveVec(){
   else { if(keys.KeyW||keys.ArrowUp){x-=1;z-=1} if(keys.KeyS||keys.ArrowDown){x+=1;z+=1} if(keys.KeyA||keys.ArrowLeft){x-=1;z+=1} if(keys.KeyD||keys.ArrowRight){x+=1;z-=1} }
   const kl=Math.hypot(x,z); if(kl>0){x/=kl;z/=kl;}
   if(mobileMode){ joyVec(_jv); x+=_jv.x; z+=_jv.z; }
+  else if(landMode){ joyVec(_jv); x+=(_jv.x+_jv.z)*.7071; z+=(_jv.z-_jv.x)*.7071; }
   _mv.set(x,0,z); const l=_mv.length(); if(l>1)_mv.divideScalar(l); return _mv;
 }
 function nearestFoe(from,maxD=1e9,cone=null,skip=null){ let best=null,bd=maxD*maxD; for(const e of enemies){ if(e.dead||e.born<.4||e.under||(skip&&skip.has(e)))continue; const dx=e.pos.x-from.x,dz=e.pos.z-from.z,d=dx*dx+dz*dz; if(d>=bd)continue; if(cone){ const l=Math.sqrt(d)||1; if((dx*cone.x+dz*cone.z)/l<cone.c) continue; } bd=d; best=e; } return best; }
@@ -156,10 +157,15 @@ function updatePlayer(dt,canAct){
     const autoB=P.mshield!=='manual'&&!p.st.noHex&&p.en>60; barRing.visible=canAct&&autoB; if(barRing.visible){ barRing.position.set(p.pos.x,.12,p.pos.z); barRing.rotation.z+=dt*1.4; barRing.material.opacity=.22+Math.sin(performance.now()/260)*.06+(p.en>90?.1:0); }
   }
   else { dashArrow.visible=barRing.visible=false; }
+  // landscape: the right stick aims (with a 20° assist onto the nearest visible enemy) and fires while held
+  if(landMode&&canAct&&aimVec(_av)){ p.aim.set((_av.x+_av.z)*.7071,0,(_av.z-_av.x)*.7071).normalize(); let best=null,bd=1e9;
+    for(const e of enemies){ if(e.dead||e.born<.4||e.dropY>0||e.under) continue; const dx=e.pos.x-p.pos.x,dz=e.pos.z-p.pos.z,d=Math.hypot(dx,dz)||1;
+      if(d<bd&&(dx*p.aim.x+dz*p.aim.z)/d>.94&&losClear(p.pos.x,p.pos.z,e.pos.x,e.pos.z,.3)){ bd=d; best=e; } }
+    if(best) p.aim.set(best.pos.x-p.pos.x,0,best.pos.z-p.pos.z).normalize(); touchFire=true; }
   // desktop aim: the mouse ray meets the plane at muzzle height, so shots fly exactly through the crosshair
   if(!mobileMode&&usedMouse){ p.model.muzzle.getWorldPosition(_mz); aimPlane.constant=-_mz.y; ray.setFromCamera(ndc,cam); if(ray.ray.intersectPlane(aimPlane,aimPt)){ p.aimOk=true; _tmp.set(aimPt.x-p.pos.x,0,aimPt.z-p.pos.z); if(_tmp.lengthSq()>.3) p.aim.copy(_tmp.normalize()); } }
   const fireIn=canAct&&(mouseDown||keys.KeyJ||touchFire||BOT.on&&BOT.fire);
-  const wantShield=canAct&&!p.st.noHex&&(mobileMode?P.mshield==='manual'&&mShieldHeld:keys.ShiftLeft||keys.ShiftRight||rightDown)&&!busy();
+  const wantShield=canAct&&!p.st.noHex&&(mobileMode?P.mshield==='manual'&&mShieldHeld:keys.ShiftLeft||keys.ShiftRight||rightDown||landMode&&mShieldHeld)&&!busy();
   p.shield=wantShield&&p.overheat<=0&&p.en>0;
   if(p.shield){ p.en-=42*p.st.hexDrain*dt; p.regenDelay=.9; if(p.en<=0){ p.en=0; p.overheat=2.2; p.regenDelay=1.4; p.shield=false; sparks(p.pos.clone().setY(2),0xff4a3a,10,6); if(p.rs.hexnova) hexNova(); } }
   else if(p.regenDelay<=0) p.en=Math.min(p.enMax,p.en+12*p.st.regen*dt);
