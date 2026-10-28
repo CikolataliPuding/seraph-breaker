@@ -71,14 +71,14 @@ function updateOrbits(dt,canAct){
   if(!canAct) return;
   for(const b of ch){ const k=b.userData.k; if(k==='shield') continue;
     if(k==='bolt'){ b.userData.zap-=dt; if(b.userData.zap<=0){ const t=nearestFoe(b.position,5.5); if(t){ b.userData.zap=.7; bolt(b.position.clone(),t.pos.clone().setY(2),0xd8f4ff); hitEnemy(t,5*p.st.dmg,t.pos.clone().setY(2),false,true); } } continue; }
-    const rad=k==='blade'?(inf?.75:.4):.55;
+    const rad=k==='blade'?(inf?.9:.4):.55;
     for(const e of enemies){ if(e.dead||e.dropY>0) continue; if(Math.hypot(e.pos.x-b.position.x,e.pos.z-b.position.z)<e.r*.7+rad){
-      if(k==='blade'){ hitEnemy(e,(inf?28:16)*p.st.dmg*dt,e.pos,true); if(inf) e.burn=Math.max(e.burn,1.5); }
+      if(k==='blade'){ hitEnemy(e,(inf?40:16)*p.st.dmg*dt,e.pos,true); if(inf) e.burn=Math.max(e.burn,2.5); }
       else if(k==='fire'){ hitEnemy(e,10*p.st.dmg*dt,e.pos,true); e.burn=Math.max(e.burn,2); }
       else { hitEnemy(e,8*p.st.dmg*dt,e.pos,true); e.slow=Math.max(e.slow,1.2); }
       if(Math.random()<dt*10) sparks(b.position,k==='ice'?0x9fe8ff:k==='blade'&&!inf?unit.shot:0xff7a2a,1,3); break; } } }
-  // Storm Halo: lightning strikes the 3 nearest enemies every second
-  if(p.rs.halo){ p.haloT=(p.haloT||0)-dt; if(p.haloT<=0){ p.haloT=1; const hit=new Set(); for(let i=0;i<3;i++){ const t=nearestFoe(p.pos,12,null,hit); if(!t) break; hit.add(t); const top=t.pos.clone().setY(9); bolt(top,t.pos.clone().setY(1.5),0xd8f4ff); bolt(top.clone().setX(top.x+.4),t.pos.clone().setY(1.5),0xffffff); hitEnemy(t,8*p.st.dmg,t.pos.clone().setY(2),false,true); if(t!==boss) t.stun=Math.max(t.stun,.25); } if(hit.size) sfx('zap'); } }
+  // Storm Halo: lightning strikes the 2 nearest enemies every 1.25 s (was 3 every second: worth 3× its parents, patch.md 34)
+  if(p.rs.halo){ p.haloT=(p.haloT||0)-dt; if(p.haloT<=0){ p.haloT=1.25; const hit=new Set(); for(let i=0;i<2;i++){ const t=nearestFoe(p.pos,12,null,hit); if(!t) break; hit.add(t); const top=t.pos.clone().setY(9); bolt(top,t.pos.clone().setY(1.5),0xd8f4ff); bolt(top.clone().setX(top.x+.4),t.pos.clone().setY(1.5),0xffffff); hitEnemy(t,6*p.st.dmg,t.pos.clone().setY(2),false,true); if(t!==boss) t.stun=Math.max(t.stun,.25); } if(hit.size) sfx('zap'); } }
 }
 // Shield Orbit: plates eat enemy shots
 function orbitBlocks(b){ for(const c of orbitG.children){ if(c.userData.k!=='shield') continue; if(Math.hypot(b.m.position.x-c.position.x,b.m.position.z-c.position.z)<.95){ sparks(b.m.position,0xffa04a,3,4); return true; } } return false; }

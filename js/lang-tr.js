@@ -167,8 +167,8 @@ const DICT_TR={
   'Gadget Echo':'Aparat Yankısı', 'Gadgets trigger twice.':'Aparatlar iki kez tetiklenir.',
   'Bullet Storm':'Mermi Fırtınası', 'Evolution of Twin Shot + Rapid Cycle: +25% fire rate and every shot fans out.':'İkiz Atış + Seri Döngü evrimi: +%25 atış hızı ve her atış yelpaze gibi açılır.',
   'Inferno Ring':'Cehennem Halkası', 'Evolution of Burn Rounds + Orbit Blades: blades become a wide ring of fire.':'Yakıcı Mermiler + Yörünge Bıçakları evrimi: bıçaklar geniş bir ateş halkasına dönüşür.',
-  'Storm Halo':'Fırtına Halesi', 'Evolution of Chain Spark + Bolt Orbit: lightning strikes 3 enemies every second.':'Zincir Kıvılcım + Şimşek Yörüngesi evrimi: şimşek her saniye 3 düşmana çarpar.',
-  'Blood Engine':'Kan Motoru', 'Evolution of Vampiric Core + Rage: kills repair 4% and Rage counts double.':'Vampir Çekirdek + Öfke evrimi: öldürmeler %4 onarır ve Öfke iki kat sayılır.',
+  'Storm Halo':'Fırtına Halesi', 'Evolution of Chain Spark + Bolt Orbit: lightning strikes 2 enemies every 1.25 seconds.':'Zincir Kıvılcım + Şimşek Yörüngesi evrimi: şimşek her 1,25 saniyede 2 düşmana çarpar.',
+  'Blood Engine':'Kan Motoru', 'Evolution of Vampiric Core + Rage: kills repair 6% and Rage counts 2.5 times.':'Vampir Çekirdek + Öfke evrimi: öldürmeler %6 onarır ve Öfke 2,5 kat sayılır.',
   // items and devil curses (ITEMS, CURSES)
   'Plated Core':'Kaplamalı Çekirdek', '+20% max armor.':'+%20 azami zırh.', 'Servo Boots':'Servo Botlar', '+10% move speed.':'+%10 hareket hızı.',
   'Capacitor':'Kondansatör', '+25% power (125 max).':'+%25 güç (en çok 125).', 'Salvage Coil':'Hurda Bobini', 'Double pickup reach, +15% gold.':'İki kat toplama menzili, +%15 altın.',
