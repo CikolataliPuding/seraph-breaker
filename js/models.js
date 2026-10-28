@@ -789,6 +789,25 @@ function corruptModel(m,amt=.45){
   const aura=new THREE.Mesh(new THREE.RingGeometry(1,1.08,40),addMat(0xb070ff,.55)); aura.rotation.x=-Math.PI/2; aura.position.y=.05; aura.scale.setScalar(Math.max(1.2,Math.max(s.x,s.z)/sc*.6)); aura.userData.nofit=1; m.g.add(aura);
   m.corrupt=true; return m;
 }
+/* Hex Breach anomalies (docs/hex-breach.html): hexagonal cells in violet and slate with a teal glow */
+const HX={dark:0x231530,vio:0x7a3cff,slate:0x3a2a52,teal:0x2fd8c8,glow:0x3af0e0};
+const hexPrism=(r,h)=>{ const g=new THREE.CylinderGeometry(r,r,h,6); g.rotateX(Math.PI/2); g.rotateZ(Math.PI/6); return g; };
+// Cellmite: three small cells; the ground ring lights up while three of them merge into a Cell Brute
+function buildCellmite(){
+  const g=new THREE.Group(), body=new THREE.Group(); body.position.y=1; g.add(body);
+  const MS=toon(HX.slate),MP=toon(HX.vio), cells=[];
+  [[0,.32],[-.3,-.2],[.3,-.2]].forEach(([x,y])=>{ const c=new THREE.Group(); c.position.set(x,y,0); body.add(c); part(hexPrism(.32,.3),MS,c,0,0,0,.05); part(hexPrism(.24,.06),MP,c,0,0,.17,.02); const l=new THREE.Mesh(hexPrism(.14,.04),basic(HX.glow,false)); l.position.z=.21; c.add(l); cells.push(c); });
+  const link=new THREE.Mesh(new THREE.RingGeometry(1.35,1.45,6),addMat(HX.glow,.45)); link.rotation.x=-Math.PI/2; link.position.y=.05; link.userData.nofit=1; g.add(link);
+  return {g,body,cells,link,mats:[MS,MP],shadow:blob(.5)};
+}
+// Cell Brute: seven cells around a red core, two heavy arms
+function buildCellBrute(){
+  const g=new THREE.Group(), body=new THREE.Group(); body.position.y=2; g.add(body);
+  const MS=toon(HX.slate),MP=toon(HX.vio),MD=toon(HX.dark), cells=[];
+  [[0,0],[.95,.55],[-.95,.55],[0,1.1],[.95,-.55],[-.95,-.55],[0,-1.1]].forEach(([x,y],i)=>{ const c=new THREE.Group(); c.position.set(x,y,0); body.add(c); part(hexPrism(.55,.7),i?MS:MD,c,0,0,0,.07); part(hexPrism(.42,.1),MP,c,0,0,.38,.03); const l=new THREE.Mesh(hexPrism(.24,.06),basic(i?HX.glow:0xff3a5a,false)); l.position.z=.45; c.add(l); cells.push(c); });
+  [-1,1].forEach(s=>{ const arm=part(box(.5,1.6,.5),MD,body,s*1.75,-.4,0,.07); arm.rotation.z=s*.3; part(hexPrism(.42,.4),MP,arm,0,-.95,0,.04); });
+  return {g,body,cells,mats:[MS,MP,MD],shadow:blob(1.6)};
+}
 // Hex Breach mutation (patch.md 36): teal tint, a hex lens over the body and a hexagonal ground ring
 function hexModel(m,amt=.4){
   const tint=new THREE.Color(0x36e8d8); m.g.traverse(o=>{ if(o.isMesh&&o.material&&o.material.isMeshToonMaterial) o.material.color.lerp(tint,amt); });

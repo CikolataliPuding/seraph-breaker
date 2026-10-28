@@ -14,6 +14,10 @@ function lobShell(from,to,dur,color,onLand,marker){ const g=new THREE.Group(), m
     if(k<=.02&&!done){ done=true; sh.visible=false; if(mk) mk.visible=false; onLand&&onLand(); } }); }
 // contact damage, with Thorn Plating paying it back
 // Thorn Plating hits back 3x, at most 30% of the rammer's max armor (patch.md 34: a diving Herald died on its first touch)
+// three Cellmites merge into a Cell Brute at their middle (the merging ones leave no loot)
+function cellMerge(e){ const g=[e]; for(const o of enemies) if(g.length<3&&o!==e&&!o.dead&&o.kind==='cellmite'&&Math.hypot(o.pos.x-e.pos.x,o.pos.z-e.pos.z)<2.4) g.push(o);
+  if(g.length<3) return; let x=0,z=0; g.forEach(o=>{ x+=o.pos.x/3; z+=o.pos.z/3; o.noLoot=true; o.mergeT=0; killEnemy(o,true); });
+  groundRing(new V3(x,0,z),HX.glow,2.4,.6); sfx('heavy'); spawnEnemy('cellbrute',freeNear(x,z,1.2),false,{noDrop:true}); }
 function contactHurt(e,d){ d*=e.def.dmgK||1; const before=player.hp; hurt(d); if(player.thorn&&player.hp<before&&!e.dead) hitEnemy(e,Math.min(d*3*player.st.dmg,e.maxHp*BAL.thornCap),e.pos.clone().setY(2),false,true); }
 // Spark explosion: hurts you only when it detonates on its own; it always hurts other enemies (chain reactions are queued and capped)
 function sparkBoom(e){ if(e.boomed) return; e.boomed=true;
@@ -389,6 +393,15 @@ const AI={
     e.cd-=dt; if(e.cd<=0){ e.cd=4.5; let k=0; for(const o of enemies){ if(o===e||o.dead||o===boss) continue; if(Math.hypot(o.pos.x-e.pos.x,o.pos.z-e.pos.z)<R){ o.shieldT=3; k++; } } if(k){ groundRing(e.pos,0x7dff9a,R,.6); sfx('shield'); } }
     e.yaw=lerpAngle(e.yaw,Math.atan2(-to.x,-to.z),Math.min(1,dt*3)); },
   /* rusher: rolls in along the flow field and speeds up as it goes; the fuse (0.55 s) only starts when it is close and can see you */
+  // Cellmite: chases, a short ring then a bite in reach; three close together for 2 s merge into a Cell Brute
+  cellmite(e,dt,to,d,pd,m){ steer(e,chase(e,e.speed,_sv),dt,3); e.biteCd-=dt;
+    if(e.biteT>0){ e.biteT-=dt; if(e.biteT<=0&&pd<e.r+1.1&&!player.dead) contactHurt(e,7); }
+    else if(e.biteCd<=0&&pd<e.r+1.4){ e.biteT=.35; e.biteCd=rand(1.1,1.6); groundRing(e.pos,0xff3a5a,1.1,.35); }
+    let near=0; for(const o of enemies) if(o!==e&&!o.dead&&o.kind==='cellmite'&&Math.hypot(o.pos.x-e.pos.x,o.pos.z-e.pos.z)<2.4) near++;
+    e.mergeT=near>=2?e.mergeT+dt:Math.max(0,e.mergeT-dt*2);
+    if(e.mergeT>=2) cellMerge(e); },
+  cellbrute(e,dt,to,d,pd,m){ const want=d>e.def.hold?chase(e,e.speed,_sv):_sv.set(0,0,0);
+    attackCycle(e,dt,want,()=>{ if(d<e.def.slam+.6&&e.slamCd<=0){ e.slamCd=rand(3,4); return ATK.slam; } return null; },2.2); faceAim(e,dt,to,4); },
   spark(e,dt,to,d,pd,m){
     if(e.bounceT>0) e.bounceT-=dt; // just bounced off a wall: let it fly for a moment
     else if(e.st!=='blink'){ e.rush=Math.min(1,(e.rush||0)+dt/1.5); steer(e,chase(e,e.speed*(.5+.8*e.rush),_sv),dt,1.6+e.rush*2.4);
@@ -615,6 +628,8 @@ const ANIM={
   heavy(e,dt,m){ const w=e.walk||0, a=e.walkAmt||0; m.pauls.forEach((p,i)=>{ if(!p.userData.broken) p.rotation.x=Math.sin(w+i*Math.PI)*.2*a+(e.jz.lean.x||0)*.6; });
     const k=teleK(e); m.glows.forEach((g,i)=>g.scale.set(1,1+k*1.6+Math.sin(e.t*30+i)*.15*(k>0?1:.3),1)); },
   // Spark truly rolls: the body turns about the axis across its velocity, as fast as it moves (radius .75)
+  cellmite(e,dt,m){ m.cells.forEach((c,i)=>{ c.position.z=Math.sin(e.t*9+i*2)*.12; c.rotation.z+=dt*2.4*(i%2?1:-1); }); m.body.position.y=1+Math.abs(Math.sin(e.t*6))*.15; m.link.material.opacity=.15+.75*Math.min(1,e.mergeT/2); },
+  cellbrute(e,dt,m){ m.body.position.y=2+Math.sin(e.t*2)*.1; m.cells.forEach((c,i)=>c.scale.setScalar(1+Math.sin(e.t*3+i)*.04)); m.body.rotation.z=Math.sin(e.t*1.2)*.05; },
   spark(e,dt,m){ const sp=Math.hypot(e.vel.x,e.vel.z); if(sp>.05){ _rq.setFromAxisAngle(_rax.set(e.vel.z/sp,0,-e.vel.x/sp),sp*dt/.75); m.body.quaternion.premultiply(_rq); } const bl=e.st==='blink', fk=bl?1-e.stT/e.def.fuse:0, k=Math.sin(e.t*(bl?16+fk*40:9))>0; m.core.material.color.setHex(k?0xffffff:0xffa040); if(bl) m.warn.scale.setScalar(1.55+fk*.2); },
   crawler(e,dt,m){ crawlGait(m,e,e.vel.length(),dt,e.sc); m.tur.rotation.y=lerpAngle(m.tur.rotation.y,(e.aimYaw||e.yaw)-e.yaw,Math.min(1,dt*10)); m.tur.scale.setScalar(e.ph==='tele'?1.12+Math.sin(e.t*40)*.04:1); },
   howitzer(e,dt,m){ spring(e.jz.rec,0,dt,14,.4); m.mort.rotation.x=.55-e.jz.rec.x*.06+(e.cd<.5&&!e.shell?Math.sin(e.t*30)*.03:0); },
