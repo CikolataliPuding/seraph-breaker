@@ -137,7 +137,7 @@ function simulate(o={}){
           const list=(spec.kind==='stage'?composeStage(ri,false):composeRoom(spec,a,ri,rule,11)).flat(), K=ROOM_KINDS.survive;
           // Survive: about one extra spawn every 1.3 s, paying K.reward of a normal kill
           if(spec.kind==='survive') for(let i=0;i<Math.round(K.time/1.3);i++) list.push(pickOne(arenaPool(a,ri))+'~');
-          for(const t0 of list){ const tg=t0.slice(-1), el=tg==='*'||tg==='!', k=el||tg==='~'?t0.slice(0,-1):t0, d=ENEMY[k], fam=(k==='shardling'?1+6*SPLIT_REWARD:1)*(tg==='~'?K.reward:1), mul=el?3:1;
+          for(const t0 of list){ const W=waveType(t0), tg=W.tg, el=W.elite, k=W.k, d=ENEMY[k], fam=(k==='shardling'?1+6*SPLIT_REWARD:1)*(tg==='~'?K.reward:1), mul=el?3:1;
             count++; g+=d.gold*ECON.killGold[a]*mul*fam; gm+=(el?ECON.gemChance.elite:d.cost>=2.5?ECON.gemChance.big:ECON.gemChance.small)*fam;
             gain(d.xp*mul*(1+a*.12)*fam); if(el&&Math.random()<.25) item(); }
           src.kill+=g; src.gemKill+=gm; g+=ECON.clearGold[a]; src.clear+=ECON.clearGold[a];

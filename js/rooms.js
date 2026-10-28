@@ -108,6 +108,12 @@ function freeSpot(minFromEntry=6){ let best=null,bd=-1;
 // mobs unlock in the arena's list order as the run goes on (3 at first, one more every 4 rooms; soft delays the first unlock by that many rooms)
 function arenaPool(a=sortie.a,ri=sortie.ri){ const A=ARENAS[a], ok=A.mobs.filter(t=>ENEMY[t]); return ok.slice(0,Math.min(ok.length,3+Math.floor(Math.max(0,ri-(A.soft||0))/4))); }
 const HUNT_TYPES=['drone','crawler','seraph','shardling','lancer'];
+/* a wave entry is 'type', 'type^2' (tier 2), 'type*' (elite) or 'type!' (the hunted elite); waveType reads it back */
+function waveType(t){ const tg=t.slice(-1), elite=tg==='*'||tg==='!'; let k=elite||tg==='~'?t.slice(0,-1):t, tier=1; const c=k.indexOf('^'); if(c>0){ tier=+k.slice(c+1)||1; k=k.slice(0,c); } return {k,tg,elite,tier}; }
+// a mob's tier in room ri of arena a: none before TIER.from, then a share that climbs to TIER.late by the arena's last quarter
+function rollTier(a,ri,t){ const mx=TIER.max[t]||1, f=TIER.from[a], L=TIER.late[a]; if(mx<2||!f) return 1;
+  const n=ri+1, q=ARENAS[a].rooms*.75, up=s=>s&&n>=s?Math.min(1,.25+.75*(n-s)/Math.max(1,q-s)):0, p3=mx>=3?L[2]*up(f[1]):0, p2=(L[1]+L[2])*up(f[0]), r=Math.random();
+  return r<p3?3:r<Math.max(p2,p3)?2:1; }
 /* role-based composition: a COMPS template core (or the next boss's teaching core), then the room budget (roomBudget × PACING k × kind k) fills up
    from the unlocked pool, and the room always ends up with a 'move' and a 'focus' enemy. spec = a room of the run plan. Returns the waves
    (lists of types; '*' = elite, '!' = the hunted elite). Pure: the debug simulation uses it too. */
@@ -119,10 +125,12 @@ function composeRoom(spec,a=sortie.a,ri=sortie.ri,rule=sortie.rule,cap=mobileMod
   else { const ok=c=>c==='move'||c==='focus'?byTag(c).length>0:pool.includes(c), tpls=COMPS[a].filter(tp=>tp.core.every(ok)), tp=pickOne(tpls.length?tpls:[{core:['move','focus']}]);
     core=tp.core.map(c=>c==='move'||c==='focus'?pickOne(byTag(c).length?byTag(c):pool):c); }
   if(spec.kind==='gauntlet') core=core.slice(0,2);
-  const list=[]; for(const t of core){ if(list.length>=cap) break; list.push(t); budget-=ENEMY[t].cost; }
-  let guard=0; while(budget>.6&&list.length<cap&&guard++<60){ const t=pickOne(pool); if(ENEMY[t].cost<=budget+.4){ list.push(t); budget-=ENEMY[t].cost; } }
+  // tiers are rolled as mobs go in (a boss's teaching room stays T1) and a tiered mob takes more of the budget
+  const list=[], add=t=>{ const tr=spec.teach?1:rollTier(a,ri,t); list.push(tr>1?t+'^'+tr:t); budget-=ENEMY[t].cost*TIER.cost[tr-1]; };
+  for(const t of core){ if(list.length>=cap) break; add(t); }
+  let guard=0; while(budget>.6&&list.length<cap&&guard++<60){ const t=pickOne(pool); if(ENEMY[t].cost<=budget+.4) add(t); }
   // the guarantee: one enemy that makes you move, one that demands attention
-  for(const g of ['move','focus']) if(!list.some(t=>ENEMY[t].tag===g)&&byTag(g).length) list.push(pickOne(byTag(g)));
+  for(const g of ['move','focus']) if(!list.some(t=>ENEMY[waveType(t).k].tag===g)&&byTag(g).length) list.push(pickOne(byTag(g)));
   if(elite){ const ep=pool.filter(t=>ENEMY[t].elite!==false); const n=rule.elitePairs?2:1; for(let i=0;i<n;i++) list.unshift(pickOne(ep.length?ep:pool)+'*'); }
   if(spec.kind==='hunt'){ const hp=pool.filter(t=>HUNT_TYPES.includes(t)); list.unshift(pickOne(hp.length?hp:HUNT_TYPES)+'!'); }
   if(spec.kind==='reinforce'){ const w=[], n=K.waves||3, per=Math.ceil(list.length/n); for(let i=0;i<n;i++) w.push(list.slice(i*per,(i+1)*per)); return w.filter(x=>x.length); }
@@ -136,8 +144,8 @@ function ambushSpot(i){ const p=player.pos, w=2*AX-3; for(let k=0;k<30;k++){ con
 function gateSpot(g){ const G_=room.gates[g%room.gates.length]; for(let k=0;k<20;k++){ const x=clamp(G_.x+rand(-1.5,1.5)*(G_.side?0:1)+(G_.side?-G_.side*rand(.4,1.4):0),-AX+1,AX-1), z=clamp(G_.z+rand(-1.5,1.5)*(G_.side?1:0)+(G_.side?0:rand(.5,1.5)),-AZ+1,AZ-1); if(!inBlock(x,z,1)) return new V3(x,0,z); } return freeSpot(); }
 // a seat for an enemy that never moves (the Main Stage drummer): the far half of the mat, clear of blocks all around, away from you
 function seatSpot(){ for(let k=0;k<60;k++){ const x=rand(-AX+3,AX-3), z=rand(-AZ+3,-1); if(inBlock(x,z,2.6)||player&&Math.hypot(x-player.pos.x,z-player.pos.z)<7) continue; return new V3(x,0,z); } return freeSpot(); }
-function spawnWave(list,mode){ list.forEach((t,i)=>{ const tag=t.slice(-1), elite=tag==='*'||tag==='!', k=elite?t.slice(0,-1):t;
-  const pos=ENEMY[k]&&ENEMY[k].seat?seatSpot():mode==='ambush'?ambushSpot(i):mode==='gate'?gateSpot(i):freeSpot(), e=spawnEnemy(k,pos,elite,{noDrop:mode==='gate'&&!ENEMY[k].seat,hunt:tag==='!'});
+function spawnWave(list,mode){ list.forEach((t,i)=>{ const W=waveType(t), tag=W.tg, elite=W.elite, k=W.k;
+  const pos=ENEMY[k]&&ENEMY[k].seat?seatSpot():mode==='ambush'?ambushSpot(i):mode==='gate'?gateSpot(i):freeSpot(), e=spawnEnemy(k,pos,elite,{noDrop:mode==='gate'&&!ENEMY[k].seat,hunt:tag==='!',tier:W.tier});
   if(e&&mode==='gate'){ e.wake=.25; groundRing(pos,0xff5a3a,2,.4); }
   // an ambush flashes a red ring where each one lands and gives you a beat before it acts
   if(e&&mode==='ambush'){ e.wake=Math.max(e.wake,.8); groundRing(pos,0xff5a3a,2.2,.6); } }); }

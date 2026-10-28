@@ -250,7 +250,8 @@ const CURSES={
    (see roomSpec in run.js): every 10-room block ends with a boss. mobs unlock in list order as the run goes on (3 at first, one more every 4 rooms,
    soft = rooms the first unlock waits on top); bosses are drawn from the pool, never twice in a row, and planned ahead so the rooms before a boss can
    teach it (firstBoss: the first block's boss). The arenas follow the story (patch.md 31): the pilot first fights what is far from his own form
-   (angels invade the Low City), and his own kind, the machines, in Fallen Sky. phase = the story beat shown beside the name. */
+   (angels invade the Low City), and his own kind, the machines, in Fallen Sky (with one corrupted angel boss, x_archon: patch.md 31). phase =
+   the story beat shown beside the name. */
 const ARENAS=[
   {name:'The Low City', phase:'Siege', rooms:30, hpMul:1, dmgMul:1, bossMul:1, mobs:['shardling','warden','censer','seraph','ophan','cherub'], soft:1, bosses:['prism','seraph','throne'], firstBoss:'throne', rule:{}, trap:'saw', ruleTxt:'Training ground: no special rule',
    theme:{bg:0x1d1424,hemiS:0xffd6b8,hemiG:0x2a1d3a,ground:0x5a4c64,city:0xffffff,edge:0xff6a1a,rim:0xff7a40,win:0xffc47a,floor:0xa898b0,wall:0x3a3346,block:0x5e5468,water:0xff7a2a},
@@ -261,7 +262,7 @@ const ARENAS=[
   {name:"Heaven's Gate", phase:'Ascent', rooms:50, hpMul:1.6, dmgMul:1.3, bossMul:1.5, mobs:['seraph','cherub','warden','censer','heavy','ophan'], bosses:['seraph','throne','archon'], rule:{elitePairs:true,hazards:.4}, trap:'pillar', ruleTxt:'Elites come in pairs',
    theme:{bg:0x2b1a26,hemiS:0xfff0d0,hemiG:0x3a2638,ground:0x7a6670,city:0xe2c8d8,edge:0xffd36a,rim:0xffb060,win:0xfff0b0,floor:0xd8c6cc,wall:0x8a7480,block:0xf0e8f2,water:0xffd36a},
    colorCss:'#ffd36a'},
-  {name:'Fallen Sky', phase:'Hubris', rooms:50, hpMul:1.9, dmgMul:1.45, bossMul:1.8, mixed:true, mobs:['drone','lancer','warden','spark','crawler','heavy','censer','howitzer','bulwark','cherub'], bosses:['colossus','hive','arachne'], rule:{hazards:.45,corruptElites:true}, trap:'mix', ruleTxt:'Both factions, corrupted elites, 2 random modifiers',
+  {name:'Fallen Sky', phase:'Hubris', rooms:50, hpMul:1.9, dmgMul:1.45, bossMul:1.8, mixed:true, mobs:['drone','lancer','warden','spark','crawler','heavy','censer','howitzer','bulwark','cherub'], bosses:['colossus','hive','arachne','x_archon'], rule:{hazards:.45,corruptElites:true}, trap:'mix', ruleTxt:'Both factions, corrupted elites, 2 random modifiers',
    theme:{bg:0x170e22,hemiS:0xe0c8ff,hemiG:0x22123a,ground:0x4a3a64,city:0xb8a0e0,edge:0xb070ff,rim:0xff4ad0,win:0xd8a0ff,floor:0x9a8ab8,wall:0x2e2244,block:0x5a3a8a,water:0xb070ff},
    colorCss:'#b070ff'},
   /* Main Stage (High-Co's festival): unlocked by Arena 4's first clear, one notch above it. 15 wave rooms (STAGE) and High-Co after room 15
@@ -362,6 +363,15 @@ const BOSS_TEACH={
   archon:['seraph','ophan','warden'],                   // lunges, a rolling line, waves (angel side)
   highco:['shredder','diver','pyro','bass'],           // cones and lightning (scream), a landing crush (slam stun), marked floor fire (pillars), slows
 };
+/* mob tiers (patch.md 25, the mob doc): T2 and T3 keep the silhouette, the telegraph and the armor, and add behavior (enemy-ai.js reads e.tier).
+   max: the highest tier a mob has behavior for (missing = T1 only; a higher roll folds down). from: [first T2 room, first T3 room] per arena
+   (0 = never); late: the T1/T2/T3 shares the arena ramps up to by its last quarter. Boss teaching rooms, elites and the Main Stage stay T1.
+   cost/gold: a tiered mob takes more of the room budget and pays more. pal: the main / accent body color per side and tier; slot: a mob whose
+   main or accent is not mats[0] / mats[1] (Ophan's white eyes are mats[1]). plates (1 or 2 bars above the model) mark the tier for colorblind
+   players. Shot and telegraph colors never change with the tier. Palette and slots follow the mob design file (docs/mob-designs.html). */
+const TIER={max:{drone:2,heavy:2,bulwark:2,warden:2,shardling:3,censer:2,crawler:2},
+  from:[[16,0],[8,26],[6,20],[1,10],[0,0]], late:[[.5,.5,0],[.3,.45,.25],[.25,.45,.3],[.15,.4,.45],[1,0,0]], cost:[1,1.15,1.3], gold:[1,1.1,1.2],
+  pal:{machine:{2:{accent:0x2fa890},3:{main:0x1c1a24,accent:0xd8d0b8}}, angel:{2:{main:0xe89ab8},3:{main:0x2a2232}}}, slot:{ophan:{main:1}}, plate:0xf2eef8};
 /* room kinds. minRoom / minArena gate them early on. Ambush: they come from the sides and from behind. Reinforcements: waves arrive through gates.
    Survive: hold out for time seconds against endless spawns (spawns pay reward × the normal kill). Hunt: an elite flees and escapes after time
    seconds. Gauntlet: few enemies (budget × k), many traps. Dark: you only see what is within light units (light.m on phones). */

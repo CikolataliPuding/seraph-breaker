@@ -89,31 +89,34 @@ function fanShot(from,base,n,step,spd,dmg,color,o){ for(let i=-n;i<=n;i++){ cons
 
 /* ================= ATTACKS ================= */
 // tele: wind-up seconds · rec: recovery · cd: cooldown range after it · need: checked at the end of the wind-up (else the attack is called off)
+// a Warden ring: n slow shots around it, turned by off (a fraction of one step)
+function wardenRing(e,n,off){ for(let i=0;i<n;i++){ const a=(i+off)/n*Math.PI*2; shoot('e',e.pos.clone().setY(1.8),new V3(Math.sin(a),0,Math.cos(a)),6.5*eSpd(),10,0xffc040,{life:4,r:.45}); } }
 const ATK={
-  // Drone rifle: a led two-round burst after a short glint
-  rifle:{tele:.38,rec:.35,cd:[1.1,1.8],need:e=>e.see,fire(e){ e.burst=2; e.bT=0; },
+  // Drone rifle: a led two-round burst after a short glint (three rounds at T2)
+  rifle:{tele:.38,rec:.35,cd:[1.1,1.8],need:e=>e.see,fire(e){ e.burst=e.tier>1?3:2; e.bT=0; },
     tick(e,dt){ if(e.ph!=='rec'||!e.burst) return; e.bT-=dt; if(e.bT>0) return; e.bT=.14; e.burst--; const mz=_muz(e), s=10.5*eSpd(); shoot('e',mz,leadDir(mz.x,mz.z,s,new V3()),s,9,0xff5a2a,{life:3,r:.45}); sparks(mz,0xff8a40,3,3); e.jz.rec.v+=3; }},
-  // Heavy spread shot: 5 shots (7 for elites) fanned around the led aim
-  fan:{tele:.5,rec:.45,cd:[1.6,2.2],need:e=>e.see,fire(e){ const mz=_muz(e), s=9*eSpd(), d=leadDir(mz.x,mz.z,s,_ld); fanShot(mz,Math.atan2(d.x,d.z),e.elite?3:2,.2,s,12,0xff5a2a,{life:3.2,r:.5}); sparks(mz,0xff8a40,3,3); e.jz.rec.v+=6; }},
+  // Heavy spread shot: 5 shots (7 for elites and T2) fanned around the led aim
+  fan:{tele:.5,rec:.45,cd:[1.6,2.2],need:e=>e.see,fire(e){ const mz=_muz(e), s=9*eSpd(), d=leadDir(mz.x,mz.z,s,_ld); fanShot(mz,Math.atan2(d.x,d.z),e.elite||e.tier>1?3:2,.2,s,12,0xff5a2a,{life:3.2,r:.5}); sparks(mz,0xff8a40,3,3); e.jz.rec.v+=6; }},
   /* Heavy slam: the red ring shows the reach and fills during the wind-up, then a small shockwave rolls out to it.
      Step outside the ring or dash through the wave. A little version of the Iron Colossus slam. */
   slam:{tele:.85,rec:.9,cd:[1.6,2.2],start(e){ slamTele(e.pos,e.def.slam,.85,.45); sfx('click'); },fire(e){ const s0=shake; shockwave(e.pos,12,e.def.slam,0xff5a2a); shake=Math.max(s0,.28); e.jz.pop.v=-6; sparks(e.pos.clone().setY(.4),0xc8c0d0,6,5); sfx('heavy'); }},
-  // Bulwark: a short fan from behind the shield
-  bfan:{tele:.45,rec:.5,cd:[2.4,3.2],need:e=>e.see,fire(e){ const mz=_muz(e); fanShot(mz,e.yaw,2,.16,8.5*eSpd(),11,0xff5a2a,{life:1.6,r:.45}); e.jz.rec.v+=6; }},
-  // Warden: a ring of slow shots around itself (area denial)
-  ring:{tele:.5,rec:.4,cd:[1.9,2.6],fire(e){ const n=e.elite?14:10,off=rand(0,1); for(let i=0;i<n;i++){ const a=(i+off)/n*Math.PI*2; shoot('e',e.pos.clone().setY(1.8),new V3(Math.sin(a),0,Math.cos(a)),6.5*eSpd(),10,0xffc040,{life:4,r:.45}); } }},
-  // Shardling: three shards around the led aim
-  tri:{tele:.4,rec:.3,cd:[1.5,2.2],need:e=>e.see,fire(e){ const o=e.pos.clone().setY(1.6*e.sc+.3), s=10*eSpd(), d=leadDir(o.x,o.z,s,_ld); fanShot(o,Math.atan2(d.x,d.z),1,.22,s,8,0x8fd0ff,{life:.95,r:.4}); }},
-  // Crawler: two quick bursts of twin shots, then it looks for cover
-  burst:{tele:.3,rec:.5,cd:[1.3,2],need:e=>e.see,fire(e){ e.burst=2; e.bT=0; },
+  // Bulwark: a short fan from behind the shield (9 tighter shots at T2)
+  bfan:{tele:.45,rec:.5,cd:[2.4,3.2],need:e=>e.see,fire(e){ const mz=_muz(e); fanShot(mz,e.yaw,e.tier>1?4:2,e.tier>1?.12:.16,8.5*eSpd(),11,0xff5a2a,{life:1.6,r:.45}); e.jz.rec.v+=6; }},
+  // Warden: a ring of slow shots around itself (area denial); T2 opens its petals again and sends a second ring half a step turned
+  ring:{tele:.5,rec:.4,cd:[1.9,2.6],fire(e){ const n=e.elite?14:10; e.ringOff=rand(0,1); wardenRing(e,n,e.ringOff); e.ring2=e.tier>1?.32:0; },
+    tick(e,dt){ if(e.ph!=='rec'||!(e.ring2>0)) return; e.ring2-=dt; if(e.ring2<=0){ e.jz.pop.v=-4; wardenRing(e,e.elite?14:10,e.ringOff+.5); } }},
+  // Shardling: three shards around the led aim (five at T2)
+  tri:{tele:.4,rec:.3,cd:[1.5,2.2],need:e=>e.see,fire(e){ const o=e.pos.clone().setY(1.6*e.sc+.3), s=10*eSpd(), d=leadDir(o.x,o.z,s,_ld); fanShot(o,Math.atan2(d.x,d.z),e.tier>1?2:1,e.tier>1?.18:.22,s,8,0x8fd0ff,{life:.95,r:.4}); }},
+  // Crawler: two quick bursts of twin shots (three at T2), then it looks for cover
+  burst:{tele:.3,rec:.5,cd:[1.3,2],need:e=>e.see,fire(e){ e.burst=e.tier>1?3:2; e.bT=0; },
     tick(e,dt){ if(e.ph!=='rec'||!e.burst) return; e.bT-=dt; if(e.bT>0) return; e.bT=.13; e.burst--; const s=10*eSpd(), d=leadDir(e.pos.x,e.pos.z,s,_ld), y=Math.atan2(d.x,d.z);
       for(const k of [-1,1]){ const o=new V3(e.pos.x+d.x*1.1+Math.cos(y)*k*.2,1.4,e.pos.z+d.z*1.1-Math.sin(y)*k*.2); shoot('e',o,d.clone(),s,8,0xff5a2a,{life:2.5,r:.4}); } sparks(e.pos.clone().setY(1.6).addScaledVector(d,1.1),0xff8a40,2,3); },
     after(e){ const c=coverSpot(e,5.5); if(c){ e.ph='cover'; e.goal=c; e.phT=rand(.9,1.5); } }},
   // a quick shot from the body (the hunted elite, whatever it is)
   snap:{tele:.3,rec:.25,cd:[1.3,2],need:e=>e.see,fire(e){ const o=e.pos.clone().setY(1.6), s=10*eSpd(); shoot('e',o,leadDir(o.x,o.z,s,new V3()),s,10,0xff5a2a,{life:2.5,r:.45}); }},
-  // Censer: three slow homing light orbs that float over blocks (no line of sight needed)
-  orbs:{tele:.55,rec:.5,cd:[2.8,3.6],fire(e){ let live=0; for(const b of bullets) if(b.tag==='censer') live++; if(live>=12) return; const T=tgt(), b0=Math.atan2(T.x-e.pos.x,T.z-e.pos.z);
-    for(let i=-1;i<=1;i++){ const a=b0+i*.7; shoot('e',e.pos.clone().setY(2.2),new V3(Math.sin(a),0,Math.cos(a)),3.6*eSpd(),10,0xffe9a0,{life:6,r:.6,scale:1.35,home:6,turn:1.1,after:3.6,air:'float',tag:'censer'}); } sfx('zap'); }},
+  // Censer: three slow homing light orbs that float over blocks (no line of sight needed); five, closer together, at T2
+  orbs:{tele:.55,rec:.5,cd:[2.8,3.6],fire(e){ let live=0; for(const b of bullets) if(b.tag==='censer') live++; if(live>=12) return; const T=tgt(), b0=Math.atan2(T.x-e.pos.x,T.z-e.pos.z), w=e.tier>1?2:1;
+    for(let i=-w;i<=w;i++){ const a=b0+i*(w>1?.35:.7); shoot('e',e.pos.clone().setY(2.2),new V3(Math.sin(a),0,Math.cos(a)),3.6*eSpd(),10,0xffe9a0,{life:6,r:.6,scale:1.35,home:6,turn:1.1,after:3.6,air:'float',tag:'censer'}); } sfx('zap'); }},
 };
 
 /* ================= ROLE AI ================= */

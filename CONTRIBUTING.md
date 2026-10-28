@@ -43,7 +43,7 @@ Bir dosyada en üst seviyede tanımlanan her şey (fonksiyonlar, `const`/`let`) 
 | `js/save.js` | Kayıt (localStorage). Yeni alanlar `DEF_P`'ye varsayılanla eklenir, eski kayıtlar `normP` ile açılır. |
 | `js/audio.js` | Tarayıcıda üretilen müzik (`TRACKS`), Main Stage moblarının kilitlendiği vuruş saati (`BEAT`) ve ses efektleri (`sfx`), High-Co'nun form parçaları için yuvalar (`hcMusic`, dosyalar `assets/audio/`) |
 | `js/renderer.js` | Three.js sahnesi, kamera (bilgisayar: izometrik, telefon: dik ve odaya sığan), ışıklar, şehir; oda boyutları (`ROOM_X`, `ROOM_Z`, `BOSS_X`, `BOSS_Z`, telefonda `ROOM_X_M`, `BOSS_X_M`) |
-| `js/models.js` | Mecha, melek, arena mobları ve boss 3D modelleri (`buildMech`, `BOSS_BUILD`, `corruptModel`). Yeni modellerin kaynağı `docs/bestiary.html`, Main Stage kadrosununki `docs/main-stage.html`. |
+| `js/models.js` | Mecha, melek, arena mobları ve boss 3D modelleri (`buildMech`, `BOSS_BUILD`, `corruptModel`). Yeni modellerin kaynağı `docs/bestiary.html`, Main Stage kadrosununki `docs/main-stage.html`, yeni moblar, tier varyantları ve ayna kopyalarınınki `docs/mob-designs.html`. |
 | `js/preview.js` | Hangardaki dönen mecha ve boss portreleri |
 | `js/input.js` | Klavye ve fare |
 | `js/mobile.js` | Kontrol modu, telefon joystick'i, otomatik nişan, otomatik kalkan |
