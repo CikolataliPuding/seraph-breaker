@@ -134,10 +134,10 @@ const DICT_TR={
   '+20 max armor per level':'Seviye başına +20 azami zırh', '+4% damage per level':'Seviye başına +%4 hasar', '+3% power regeneration per level':'Seviye başına +%3 güç yenilenmesi',
   // run skills (RARITY, RSK)
   'Common':'Sıradan', 'Rare':'Nadir', 'Epic':'Destansı', 'Legendary':'Efsanevi',
-  'Attack Boost':'Saldırı Artışı', '+18% damage.':'+%18 hasar.', 'Rapid Cycle':'Seri Döngü', '+13% fire rate.':'+%13 atış hızı.',
-  'Armor Up':'Zırh Takviyesi', '+15% max armor and repair 15%.':'+%15 azami zırh ve %15 onarım.', 'Max Armor+':'Azami Zırh+', '+30 max armor.':'+30 azami zırh.',
+  'Attack Boost':'Saldırı Artışı', '+20% damage.':'+%20 hasar.', 'Rapid Cycle':'Seri Döngü', '+13% fire rate.':'+%13 atış hızı.',
+  'Armor Up':'Zırh Takviyesi', '+15% max armor and repair 15%.':'+%15 azami zırh ve %15 onarım.', 'Max Armor+':'Azami Zırh+', '+35 max armor.':'+35 azami zırh.',
   'Hex Regen':'Altıgen Yenilenme', '+35% power regeneration.':'+%35 güç yenilenmesi.', 'Swift Servos':'Çevik Servolar', '+8% move speed.':'+%8 hareket hızı.',
-  'Crit Lens':'Kritik Mercek', '+7% critical chance.':'+%7 kritik şansı.', '6% chance to ignore a hit.':'Bir vuruşu yok sayma şansı %6.',
+  'Crit Lens':'Kritik Mercek', '+8% critical chance.':'+%8 kritik şansı.', '6% chance to ignore a hit.':'Bir vuruşu yok sayma şansı %6.',
   'Gold Rush':'Altına Hücum', '+25% gold.':'+%25 altın.', 'Sync Surge':'Senkron Dalgası', 'Special recharges 20% faster.':'Özel %20 daha hızlı dolar.',
   'Twin Shot':'İkiz Atış', '+1 parallel projectile. Each shot deals 75% (60% at rank 2).':'+1 paralel mermi. Her atış %75 hasar verir (2. kademede %60).',
   'Diagonal Fire':'Çapraz Ateş', '+2 projectiles at 40°.':'40° açıyla +2 mermi.', 'Side Fire':'Yan Ateş', '+1 projectile to each side.':'İki yana da +1 mermi.',
