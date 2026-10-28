@@ -15,8 +15,9 @@ function clearRoom(){
   if(npc){ scene.remove(npc.m.g); npc=null; }
 }
 function buildRoom(hx,hz,grid,withDoor){
-  // desktop rooms are 2 columns wider than the 11-column layouts: an open lane on each side, blocks keep their size
+  // desktop rooms are 2 columns wider than the 11-column layouts (an open lane on each side) and 3 rows longer (2 open rows at the entry, 1 at the door)
   if(grid&&!mobileMode&&grid[0].length===11) grid=grid.map(r=>'.'+r+'.');
+  if(grid&&!mobileMode&&grid.length===15&&hz>15){ const e='.'.repeat(grid[0].length), add=Math.round(hz-15); grid=[...Array(add>>1).fill(e),...grid,...Array(add-(add>>1)).fill(e)]; }
   clearRoom(); AX=hx; AZ=hz;
   const t=ARENAS[stage].theme;
   tileTex.repeat.set(hx,hz);
@@ -47,7 +48,7 @@ function buildRoom(hx,hz,grid,withDoor){
   fitCamera();
 }
 function buildBossRoom(){
-  buildRoom(roomHalfX(true),BOSS_Z,null,true);
+  buildRoom(roomHalfX(true),roomHalfZ(true),null,true);
   const t=ARENAS[stage].theme, bm=toon(t.block), px=AX*.65;
   // High-Co plays a concert: same four cover spots, but they are amp stacks, and the stage, lights and crowd sit around the mat
   hcArena=null;
@@ -218,7 +219,7 @@ function startRoom(i,force){
   clearEnemiesAndShots();
   room={type,kind:spec.kind,spec,cleared:false,hurt:false,completeT:0,boss:type==='boss'?(force&&force.boss||pickBoss()):null};
   if(type==='boss'){ buildBossRoom(); player.pos.set(0,0,AZ-3); }
-  else { buildRoom(roomHalfX(),ROOM_Z,type==='angel'?SANCTUM:ROOMS[DBG.layout]||pickOne(ROOMS),true); player.pos.set(0,0,AZ-1.5); if(ARENAS[stage].stage) addStageDecor(); }
+  else { buildRoom(roomHalfX(),roomHalfZ(),type==='angel'?SANCTUM:ROOMS[DBG.layout]||pickOne(ROOMS),true); player.pos.set(0,0,AZ-1.5); if(ARENAS[stage].stage) addStageDecor(); }
   player.vel.set(0,0,0); player.stunT=0; player.slowT=0; AU.tempoK=BEAT.force?AU.tempoK:1; camTarget.set(mobileMode?0:player.pos.x,0,mobileMode?mobileCamZ(player.pos.z):player.pos.z);
   if(typeof onRoomStart==='function') onRoomStart();
   logRoomStart(type);

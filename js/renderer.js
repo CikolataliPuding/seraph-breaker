@@ -42,9 +42,9 @@ const blob=r=>{ const m=new THREE.Mesh(new THREE.CircleGeometry(r,18),new THREE.
 /* world: ground + city ring */
 let AX=11, AZ=15, hazardMat=null; // half-width (x) and half-depth (z) of the current room; the door is at z=-AZ
 const CITY_R=24;
-const OUTW=6, ROOM_X=13, ROOM_Z=15, BOSS_X=14, BOSS_Z=14, OUT_DPS=6; // rooms are tall rectangles: 13 columns × 15 rows on desktop (26 × 30 units; the 11-column layouts get an open lane on each side, rooms.js buildRoom)
-// phone mode keeps entities readable at 390 px: rooms are 20 wide there (the layouts' own 11 columns, slightly narrower cells)
-const ROOM_X_M=10, BOSS_X_M=11, roomHalfX=boss=>mobileMode?(boss?BOSS_X_M:ROOM_X_M):(boss?BOSS_X:ROOM_X);
+const OUTW=6, ROOM_X=14, ROOM_Z=18, BOSS_X=15, BOSS_Z=16, OUT_DPS=6; // rooms are tall rectangles: 13 columns × 18 rows on desktop (28 × 36 units; the 11 × 15 layouts get an open lane on each side and 3 open rows, rooms.js buildRoom)
+// phone mode keeps entities readable at 390 px: rooms are 20 × 30 there (the layouts' own 11 × 15 cells, slightly narrower)
+const ROOM_X_M=10, BOSS_X_M=11, ROOM_Z_M=15, BOSS_Z_M=14, roomHalfX=boss=>mobileMode?(boss?BOSS_X_M:ROOM_X_M):(boss?BOSS_X:ROOM_X), roomHalfZ=boss=>mobileMode?(boss?BOSS_Z_M:ROOM_Z_M):(boss?BOSS_Z:ROOM_Z);
 let groundMat,cityMat,winInst,tileTex;
 (function buildWorld(){
   const cv=document.createElement('canvas'); cv.width=cv.height=256; const g=cv.getContext('2d');
