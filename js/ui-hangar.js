@@ -42,7 +42,7 @@ $('storyBtn').onclick=()=>{ sfx('click'); storyShow(); };
 function renderMenu(){
   document.documentElement.style.setProperty('--unit',unitCss());
   $('wGold').textContent=P.gold.toLocaleString(); $('wGems').textContent=P.gems.toLocaleString();
-  $('whoName').textContent=P.pilot||t('[CALLSIGN]'); $('avatar').textContent=String(P.arenas).padStart(2,'0'); $('betaBadge').hidden=!P.beta;
+  $('whoName').textContent=P.pilot||t('[CALLSIGN]'); $('avatar').textContent=String(P.arenas).padStart(2,'0'); $('betaBadge').hidden=!(P.beta||betaOK());
   if(view==='home'){ renderHome(); hangarFocus(); } if(view==='map') renderMap(); if(view==='armory') renderArmory(); if(view==='skills') renderTree($('treeHangar')); if(view==='frames') renderFrames(); if(view==='system') renderSystem();
 }
 // holo map (wide hangar, right panel): a route from Arena 1 (bottom) up through the arenas this pilot can see; a node picks the arena, the hangar lights follow
@@ -71,3 +71,11 @@ $('sortieBtn').onclick=()=>{ sfx('click'); openView('map'); };
 $('contBtn').onclick=()=>{ const r=loadRun(); if(r){ sfx('click'); launchArena(r.a,r); } else renderHome(); };
 $('mapBack').onclick=()=>openView('home');
 $('launchBtn').onclick=()=>{ const a=openSel(P.selArena); if(!arenaOpen(a)) return; if(loadRun()&&!$('launchBtn').dataset.arm){ $('launchBtn').dataset.arm='1'; $('launchBtn').textContent=t('Start over? Your saved run ends'); return; } delete $('launchBtn').dataset.arm; clearRun(); launchArena(a); };
+// beta program (tester.js): tap the pilot card for the code box; a ranked pilot gets the report download instead
+function renderBeta(){ const on=betaOK(); $('betaJoin').hidden=on; $('betaRep').hidden=!on;
+  const n=$('betaNote'); n.className='note'; n.textContent=on?t('Beta tester: thank you! Your runs are logged on this device; download the report when asked.'):t('Got a beta code? Enter it to join the beta.'); }
+const betaToggle=()=>{ const p=$('betaPop'); p.hidden=!p.hidden; $('whoBox').setAttribute('aria-expanded',String(!p.hidden)); if(!p.hidden) renderBeta(); sfx('click'); };
+$('whoBox').onclick=betaToggle; $('whoBox').addEventListener('keydown',e=>{ if(e.code==='Enter'||e.code==='Space'){ e.preventDefault(); betaToggle(); } });
+$('betaBtn').onclick=()=>{ const ok=unlockBeta($('betaIn').value); $('betaIn').value=''; if(ok){ renderBeta(); renderMenu(); sfx('lvup'); } else { const n=$('betaNote'); n.className='note bad'; n.textContent=t('That code is not valid.'); sfx('click'); } };
+$('betaIn').addEventListener('keydown',e=>{ if(e.code==='Enter') $('betaBtn').click(); });
+$('betaRep').onclick=()=>{ betaReport(); sfx('click'); };

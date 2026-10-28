@@ -71,10 +71,10 @@ const r2=v=>Math.round(v*100)/100;
 /* ================= RUN LOG ================= */
 // debug mode only: per room time, damage taken/dealt, kills, gold and diamonds by source, power estimate and enemy scale
 const RUNLOG={rooms:[],cur:null};
-function logRoomStart(type){ if(!DEBUG||!sortie) return; RUNLOG.cur={a:sortie.a,room:sortie.ri+1,type,deaths:0,t0:playTime,taken0:sortie.dmgTaken||0,dealt0:sortie.dmgDealt||0,kills0:kills,earn0:Object.assign({},sortie.earn||{})}; }
+function logRoomStart(type){ if(!(DEBUG||betaOK())||!sortie) return; RUNLOG.cur={a:sortie.a,room:sortie.ri+1,type,deaths:0,t0:playTime,taken0:sortie.dmgTaken||0,dealt0:sortie.dmgDealt||0,kills0:kills,earn0:Object.assign({},sortie.earn||{})}; }
 // 'clear' only stamps the clear time; the entry closes when you leave the room (exit), die or finish the arena, so pickups collected after the clear still count
 function logRoomEnd(result){
-  if(!DEBUG||!RUNLOG.cur||!sortie) return; const c=RUNLOG.cur;
+  if(!(DEBUG||betaOK())||!RUNLOG.cur||!sortie) return; const c=RUNLOG.cur;
   if(result==='clear'){ if(c.clearT==null) c.clearT=playTime-c.t0; return; }
   RUNLOG.cur=null; if(c.clearT!=null&&result!=='death') result='clear';
   const e=sortie.earn||{}, gold={}, gems={};
@@ -82,7 +82,8 @@ function logRoomEnd(result){
   const pw=playerPower(), sc=enemyScale(sortie.a,sortie.ri,sortie.rule);
   RUNLOG.rooms.push({arena:c.a+1,room:c.room,type:c.type,result,deaths:c.deaths,time:r2(c.clearT!=null?c.clearT:playTime-c.t0),dmgTaken:Math.round((sortie.dmgTaken||0)-c.taken0),dmgDealt:Math.round((sortie.dmgDealt||0)-c.dealt0),kills:kills-c.kills0,
     gold,gems,lv:sortie.lv,power:{dps:r2(pw.dps),ehp:r2(pw.ehp),total:r2(pw.power)},enemy:{hp:r2(sc.hp),dmg:r2(sc.dmg),boss:r2(sc.boss)}});
-  renderRunLog();
+  const L=RUNLOG.rooms[RUNLOG.rooms.length-1]; betaLog({k:'room',a:L.arena,room:L.room,type:L.type,boss:L.type==='boss'&&room?room.boss:undefined,result:L.result,deaths:L.deaths,time:L.time,taken:L.dmgTaken,hp:Math.round(player.maxHp),lv:L.lv});
+  if(!DEBUG) RUNLOG.rooms.length=0; renderRunLog();
 }
 function runLogJson(){ return JSON.stringify({build:BUILD,tester:true,unit:P.unit,weapon:P.weapon,core:P.core,tree:P.skills,arena:sortie&&sortie.a+1,earnTotal:sortie&&sortie.earn,rooms:RUNLOG.rooms},null,1); }
 const sumObj=o=>Object.values(o||{}).reduce((a,b)=>a+b,0);

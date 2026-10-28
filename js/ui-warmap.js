@@ -132,7 +132,7 @@ $('fsBtn').onclick=()=>{ try{ const r=document.documentElement.requestFullscreen
 // Reset my progress: a fresh pilot, but the beta badge, the tester code (and its flag) and the Main Stage access code stay
 let resetArm=false;
 $('resetBtn').onclick=()=>{ if(!resetArm){ resetArm=true; $('resetBtn').textContent=t('Tap again to erase your progress'); setTimeout(()=>{ resetArm=false; $('resetBtn').textContent=t('Reset my progress'); },4000); return; }
-  const keep={rev:P.rev,beta:P.beta,testerCode:P.testerCode,testerSave:P.testerSave,testerTools:P.testerTools,stageCode:P.stageCode}; P=freshP(); Object.assign(P,keep); resetArm=false; $('resetBtn').textContent=t('Reset my progress'); clearRun(); persist(); rebuildPreview(); renderMenu(); };
+  const keep={rev:P.rev,beta:P.beta,betaCode:P.betaCode,testerCode:P.testerCode,testerSave:P.testerSave,testerTools:P.testerTools,stageCode:P.stageCode}; P=freshP(); Object.assign(P,keep); resetArm=false; $('resetBtn').textContent=t('Reset my progress'); clearRun(); persist(); rebuildPreview(); renderMenu(); };
 /* tester code: only its SHA-256 is in the code (tester.js). Unlocked: a toggle for the in-game tester tools (reloads the page). */
 function renderTester(){ const ok=testerOK(), n=$('testerNote'); $('testerToolsL').hidden=!ok; $('testerTools').checked=P.testerTools; $('testerBtn').textContent=ok?t('Lock'):t('Unlock');
   $('testerIn').hidden=ok; n.className='note'+(ok?' ok':''); n.textContent=ok?t('Tester mode unlocked. Runs with tester tools are flagged and never count for rankings.'):t('For testers only. Tester runs are flagged and never count for rankings.'); }
