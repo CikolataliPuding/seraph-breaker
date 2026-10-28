@@ -14,7 +14,7 @@ function makePlayer(){
 /* hubris (the story): the stronger the pilot grows in a run, the more the power gets to him. 0..1 from the arena and the run level.
    It reddens the mech's eyes and armor and darkens the screen edges; past HUBRIS.loose control starts to slip: the aim drifts,
    the frame trembles now and then (phones buzz). Reduced motion keeps the tremor off, the drift stays. */
-const HUBRIS={base:[0,.12,.24,.36,.48],lv:40,loose:.35}, _hubRed=new THREE.Color(0xff1a2a);
+const HUBRIS={base:[0,.12,.24,.36,.48,.48],lv:40,loose:.35}, _hubRed=new THREE.Color(0xff1a2a);
 const reduceMotion=matchMedia('(prefers-reduced-motion: reduce)');
 function hubris(){ return sortie?clamp((HUBRIS.base[sortie.a]||0)+.5*Math.min(1,(sortie.lv-1)/HUBRIS.lv),0,1):0; }
 function hubrisTick(p,dt){ const h=hubris(), k=Math.max(0,(h-HUBRIS.loose)/(1-HUBRIS.loose));

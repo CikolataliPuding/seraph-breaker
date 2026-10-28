@@ -15,7 +15,7 @@ const STORY={intro:[
   'Then the sky opened. Machines. Angels. Things that are not us. And still nobody believes in me.',
   'Fine. At least I will be useful. For my kind.'],
   voice:['Nobody expects anything from me. Good. Then nobody sees me fail.','They are cheering. For me. I could get used to this.',
-    'Angels kneel when they break. I like the sound of it.','Who am I fighting for again? It does not matter. I am winning.','They chant his name. Not mine. Not yet.']};
+    'Angels kneel when they break. I like the sound of it.','Who am I fighting for again? It does not matter. I am winning.','The grid bends where I walk. Maybe it was always mine.','They chant his name. Not mine. Not yet.']};
 const SPECIALS = {
   azure:{name:'Overdrive',cd:25,d:'5 s of 2.5× fire rate, +30% damage and +20% speed.'},
   crimson:{name:'Crimson Nova',cd:10,d:'Leap to the target and detonate on landing. Invulnerable in the air.'},
@@ -213,6 +213,7 @@ const SCALE={mob:2.2,hp:.058,dmg:.04,bossDmgK:1.4,bossRef:9,finalHp:1.5,finalDmg
    Plain player words: what got weaker (nerf), stronger (buff), what is new, what changed and what was fixed. A new pilot skips them. */
 const NEWS=[
   {id:'balance-2',title:'The Power Curve Update',items:[
+    {k:'new',t:'New arena 5: Hex Breach. The grid itself has come alive: any enemy may come hex-mutated and tougher, elites always do. Clear Fallen Sky to open it.'},
     {k:'change',t:'Arenas now unlock your power. Every arena you open lets each Core stat go 4 levels higher and opens new skill tree ranks. Levels you bought above the limit are kept and come back as you open arenas.'},
     {k:'change',t:'Core levels now multiply: every Armor or Damage level is +9% on top of the last, so late levels count as much as early ones.'},
     {k:'nerf',t:'Enemies grow with you: every arena is a little harder than the last at the power it lets you have. Arena 1 hits softer to match the new Core limit, and later arenas get tougher.'},
@@ -249,12 +250,12 @@ const XP_NEED={base:6,per:.35}, XP_BOSS=10;
    (balance.js, patch.md 39: the price of the arena's Core tier), these gold tables only give the split (check with DBG.sim()). */
 const ECON={
   // Main Stage: Arena 4's gold and diamonds per minute (≈125 gold, ≈2.4 diamonds) over its ≈29 min run (15 rooms × par 95 s + High-Co)
-  target:{gold:[1200,2000,3000,4000,3600],gems:[30,45,60,80,70]},
-  killGold:[.81,.72,.72,.9,.96],      // × ENEMY gold per arena (Main Stage: fewer, tougher kills in long wave rooms); ×0.9 in the gold/diamond split
-  bossGold:[.5,.36,.23,.36,.45],      // × BOSSES gold per arena (×0.9 as above)
-  bossGems:[.28,.25,.14,.22,.75],     // × BOSSES gems per arena, paid on the kill (the Main Stage has one boss, so he pays the run's share)
-  clearGold:[6,9,12,15,35],           // per cleared combat/elite room (Main Stage rooms are long wave sets)
-  healChance:[.12,.12,.12,.12,.05],   // a kill drops a repair pickup (+14% armor); Main Stage rooms have 15-30 kills each, so it is rarer there
+  target:{gold:[1200,2000,3000,4000,4000,3600],gems:[30,45,60,80,80,70]},
+  killGold:[.81,.72,.72,.9,.9,.96],      // × ENEMY gold per arena (Main Stage: fewer, tougher kills in long wave rooms); ×0.9 in the gold/diamond split
+  bossGold:[.5,.36,.23,.36,.36,.45],      // × BOSSES gold per arena (×0.9 as above)
+  bossGems:[.28,.25,.14,.22,.22,.75],     // × BOSSES gems per arena, paid on the kill (the Main Stage has one boss, so he pays the run's share)
+  clearGold:[6,9,12,15,15,35],           // per cleared combat/elite room (Main Stage rooms are long wave sets)
+  healChance:[.12,.12,.12,.12,.12,.05],   // a kill drops a repair pickup (+14% armor); Main Stage rooms have 15-30 kills each, so it is rarer there
   gemChance:{small:.008,big:.03,elite:.2},
   firstClear:a=>40+30*a, repeatClear:a=>5+5*a,
   // farm check (tester.js farmMul): gold and diamonds when replaying an arena 0 / 1 / 2+ below your highest unlocked one
@@ -307,7 +308,14 @@ const ARENAS=[
   {name:'Fallen Sky', phase:'Hubris', rooms:50, mixed:true, mobs:['drone','lancer','warden','spark','ram','censer','crawler','hopper','heavy','coil','cherub','sentry','howitzer','borer','bulwark','mender'], blockTypes:10, pin:['warden','censer','cherub'], bosses:['colossus','hive','arachne','x_archon'], rule:{hazards:.45,corruptElites:true}, trap:'mix', ruleTxt:'Both factions, corrupted elites, 2 random modifiers',
    theme:{bg:0x170e22,hemiS:0xe0c8ff,hemiG:0x22123a,ground:0x4a3a64,city:0xb8a0e0,edge:0xb070ff,rim:0xff4ad0,win:0xd8a0ff,floor:0x9a8ab8,wall:0x2e2244,block:0x5a3a8a,water:0xb070ff},
    colorCss:'#b070ff'},
-  /* Main Stage (High-Co's festival): unlocked by Arena 4's first clear, one notch above it. 15 wave rooms (STAGE) and High-Co after room 15
+  /* Hex Breach (patch.md 36, the owner's docs/hex-breach.html): the gap that opens when Hexarch's seal cracks; neither angel nor machine.
+     Every earlier mob may come hex-mutated (rule.hexMut: 20%, elites always): teal tint, hex lenses, +15% armor (enemies.js hexMutate).
+     The anomaly units, the shifting grid rule and Hexarch (the last room) come in later PRs; until then the corrupted bosses hold the pool.
+     No hpMul / dmgMul: the arena curve (CURVE) sets its numbers, the first arena that needs no table row. */
+  {name:'Hex Breach', phase:'Breach', rooms:50, mixed:true, mobs:['drone','seraph','warden','lancer','shardling','ram','censer','crawler','herald','coil','heavy','beacon','hopper','dominion','sentry','bulwark','emissary','howitzer'], blockTypes:10, pin:['warden','censer','beacon'], bosses:['x_colossus','x_archon','x_arachne'], rule:{hazards:.5,hexMut:.2}, trap:'mix', ruleTxt:'Hex breach: any enemy may come hex-mutated, elites always do',
+   theme:{bg:0x120a22,hemiS:0xbff6ff,hemiG:0x1c1036,ground:0x3a2c5a,city:0x7ae8e0,edge:0x36e8d8,rim:0xb070ff,win:0x9ff4ee,floor:0x8a7ab0,wall:0x261c40,block:0x4a3a7a,water:0x36e8d8},
+   colorCss:'#36e8d8'},
+  /* Main Stage (High-Co's festival): unlocked by Hex Breach's first clear (it was Arena 4's), one notch above it. 15 wave rooms (STAGE) and High-Co after room 15
      (rooms counts the boss room, like the other arenas). roomK: the enemy curve runs roomK rooms per room (and per wave inside it, see
      enemyScale), so the 15 long rooms climb like Arena 4's 50 short ones; that curve is now only High-Co's. mobCurve: the wave mobs' own armor and
      damage curve, [start, growth per room up to knee, growth after] (balance.js kneeCurve): the knee is where the pilot hits the level cap, so the
@@ -411,8 +419,11 @@ const COMPS=[
    {name:'Bastion',core:['dominion','cherub','warden']},{name:'Gaze',core:['beacon','warden','herald']},{name:'Hymn',core:['cantor','seraph','warden']},{name:'Halo throw',core:['aureole','ophan','focus']},{name:'Envoy',core:['emissary','beacon','cherub']},{name:'Skirmish',core:['move','focus','seraph']}],
   [{name:'Lanes',core:['lancer','crawler','drone']},{name:'Medics',core:['cherub','heavy','spark','spark']},{name:'Siege line',core:['howitzer','bulwark','lancer']},
    {name:'Hunters',core:['crawler','crawler','warden','censer']},{name:'Judgement',core:['warden','lancer','heavy']},{name:'Breach',core:['ram','crawler','lancer']},{name:'Grid',core:['coil','drone','lancer']},{name:'Field repair',core:['mender','heavy','drone','drone']},{name:'Turret line',core:['sentry','howitzer','crawler']},{name:'Dig',core:['borer','hopper','lancer']},{name:'Skirmish',core:['move','focus','move']}],
+  // Hex Breach: mixed squads from both factions; the hex mutation (rule.hexMut) does the rest
+  [{name:'Breach',core:['ram','drone','focus']},{name:'Lattice',core:['warden','coil','lancer']},{name:'Choir',core:['seraph','herald','beacon']},
+   {name:'Wall',core:['bulwark','sentry','move']},{name:'Siege',core:['howitzer','heavy','drone']},{name:'Swarm',core:['shardling','crawler','hopper']},{name:'Court',core:['dominion','emissary','focus']}],
   // Main Stage rooms are composed wave by wave from STAGE (composeStage); these only cover a forced plain room there
-  [{name:'Sound check',core:['bass','roadie','spot']},{name:'Moshpit',core:['mosher','mosher','mosher','mosher','mosher','mosher']},{name:'Encore',core:['bass','dancer','shredder','drummer']}],
+  [{name:'Sound check',core:['bass','roadie','spot']},{name:'Moshpit',core:['mosher','mosher','mosher','mosher','mosher','mosher']},{name:'Encore',core:['bass','dancer','shredder','drummer']}]
 ];
 /* the rooms right before a boss teach its patterns with smaller versions (core of the teaching room, see PACING) */
 const BOSS_TEACH={
@@ -432,7 +443,7 @@ const BOSS_TEACH={
    main or accent is not mats[0] / mats[1] (Ophan's white eyes are mats[1]). plates (1 or 2 bars above the model) mark the tier for colorblind
    players. Shot and telegraph colors never change with the tier. Palette and slots follow the mob design file (docs/mob-designs.html). */
 const TIER={max:{drone:2,heavy:2,bulwark:2,warden:2,shardling:3,censer:2,crawler:2,seraph:3,spark:3,lancer:2,cherub:2,ophan:3,howitzer:2},
-  from:[[16,0],[8,26],[6,20],[1,10],[0,0]], late:[[.5,.5,0],[.3,.45,.25],[.25,.45,.3],[.15,.4,.45],[1,0,0]], cost:[1,1.15,1.3], gold:[1,1.1,1.2],
+  from:[[16,0],[8,26],[6,20],[1,10],[1,8],[0,0]], late:[[.5,.5,0],[.3,.45,.25],[.25,.45,.3],[.15,.4,.45],[.1,.35,.55],[1,0,0]], cost:[1,1.15,1.3], gold:[1,1.1,1.2],
   pal:{machine:{2:{accent:0x2fa890},3:{main:0x1c1a24,accent:0xd8d0b8}}, angel:{2:{main:0xe89ab8},3:{main:0x2a2232}}}, slot:{ophan:{main:1}}, plate:0xf2eef8};
 /* room kinds. minRoom / minArena gate them early on. Ambush: they come from the sides and from behind. Reinforcements: waves arrive through gates.
    Survive: hold out for time seconds against endless spawns (spawns pay reward × the normal kill). Hunt: an elite flees and escapes after time

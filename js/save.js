@@ -6,9 +6,10 @@ const SAVE_KEY='seraph-breaker-save-v2';
 // stageCode: the old Main Stage beta access code; unused since the stage opens with Arena 4's first clear (patch.md 31), kept so saves keep their fields.
 // v6: frames are bought with diamonds (units: owned frames, Azure free). Saves from before v6 are beta saves and keep every frame.
 // v7: paint colors are bought with gold (paints: owned colors). Saves from before v7 keep the colors their frame wears.
+// v11: Hex Breach takes arena slot 4, the Main Stage moves to 5: its best room and story flag move with it (normP).
 // v10: news: the id of the last patch notes the pilot has seen (ui-hangar.js newsBoot).
 // v9: betaCode: the beta program code (tester.js); a valid one gives the BETA TESTER rank and keeps a local run log for the beta report.
-const DEF_P={v:10,beta:false,betaCode:'',news:'',testerCode:'',testerSave:false,testerTools:false,stageCode:'',rev:0,pilot:'',unit:'azure',units:{azure:true},paints:[],lore:{intro:false,arenas:[]},c1:null,c2:null,gold:0,gems:0,skills:{},owned:{},weapon:'sig',gadgets:['',''],music:.55,sfx:.7,best:0,clears:0,progress:0,ctrl:'auto',autoGadget:false,mshield:'auto',arenas:1,bestRoom:[0,0,0,0,0],selArena:0,core:{armor:0,dmg:0,regen:0}};
+const DEF_P={v:11,beta:false,betaCode:'',news:'',testerCode:'',testerSave:false,testerTools:false,stageCode:'',rev:0,pilot:'',unit:'azure',units:{azure:true},paints:[],lore:{intro:false,arenas:[]},c1:null,c2:null,gold:0,gems:0,skills:{},owned:{},weapon:'sig',gadgets:['',''],music:.55,sfx:.7,best:0,clears:0,progress:0,ctrl:'auto',autoGadget:false,mshield:'auto',arenas:1,bestRoom:[0,0,0,0,0],selArena:0,core:{armor:0,dmg:0,regen:0}};
 const freshP = () => JSON.parse(JSON.stringify(DEF_P));
 function normP(d){
   const p=freshP();
@@ -31,6 +32,7 @@ function normP(d){
   // v8: the Core caps at CORE_MAX (was 20, then 30; patch.md 27). Since the tier gate (patch.md 38) levels above the arena's cap stay saved and
   // count again when the next arena opens; CORE_MAX (40) is only a sanity cap
   const c=p.core&&typeof p.core==='object'?p.core:{}; p.core={}; for(const k of ['armor','dmg','regen']) p.core[k]=clamp(Math.floor(+c[k]||0),0,CORE_MAX);
+  if(d&&typeof d==='object'&&(+d.v||0)<11){ if(Array.isArray(p.bestRoom)&&p.bestRoom.length>4) p.bestRoom.splice(4,0,0); if(p.lore.arenas.length>4) p.lore.arenas.splice(4,0,false); }
   p.bestRoom=ARENAS.map((A,i)=>clamp(Math.floor(+(Array.isArray(p.bestRoom)&&p.bestRoom[i])||0),0,A.rooms));
   // 4-arena saves: the last arena's clear used to cap the unlocks at 4, so a cleared Arena 4 opens the next arena now
   p.arenas=clamp(Math.floor(+p.arenas||1),1,ARENAS.length);
