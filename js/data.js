@@ -198,9 +198,6 @@ const BAL={
   // desktop: moving while the trigger is held costs this share of move speed (patch.md 34: holding fire and walking was free).
   // The phone already stops firing while you move.
   fireSlow:.35,
-  // Azure's rifle heats up (patch.md 40): each shot adds shot, heat drops cool per second when you let go, at 1 the gun locks for lock seconds.
-  // Base fire rate overheats in ~3 s of holding; fire-rate cards heat it faster. Overdrive (its special) never overheats.
-  azHeat:{shot:1/30,cool:.45,lock:1.5},
   thornCap:.3,
   // Twin Shot: damage of each parallel shot by rank (1 / 1.5 / 1.8 total), so multishot does not multiply everything else
   twin:[1,.75,.6],
@@ -222,7 +219,7 @@ const NEWS=[
     {k:'nerf',t:'The angel repairs 25% of your armor, not all of it.'},
     {k:'new',t:"New devil deals with a real price: The Crowd, Dry Vein, Pride, Glass Heart, Hunter's Mark. The devil can visit anyone now, not only a flawless pilot."},
     {k:'nerf',t:'Enemies no longer wait for their turn: snipers keep firing, chargers come at you the moment they see you.'},
-    {k:'nerf',t:"Azure's rifle overheats after about 3 seconds of holding fire. While shooting, speed cards no longer cancel the slowdown."},
+    {k:'nerf',t:'While shooting, speed cards no longer cancel the slowdown.'},
     {k:'change',t:'Bosses grow with your build: a strong build still wins faster, but no boss melts in seconds.'}]},
   {id:'controls-1',title:'The Sideways Update',items:[
     {k:'new',t:'Phones held sideways: left thumb moves, right thumb aims and fires, DASH and SP sit on the right. The game goes fullscreen on the first touch (on iPhone, add it to the Home Screen).'},
