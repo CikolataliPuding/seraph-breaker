@@ -409,6 +409,19 @@ body.mob #tPause{top:calc(10px + env(safe-area-inset-top,0px))}
 body.mob #toast{top:30%;font-size:26px}
 body.mob h2{font-size:30px}
 @media (orientation:landscape) and (max-height:520px){ .tb.big{width:72px;height:72px} .mbtns{flex-direction:row-reverse;align-items:flex-end} }
+/* phone held sideways (body.land, mobile.js): twin sticks float under the thumbs, the buttons stack on the right edge, compact HUD on top */
+.stk.aim{border-color:rgba(255,106,26,.55)} .stk.aim i{background:rgba(255,106,26,.45)}
+body.land .dpips{display:none}
+body.land .mbtns{flex-direction:row-reverse;align-items:flex-end;right:calc(max(12px,env(safe-area-inset-right,0px)) + 82px);bottom:calc(16px + env(safe-area-inset-bottom,0px));gap:8px}
+body.land .tb.big{width:66px;height:66px} body.land .tb.sm,body.land .tb.sh{width:48px;height:48px}
+body.land .tb.dash{right:max(12px,env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));width:70px;height:70px}
+body.land #tPause{top:calc(8px + env(safe-area-inset-top,0px))}
+body.land #hudL{top:calc(8px + env(safe-area-inset-top,0px));left:max(10px,env(safe-area-inset-left,0px));width:min(300px,34%);gap:2px}
+body.land .unitname{font-size:13px} body.land .unitname small{font-size:10px} body.land .lbl{font-size:10px;letter-spacing:.1em} body.land .bar{height:6px}
+body.land #hudR{top:calc(8px + env(safe-area-inset-top,0px));right:calc(max(10px,env(safe-area-inset-right,0px)) + 50px);font-size:11px;line-height:1.35}
+body.land #hudR .big{font-size:15px}
+body.land #bossHud{top:calc(8px + env(safe-area-inset-top,0px));bottom:auto;width:min(420px,38%)}
+body.land .mhint{bottom:calc(14px + env(safe-area-inset-bottom,0px))}
 
 /* arena select (replaces the 12-level war map) */
 .arenaList{display:grid;gap:10px;padding:4px 16px 16px}

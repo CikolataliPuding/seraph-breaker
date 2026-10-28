@@ -12,7 +12,7 @@ function clearWorld(){
 function refreshControls(){
   const on=playing()&&state!=='cine'&&state!=='choice';
   ['hudL','hudR','xpTrack','rsBar'].forEach(id=>$(id).hidden=!on);
-  $('abBar').hidden=!on||mobileMode; $('touch').hidden=!on||!mobileMode; $('tSH').hidden=P.mshield!=='manual';
+  $('abBar').hidden=!on||mobileMode||landMode; $('touch').hidden=!on||!(mobileMode||landMode); $('tSH').hidden=!landMode&&P.mshield!=='manual';
   $('bossHud').hidden=!(on&&(boss||room&&room.timer)&&state!=='bossdeath'); $('bossHud').classList.toggle('timer',!boss&&!!(room&&room.timer));
   if(on) renderAbilityIcons();
 }

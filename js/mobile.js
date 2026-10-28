@@ -1,11 +1,15 @@
-// Seraph Breaker · mobile.js: Control modes. Mobile (portrait, Archero-style): floating joystick, auto-fire, auto or hold-to-shield barrier, flick/double-tap dash with charges.
+// Seraph Breaker · mobile.js: Control modes. Mobile portrait (Archero-style): floating joystick, auto-fire, auto or hold-to-shield barrier, flick/double-tap dash with charges. Mobile landscape: twin sticks, desktop rules, fullscreen.
 /* ================= CONTROL MODE ================= */
 function wantMobile(){ if(typeof DEBUG!=='undefined'&&DEBUG&&QS.get('mobile')==='1') return true; return P.ctrl==='mobile'||(P.ctrl!=='desktop'&&isTouch); }
+/* a touch device held sideways (patch.md 28 [karar]) plays by the desktop rules: desktop rooms and camera, firing while moving costs the same
+   35% speed, the dash runs on its cooldown. Left thumb: move stick, right thumb: aim stick that fires while held (a light aim assist snaps to
+   an enemy within 20°). Held upright it stays the portrait Archero mode. Turning the phone switches the mode (the next room takes its size). */
 function setMode(){
-  const m=wantMobile(); mobileMode=m; document.body.classList.toggle('mob',m);
+  const w=wantMobile(), side=innerWidth>innerHeight, m=w&&!side; mobileMode=m; landMode=w&&side; document.body.classList.toggle('mob',m); document.body.classList.toggle('land',landMode);
+  const hint=$('mHint'); if(hint) hint.textContent=t(landMode?'Left thumb: move · right thumb: aim and fire · DASH and SP on the right':'Drag to move · let go to fire · dash: DASH button (drag to aim) or double-tap and slide');
   // phones: cap the pixel ratio and use a smaller shadow map
-  renderer.setPixelRatio(Math.min(devicePixelRatio,m?1.5:isTouch?1.6:2));
-  const sm=m?768:isTouch?1024:2048; if(sun.shadow.mapSize.x!==sm){ sun.shadow.mapSize.set(sm,sm); if(sun.shadow.map){ sun.shadow.map.dispose(); sun.shadow.map=null; } }
+  renderer.setPixelRatio(Math.min(devicePixelRatio,m||landMode?1.5:isTouch?1.6:2));
+  const sm=m||landMode?768:isTouch?1024:2048; if(sun.shadow.mapSize.x!==sm){ sun.shadow.mapSize.set(sm,sm); if(sun.shadow.map){ sun.shadow.map.dispose(); sun.shadow.map=null; } }
   resize(); resetTouch(); if(typeof refreshControls==='function') refreshControls();
 }
 
@@ -19,35 +23,53 @@ const joy={id:null,ox:0,oy:0,x:0,y:0,t0:0,hist:[],lastTap:0,tx:0,ty:0,moved:0,ar
    - Double tap: tap, then touch again and slide: it dashes the way you slide (no slide within DASH_ARM s: the way you last moved).
    - Flick: a fast flick of the stick on release. */
 const DASH_DRAG=14, DASH_ARM=.14;
+// landscape aim stick (right half of the screen)
+const aimJ={id:null,ox:0,oy:0,x:0,y:0}, _av=new V3();
+function aimVec(out){ if(aimJ.id===null||Math.hypot(aimJ.x,aimJ.y)<.25) return null; return out.set(aimJ.x,0,aimJ.y); }
+// landscape on a phone: the first touch after turning it goes fullscreen and locks the turn (Android; iPhone Safari has no fullscreen for pages,
+// there "Add to Home Screen" opens it without the browser bars)
+let fsAsked=false;
+function goFull(){ if(!landMode||fsAsked||document.fullscreenElement) return; fsAsked=true; const de=document.documentElement;
+  if(de.requestFullscreen) de.requestFullscreen({navigationUI:'hide'}).then(()=>{ try{ screen.orientation.lock('landscape').catch(()=>{}); }catch(_){} }).catch(()=>{}); }
 let mShieldHeld=false; // Mobile shield: Manual, the hold-to-shield button
 function initMobile(){
   const layer=$('touch'), el=$('stkM'), knob=el.firstElementChild, pips=$('dashPips');
-  const end=e=>{ if(joy.id!==e.pointerId) return;
+  const end=e=>{ if(aimJ.id===e.pointerId){ aimJ.id=null; aimJ.x=aimJ.y=0; $('stkA').hidden=true; return; }
+    if(joy.id!==e.pointerId) return;
     // a fast flick on release dashes in the flick direction
     const now=performance.now(), h=joy.hist; let fx=0,fy=0,fv=0;
     for(let i=h.length-1;i>=0;i--){ if(now-h[i][0]>90) { const dt=Math.max(16,now-h[i][0]); fx=e.clientX-h[i][1]; fy=e.clientY-h[i][2]; fv=Math.hypot(fx,fy)/dt; break; } }
     if(!fv&&h.length){ const a=h[0],dt=Math.max(16,now-a[0]); fx=e.clientX-a[1]; fy=e.clientY-a[2]; fv=Math.hypot(fx,fy)/dt; }
     if(joy.arm){ joy.arm=0; tryDash(); }
-    else if(fv>1.15&&Math.hypot(joy.x,joy.y)>.45) tryDash(new V3(fx,0,fy).normalize());
+    else if(!landMode&&fv>1.15&&Math.hypot(joy.x,joy.y)>.45) tryDash(new V3(fx,0,fy).normalize());
     // a short tap counts toward a double tap
     if(now-joy.t0<220&&joy.moved<14){ joy.lastTap=now; joy.tx=e.clientX; joy.ty=e.clientY; }
     joy.id=null; joy.x=joy.y=0; el.hidden=true; joy.hist.length=0;
   };
+  const ela=$('stkA'), knobA=ela.firstElementChild;
   layer.addEventListener('pointerdown',e=>{
     if(e.target!==layer) return;
+    // landscape: the right half is the aim stick, the left half the move stick (no double-tap or second-finger dash: the DASH button does it)
+    if(landMode&&e.clientX>innerWidth*.5){ if(aimJ.id!==null) return; aimJ.id=e.pointerId; aimJ.ox=e.clientX; aimJ.oy=e.clientY; aimJ.x=aimJ.y=0;
+      ela.style.left=aimJ.ox+'px'; ela.style.top=aimJ.oy+'px'; ela.hidden=false; knobA.style.transform=''; try{ layer.setPointerCapture(e.pointerId); }catch(_){} e.preventDefault(); return; }
+    if(landMode&&joy.id!==null) return;
     // a second finger while the stick is held: dash along the stick
     if(joy.id!==null){ if(e.pointerId!==joy.id){ e.preventDefault(); tryDash(); } return; }
     $('mHint').hidden=true;
-    if(e.clientY<innerHeight*.4) return;
+    if(!landMode&&e.clientY<innerHeight*.4) return;
     const now=performance.now();
     // double tap: arm the dash; sliding this touch picks its direction
-    if(now-joy.lastTap<300&&Math.hypot(e.clientX-joy.tx,e.clientY-joy.ty)<60){ joy.lastTap=0; joy.arm=now; setTimeout(()=>{ if(joy.arm===now){ joy.arm=0; tryDash(); } },DASH_ARM*1000); }
+    if(!landMode&&now-joy.lastTap<300&&Math.hypot(e.clientX-joy.tx,e.clientY-joy.ty)<60){ joy.lastTap=0; joy.arm=now; setTimeout(()=>{ if(joy.arm===now){ joy.arm=0; tryDash(); } },DASH_ARM*1000); }
     joy.id=e.pointerId; joy.ox=e.clientX; joy.oy=e.clientY; joy.x=joy.y=0; joy.t0=now; joy.moved=0; joy.hist.length=0; joy.hist.push([now,e.clientX,e.clientY]);
     el.style.left=joy.ox+'px'; el.style.top=joy.oy+'px'; el.hidden=false; knob.style.transform='';
     pips.style.left=joy.ox+'px'; pips.style.top=(joy.oy-JOY_R-22)+'px'; pips.style.bottom='auto';
     try{ layer.setPointerCapture(e.pointerId); }catch(_){} e.preventDefault();
   });
-  layer.addEventListener('pointermove',e=>{ if(joy.id!==e.pointerId) return;
+  layer.addEventListener('pointermove',e=>{
+    if(aimJ.id===e.pointerId){ let dx=e.clientX-aimJ.ox,dy=e.clientY-aimJ.oy; const l=Math.hypot(dx,dy);
+      if(l>JOY_R){ aimJ.ox+=dx*(1-JOY_R/l); aimJ.oy+=dy*(1-JOY_R/l); dx*=JOY_R/l; dy*=JOY_R/l; ela.style.left=aimJ.ox+'px'; ela.style.top=aimJ.oy+'px'; }
+      aimJ.x=dx/JOY_R; aimJ.y=dy/JOY_R; knobA.style.transform=`translate(${dx}px,${dy}px)`; return; }
+    if(joy.id!==e.pointerId) return;
     let dx=e.clientX-joy.ox,dy=e.clientY-joy.oy; const l=Math.hypot(dx,dy); joy.moved=Math.max(joy.moved,l);
     // drag past the rim and the stick follows the thumb
     if(l>JOY_R){ joy.ox+=dx*(1-JOY_R/l); joy.oy+=dy*(1-JOY_R/l); dx*=JOY_R/l; dy*=JOY_R/l; el.style.left=joy.ox+'px'; el.style.top=joy.oy+'px'; }
@@ -63,17 +85,18 @@ function initMobile(){
   // dash button: along the held stick at once, else drag to aim (release without a drag: the way you last moved)
   const db=$('tDash'); let dbId=null,dbX=0,dbY=0;
   db.addEventListener('pointerdown',e=>{ e.stopPropagation(); e.preventDefault(); db.classList.add('on');
-    if(joyVec(_jv).lengthSq()>0){ tryDash(); return; }
+    if(landMode||joyVec(_jv).lengthSq()>0){ tryDash(); return; } // landscape: along the move stick, else where you aim
     dbId=e.pointerId; dbX=e.clientX; dbY=e.clientY; try{ db.setPointerCapture(e.pointerId); }catch(_){} });
   db.addEventListener('pointermove',e=>{ if(e.pointerId!==dbId) return; const dx=e.clientX-dbX,dy=e.clientY-dbY; if(Math.hypot(dx,dy)>=DASH_DRAG){ dbId=null; tryDash(new V3(dx,0,dy).normalize()); } });
   const dbEnd=e=>{ db.classList.remove('on'); if(e.pointerId!==dbId) return; dbId=null; if(e.type==='pointerup') tryDash(); };
   ['pointerup','pointercancel','lostpointercapture'].forEach(t=>db.addEventListener(t,dbEnd));
   tap('tSP',trySpecial); tap('tG1',()=>useGadget(0)); tap('tG2',()=>useGadget(1)); tap('tPause',togglePause);
   addEventListener('touchstart',()=>{ if(!isTouch){ isTouch=true; document.body.classList.add('touch'); if(P.ctrl==='auto') setMode(); } },{passive:true});
-  addEventListener('resize',()=>{ resetTouch(); });
+  addEventListener('resize',()=>{ if(wantMobile()&&(innerWidth>innerHeight)!==landMode){ fsAsked=false; setMode(); } resetTouch(); });
+  addEventListener('pointerdown',()=>{ if(isTouch) goFull(); },{passive:true});
   setMode();
 }
-function resetTouch(){ mShieldHeld=false; joy.arm=0; const sh=$('tSH'); if(sh) sh.classList.remove('on'); joy.id=null; joy.x=joy.y=0; const el=$('stkM'); if(el) el.hidden=true; joy.hist.length=0; }
+function resetTouch(){ aimJ.id=null; aimJ.x=aimJ.y=0; const ea=$('stkA'); if(ea) ea.hidden=true; mShieldHeld=false; joy.arm=0; const sh=$('tSH'); if(sh) sh.classList.remove('on'); joy.id=null; joy.x=joy.y=0; const el=$('stkM'); if(el) el.hidden=true; joy.hist.length=0; }
 function joyVec(out){ if(joy.id===null||Math.hypot(joy.x,joy.y)<.18) return out.set(0,0,0); return out.set(joy.x,0,joy.y); }
 
 /* ================= AUTO-AIM ================= */
