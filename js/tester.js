@@ -27,7 +27,7 @@ function lockTester(){ P.testerCode=''; P.testerTools=false; persist(); }
 
 /* beta program (patch.md 35): a beta code (only its SHA-256 is here) gives the account the BETA TESTER rank. A ranked pilot's runs, rooms and
    card picks go to their own localStorage key (never the save) and download from the hangar as a JSON report: no server, nothing personal */
-const BETA_HASH='';
+const BETA_HASH='f05aded2f071f5099539a36640e965429374e2721535a35b6762fd8428f294df';
 let betaK=null, betaV=false;
 const betaOK=()=>{ if(P.betaCode!==betaK){ betaK=P.betaCode; betaV=!!BETA_HASH&&!!P.betaCode&&sha256(normCode(P.betaCode))===BETA_HASH; } return betaV; };
 function unlockBeta(code){ if(!BETA_HASH||sha256(normCode(code))!==BETA_HASH) return false; P.betaCode=normCode(code); P.beta=true; persist(); betaLog({k:'join'}); return true; }
