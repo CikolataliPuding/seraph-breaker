@@ -107,7 +107,11 @@ function freeSpot(minFromEntry=6){ let best=null,bd=-1;
   return best||new V3(rand(-3,3),0,-AZ+2.5);
 }
 // mobs unlock in the arena's list order as the run goes on (3 at first, one more every 4 rooms; soft delays the first unlock by that many rooms)
-function arenaPool(a=sortie.a,ri=sortie.ri){ const A=ARENAS[a], ok=A.mobs.filter(t=>ENEMY[t]); return ok.slice(0,Math.min(ok.length,3+Math.floor(Math.max(0,ri-(A.soft||0))/4))); }
+function arenaPool(a=sortie.a,ri=sortie.ri){ const A=ARENAS[a], ok=A.mobs.filter(t=>ENEMY[t]), open=ok.slice(0,Math.min(ok.length,3+Math.floor(Math.max(0,ri-(A.soft||0))/4)));
+  if(!A.blockTypes||open.length<=A.blockTypes) return open;
+  // more types than a block shows: the pinned ones (Fallen Sky's angels) and the two newest unlocks always, the rest a window that moves 3 on per 10-room block
+  const keep=[...new Set([...(A.pin||[]).filter(t=>open.includes(t)),...open.slice(-2)])], rest=open.filter(t=>!keep.includes(t)), s=(Math.floor(ri/10)*3)%rest.length, w=keep.slice();
+  for(let i=0;w.length<A.blockTypes&&i<rest.length;i++) w.push(rest[(s+i)%rest.length]); return w; }
 const HUNT_TYPES=['drone','crawler','seraph','shardling','lancer'];
 /* a wave entry is 'type', 'type^2' (tier 2), 'type*' (elite) or 'type!' (the hunted elite); waveType reads it back */
 function waveType(t){ const tg=t.slice(-1), elite=tg==='*'||tg==='!'; let k=elite||tg==='~'?t.slice(0,-1):t, tier=1; const c=k.indexOf('^'); if(c>0){ tier=+k.slice(c+1)||1; k=k.slice(0,c); } return {k,tg,elite,tier}; }
