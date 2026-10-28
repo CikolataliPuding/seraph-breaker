@@ -197,4 +197,5 @@ makePortraits();
 rebuildPreview();
 openView('home');
 if(!P.lore.intro) storyShow();
+newsBoot();
 requestAnimationFrame(frame);
