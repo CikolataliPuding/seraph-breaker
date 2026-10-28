@@ -39,6 +39,13 @@ $('stSkip').onclick=e=>{ e.stopPropagation(); sfx('click'); STORYUI.i=STORY.intr
 $('story').addEventListener('pointerdown',e=>{ if(e.target.closest('button')) return; STORYUI.i++; storyCard(); });
 addEventListener('keydown',e=>{ if($('story').hidden||e.repeat) return; e.preventDefault(); if(e.code==='Escape'){ STORYUI.i=STORY.intro.length; } else STORYUI.i++; storyCard(); });
 $('storyBtn').onclick=()=>{ sfx('click'); storyShow(); };
+// patch notes: the newest NEWS entry once after an update; a new pilot (intro story not seen yet) has nothing to compare, so it is marked seen
+function newsShow(n=NEWS[0]){ if(!n) return; const tags={nerf:'NERF',buff:'BUFF',new:'NEW',change:'CHANGE',fix:'FIX'}; $('nwT').textContent=t(n.title); const ul=$('nwList'); ul.innerHTML='';
+  n.items.forEach(x=>{ const li=document.createElement('li'), s=document.createElement('span'), p=document.createElement('span'); s.className='nwTag '+x.k; s.textContent=t(tags[x.k]); p.textContent=t(x.t); li.append(s,p); ul.appendChild(li); });
+  $('news').hidden=false; P.news=n.id; persist(); }
+function newsBoot(){ const n=NEWS[0]; if(!n||P.news===n.id) return; if(!P.lore.intro){ P.news=n.id; persist(); return; } newsShow(n); }
+$('nwOk').onclick=()=>{ sfx('click'); $('news').hidden=true; };
+$('newsBtn').onclick=()=>{ sfx('click'); newsShow(); };
 function renderMenu(){
   document.documentElement.style.setProperty('--unit',unitCss());
   $('wGold').textContent=P.gold.toLocaleString(); $('wGems').textContent=P.gems.toLocaleString();
