@@ -51,6 +51,15 @@ function perfectDodge(){
 }
 // the HUD beat pip flashes when a dash lands on the beat
 function beatFlash(){ const el=$('beatPip'); if(!el) return; el.classList.remove('dash'); void el.offsetWidth; el.classList.add('dash'); }
+// Crimson Nova without a mouse (phone): land on the thickest crowd in reach (the blast is 7 wide), never on top of the boss.
+// Leaping 7 units along the aim used to drop the pilot at the boss's feet (issue #43)
+function novaSpot(p){ let best=null, bn=0;
+  for(const e of enemies){ if(e.dead||e===boss||e.under) continue; if(Math.hypot(e.pos.x-p.pos.x,e.pos.z-p.pos.z)>12) continue;
+    let n=0; for(const o of enemies) if(!o.dead&&o!==boss&&Math.hypot(o.pos.x-e.pos.x,o.pos.z-e.pos.z)<6) n++; if(n>bn){ bn=n; best=e; } }
+  return best?best.pos.clone().setY(0):p.pos.clone().addScaledVector(p.aim,7); }
+// after the reach and mat clamps: a landing spot closer than 4 units to the boss's edge moves out toward the pilot's side
+function novaKeep(to,p){ if(!boss||boss.dead) return; const keep=boss.r+4; if(Math.hypot(to.x-boss.pos.x,to.z-boss.pos.z)>=keep) return;
+  const dx=p.pos.x-boss.pos.x, dz=p.pos.z-boss.pos.z, d=Math.hypot(dx,dz)||1; to.x=clamp(boss.pos.x+dx/d*keep,-AX+1,AX-1); to.z=clamp(boss.pos.z+dz/d*keep,-AZ+1,AZ-1); }
 function trySpecial(){
   if(state!=='fight'||!player||player.dead||paused||busy()) return;
   const p=player; if(p.sp<100||p.od>0) return;
@@ -58,8 +67,8 @@ function trySpecial(){
   const sp=p.st.spPow; // Overload Special: harder and longer
   if(P.unit==='azure'){ p.od=5*(1+(sp-1)*.5); groundRing(p.pos,0xffe14a,6,.6); }
   else if(P.unit==='crimson'){
-    let to; if(p.aimOk&&!mobileMode) to=aimPt.clone().setY(0); else to=p.pos.clone().addScaledVector(p.aim,7);
-    const d=to.clone().sub(p.pos); if(d.length()>9) d.setLength(9); to=p.pos.clone().add(d); to.x=clamp(to.x,-AX+1,AX-1); to.z=clamp(to.z,-AZ+1,AZ-1);
+    let to; if(p.aimOk&&!mobileMode) to=aimPt.clone().setY(0); else to=novaSpot(p);
+    const d=to.clone().sub(p.pos); if(d.length()>9) d.setLength(9); to=p.pos.clone().add(d); to.x=clamp(to.x,-AX+1,AX-1); to.z=clamp(to.z,-AZ+1,AZ-1); if(!(p.aimOk&&!mobileMode)) novaKeep(to,p);
     p.leap={from:p.pos.clone(),to,t:0,dur:.5};
   }
   else { p.lance=2.4*(1+(sp-1)*.5); p.lanceMax=p.lance; p.lanceDir.copy(p.aim); sfx('beam'); }
