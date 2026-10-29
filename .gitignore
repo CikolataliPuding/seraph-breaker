@@ -5,3 +5,5 @@ test-shots/*
 # music files stay on this computer (copyright): the game only asks for them when it runs on localhost (audio.js MUSIC_LOCAL)
 assets/audio/
 !test-shots/pr/
+tools/node_modules/
+tools/package-lock.json
