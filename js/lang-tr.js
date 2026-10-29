@@ -168,7 +168,7 @@ const DICT_TR={
   'Servo tuning':'Servo ayarı', '+6% move speed per rank':'Kademe başına +%6 hareket hızı', 'Cell recharge':'Hücre şarjı', '+15% power regeneration':'+%15 güç yenilenmesi',
   'Thruster vents':'İtici delikleri', '-15% dash cooldown':'Atılma bekleme süresi -%15', 'Salvage magnet':'Hurda mıknatısı', '+60% pickup reach, +10% gold':'+%60 toplama menzili, +%10 altın',
   'Quick deploy':'Hızlı kurulum', '-12% gadget cooldowns':'Aparat bekleme süreleri -%12',
-  '+9% max armor per level, compounding':'Seviye başına +%9 azami zırh, katlanarak', '+9% damage per level, compounding':'Seviye başına +%9 hasar, katlanarak', '+3% power regeneration per level, compounding':'Seviye başına +%3 güç yenilenmesi, katlanarak', 'Next arena':'Sonraki arena',
+  '+9% max armor per level, compounding':'Seviye başına +%9 azami zırh, katlanarak', '+9% damage per level, compounding':'Seviye başına +%9 hasar, katlanarak', '+3% power regeneration per level, compounding':'Seviye başına +%3 güç yenilenmesi, katlanarak',
   // run skills (RARITY, RSK)
   'Common':'Sıradan', 'Rare':'Nadir', 'Epic':'Destansı', 'Legendary':'Efsanevi',
   'Attack Boost':'Saldırı Artışı', '+20% damage.':'+%20 hasar.', 'Rapid Cycle':'Seri Döngü', '+13% fire rate.':'+%13 atış hızı.',
