@@ -155,8 +155,8 @@ function tick(dt,now){
   else if(player&&!player.dead&&dt>0){ if(mobileMode) _tmp.set(0,0,mobileCamZ(player.pos.z)); else _tmp.copy(player.pos).addScaledVector(player.aim,1.5); camTarget.lerp(_tmp,Math.min(1,dt*5)); }
   camZoom+=(want-camZoom)*Math.min(1,(dt||.016)*3); if(Math.abs(cam.zoom-camZoom)>.001){ cam.zoom=camZoom; cam.updateProjectionMatrix(); }
   cam.position.copy(camTarget).add(mobileMode?CAM_OFF_M:CAM_OFF);
-  if(REDUCED_MOTION) shake=0;
-  if(shake>0){ cam.position.x+=rand(-1,1)*shake; cam.position.y+=rand(-1,1)*shake*.6; shake=Math.max(0,shake-(dt||.016)*1.8); }
+  const sk=a11yShake(); if(!sk) shake=0; // Screen shake setting (System); auto follows reduce motion
+  if(shake>0){ cam.position.x+=rand(-1,1)*shake*sk; cam.position.y+=rand(-1,1)*shake*sk*.6; shake=Math.max(0,shake-(dt||.016)*1.8); }
   cam.lookAt(camTarget);
   sun.position.copy(camTarget).add(_sunOff); sun.target.position.copy(camTarget);
   hudT-=dt; if(player&&sortie&&hudT<=0){ hudT=.06; const p=player;

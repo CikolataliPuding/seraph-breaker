@@ -17,7 +17,7 @@ function crossBlast(pos,color,size=1){
   const v=new THREE.Mesh(G.plane,mat),h=new THREE.Mesh(G.plane,mat),vc=new THREE.Mesh(G.plane,matW),hc=new THREE.Mesh(G.plane,matW); g.add(v,h,vc,hc);
   addFx(g,.9*size**.3,(f,dt,k)=>{ g.quaternion.copy(cam.quaternion); const t=1-k,grow=Math.min(1,t*6);
     v.scale.set(1.3*size*k+.1,18*size*grow,1); v.position.y=9*size*grow*.35; h.scale.set(9*size*grow,1.1*size*k+.1,1); h.position.y=1.5*size;
-    vc.scale.set(.4*size*k,16*size*grow,1); vc.position.y=v.position.y; hc.scale.set(8*size*grow,.35*size*k,1); hc.position.y=h.position.y; mat.opacity=k; matW.opacity=k; });
+    vc.scale.set(.4*size*k,16*size*grow,1); vc.position.y=v.position.y; hc.scale.set(8*size*grow,.35*size*k,1); hc.position.y=h.position.y; const op=a11yCalm()?k*.4:k; mat.opacity=op; matW.opacity=op; });
   groundRing(pos,color,4*size,.7); sparks(pos.clone().setY(1.5),color,14,10*size); shake=Math.max(shake,.35*size);
   sfx(size>1.4?'bigboom':'boom');
 }

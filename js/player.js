@@ -117,7 +117,7 @@ function hurt(d){
   if(boss&&boss.formN) d=hcDmg(d); // High-Co's form damage (bosses.js)
   d*=roomDmgScale()*p.st.armor*(p.lance>0?.5:1); if(sortie) sortie.dmgTaken=(sortie.dmgTaken||0)+Math.min(d,Math.max(0,p.hp));
   p.hp-=d; p.inv=.55; shake=Math.max(shake,.4); if(d>=14) hitstop(40); p.jz.sq.v+=2; flashModel(p); buzz(40); sfx('hurt'); if(room) room.hurt=true;
-  $('vign').style.opacity=1; setTimeout(()=>{ $('vign').style.opacity=player&&!player.dead&&player.hp<player.maxHp*.3?.45:0; },160);
+  $('vign').style.opacity=a11yCalm()?.5:1; setTimeout(()=>{ $('vign').style.opacity=player&&!player.dead&&player.hp<player.maxHp*.3?.45:0; },160);
   sparks(p.pos.clone().setY(2),0xff4a3a,10,8);
   if(p.hp<=0) zeroHp();
 }

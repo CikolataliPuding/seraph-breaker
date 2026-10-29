@@ -35,7 +35,7 @@ function bossPending(){ for(const x of bullets) if(x.tag==='bmis') return true; 
 const bossHeavy=()=>!!(boss&&!boss.dead&&state==='fight'&&(!LIGHT_ATK.includes(boss.atk)||bossPending()));
 // ground telegraph for a shockwave: the ring is its full reach, the disc fills up during the wind-up, then the ring stays until the wave is out
 function slamTele(pos,R,wind,hold,col=0xff2236){
-  const g=new THREE.Group(), ring=new THREE.Mesh(G.ring,addMat(col,.9)), fill=new THREE.Mesh(G.disc,addMat(col,.2)), life=wind+hold;
+  const g=new THREE.Group(), ring=new THREE.Mesh(G.ring,addMat(warnRim(col),.9)), fill=new THREE.Mesh(G.disc,warnFill(addMat(col,.2))), life=wind+hold;
   ring.rotation.x=fill.rotation.x=-Math.PI/2; ring.scale.setScalar(R); fill.position.y=-.01; g.add(ring,fill); g.position.set(pos.x,.07,pos.z);
   addFx(g,life,(f,dt,k)=>{ const t=life*(1-k), c=Math.min(1,t/wind); fill.visible=t<wind; fill.scale.setScalar(Math.max(.01,R*c)); fill.material.opacity=.1+.22*c;
     ring.material.opacity=t<wind?.5+.45*Math.abs(Math.sin(t*(5+c*22))):.9*Math.max(0,(life-t)/Math.max(.01,hold)); });
@@ -341,15 +341,14 @@ function highcoFormDown(b){
   hcHud(b); popText(n===2?t('ENCORE'):'SAKİN OLMAM LAZIM');
 }
 const HC_DESC=[0,2.2,1.5]; // entrance descent time per form (form I parachutes in during the cinematic)
-/* game feel: hcShake / hcCam scale with the device (phones get less, prefers-reduced-motion gets no shake and no camera moves; main.js
-   also drops all screen shake for reduced motion). HC_CAM: a short camera hold on a point with a zoom punch, read by main.js. */
-const REDUCED_MOTION=!!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches);
-const hcFeel=()=>REDUCED_MOTION?0:mobileMode?.55:1;
+/* game feel: hcShake / hcCam scale with the device (phones get less, Screen shake Off (or auto with reduce motion) gets no shake and no camera moves; main.js
+   also scales all screen shake by it, juice.js a11yShake). HC_CAM: a short camera hold on a point with a zoom punch, read by main.js. */
+const hcFeel=()=>a11yShake()*(mobileMode?.55:1);
 // crowd and stage hype (animateHighCoArena reads a.hype; 2 = the final form's roar)
 function hcCrowd(lvl){ if(hcArena) hcArena.hype=Math.max(hcArena.hype||0,lvl); sfx(lvl>=2?'roar':'crowd'); }
 const hcShake=v=>{ shake=Math.max(shake,v*hcFeel()); };
 const HC_CAM={t:0,zoom:1,pos:new V3()};
-function hcCam(pos,zoom,t){ if(REDUCED_MOTION) return; HC_CAM.pos.set(pos.x,0,pos.z); HC_CAM.zoom=1+(zoom-1)*(mobileMode?.5:1); HC_CAM.t=t; }
+function hcCam(pos,zoom,t){ if(!a11yShake()) return; HC_CAM.pos.set(pos.x,0,pos.z); HC_CAM.zoom=1+(zoom-1)*(mobileMode?.5:1); HC_CAM.t=t; }
 // every hit the pilot takes in his room scales with the current form (forms[n].dmg), and one hit never goes past hitCap (raw, before the room curve)
 function hcDmg(d){ const b=boss; if(!b||!b.formN||b.dead) return d; return Math.min(d*b.def.forms[b.phase-1].dmg,Math.max(d,b.def.hitCap)); }
 /* form I entrance: the parachute drop as a cinematic. He sinks under the canopy (the cinematic camera follows him down; if it is skipped

@@ -1,8 +1,22 @@
 // Seraph Breaker · juice.js: Game feel: hitstop, slow motion, springs, hit reactions, muzzle flash and death debris.
 /* ================= JUICE ================= */
+/* accessibility (#56, System): Screen shake auto/full/low/off and Flashes auto/full/reduced (auto follows the system's reduce-motion
+   setting); Reduced flashes drops hitstop and dims the white hit flash, the muzzle flash, blast flashes and the red damage vignette.
+   High-contrast warnings: enemy telegraphs get diagonal stripes on their fill and a white rim, so they do not rely on color alone. */
+const SYS_REDUCE=!!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches);
+const a11yShake=()=>P.shake==='full'?1:P.shake==='low'?.4:P.shake==='off'?0:SYS_REDUCE?0:1;
+const a11yCalm=()=>P.flashes==='reduced'||(P.flashes==='auto'&&SYS_REDUCE);
+let _stripeTex=null;
+const stripeTex=()=>{ if(_stripeTex) return _stripeTex; const c=document.createElement('canvas'); c.width=c.height=64; const g=c.getContext('2d'); g.fillStyle='rgba(255,255,255,.28)'; g.fillRect(0,0,64,64);
+  g.fillStyle='#fff'; for(let i=-64;i<128;i+=16){ g.beginPath(); g.moveTo(i,0); g.lineTo(i+8,0); g.lineTo(i+72,64); g.lineTo(i+64,64); g.closePath(); g.fill(); }
+  _stripeTex=new THREE.CanvasTexture(c); _stripeTex.wrapS=_stripeTex.wrapT=THREE.RepeatWrapping; _stripeTex.repeat.set(3,3); return _stripeTex; };
+// a telegraph fill material: striped under High-contrast warnings (the material is the telegraph's own, never a shared cached one)
+function warnFill(mat){ if(P.warnHi&&mat&&!mat.map){ mat.map=stripeTex(); mat.needsUpdate=true; } return mat; }
+// the rim color of a telegraph ring: white under High-contrast warnings
+const warnRim=c=>P.warnHi?0xffffff:c;
 // hitstop freezes the simulation (not rendering) for a few frames. Never stacks past 120 ms; a short cooldown stops rapid crits from stuttering.
 let hitstopT=0,hsCool=0,slowT=0;
-function hitstop(ms,force){ if(!force&&hsCool>0) return; hitstopT=Math.min(.12,Math.max(hitstopT,ms/1000)); hsCool=force?.1:.25; }
+function hitstop(ms,force){ if(a11yCalm()) return; if(!force&&hsCool>0) return; hitstopT=Math.min(.12,Math.max(hitstopT,ms/1000)); hsCool=force?.1:.25; }
 // slow motion for enemies and their shots (perfect dodge)
 function slowmo(s){ slowT=Math.max(slowT,s); }
 // small spring: s={x,v}. f = stiffness (rad/s), z = damping ratio (1 = critically damped, <1 overshoots and settles)
@@ -37,7 +51,7 @@ function applyJuice(g,j,dt,sc){
 /* muzzle flash: one reusable mesh, no per-shot allocation */
 const mFlash=new THREE.Mesh(new THREE.OctahedronGeometry(.42,0),addMat(0xffffff,.95)); mFlash.visible=false; scene.add(mFlash);
 let mFlashT=0;
-function muzzleFlash(pos,color,size=1){ mFlash.position.copy(pos); mFlash.material.color.setHex(color); mFlash.scale.set(size,size,size*1.8); mFlash.rotation.set(rand(0,3),rand(0,3),rand(0,3)); mFlash.visible=true; mFlashT=.05; }
+function muzzleFlash(pos,color,size=1){ if(a11yCalm()) size*=.45; mFlash.position.copy(pos); mFlash.material.color.setHex(color); mFlash.scale.set(size,size,size*1.8); mFlash.rotation.set(rand(0,3),rand(0,3),rand(0,3)); mFlash.visible=true; mFlashT=.05; }
 
 /* death debris: the model's own parts are detached and flung with gravity, spin and one bounce, then shrink away */
 const debris=[];

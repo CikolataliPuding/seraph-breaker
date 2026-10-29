@@ -5,7 +5,7 @@ const _sv=new V3(),_sv2=new V3(),_lp=new V3(),_ld=new V3();
 function lineLen(x,z,dx,dz,max,pad=0){ let t=0; while(t<max){ t+=.4; const px=x+dx*t,pz=z+dz*t; if(Math.abs(px)>AX-1||Math.abs(pz)>AZ-1||inBlock(px,pz,pad,'block')) return Math.max(0,t-.4); } return max; }
 // ground telegraph strip (fades out on its own)
 // solid: normal blending, so a red strip stays red on the light floors (additive red turns pink there)
-function teleStrip(pos,dx,dz,len,w,color,life,solid){ const g=new THREE.Group(), mat=solid?new THREE.MeshBasicMaterial({color,transparent:true,opacity:.3,depthWrite:false}):addMat(color,.3), pl=new THREE.Mesh(new THREE.PlaneGeometry(w,len),mat); pl.rotation.x=-Math.PI/2; pl.position.z=len/2; g.add(pl); g.position.set(pos.x,.05,pos.z); g.rotation.y=Math.atan2(dx,dz); addFx(g,life,(f,dt,k)=>{ mat.opacity=.18+.22*Math.abs(Math.sin((1-k)*life*9)); }); return g; }
+function teleStrip(pos,dx,dz,len,w,color,life,solid){ const g=new THREE.Group(), mat=warnFill(solid?new THREE.MeshBasicMaterial({color,transparent:true,opacity:.3,depthWrite:false}):addMat(color,.3)), pl=new THREE.Mesh(new THREE.PlaneGeometry(w,len),mat); pl.rotation.x=-Math.PI/2; pl.position.z=len/2; g.add(pl); g.position.set(pos.x,.05,pos.z); g.rotation.y=Math.atan2(dx,dz); addFx(g,life,(f,dt,k)=>{ mat.opacity=.18+.22*Math.abs(Math.sin((1-k)*life*9)); }); return g; }
 // lobbed shell (howitzer, mine layers): visual arc with a ground shadow, then onLand. marker: a red landing ring (the Howitzer has its own).
 function lobShell(from,to,dur,color,onLand,marker){ const g=new THREE.Group(), m=new THREE.Mesh(G.orb,basic(color,false)); m.scale.setScalar(1.2); const sh=blob(.4); sh.position.y=.04; g.add(m,sh);
   let mk=null; if(marker){ mk=new THREE.Mesh(G.ring,addMat(0xff3a2a,.8)); mk.rotation.x=-Math.PI/2; mk.position.set(to.x,.07,to.z); mk.scale.setScalar(1.3); g.add(mk); }
@@ -439,7 +439,7 @@ const cornered=()=>Math.abs(player.pos.x)>AX-2.2||Math.abs(player.pos.z)>AZ-2.2|
 const CONE_GEO=new THREE.CircleGeometry(1,24,Math.PI/2-.45,.9); // a .9 rad slice of the unit disc around local -z once laid flat
 const coneGeo=arc=>new THREE.CircleGeometry(1,24,Math.PI/2-arc/2,arc), CONE_BASS=coneGeo(ENEMY.bass.cone[1]);
 CONE_GEO.userData.shared=CONE_BASS.userData.shared=true; // telegraph shapes reused by every mob
-function teleCone(e,dir,len,life,col=MS_COL.amber,geo=CONE_GEO){ const g=new THREE.Group(), mat=addMat(col,.25), m=new THREE.Mesh(geo,mat);
+function teleCone(e,dir,len,life,col=MS_COL.amber,geo=CONE_GEO){ const g=new THREE.Group(), mat=warnFill(addMat(col,.25)), m=new THREE.Mesh(geo,mat);
   m.rotation.x=-Math.PI/2; g.add(m); g.position.set(e.pos.x,.06,e.pos.z); g.rotation.y=Math.atan2(dir.x,dir.z)+Math.PI;
   const o=col===MS_COL.red?1.6:1; // the Bass Brute's red cone reads fainter on the dark mat, so it is drawn stronger
   addFx(g,life,(f,dt,k)=>{ mat.opacity=(.15+.3*(1-k)+.12*Math.abs(Math.sin((1-k)*life*14)))*o; m.scale.setScalar(len*(.35+.65*(1-k))); }); return g; }
@@ -466,7 +466,7 @@ function updateSkyDrops(dt){
         if(!player.dead&&state==='fight'&&Math.hypot(player.pos.x-M.x,player.pos.z-M.z)<M.R+.4){ if(player.dashT>0){ player.inv=Math.max(player.inv,.35); perfectDodge(); } else hurt(M.dmg); } M.t=0; } }
     else { M.ring.material.opacity=Math.max(0,.8-M.t*3); if(M.t>.3){ roomGroup.remove(M.g); [M.ring,M.fill].forEach(o=>o.material.dispose()); stageMeteors.splice(i,1); } } } }
 // thin floor line from pos toward (dx,dz), len long, on the shared unit plane (no geometry per shot: Pyro Tech fires often)
-function teleLine(pos,dx,dz,len,w,color,life){ const g=new THREE.Group(), mat=addMat(color,.3), pl=new THREE.Mesh(G.plane,mat); pl.rotation.x=-Math.PI/2; pl.scale.set(w,len,1); pl.position.z=len/2; g.add(pl);
+function teleLine(pos,dx,dz,len,w,color,life){ const g=new THREE.Group(), mat=warnFill(addMat(color,.3)), pl=new THREE.Mesh(G.plane,mat); pl.rotation.x=-Math.PI/2; pl.scale.set(w,len,1); pl.position.z=len/2; g.add(pl);
   g.position.set(pos.x,.05,pos.z); g.rotation.y=Math.atan2(dx,dz); addFx(g,life,(f,dt,k)=>{ mat.opacity=.18+.22*Math.abs(Math.sin((1-k)*life*9)); }); return g; }
 const MS_ATK={
   // Shredder riff: an amber sound-wave cone of shots toward you, on the beat
