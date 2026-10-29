@@ -33,6 +33,12 @@ const DICT_TR={
   'Tester tools in game (reloads the page)':'Oyun içi tester araçları (sayfayı yeniler)',
   'Main Stage access code':'Ana Sahne erişim kodu', 'Access code':'Erişim kodu', 'The Main Stage is in beta. Enter the access code to open it.':'Ana Sahne beta aşamasında. Açmak için erişim kodunu gir.',
   'Fullscreen':'Tam ekran', 'Reset my progress':'İlerlememi sıfırla', 'Replay story':'Hikayeyi yeniden oynat',
+  'Move my save':'Kaydımı taşı', 'Export save':'Kaydı dışa aktar', 'Import save':'Kaydı içe aktar', 'Paste a save here, then Import save':'Kaydı buraya yapıştır, sonra Kaydı içe aktar\'a bas',
+  'Moves your progress to another device or browser. Tester and beta codes stay on this device.':'İlerlemeni başka bir cihaza ya da tarayıcıya taşır. Tester ve beta kodları bu cihazda kalır.',
+  'Save downloaded and copied. Open System on the other device and import it.':'Kayıt indirildi ve kopyalandı. Diğer cihazda Sistem ekranını açıp içe aktar.',
+  'Save downloaded. You can also copy the text in the box.':'Kayıt indirildi. Kutudaki metni de kopyalayabilirsin.',
+  'That is not an Autocrat save.':'Bu bir Autocrat kaydı değil.', 'Save imported.':'Kayıt içe aktarıldı.',
+  'Arena {0} open, {1} gold, {2} diamonds. Tap Import save again to replace your progress here.':'{0}. arena açık, {1} altın, {2} elmas. Buradaki ilerlemenin yerine geçmesi için Kaydı içe aktar\'a tekrar bas.',
   // story, cards, pause, report
   // patch notes (NEWS)
   'The Real Fight Update':'Gerçek Dövüş Güncellemesi',
