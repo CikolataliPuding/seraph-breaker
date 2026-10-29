@@ -1,0 +1,24 @@
+# Autocrat · perf (#74): frame cost of three scenes on an emulated mid-range phone with the CPU slowed 4x (tools/perf.mjs). Run it by hand
+# from the Actions tab; with a base ref it measures that ref first with the same tool, so the log shows a before/after table.
+name: Perf
+on:
+  workflow_dispatch:
+    inputs:
+      base:
+        description: Ref to compare against (leave empty for no comparison)
+        default: main
+permissions:
+  contents: read
+jobs:
+  perf:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: npm install --prefix tools --no-audit --no-fund
+      - if: inputs.base != ''
+        run: git worktree add /tmp/base "origin/${{ inputs.base }}" && node tools/perf.mjs --root /tmp/base --label "base: ${{ inputs.base }}"
+      - run: node tools/perf.mjs --label "${{ github.ref_name }}"
