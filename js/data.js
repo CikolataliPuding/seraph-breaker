@@ -331,9 +331,9 @@ const ARENAS=[
    colorCss:'#b070ff'},
   /* Hex Breach (patch.md 36, the owner's docs/hex-breach.html): the gap that opens when Hexarch's seal cracks; neither angel nor machine.
      Every earlier mob may come hex-mutated (rule.hexMut: 20%, elites always): teal tint, hex lenses, +15% armor (enemies.js hexMutate).
-     The anomaly units, the shifting grid rule and Hexarch (the last room) come in later PRs; until then the corrupted bosses hold the pool.
+     The anomaly units and the shifting grid rule come in later PRs; the corrupted bosses hold the pool, and the last room is always Hexarch (finale).
      No hpMul / dmgMul: the arena curve (CURVE) sets its numbers, the first arena that needs no table row. */
-  {name:'Hex Breach', phase:'Breach', rooms:50, mixed:true, mobs:['cellmite','hexdrone','hexbulwark','cellbrute'], minion:'cellmite', bosses:['x_colossus','x_hive','x_arachne'], rule:{hazards:.5,hexMut:.2}, trap:'mix', ruleTxt:'Hex breach: the grid itself fights you',
+  {name:'Hex Breach', phase:'Breach', rooms:50, mixed:true, mobs:['cellmite','hexdrone','hexbulwark','cellbrute'], minion:'cellmite', bosses:['x_colossus','x_hive','x_arachne'], finale:'hexarch', rule:{hazards:.5,hexMut:.2}, trap:'mix', ruleTxt:'Hex breach: the grid itself fights you',
    theme:{bg:0x120a22,hemiS:0xbff6ff,hemiG:0x1c1036,ground:0x3a2c5a,city:0x7ae8e0,edge:0x36e8d8,rim:0xb070ff,win:0x9ff4ee,floor:0x8a7ab0,wall:0x261c40,block:0x4a3a7a,water:0x36e8d8},
    colorCss:'#36e8d8'},
   /* Main Stage (High-Co's festival): unlocked by Hex Breach's first clear (it was Arena 4's), one notch above it. 15 wave rooms (STAGE) and High-Co after room 15
@@ -471,6 +471,7 @@ const BOSS_TEACH={
   throne:['ophan','warden','censer'],                   // rolls and bullet walls
   archon:['seraph','ophan','warden'],                   // lunges, a rolling line, waves (angel side)
   highco:['shredder','diver','pyro','bass'],           // cones and lightning (scream), a landing crush (slam stun), marked floor fire (pillars), slows
+  hexarch:['hexdrone','hexdrone','cellbrute'],          // aimed cells and a hex shock (volley, honey)
 };
 /* mob tiers (patch.md 25, the mob doc): T2 and T3 keep the silhouette, the telegraph and the armor, and add behavior (enemy-ai.js reads e.tier).
    max: the highest tier a mob has behavior for (missing = T1 only; a higher roll folds down). from: [first T2 room, first T3 room] per arena
@@ -559,6 +560,15 @@ const BOSSES={
     pool:[['walls','eyes','smite'],['walls','eyes','walls2','smite','pulse'],['walls2','eyes','roll','walls','roll','smite','pulse']]},
   archon:{name:'Archon',cls:'Class · Angel · Judge',epi:'An armored knight with a sword of light. Stay out of the lunge, punish the recovery, and stop firing into the shield.',threat:5,warn:'JUDGEMENT DESCENDS',hp:820,r:2.6,fly:.01,coreY:4.6,barrier:false,minion:'mini',gold:560,gems:56,angel:true,
     pool:[['wave','lunge','aimed'],['wave','lunge','shieldup','wave','smite'],['lunge','wave','shieldup','lunge','ring','smite','pulse']]},
+  /* Hexarch (patch.md 36.1, the owner's docs/hexarch.html): Hex Breach's last room, always (ARENAS finale), never drawn from a pool.
+     Phase I: honey (the floor turns into hex tiles that light up ring by ring and burst; step onto a burnt-out tile behind the wave),
+     volley (the orbit cell nearest you opens its eye and fires 3 shots; hitting the open eye shuts it and deals ×2), seal (immune under a hex
+     shell while two orbit cells glow; break both for a stun). Phases II and III borrow sweep / ring / spiral until their own attacks land.
+     hx: tile = hex tile radius, tele = a tile's warning, ring = seconds between rings, dmg = tile burst (raw, before the room curve),
+     eyeOpen = how long an eye stays open before it fires, eyeHp / sealHp = share of the boss armor, sealT = the shell's longest hold, satR = orbit radius. */
+  hexarch:{name:'Hexarch',cls:'Class · Anomaly · Hex lattice',epi:'The thing that made your shield first. Now it wants it back.',threat:5,warn:'SIGNAL INTEGRITY FAILING',hp:1100,r:3.4,fly:.01,coreY:5.6,barrier:false,minion:'cellmite',finale:true,gold:700,gems:70,angel:false,
+    pool:[['honey','volley','seal','volley'],['honey','volley','seal','sweep','ring'],['honey','volley','seal','sweep','ring','spiral']],
+    hx:{tile:1.7,tele:.8,ring:.7,dmg:16,eyeOpen:.55,eyeHp:.008,sealT:7,sealHp:.025,stun:2,satR:3.1}},
   // High-Co (Main Stage headliner): three forms killed one after another, each with its own armor bar (bosses.js, highcoFormDown).
   // Form I the white frontman (parachute drop), form II the black-winged angel (descends in a light column), form III red-winged rage.
   // Only form III's death is the boss kill (score, rewards, room clear). b.phase is the form number, so pool[n-1] is form n's attack set.

@@ -60,7 +60,7 @@ Bir dosyada en üst seviyede tanımlanan her şey (fonksiyonlar, `const`/`let`) 
 | `js/items.js` | Eşya düşürme, 4 slot ve takas |
 | `js/player.js` | Oyuncu, özel hareketler, aletler ve silahlar (`weaponUpdate`) |
 | `js/enemy-ai.js` | Düşman davranışları rollerle (`AI`, `ATK` ve `ANIM` tabloları), hareket (`steer`), elit nitelikleri |
-| `js/bosses.js` | Boss saldırıları (`bossTick`), boss parçaları ve sinematik giriş |
+| `js/bosses.js` | Boss saldırıları (`bossTick`), boss parçaları, High-Co, Hexarch (petek zemin, yörünge hücreleri, mühür) ve sinematik giriş |
 | `js/run.js` | Arena koşusu: tohumlu koşu planı (`arenaPlan`, `PACING`), boss seçimi, koşu kaydı ve devam |
 | `js/flow.js` | Oda geçişleri, sonuç ekranı, duraklatma |
 | `js/ui-hangar.js` | Hangar menüsü ve alt menü |
