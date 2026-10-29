@@ -139,6 +139,9 @@
           <div class="fld"><span>Tester code</span><div class="row tester"><input id="testerIn" maxlength="48" autocomplete="off" spellcheck="false" placeholder="XXXXX-XXXXX-XXXXX-..."><button class="btn ghost" id="testerBtn">Unlock</button></div>
             <p class="note" id="testerNote">For testers only. Tester runs are flagged and never count for rankings.</p>
             <label class="chk" id="testerToolsL" hidden><input type="checkbox" id="testerTools"> Tester tools in game (reloads the page)</label></div>
+          <div class="fld"><span>Move my save</span><div class="row"><button class="btn ghost" id="saveExp">Export save</button><button class="btn ghost" id="saveImp">Import save</button><input type="file" id="saveFile" accept=".json,application/json,text/plain" hidden></div>
+            <textarea id="saveTxt" rows="3" spellcheck="false" autocomplete="off" placeholder="Paste a save here, then Import save"></textarea>
+            <p class="note" id="saveNote">Moves your progress to another device or browser. Tester and beta codes stay on this device.</p></div>
           <div class="row"><button class="btn ghost" id="fsBtn">Fullscreen</button><button class="btn ghost" id="resetBtn">Reset my progress</button><button class="btn ghost" id="storyBtn">Replay story</button><button class="btn ghost" id="newsBtn">Patch notes</button></div>
         </div>
       </section>
