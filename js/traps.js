@@ -10,7 +10,7 @@ function trapKind(a){ const k=ARENAS[a].trap||'spike'; return k==='mix'?pickOne(
 // mark (v=1) or unmark (v=-1) the nav cells inside a rectangle
 function navMarkRect(x0,z0,x1,z1,v){ if(!NAV.ok) return; const c0=Math.max(0,Math.floor((x0+AX)/NAV.cx)), c1=Math.min(NAV.w-1,Math.floor((x1+AX)/NAV.cx)), r0=Math.max(0,Math.floor((z0+AZ)/NAV.cz)), r1=Math.min(NAV.h-1,Math.floor((z1+AZ)/NAV.cz));
   for(let r=r0;r<=r1;r++) for(let c=c0;c<=c1;c++){ const i=r*NAV.w+c; NAV.trap[i]=Math.max(0,NAV.trap[i]+v); } }
-function trapMaterials(){ if(trapMats) return trapMats; trapMats={plate:toon(0x2a2632),metal:toon(0xc8c4cc),blade:toon(0xe8e8ee),rail:toon(0x1c1a22),warn:addMat(0xff3a2a,.45),gold:addMat(0xffd36a,.6),glow:addMat(0xffd36a,.22),core:addMat(0xfff4d0,.5),edge:basic(0x7a1a26,false)}; return trapMats; }
+function trapMaterials(){ if(trapMats) return trapMats; trapMats={plate:toon(0x2a2632),metal:toon(0xc8c4cc),blade:toon(0xe8e8ee),rail:toon(0x1c1a22),warn:warnFill(addMat(0xff3a2a,.45)),gold:warnFill(addMat(0xffd36a,.6)),glow:addMat(0xffd36a,.22),core:addMat(0xfff4d0,.5),edge:basic(0x7a1a26,false)}; return trapMats; }
 // cells: [{x,z}] of one '~' run; cw/cz: cell size
 function addTrapGroup(kind,cells,cw,cz,idx){
   const M=trapMaterials(), T=TRAPS[kind], g=new THREE.Group(); roomGroup.add(g);

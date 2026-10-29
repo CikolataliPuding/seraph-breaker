@@ -9,7 +9,7 @@ const SAVE_KEY='seraph-breaker-save-v2';
 // v11: Hex Breach takes arena slot 4, the Main Stage moves to 5: its best room and story flag move with it (normP).
 // v10: news: the id of the last patch notes the pilot has seen (ui-hangar.js newsBoot).
 // v9: betaCode: the beta program code (tester.js); a valid one gives the BETA TESTER rank and keeps a local run log for the beta report.
-const DEF_P={v:11,beta:false,betaCode:'',news:'',testerCode:'',testerSave:false,testerTools:false,stageCode:'',rev:0,pilot:'',unit:'azure',units:{azure:true},paints:[],lore:{intro:false,arenas:[]},c1:null,c2:null,gold:0,gems:0,skills:{},owned:{},weapon:'sig',gadgets:['',''],music:.55,sfx:.7,best:0,clears:0,progress:0,ctrl:'auto',autoGadget:false,mshield:'auto',arenas:1,bestRoom:[0,0,0,0,0],selArena:0,core:{armor:0,dmg:0,regen:0}};
+const DEF_P={v:11,beta:false,betaCode:'',news:'',testerCode:'',testerSave:false,testerTools:false,stageCode:'',rev:0,pilot:'',unit:'azure',units:{azure:true},paints:[],lore:{intro:false,arenas:[]},c1:null,c2:null,gold:0,gems:0,skills:{},owned:{},weapon:'sig',gadgets:['',''],music:.55,sfx:.7,best:0,clears:0,progress:0,ctrl:'auto',autoGadget:false,mshield:'auto',shake:'auto',flashes:'auto',warnHi:false,arenas:1,bestRoom:[0,0,0,0,0],selArena:0,core:{armor:0,dmg:0,regen:0}};
 const freshP = () => JSON.parse(JSON.stringify(DEF_P));
 function normP(d){
   const p=freshP();
@@ -41,6 +41,8 @@ function normP(d){
   p.pilot=String(p.pilot||'').slice(0,14);
   p.beta=!!p.beta; p.betaCode=String(p.betaCode||'').slice(0,60); p.news=String(p.news||'').slice(0,40); p.testerCode=String(p.testerCode||'').slice(0,60); p.testerSave=!!p.testerSave; p.testerTools=!!p.testerTools; p.stageCode=String(p.stageCode||'').slice(0,60);
   if(!['auto','mobile','desktop'].includes(p.ctrl)) p.ctrl='auto'; p.autoGadget=!!p.autoGadget; if(!['auto','manual'].includes(p.mshield)) p.mshield='auto';
+  // accessibility (#56): screen shake auto/full/low/off, flashes auto/full/reduced (auto follows the system's reduce-motion setting), high-contrast warnings
+  if(!['auto','full','low','off'].includes(p.shake)) p.shake='auto'; if(!['auto','full','reduced'].includes(p.flashes)) p.flashes='auto'; p.warnHi=!!p.warnHi;
   return p;
 }
 let P=freshP();

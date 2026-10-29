@@ -117,13 +117,18 @@ function renderFrames(){
   [0,1].forEach(i=>{ const g=P.gadgets[i]; item(g||'hook',t('Gadget {0}',i+1),g?GADGETS[g].name:t('Empty slot'),()=>openView('armory')); });
 }
 function renderSystem(){ $('buildTxt').textContent=t('Build {0}.',BUILD); renderTester(); $('volM').value=Math.round(P.music*100); $('volMo').textContent=Math.round(P.music*100); $('volS').value=Math.round(P.sfx*100); $('volSo').textContent=Math.round(P.sfx*100);
-  document.querySelectorAll('#ctrlSeg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.c===P.ctrl)); document.querySelectorAll('#shSeg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.s===P.mshield)); document.querySelectorAll('#langSeg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.l===LANG)); $('autoG').checked=P.autoGadget; }
+  document.querySelectorAll('#ctrlSeg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.c===P.ctrl)); document.querySelectorAll('#shSeg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.s===P.mshield)); document.querySelectorAll('#langSeg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.l===LANG)); $('autoG').checked=P.autoGadget;
+  document.querySelectorAll('#shakeSeg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.k===P.shake)); document.querySelectorAll('#flashSeg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.k===P.flashes)); $('warnHi').checked=P.warnHi; }
 // language buttons in their own language; a change reloads the page (i18n.js)
 $('langSeg').innerHTML=Object.keys(LANGS).map(k=>`<button data-l="${k}" lang="${k}">${LANGS[k]}</button>`).join('');
 document.querySelectorAll('#langSeg button').forEach(b=>b.onclick=()=>{ if(b.dataset.l===LANG) return; sfx('click'); langSet(b.dataset.l); });
 document.querySelectorAll('#ctrlSeg button').forEach(b=>b.onclick=()=>{ P.ctrl=b.dataset.c; sfx('click'); persist(); setMode(); renderSystem(); });
 document.querySelectorAll('#shSeg button').forEach(b=>b.onclick=()=>{ P.mshield=b.dataset.s; sfx('click'); persist(); renderSystem(); refreshControls(); });
 $('autoG').onchange=e=>{ P.autoGadget=e.target.checked; persist(); };
+// accessibility (#56): shake and flash levels apply at once; warnings apply to telegraphs made from now on (trap tiles from the next room)
+document.querySelectorAll('#shakeSeg button').forEach(b=>b.onclick=()=>{ P.shake=b.dataset.k; sfx('click'); persist(); renderSystem(); });
+document.querySelectorAll('#flashSeg button').forEach(b=>b.onclick=()=>{ P.flashes=b.dataset.k; sfx('click'); persist(); renderSystem(); });
+$('warnHi').onchange=e=>{ P.warnHi=e.target.checked; trapMats=null; persist(); };
 $('pilotIn').addEventListener('input',e=>{ const v=e.target.value.replace(/[^\p{L}\p{N} _\-.]/gu,'').slice(0,14); if(v!==e.target.value) e.target.value=v; P.pilot=v.trim(); $('whoName').textContent=P.pilot||t('[CALLSIGN]'); });
 $('pilotIn').addEventListener('change',()=>persist());
 $('volM').oninput=e=>{ P.music=e.target.value/100; $('volMo').textContent=e.target.value; setVolumes(); };

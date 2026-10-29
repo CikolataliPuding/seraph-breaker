@@ -77,7 +77,7 @@ function dropPlate(e){ if(!e.plate) return; scene.remove(e.plate); e.plate.mater
 function breakParts(e){ const f=e.hp/e.maxHp; for(const b of e.model.breaks){ if(b.done||f>=b.at||!b.o.parent) continue; b.done=true;
   const st=new THREE.Object3D(); st.position.copy(b.o.position); b.o.parent.add(st); (e.stumps||(e.stumps=[])).push(st);
   b.o.getWorldPosition(_tmp2); b.o.userData.broken=true; scene.attach(b.o); pushDebris(b.o,new V3(rand(-3,3)+e.hdx*3,rand(5,8),rand(-3,3)+e.hdz*3),rand(.9,1.3),false); sparks(_tmp2.clone(),0xffc070,6,6); sfx('hit'); } }
-function flashModel(e){ e.model.mats.forEach(m=>m.emissive.setHex(0xffffff)); e.flash=.07; }
+function flashModel(e){ const c=a11yCalm()?0x555555:0xffffff; e.model.mats.forEach(m=>m.emissive.setHex(c)); e.flash=.07; }
 function unflash(e){ e.model.mats.forEach(m=>m.emissive.setHex(0)); }
 // noProc: damage from a proc (no on-hit procs, and a kill from it triggers no on-kill procs). flat: no crit, Rage or boss bonus.
 function hitEnemy(e,d,pos,dot,noProc,flat){
