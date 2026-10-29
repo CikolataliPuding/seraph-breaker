@@ -101,6 +101,19 @@ Kolay başlangıç fikirleri:
 - Başka birinin özelliğini kaldırıyorsan ya da büyük ölçüde değiştiriyorsan, PR açıklamasında nedenini yaz.
 - Kod, görsel ya da ses eklerken kullanma hakkın olduğundan emin ol. Telifli içerik ekleme.
 
+### Otomatik kontrol (smoke test)
+
+Her PR'da GitHub iki kontrol koşar (`.github/workflows/smoke.yml`):
+- **lint:** `npx eslint@9 js`. Sözdizimi hatalarını ve veri tablolarında iki kez yazılmış anahtar gibi kaymaları yakalar (`eslint.config.mjs`).
+- **smoke:** Oyun headless Chrome'da açılır. Otopilot The Low City'yi 2 dakika oynar, sonra her bossla birer kez dövüşür, çizim yapmadan ve hızlandırılmış. Sayfa hatası, konsol hatası ya da bir oyun karesinde (`tick`) fırlayan hata kontrolü kırmızı yapar. Kayda hiçbir şey yazılmaz.
+
+Yerelde (Node 20 ve Chrome gerekir):
+
+```bash
+npm install --prefix tools
+node tools/smoke.mjs
+```
+
 ## Fikir ya da hata bildirmek
 
 Kod yazmadan da katkı verebilirsin: **Issues** sekmesinden bir fikir öner ya da bulduğun hatayı yaz.

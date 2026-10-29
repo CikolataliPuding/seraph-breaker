@@ -1,0 +1,28 @@
+# Autocrat · smoke test (#53): on every pull request (and pushes to main) lint the scripts and let the autopilot play
+# Arena 1 plus one fight against every boss in headless Chrome. A page error, console error or exception inside a game tick fails the run.
+name: Smoke test
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: npx --yes eslint@9.13.0 js
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: npm install --prefix tools --no-audit --no-fund
+      - run: node tools/smoke.mjs --seconds 120 --boss-seconds 25
