@@ -141,9 +141,13 @@ $('resetBtn').onclick=()=>{ if(!resetArm){ resetArm=true; $('resetBtn').textCont
   const keep={rev:P.rev,beta:P.beta,betaCode:P.betaCode,testerCode:P.testerCode,testerSave:P.testerSave,testerTools:P.testerTools,stageCode:P.stageCode}; P=freshP(); Object.assign(P,keep); resetArm=false; $('resetBtn').textContent=t('Reset my progress'); clearRun(); persist(); rebuildPreview(); renderMenu(); };
 /* move my save (#55): export the profile as JSON (file + clipboard + the text box), import it on another device. Tester, beta and stage
    codes never leave the device: an import keeps this device's codes. A tester-flagged save stays flagged, so an import cannot launder it.
-   The run in progress (Continue run) is its own save and stays on this device. */
-const SAVE_CODES=['testerCode','betaCode','stageCode','testerTools'];
-function saveExportText(){ const s=JSON.parse(JSON.stringify(P)); SAVE_CODES.forEach(k=>s[k]=DEF_P[k]); return JSON.stringify({app:'autocrat',kind:'save',v:P.v,build:BUILD,made:new Date().toISOString(),save:s}); }
+   The run in progress (Continue run) is its own save and stays on this device.
+   The file is signed (sig: SHA-256 of SAVE_SALT + the save), so a file edited by hand is refused. The salt is in this code, so the signature
+   only stops casual edits, not a determined cheat (a client-side game cannot); normP still checks every field. An imported save keeps
+   this device's beta badge and is flagged for good (P.imported), so rankings can leave it out later. */
+const SAVE_CODES=['testerCode','betaCode','stageCode','testerTools'], SAVE_SALT='autocrat-save-1:', SAVE_MAX=200000;
+const saveSig=s=>sha256(SAVE_SALT+JSON.stringify(s));
+function saveExportText(){ const s=JSON.parse(JSON.stringify(P)); SAVE_CODES.forEach(k=>s[k]=DEF_P[k]); return JSON.stringify({app:'autocrat',kind:'save',v:P.v,build:BUILD,made:new Date().toISOString(),save:s,sig:saveSig(s)}); }
 function saveNote(txt,cls){ const n=$('saveNote'); n.textContent=txt; n.className='note'+(cls?' '+cls:''); }
 $('saveExp').onclick=()=>{ sfx('click'); const txt=saveExportText(), ta=$('saveTxt'); ta.value=txt;
   const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([txt],{type:'application/json'})); a.download='autocrat-save-'+new Date().toISOString().slice(0,10)+'.json';
@@ -152,16 +156,17 @@ $('saveExp').onclick=()=>{ sfx('click'); const txt=saveExportText(), ta=$('saveT
   if(navigator.clipboard&&window.isSecureContext) navigator.clipboard.writeText(txt).then(ok,manual); else manual(); };
 let saveArm=null;
 function saveImport(txt){
-  let d=null; try{ d=JSON.parse(String(txt).trim()); }catch(e){}
-  const s=d&&d.app==='autocrat'&&d.save&&typeof d.save==='object'?d.save:d;
-  if(!s||typeof s!=='object'||Array.isArray(s)||typeof s.unit!=='string'||typeof s.core!=='object'){ saveArm=null; saveNote(t('That is not an Autocrat save.'),'bad'); return; }
+  txt=String(txt); let d=null; if(txt.length<=SAVE_MAX) try{ d=JSON.parse(txt.trim()); }catch(e){}
+  const s=d&&d.app==='autocrat'&&d.save&&typeof d.save==='object'&&!Array.isArray(d.save)?d.save:null;
+  if(!s||typeof s.unit!=='string'||!s.core||typeof s.core!=='object'){ saveArm=null; saveNote(t('That is not an Autocrat save.'),'bad'); return; }
+  if(d.sig!==saveSig(s)){ saveArm=null; saveNote(t('This save file was edited or comes from an older version, so it cannot be imported.'),'bad'); return; }
   // two taps, like Reset: the first one shows what is coming in, the second one replaces this device's progress
   const n=normP(s);
   if(saveArm!==txt){ saveArm=txt; saveNote(t('Arena {0} open, {1} gold, {2} diamonds. Tap Import save again to replace your progress here.',n.arenas,n.gold,n.gems)); setTimeout(()=>{ if(saveArm===txt) saveArm=null; },8000); return; }
-  saveArm=null; SAVE_CODES.forEach(k=>n[k]=P[k]); n.testerSave=n.testerSave||P.testerSave; n.beta=n.beta||P.beta; n.rev=Math.max(P.rev||0,n.rev||0); n.v=DEF_P.v;
+  saveArm=null; SAVE_CODES.forEach(k=>n[k]=P[k]); n.testerSave=n.testerSave||P.testerSave; n.beta=P.beta; n.imported=true; n.rev=Math.max(P.rev||0,n.rev||0); n.v=DEF_P.v;
   P=n; persist(); rebuildPreview(); renderMenu(); renderSystem(); $('saveTxt').value=''; saveNote(t('Save imported.'),'ok'); sfx('coin'); }
 $('saveImp').onclick=()=>{ sfx('click'); const txt=$('saveTxt').value; if(txt.trim()) saveImport(txt); else $('saveFile').click(); };
-$('saveFile').onchange=e=>{ const f=e.target.files&&e.target.files[0]; e.target.value=''; if(!f) return; if(f.size>200000){ saveNote(t('That is not an Autocrat save.'),'bad'); return; }
+$('saveFile').onchange=e=>{ const f=e.target.files&&e.target.files[0]; e.target.value=''; if(!f) return; if(f.size>SAVE_MAX){ saveNote(t('That is not an Autocrat save.'),'bad'); return; }
   const r=new FileReader(); r.onload=()=>{ $('saveTxt').value=String(r.result||''); saveArm=null; saveImport(r.result); }; r.readAsText(f); };
 /* tester code: only its SHA-256 is in the code (tester.js). Unlocked: a toggle for the in-game tester tools (reloads the page). */
 function renderTester(){ const ok=testerOK(), n=$('testerNote'); $('testerToolsL').hidden=!ok; $('testerTools').checked=P.testerTools; $('testerBtn').textContent=ok?t('Lock'):t('Unlock');

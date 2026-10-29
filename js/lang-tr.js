@@ -41,6 +41,7 @@ const DICT_TR={
   'Save downloaded and copied. Open System on the other device and import it.':'Kayıt indirildi ve kopyalandı. Diğer cihazda Sistem ekranını açıp içe aktar.',
   'Save downloaded. You can also copy the text in the box.':'Kayıt indirildi. Kutudaki metni de kopyalayabilirsin.',
   'That is not an Autocrat save.':'Bu bir Autocrat kaydı değil.', 'Save imported.':'Kayıt içe aktarıldı.',
+  'This save file was edited or comes from an older version, so it cannot be imported.':'Bu kayıt dosyası değiştirilmiş ya da eski bir sürümden, içe aktarılamaz.',
   'Arena {0} open, {1} gold, {2} diamonds. Tap Import save again to replace your progress here.':'{0}. arena açık, {1} altın, {2} elmas. Buradaki ilerlemenin yerine geçmesi için Kaydı içe aktar\'a tekrar bas.',
   // story, cards, pause, report
   // patch notes (NEWS)
