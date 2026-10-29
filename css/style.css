@@ -573,4 +573,6 @@ body.aiming,body.aiming #gl{cursor:none}
 .badge{display:inline-block;margin-left:6px;padding:1px 6px;border:1px solid var(--gold);color:var(--gold);font-style:normal;font-size:10px;letter-spacing:.16em}
 .row.tester{flex-wrap:nowrap} #testerIn{appearance:none;flex:1;min-width:0;border:1px solid var(--line);background:rgba(12,9,16,.7);color:var(--paper);font-family:var(--f-data);font-size:15px;padding:9px 10px;text-transform:uppercase;letter-spacing:.08em;border-radius:0}
 #testerIn:focus{outline:none;border-color:var(--signal)} #testerNote.ok{color:var(--sp)} #testerNote.bad{color:var(--alert)}
+#saveTxt{display:block;width:100%;box-sizing:border-box;margin-top:8px;border:1px solid var(--line);background:rgba(12,9,16,.7);color:var(--paper);font:12px/1.35 var(--f-data);padding:8px 10px;border-radius:0;resize:vertical;-webkit-user-select:text;user-select:text;touch-action:auto}
+#saveTxt:focus{outline:none;border-color:var(--signal)} #saveNote.ok{color:var(--sp)} #saveNote.bad{color:var(--alert)}
 #dbg select.w,#dbg input.w{width:72px}
