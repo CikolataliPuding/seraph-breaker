@@ -139,6 +139,30 @@ $('fsBtn').onclick=()=>{ try{ const r=document.documentElement.requestFullscreen
 let resetArm=false;
 $('resetBtn').onclick=()=>{ if(!resetArm){ resetArm=true; $('resetBtn').textContent=t('Tap again to erase your progress'); setTimeout(()=>{ resetArm=false; $('resetBtn').textContent=t('Reset my progress'); },4000); return; }
   const keep={rev:P.rev,beta:P.beta,betaCode:P.betaCode,testerCode:P.testerCode,testerSave:P.testerSave,testerTools:P.testerTools,stageCode:P.stageCode}; P=freshP(); Object.assign(P,keep); resetArm=false; $('resetBtn').textContent=t('Reset my progress'); clearRun(); persist(); rebuildPreview(); renderMenu(); };
+/* move my save (#55): export the profile as JSON (file + clipboard + the text box), import it on another device. Tester, beta and stage
+   codes never leave the device: an import keeps this device's codes. A tester-flagged save stays flagged, so an import cannot launder it.
+   The run in progress (Continue run) is its own save and stays on this device. */
+const SAVE_CODES=['testerCode','betaCode','stageCode','testerTools'];
+function saveExportText(){ const s=JSON.parse(JSON.stringify(P)); SAVE_CODES.forEach(k=>s[k]=DEF_P[k]); return JSON.stringify({app:'autocrat',kind:'save',v:P.v,build:BUILD,made:new Date().toISOString(),save:s}); }
+function saveNote(txt,cls){ const n=$('saveNote'); n.textContent=txt; n.className='note'+(cls?' '+cls:''); }
+$('saveExp').onclick=()=>{ sfx('click'); const txt=saveExportText(), ta=$('saveTxt'); ta.value=txt;
+  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([txt],{type:'application/json'})); a.download='autocrat-save-'+new Date().toISOString().slice(0,10)+'.json';
+  document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },500);
+  const ok=()=>saveNote(t('Save downloaded and copied. Open System on the other device and import it.'),'ok'), manual=()=>{ ta.focus(); ta.select(); saveNote(t('Save downloaded. You can also copy the text in the box.'),'ok'); };
+  if(navigator.clipboard&&window.isSecureContext) navigator.clipboard.writeText(txt).then(ok,manual); else manual(); };
+let saveArm=null;
+function saveImport(txt){
+  let d=null; try{ d=JSON.parse(String(txt).trim()); }catch(e){}
+  const s=d&&d.app==='autocrat'&&d.save&&typeof d.save==='object'?d.save:d;
+  if(!s||typeof s!=='object'||Array.isArray(s)||typeof s.unit!=='string'||typeof s.core!=='object'){ saveArm=null; saveNote(t('That is not an Autocrat save.'),'bad'); return; }
+  // two taps, like Reset: the first one shows what is coming in, the second one replaces this device's progress
+  const n=normP(s);
+  if(saveArm!==txt){ saveArm=txt; saveNote(t('Arena {0} open, {1} gold, {2} diamonds. Tap Import save again to replace your progress here.',n.arenas,n.gold,n.gems)); setTimeout(()=>{ if(saveArm===txt) saveArm=null; },8000); return; }
+  saveArm=null; SAVE_CODES.forEach(k=>n[k]=P[k]); n.testerSave=n.testerSave||P.testerSave; n.beta=n.beta||P.beta; n.rev=Math.max(P.rev||0,n.rev||0); n.v=DEF_P.v;
+  P=n; persist(); rebuildPreview(); renderMenu(); renderSystem(); $('saveTxt').value=''; saveNote(t('Save imported.'),'ok'); sfx('coin'); }
+$('saveImp').onclick=()=>{ sfx('click'); const txt=$('saveTxt').value; if(txt.trim()) saveImport(txt); else $('saveFile').click(); };
+$('saveFile').onchange=e=>{ const f=e.target.files&&e.target.files[0]; e.target.value=''; if(!f) return; if(f.size>200000){ saveNote(t('That is not an Autocrat save.'),'bad'); return; }
+  const r=new FileReader(); r.onload=()=>{ $('saveTxt').value=String(r.result||''); saveArm=null; saveImport(r.result); }; r.readAsText(f); };
 /* tester code: only its SHA-256 is in the code (tester.js). Unlocked: a toggle for the in-game tester tools (reloads the page). */
 function renderTester(){ const ok=testerOK(), n=$('testerNote'); $('testerToolsL').hidden=!ok; $('testerTools').checked=P.testerTools; $('testerBtn').textContent=ok?t('Lock'):t('Unlock');
   $('testerIn').hidden=ok; n.className='note'+(ok?' ok':''); n.textContent=ok?t('Tester mode unlocked. Runs with tester tools are flagged and never count for rankings.'):t('For testers only. Tester runs are flagged and never count for rankings.'); }
