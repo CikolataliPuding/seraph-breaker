@@ -1,0 +1,9 @@
+{
+  "name": "autocrat-tools",
+  "private": true,
+  "description": "Dev tools for the smoke test (tools/smoke.mjs). Not part of the game, which has no build step and no dependencies.",
+  "type": "module",
+  "dependencies": {
+    "puppeteer-core": "23.11.1"
+  }
+}
